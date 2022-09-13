@@ -4,7 +4,7 @@
   "main": "index.js",
   "repository": "git@github.com:finnishtransportagency/raita.git",
   "author": {},
-  "license": "MIT",
+  "license": "EUPL-1.2",
   "devDependencies": {
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
