@@ -5,15 +5,41 @@
   "repository": "git@github.com:finnishtransportagency/raita.git",
   "author": {},
   "license": "EUPL-1.2",
-  "devDependencies": {
-    "husky": "^8.0.1",
-    "lint-staged": "^13.0.3",
-    "prettier": "^2.7.1"
-  },
   "lint-staged": {
     "*.{js,css,md}": "prettier --write"
   },
   "scripts": {
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "s3:ls": "aws s3 ls $RAITA_DATA_S3",
+    "s3:put:small": "aws s3 cp $RAITA_SMALL_EXAMPLE_PATH s3://$RAITA_DATA_S3",
+    "s3:put:medium": "aws s3 cp --recursive $RAITA_MEDIUM_EXAMPLE_PATH s3://$RAITA_DATA_S3",
+    "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.102",
+    "@types/jest": "^26.0.10",
+    "@types/node": "10.17.27",
+    "aws-cdk": "2.17.0",
+    "husky": "^8.0.1",
+    "jest": "^26.4.2",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.1",
+    "ts-jest": "^26.2.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-sdk/client-opensearch": "^3.163.0",
+    "@aws-sdk/credential-provider-node": "^3.171.0",
+    "@opensearch-project/opensearch": "^2.0.0",
+    "aws-cdk-lib": "2.17.0",
+    "aws-lambda": "^1.0.7",
+    "aws-opensearch-connector": "^1.1.0",
+    "constructs": "^10.0.0",
+    "zod": "^3.19.1"
   }
 }
