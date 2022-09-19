@@ -21,7 +21,7 @@ const getConfig = () => {
     configurationFile: 'extractionSpec.json',
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION, // OR 'eu-west-1' OR process.env.AWS_REGION
-    openSeachMetadataIndex: 'metadata-index',
+    openSearchMetadataIndex: 'metadata-index',
   };
   return ConfigSchema.parse(config);
 };
