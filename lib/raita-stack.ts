@@ -51,7 +51,7 @@ export class RaitaStack extends Stack {
     const handleMermecFileEvents = new NodejsFunction(this, 'mermec-parser', {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_14_X,
+      runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleMermecFileEvents',
       entry: path.join(__dirname, `../lambda/mermecParser/mermecParser.ts`),
       environment: {
