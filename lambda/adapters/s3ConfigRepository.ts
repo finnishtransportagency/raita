@@ -1,5 +1,5 @@
-import { S3 } from "aws-sdk";
-import { ISpecificationAdapterInterface } from "../types/portSpecification";
+import { S3 } from 'aws-sdk';
+import { ISpecificationAdapterInterface } from '../types/portSpecification';
 
 export class S3ConfigRepository implements ISpecificationAdapterInterface {
   #s3: S3;
@@ -9,13 +9,11 @@ export class S3ConfigRepository implements ISpecificationAdapterInterface {
   constructor({
     configurationBucket,
     configurationFile,
-    apiVersion,
   }: {
     configurationBucket: string;
     configurationFile: string;
-    apiVersion?: string;
   }) {
-    this.#s3 = new S3({ apiVersion: apiVersion ?? "2006-03-01" });
+    this.#s3 = new S3();
     this.#configurationBucket = configurationBucket;
     this.#configurationFile = configurationFile;
   }
@@ -31,7 +29,7 @@ export class S3ConfigRepository implements ISpecificationAdapterInterface {
     if (specJSON) {
       return specJSON;
     } else {
-      throw new Error("Empty specification.");
+      throw new Error('Empty specification.');
     }
   };
 

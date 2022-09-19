@@ -1,12 +1,12 @@
-import { S3ConfigRepository } from "../adapters/s3ConfigRepository";
+import { S3ConfigRepository } from '../adapters/s3ConfigRepository';
 import {
   ISpecificationAdapterInterface,
   ISpecificationPortInterface,
-} from "../types/portSpecification";
-import { ExtractionSpec, IExtractionSpec } from "../types";
-import getConfig from "../config";
+} from '../types/portSpecification';
+import { ExtractionSpec, IExtractionSpec } from '../types';
+import getConfig from '../config';
 
-export type IConfigBackend = "s3";
+export type IConfigBackend = 's3';
 
 export default class ConfigPort implements ISpecificationPortInterface {
   #backend: ISpecificationAdapterInterface;
