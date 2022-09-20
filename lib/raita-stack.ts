@@ -37,6 +37,7 @@ export class RaitaStack extends Stack {
     const applicationPrefix = 'raita-analysis';
 
     // Create buckets
+    // TODO: Plan flexible bucket and configuration structure & naming to account for possible other source systems
     const dataBucket = this.createBucket('mermec-data');
     const configurationBucket = this.createBucket('mermec-configuration');
 
@@ -65,7 +66,7 @@ export class RaitaStack extends Stack {
     // Create and configure OpenSearch domain
     // TODO: Might warrant refactor
     const openSearchDomain = this.createOpenSearchDomain({
-      domainName: 'mermec-base',
+      domainName: 'raita-base',
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
@@ -154,6 +155,7 @@ export class RaitaStack extends Stack {
     cognitoUserPool: UserPool;
     masterUserRole: Role;
   }) {
+    // TODO: Check if asterisk can be dropped out
     const domainArn =
       'arn:aws:es:' +
       this.region +
@@ -188,6 +190,7 @@ export class RaitaStack extends Stack {
         role: cognitoOpenSearchServiceRole,
         userPoolId: cognitoUserPool.userPoolId,
       },
+      // TODO: Define least privileges access policy here
       accessPolicies: [
         new PolicyStatement({
           effect: Effect.ALLOW,
