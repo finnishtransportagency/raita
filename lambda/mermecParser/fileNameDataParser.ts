@@ -1,5 +1,6 @@
 import { IExtractionSpec, ParseValueResult } from '../types';
 import { logger } from '../utils/logger';
+import { parsePrimitive } from '../utils/parsePrimitives';
 
 export const extractFileNameData = (
   fileName: string,
@@ -20,11 +21,14 @@ export const extractFileNameData = (
   }
   return baseName.split('_').reduce<ParseValueResult>((acc, cur, index) => {
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
-    const keyLabel = fileNamePartLabels[suffix][index + 1];
-    if (keyLabel) {
+    const { name, parseAs } = fileNamePartLabels[suffix][index + 1];
+    if (name) {
+      const { key, value } = parseAs
+        ? parsePrimitive(name, cur, parseAs)
+        : { key: name, value: cur };
       // TODO: AWS has replaced spaces in folder names with + character. To decide whether these should be
       // replaced back to spaces.
-      acc[keyLabel] = cur;
+      acc[key] = value;
     }
     return acc;
   }, {});
