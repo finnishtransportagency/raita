@@ -1,10 +1,12 @@
 import { S3EventRecord } from 'aws-lambda/trigger/s3';
+import { ZodError } from 'zod';
 
 class Logger {
   log = (data: unknown) => {
     const message =
       (typeof data === 'string' && data) ||
       (data instanceof Error && data.message) ||
+      (data instanceof ZodError && data.message) ||
       JSON.stringify(data);
     try {
       console.log(message);
