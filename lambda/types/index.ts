@@ -1,9 +1,9 @@
-export * from "./specification";
-export * from "./portDataStorage";
-export * from "./portFile";
-export * from "./portSpecification";
+export * from './specification';
+export * from './portDataStorage';
+export * from './portFile';
+export * from './portSpecification';
 
-export type ParseValueResult = Record<string, string>;
+export type ParseValueResult = Record<string, string | number>;
 
 export interface FileMetadataEntry {
   fileName: string;

@@ -3,6 +3,7 @@ import {
   IExtractionSpec,
 } from '../types';
 import { ParseValueResult } from '../types';
+import { parsePrimitive } from '../utils/parsePrimitives';
 import { regexCapturePatterns } from '../utils/regex';
 
 export const isContentExtractionRequired = ({
@@ -21,7 +22,7 @@ const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
   fileBody: string,
 ) => {
-  const { propertyKey, pattern } = extractSpec;
+  const { propertyKey, pattern, parseAs } = extractSpec;
   // If more than one possible pattern, add logic here for passing
   // arguments to the function generating regex.
   const regr = regexCapturePatterns[pattern.predefinedPatternId](
@@ -29,8 +30,13 @@ const extractValue = (
   );
   try {
     const res = regr.exec(fileBody);
-    const value = res?.[1];
-    return value ? { propertyKey, value } : null;
+    const val = res?.[1];
+    if (val) {
+      return parseAs
+        ? parsePrimitive(propertyKey, val, parseAs)
+        : { key: propertyKey, value: val };
+    }
+    return null;
   } catch (err) {
     throw new Error(
       `Parsing failed for the term: ${propertyKey}: ${
@@ -50,7 +56,7 @@ export const extractFileContentData = (
         .map(extractSpecItem => extractValue(extractSpecItem, fileBody))
         .reduce<ParseValueResult>((acc, cur) => {
           if (cur) {
-            acc[cur.propertyKey] = cur.value;
+            acc[cur.key] = cur.value;
           }
           return acc;
         }, {});
