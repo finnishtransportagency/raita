@@ -53,14 +53,14 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
     const client = await this.#getClient();
     // Add entries to the index.
-    const addPromises = data.map(async entry => {
+    const additions = data.map(async entry => {
       const addDocresponse = client.index({
         index: this.#dataIndex,
         body: entry,
       });
       return addDocresponse;
     });
-    await Promise.all(addPromises)
+    await Promise.all(additions)
       .then(data => {
         logger.log(data);
       })
