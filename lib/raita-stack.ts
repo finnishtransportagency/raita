@@ -1,4 +1,4 @@
-import { Stack, StackProps, CfnJson } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -16,6 +16,7 @@ import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
   PhysicalResourceId,
+  Provider,
 } from 'aws-cdk-lib/custom-resources';
 import {
   ManagedPolicy,
@@ -29,7 +30,6 @@ import {
 import { Construct } from 'constructs';
 
 import * as path from 'path';
-import getConfig from '../lambda/config';
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -70,8 +70,26 @@ export class RaitaStack extends Stack {
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
-      masterUserRole: esAdminUserRole,
+      masterUserRole: lambdaServiceRole,
     });
+
+    // Create a ManagedPolicy that allows admin role and lambda role to call
+    // open search endpoints
+    const openSearchHttpPolicy = new ManagedPolicy(
+      this,
+      'openSearchHttpPolicy',
+      {
+        roles: [esAdminUserRole, lambdaServiceRole],
+      },
+    );
+    openSearchHttpPolicy.addStatements(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: [openSearchDomain.domainArn],
+        actions: ['es:ESHttpPost', 'es:ESHttpGet', 'es:ESHttpPut'],
+      }),
+    );
+
     this.configureIdentityPool({
       userPool: userPool,
       identityPool: idPool,
@@ -88,11 +106,15 @@ export class RaitaStack extends Stack {
       configurationBucketName: configurationBucket.bucketName,
       lambdaRole: lambdaServiceRole,
     });
-
+    // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
+    this.configureOpenSearchRoleMapping({
+      lambdaServiceRole,
+      esAdminUserRole,
+      esLimitedUserRole,
+      openSearchDomain,
+    });
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(handleMermecFileEvents);
-
-    // TODO: Grant OpenSearch internal permissions
   }
 
   /**
@@ -166,12 +188,14 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
+    // TODO: Configure removalPolicy as environment dependent
     return new opensearch.Domain(this, domainName, {
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       ebs: {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
       },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       capacity: {
         dataNodes: 1,
         dataNodeInstanceType: 't3.small.search',
@@ -195,17 +219,23 @@ export class RaitaStack extends Stack {
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ['es:ESHttp*'],
-          principals: [new AnyPrincipal()],
+          principals: [new AnyPrincipal(), masterUserRole],
           resources: [domainArn],
         }),
       ],
     });
   }
 
+  /**
+   * Creates a user pool.
+   * TODO: This setup is likely removed in the future as this is Raita specific user pool
+   * TODO: Configure removalPolicy as environment dependent
+   */
   private createUserPool(applicationPrefix: string) {
     const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
       userPoolName: applicationPrefix + ' User Pool',
       selfSignUpEnabled: false,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       signInAliases: {
         username: true,
         email: true,
@@ -219,6 +249,9 @@ export class RaitaStack extends Stack {
     return userPool;
   }
 
+  /**
+   * TODO: Configure removalPolicy as environment dependent AND autoDeleteObjects
+   */
   private createBucket(bucketName: string) {
     return new s3.Bucket(this, bucketName, {
       versioned: true,
@@ -332,6 +365,55 @@ export class RaitaStack extends Stack {
           },
         },
       }),
+    });
+  }
+
+  private configureOpenSearchRoleMapping({
+    lambdaServiceRole,
+    esAdminUserRole,
+    esLimitedUserRole,
+    openSearchDomain,
+  }: {
+    lambdaServiceRole: Role;
+    esAdminUserRole: Role;
+    esLimitedUserRole: Role;
+    openSearchDomain: cdk.aws_opensearchservice.Domain;
+  }) {
+    // Create lambda for sending requests to OpenSearch API
+    const esRequestsFn = new NodejsFunction(this, 'esRequestsFn', {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'sendOpenSearchAPIRequest',
+      entry: path.join(__dirname, `../lambda/osRequests/osRequests.ts`),
+      timeout: cdk.Duration.seconds(30),
+      role: lambdaServiceRole,
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomain.domainEndpoint,
+      },
+    });
+
+    const esRequestProvider = new Provider(this, 'esRequestProvider', {
+      onEventHandler: esRequestsFn,
+    });
+
+    // TODO: Add API call for esLimitedRole
+    new CustomResource(this, 'esRequestsResource', {
+      serviceToken: esRequestProvider.serviceToken,
+      properties: {
+        requests: [
+          {
+            method: 'PUT',
+            path: '/_plugins/_security/api/rolesmapping/all_access',
+            body: {
+              backend_roles: [
+                esAdminUserRole.roleArn,
+                lambdaServiceRole.roleArn,
+              ],
+              hosts: [],
+              users: [],
+            },
+          },
+        ],
+      },
     });
   }
 }

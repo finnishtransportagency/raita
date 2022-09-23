@@ -2,6 +2,7 @@ import { OpenSearchRepository } from '../adapters/openSearchRepository';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
 import { FileMetadataEntry } from '../types';
 import getConfig from '../config';
+import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
 export type IStorageBackend = 'openSearch';
 
@@ -12,12 +13,15 @@ export default class MetadataPort implements IMetadataStorageInterface {
     const config = getConfig();
     const backends: Record<IStorageBackend, () => IMetadataStorageInterface> = {
       // OPEN: Figure out if better way of accessing the region would be Stack.of(this).region approach
-      openSearch: () =>
-        new OpenSearchRepository({
+      openSearch: () => {
+        return new OpenSearchRepository({
           dataIndex: config.openSearchMetadataIndex,
-          region: config.region,
-          openSearchDomain: config.openSearchDomain,
-        }),
+          openSearchClient: new RaitaOpenSearchClient({
+            region: config.region,
+            openSearchDomain: config.openSearchDomain,
+          }),
+        });
+      },
     };
     this.#backend = backends[storageBackend]();
   }
