@@ -13,6 +13,7 @@ import {
 } from './contentDataParser';
 import { logger } from '../utils/logger';
 import BackendFacade from '../ports/backend';
+import { parseCSV } from '../csvParser';
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -34,7 +35,15 @@ export async function handleMermecFileEvents(event: S3Event): Promise<void> {
         // HERE flow control if multiple event types (S3, HTTP...)
         // or files in multiple repositories
         const file = await backend.files.getFile(eventRecord);
+        logger.log(file.contentType);
+
+        // TODO: Improve handling of contentType missing. Use file suffix? Skip file?
+        if (!file.contentType) {
+          logger.log('WARNING: No file content type.');
+          return null;
+        }
         if (!spec.include.includeContentTypes.includes(file.contentType)) {
+          logger.log('Not processing file due to file type.');
           return null;
         }
         const path = eventRecord.s3.object.key.split('/');
@@ -45,6 +54,15 @@ export async function handleMermecFileEvents(event: S3Event): Promise<void> {
           file,
           spec,
         });
+
+        // THIS IS BRUTAL ASYNCHRONOUS TEST
+        if (file.contentType === 'text/csv' && file.body) {
+          logger.log('csv should be parsed');
+          const parsed = await parseCSV(file.body);
+          logger.log(`Parsed objects count: ${parsed.length}`);
+          await backend.metadataStorage.saveMermecData('data-index', parsed);
+        }
+
         return {
           fileName,
           arn: eventRecord.s3.bucket.arn,
@@ -52,12 +70,16 @@ export async function handleMermecFileEvents(event: S3Event): Promise<void> {
           metadata,
         };
       },
-    ).filter(x => Boolean(x)) as Array<Promise<FileMetadataEntry>>;
+    );
     // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
     // Switch to granular error handling.
     // Check if lambda supports es2022 and if so, switch to Promise.allSettled
     const entries = await Promise.all(recordResults);
-    await backend.metadataStorage.saveFileMetadata(entries);
+    // Submit to saving metadata, filtering first unprocessed (null) entries
+    logger.log(entries.filter(x => Boolean(x)) as Array<FileMetadataEntry>);
+    await backend.metadataStorage.saveFileMetadata(
+      entries.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
+    );
     logger.log('Entries persisted in OpenSearch.');
   } catch (err) {
     // TODO: Figure out proper error handling.

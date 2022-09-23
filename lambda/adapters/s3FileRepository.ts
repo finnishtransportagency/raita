@@ -2,6 +2,7 @@ import { S3EventRecord } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { IFileResult } from '../types';
 import { IFileInterface } from '../types/portFile';
+import { logger } from '../utils/logger';
 
 export class S3FileRepository implements IFileInterface {
   #s3: S3;
@@ -22,6 +23,7 @@ export class S3FileRepository implements IFileInterface {
       })
       .promise();
     return {
+      body: file.Body,
       fileBody: file.Body?.toString(),
       contentType: file.ContentType,
     };

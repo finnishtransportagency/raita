@@ -25,4 +25,8 @@ export default class MetadataPort implements IMetadataStorageInterface {
   saveFileMetadata = (data: FileMetadataEntry[]) => {
     return this.#backend.saveFileMetadata(data);
   };
+
+  saveMermecData = (indexName: string, data: Array<Object>) => {
+    return this.#backend.saveMermecData(indexName, data);
+  };
 }

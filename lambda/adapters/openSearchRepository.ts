@@ -69,4 +69,41 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         throw err;
       });
   };
+
+  saveMermecData = async (indexName: string, data: Array<Object>) => {
+    const client = await this.#getClient();
+    // Add entries to the index.
+    logger.log('Starting to persist entries');
+
+    // const additions = data.map(async entry => {
+    //   // logger.log(entry);
+    //   const addDocresponse = client.index({
+    //     index: indexName,
+    //     body: entry,
+    //   });
+    //   return addDocresponse;
+    // });
+    // await Promise.all(additions)
+    //   .then(data => {
+    //     logger.log(data);
+    //   })
+    //   .catch(err => {
+    //     logger.log(`Save nernec data failed`);
+    //     logger.log(err);
+    //     throw err;
+    //   });
+    const operations = data.flatMap(doc => [
+      { index: { _index: indexName } },
+      doc,
+    ]);
+
+    // try {
+    //   const res = await client.bulk({
+    //     refresh: true,
+    //     operations,
+    //   });
+    // } catch (err) {
+    //   logger.log(err);
+    // }
+  };
 }
