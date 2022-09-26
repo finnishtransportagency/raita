@@ -2,11 +2,19 @@
  * Temporary stylesheet
  */
 :root {
+  --font-family: 'Exo 2';
+
+  font-size: 16px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  font-family: var(--font-family);
+
+  --space-sm: 0.5rem;
+  --space: 1rem;
 }
 
 .cols {
@@ -23,14 +31,14 @@
 }
 
 .space-y > * {
-  margin-top: 0.5rem;
+  margin-top: var(--space-sm);
 }
 
 .input {
 }
 
 .input + .input {
-  margin-top: 0.5rem;
+  margin-top: var(--space-sm);
 }
 
 .input__label {
@@ -48,4 +56,12 @@
 .pager__item {
   border: solid 1px #f00;
   display: inline-block;
+}
+
+/* Form/fieldsets */
+fieldset {
+}
+
+fieldset > legend {
+  padding: 0 var(--space-sm);
 }
