@@ -36,7 +36,7 @@ export class RaitaPipelineStack extends Stack {
             ),
           },
         ),
-        commands: ['npm ci', 'npm run deploy:raita:dev'],
+        commands: ['npm ci', 'npx cdk synth'],
       }),
       dockerEnabledForSynth: true,
       codeBuildDefaults: {
@@ -50,7 +50,6 @@ export class RaitaPipelineStack extends Stack {
           new PolicyStatement({
             effect: Effect.ALLOW,
             actions: ['cloudformation:DescribeStacks'],
-            // principals: [new AnyPrincipal()],
             // TODO: FIX THIS! No '*'!
             resources: [
               '*',
