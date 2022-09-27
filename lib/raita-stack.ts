@@ -93,12 +93,13 @@ export class RaitaStack extends Stack {
       region: config.region,
     });
 
-    // Create API Gateway
-    new RaitaGatewayStack(this, {
-      dataBucket,
-      lambdaServiceRole,
-      userPool,
-    });
+    // TODO: Bring back
+    // // Create API Gateway
+    // new RaitaGatewayStack(this, {
+    //   dataBucket,
+    //   lambdaServiceRole,
+    //   userPool,
+    // });
 
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(handleMermecFileEvents);
