@@ -174,6 +174,7 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
+    // TODO: Environment dependent removal policy
     return new opensearch.Domain(this, domainName, {
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       ebs: {
@@ -211,6 +212,7 @@ export class RaitaStack extends Stack {
     });
   }
 
+  // TODO: Environment dependent removal policy
   private createUserPool(applicationPrefix: string) {
     const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
       userPoolName: applicationPrefix + ' User Pool',
@@ -231,8 +233,7 @@ export class RaitaStack extends Stack {
 
   /**
    * Creates a data bucket for the stacks
-   * TODO: Resolve if okay to delete bucket and objects
-   * when stack deleted (removalPolicy, autoDeleteObjects below)
+   * TODO: Environment dependent removal policy (and autoDeleteObjects)
    */
   private createBucket(bucketName: string) {
     return new s3.Bucket(this, bucketName, {
