@@ -30,6 +30,7 @@ import { Construct } from 'constructs';
 
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
+import getConfig from '../lambda/config';
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
