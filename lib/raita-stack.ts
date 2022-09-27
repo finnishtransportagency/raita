@@ -29,7 +29,7 @@ import {
 import { Construct } from 'constructs';
 
 import * as path from 'path';
-import getConfig from '../lambda/config';
+import { RaitaGatewayStack } from './raita-gateway';
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -92,6 +92,13 @@ export class RaitaStack extends Stack {
       region: config.region,
     });
 
+    // Create API Gateway
+    new RaitaGatewayStack(this, {
+      dataBucket,
+      lambdaServiceRole,
+      userPool,
+    });
+
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(handleMermecFileEvents);
 
@@ -145,6 +152,7 @@ export class RaitaStack extends Stack {
 
   /**
    * Creates OpenSearch domain
+   * TODO: Remove removalPolicy OR make it environment dependent
    */
   private createOpenSearchDomain({
     domainName,
@@ -170,12 +178,14 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
+    // TODO: Environment dependent removal policy
     return new opensearch.Domain(this, domainName, {
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       ebs: {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
       },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       capacity: {
         dataNodes: 1,
         dataNodeInstanceType: 't3.small.search',
@@ -206,10 +216,12 @@ export class RaitaStack extends Stack {
     });
   }
 
+  // TODO: Environment dependent removal policy
   private createUserPool(applicationPrefix: string) {
     const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
       userPoolName: applicationPrefix + ' User Pool',
       selfSignUpEnabled: false,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       signInAliases: {
         username: true,
         email: true,
@@ -223,6 +235,10 @@ export class RaitaStack extends Stack {
     return userPool;
   }
 
+  /**
+   * Creates a data bucket for the stacks
+   * TODO: Environment dependent removal policy (and autoDeleteObjects)
+   */
   private createBucket(bucketName: string) {
     return new s3.Bucket(this, bucketName, {
       versioned: true,
