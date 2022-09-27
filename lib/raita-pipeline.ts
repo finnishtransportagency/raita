@@ -36,7 +36,7 @@ export class RaitaPipelineStack extends Stack {
             ),
           },
         ),
-        commands: ['npm ci', 'npx cdk synth'],
+        commands: ['npm ci', 'npm run synth:raita:' + config.env],
       }),
       dockerEnabledForSynth: true,
       codeBuildDefaults: {
