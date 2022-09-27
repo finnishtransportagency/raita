@@ -16,7 +16,7 @@ import { RaitaStack } from './raita-stack';
 export class RaitaPipelineStack extends Stack {
   constructor(scope: Construct) {
     const config = getconfig();
-    super(scope, 'raita-pipeline', {
+    super(scope, 'raita-pipeline-' + config.env, {
       stackName: 'raita-pipeline-' + config.env,
       env: {
         region: 'eu-west-1',
