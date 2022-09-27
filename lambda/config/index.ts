@@ -1,6 +1,8 @@
 import { config } from 'process';
 import { z } from 'zod';
 
+// Inspiration from https://github.com/finnishtransportagency/hassu/blob/main/deployment/lib/config.ts
+
 export function getEnv(name: string) {
   const value = process.env[name];
   if (!value) {
@@ -13,29 +15,34 @@ const permanentEnvironments = ['dev', 'prod'] as const;
 const allEnvironments = [...permanentEnvironments, 'feature'] as const;
 
 const env = getEnv('ENVIRONMENT');
-const branch = getEnv('BRANCH'); // TODO: Not always from env?
+const branch = getEnv('BRANCH'); // TODO: Not always from env? Main as default?
 // Used any as otherwise includes isn't allowed
-const sharedInfraEnv = permanentEnvironments.includes(env as any) ? env : 'dev';
+const isPermanentEnvironment = (environment: string) =>
+  permanentEnvironments.includes(environment as any);
+const sharedInfraEnv = isPermanentEnvironment(env) ? env : 'dev';
 
 // TODO: CDK typescript version 3.9.7 with zod causes TS2589: Type instantiation is excessively deep and possibly infinite.
 // Should be resolvable by upgrading typescript version (but trying this broke cdk synth command)
 // @ts-ignore
-// const ConfigSchema = z.object({
-//   env: z.enum(allEnvironments), // TODO: Third type, extended from permanentEnvironments
-//   branch: z.string(),
-//   dataBucketName: z.string(),
-//   openSearchDomainName: z.string(),
-//   parserConfigurationBucketName: z.string(),
-//   parserConfigurationFile: z.string(),
-//   parserLambdaName: z.string(),
-//   region: z.string(),
-//   openSearchMetadataIndex: z.string(),
-//   authenticationToken: z.string(),
-//   tags: z.object({
-//     Environment: z.enum(allEnvironments),
-//     Project: z.string(),
-//   }),
-// });
+const ConfigSchema = z.object({
+  // @ts-ignore
+  env: z.enum(allEnvironments), // TODO: Third type, extended from permanentEnvironments
+  isPermanentEnvironment: z.function(),
+  branch: z.string(),
+  dataBucketName: z.string(),
+  openSearchDomainName: z.string(),
+  parserConfigurationBucketName: z.string(),
+  parserConfigurationFile: z.string(),
+  parserLambdaName: z.string(),
+  region: z.string(),
+  openSearchMetadataIndex: z.string(),
+  authenticationToken: z.string(),
+  // @ts-ignore
+  tags: z.object({
+    Environment: z.enum(allEnvironments),
+    Project: z.string(),
+  }),
+});
 
 // CDK DEFAULTS come from the AWS profile that is used to run the commands
 // TODO: This IS not be the brightest implementation at the moment.
@@ -45,6 +52,7 @@ const sharedInfraEnv = permanentEnvironments.includes(env as any) ? env : 'dev';
 const getConfig = () => {
   const config = {
     env,
+    isPermanentEnvironment,
     branch,
     dataBucketName: 'input-data-' + env,
     openSearchDomainName: 'raita-base-' + sharedInfraEnv,
@@ -60,7 +68,7 @@ const getConfig = () => {
       Project: 'raita',
     },
   };
-  return config; // ConfigSchema.parse(config);
+  return ConfigSchema.parse(config);
 };
 
 export default getConfig;

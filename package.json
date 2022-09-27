@@ -18,9 +18,9 @@
     "s3:put:small": "aws s3 cp $RAITA_SMALL_EXAMPLE_PATH s3://$RAITA_DATA_S3",
     "s3:put:medium": "aws s3 cp --recursive $RAITA_MEDIUM_EXAMPLE_PATH s3://$RAITA_DATA_S3",
     "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
-    "deploy:raita:dev": "cross-env ENVIRONMENT=dev BRANCH=chore/RAITA-18-ci-cd cdk deploy --require-approval never",
+    "deploy:raita:dev": "cross-env ENVIRONMENT=dev BRANCH=main cdk deploy --require-approval never",
     "deploy:pipeline": "cdk --app \"ts-node bin/raita-pipeline\" deploy raita-pipeline",
-    "deploy:pipeline:main": "cross-env ENVIRONMENT=dev BRANCH=chore/RAITA-18-ci-cd cdk --app \"ts-node bin/raita-pipeline\" deploy raita-pipeline"
+    "deploy:pipeline:main": "cross-env ENVIRONMENT=dev BRANCH=main cdk --app \"ts-node bin/raita-pipeline\" deploy raita-pipeline"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",
