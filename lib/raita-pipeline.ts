@@ -38,7 +38,11 @@ export class RaitaPipelineStack extends Stack {
           },
         ),
         // TODO: remove ls
-        commands: ['npm ci', 'npm run synth:raita:' + config.env, 'npx cdk ls'],
+        commands: [
+          'npm ci',
+          'npm run synth:raita:' + config.env,
+          'ENVIRONMENT=dev BRANCH=chore/RAITA-18-ci-cd npx cdk ls',
+        ],
       }),
       dockerEnabledForSynth: true,
       codeBuildDefaults: {
