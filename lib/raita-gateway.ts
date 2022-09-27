@@ -40,7 +40,11 @@ export class RaitaGatewayStack extends NestedStack {
     restApi.root
       .addResource('files')
       .addMethod('POST', new LambdaIntegration(urlGenerator), {
-        methodResponses: [{ statusCode: '200' }],
+        methodResponses: [
+          { statusCode: '200' },
+          { statusCode: '400' },
+          { statusCode: '500' },
+        ],
         authorizer: auth,
         authorizationType: AuthorizationType.COGNITO,
       });
