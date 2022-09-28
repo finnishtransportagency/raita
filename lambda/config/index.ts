@@ -1,4 +1,3 @@
-import { config } from 'process';
 import { z } from 'zod';
 
 // Inspiration from https://github.com/finnishtransportagency/hassu/blob/main/deployment/lib/config.ts
