@@ -59,8 +59,7 @@ const getConfig = () => {
     parserConfigurationBucketName: 'raita-parser-configuration-' + env,
     parserConfigurationFile: 'extractionSpec.json',
     parserLambdaName: 'raita-parser-' + env,
-    // account: getEnv('CDK_DEFAULT_ACCOUNT'),
-    region: 'eu-west-1', // process.env.CDK_DEFAULT_REGION, // OR 'eu-west-1' OR process.env.AWS_REGION
+    region: 'eu-west-1',
     openSearchMetadataIndex: 'metadata-index',
     authenticationToken: 'github-token',
     tags: {
