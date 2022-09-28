@@ -17,7 +17,6 @@ export class RaitaPipelineStack extends Stack {
   constructor(scope: Construct) {
     const config = getconfig();
     super(scope, 'raita-pipeline-' + config.env, {
-      stackName: 'raita-pipeline-' + config.env,
       env: {
         region: 'eu-west-1',
       },
@@ -98,6 +97,7 @@ export class RaitaPipelineStack extends Stack {
         ],
       },
     });
+    // TODO: Name by environment?
     pipeline.addStage(new RaitaApplication(this, 'Raita'));
   }
 }
