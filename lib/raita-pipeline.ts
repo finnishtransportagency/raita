@@ -6,7 +6,6 @@ import {
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
-import { Effect, Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import getconfig from '../lambda/config';
 import { RaitaStack } from './raita-stack';
 
@@ -17,7 +16,6 @@ export class RaitaPipelineStack extends Stack {
   constructor(scope: Construct) {
     const config = getconfig();
     super(scope, 'raita-pipeline-' + config.env, {
-      // stackName: 'raita-pipeline-' + config.env,
       env: {
         region: 'eu-west-1',
       },
@@ -47,54 +45,9 @@ export class RaitaPipelineStack extends Stack {
           LocalCacheMode.SOURCE,
           LocalCacheMode.DOCKER_LAYER,
         ),
-        rolePolicy: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ['cloudformation:DescribeStacks'],
-            // TODO: FIX THIS! No '*'!
-            resources: [
-              '*',
-              'arn:aws:cloudformation:' +
-                this.region +
-                ':' +
-                this.account +
-                ':stack/CDKToolkit/*',
-            ],
-          }),
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ['ssm:GetParameter'],
-            // TODO: FIX THIS! No '*'!
-            resources: [
-              '*',
-              'arn:aws:ssm:' +
-                this.region +
-                ':' +
-                this.account +
-                ':parameter/cdk-bootstrap/*',
-            ],
-          }),
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            actions: ['sts:AssumeRole'],
-            // TODO: FIX THIS! No '*'!
-            resources: [
-              '*',
-              'arn:aws:ssm:' +
-                this.region +
-                ':' +
-                this.account +
-                ':role/cdk-*-file-publishing-role-' +
-                this.account +
-                '-' +
-                this.region,
-            ],
-          }),
-        ],
       },
     });
-    // TODO: Name by environment?
-    pipeline.addStage(new RaitaApplication(this, 'Raita'));
+    pipeline.addStage(new RaitaApplication(this, config.env));
   }
 }
 class RaitaApplication extends Stage {
