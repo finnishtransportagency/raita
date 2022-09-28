@@ -6,7 +6,7 @@ import {
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Effect, Policy, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import getconfig from '../lambda/config';
 import { RaitaStack } from './raita-stack';
 
@@ -17,6 +17,7 @@ export class RaitaPipelineStack extends Stack {
   constructor(scope: Construct) {
     const config = getconfig();
     super(scope, 'raita-pipeline-' + config.env, {
+      // stackName: 'raita-pipeline-' + config.env,
       env: {
         region: 'eu-west-1',
       },
@@ -36,12 +37,7 @@ export class RaitaPipelineStack extends Stack {
             ),
           },
         ),
-        // TODO: remove ls
-        commands: [
-          'npm ci',
-          'npm run synth:raita:' + config.env,
-          'ENVIRONMENT=dev BRANCH=chore/RAITA-18-ci-cd npx cdk ls',
-        ],
+        commands: ['npm ci', 'npm run synth:raita:' + config.env],
       }),
       dockerEnabledForSynth: true,
       codeBuildDefaults: {
