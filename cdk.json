@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/parsing-test.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/raita-pipeline.ts",
   "watch": {
     "include": [
       "**"

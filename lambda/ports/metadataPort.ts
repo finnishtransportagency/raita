@@ -16,7 +16,7 @@ export default class MetadataPort implements IMetadataStorageInterface {
         new OpenSearchRepository({
           dataIndex: config.openSearchMetadataIndex,
           region: config.region,
-          openSearchDomain: config.openSearchDomain,
+          openSearchDomain: config.openSearchDomainName,
         }),
     };
     this.#backend = backends[storageBackend]();
