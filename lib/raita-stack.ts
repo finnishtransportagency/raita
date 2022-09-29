@@ -1,21 +1,11 @@
-import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
+import { Stack, StackProps, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import {
-  CfnIdentityPool,
-  UserPool,
-  CfnIdentityPoolRoleAttachment,
-  CfnUserPoolGroup,
-} from 'aws-cdk-lib/aws-cognito';
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-  Provider,
-} from 'aws-cdk-lib/custom-resources';
+import { CfnIdentityPool, UserPool } from 'aws-cdk-lib/aws-cognito';
+import { Provider } from 'aws-cdk-lib/custom-resources';
 import {
   ManagedPolicy,
   Role,
@@ -34,35 +24,17 @@ export class RaitaStack extends Stack {
     super(scope, id, props);
     const applicationPrefix = 'raita-analysis';
 
-    // Create buckets
-    // TODO: Plan flexible bucket and configuration structure & naming to account for possible other source systems
-    // const dataBucket = this.createBucket('mermec-data');
-    // const configurationBucket = this.createBucket('mermec-configuration');
-
-    // Create Cognito user and identity pools
-    const userPool = this.createUserPool(applicationPrefix);
     const idPool = this.createIdentityPool(applicationPrefix);
 
     // Create roles
-    // const esLimitedUserRole = this.createUserRole(idPool, 'esLimitedUserRole');
     const esAdminUserRole = this.createUserRole(idPool, 'esAdminUserRole');
-    // const openSearchServiceRole = this.createServiceRole(
-    //   'openSearchServiceRole',
-    //   'es.amazonaws.com',
-    //   'AmazonESCognitoAccess',
-    // );
     const lambdaServiceRole = this.createServiceRole(
       'lambdaServiceRole',
       'lambda.amazonaws.com',
       'service-role/AWSLambdaBasicExecutionRole',
     );
 
-    // Create Cognito user groups
-    // this.createAdminUserGroup(userPool.userPoolId, esAdminUserRole.roleArn);
-    // this.createLimitedUserGroup(userPool.userPoolId, esLimitedUserRole.roleArn);
-
     // Create and configure OpenSearch domain
-    // TODO: Might warrant refactor
     const openSearchDomain = this.createOpenSearchDomain({
       domainName: 'raita-base',
       masterUserRole: lambdaServiceRole,
@@ -85,22 +57,12 @@ export class RaitaStack extends Stack {
       }),
     );
 
-    // this.configureIdentityPool({
-    //   userPool: userPool,
-    //   identityPool: idPool,
-    //   applicationPrefix,
-    //   esDomain: openSearchDomain,
-    //   esLimitedUserRole: openSearchServiceRole,
-    // });
-
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     this.configureOpenSearchRoleMapping({
       lambdaServiceRole,
       esAdminUserRole,
       openSearchDomain,
     });
-    // Grant lambda read to configuration bucket
-    // configurationBucket.grantRead(handleMermecFileEvents);
   }
 
   /**
@@ -124,7 +86,6 @@ export class RaitaStack extends Stack {
       domainName +
       '/*';
 
-    // TODO: Identify parameters to move to environment (and move)
     // TODO: Configure removalPolicy as environment dependent
     return new opensearch.Domain(this, domainName, {
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
@@ -146,7 +107,7 @@ export class RaitaStack extends Stack {
       fineGrainedAccessControl: {
         masterUserArn: masterUserRole.roleArn,
       },
-      // TODO: Define least privileges access policy here
+      // TODO: **** Define least privileges access policy here ****
       accessPolicies: [
         new PolicyStatement({
           effect: Effect.ALLOW,
@@ -156,29 +117,6 @@ export class RaitaStack extends Stack {
         }),
       ],
     });
-  }
-
-  /**
-   * Creates a user pool.
-   * TODO: This setup is likely removed in the future as this is Raita specific user pool
-   * TODO: Configure removalPolicy as environment dependent
-   */
-  private createUserPool(applicationPrefix: string) {
-    const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
-      userPoolName: applicationPrefix + ' User Pool',
-      selfSignUpEnabled: false,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      signInAliases: {
-        username: true,
-        email: true,
-      },
-    });
-    userPool.addDomain('cognitoDomain', {
-      cognitoDomain: {
-        domainPrefix: applicationPrefix,
-      },
-    });
-    return userPool;
   }
 
   private createIdentityPool(applicationPrefix: string) {
@@ -213,81 +151,6 @@ export class RaitaStack extends Stack {
       ),
     });
   }
-
-  // private createLimitedUserGroup(
-  //   userPoolId: string,
-  //   limitedUserRoleArn: string,
-  // ) {
-  //   new CfnUserPoolGroup(this, 'userPoolLimitedGroupPool', {
-  //     userPoolId: userPoolId,
-  //     groupName: 'es-limited-users',
-  //     roleArn: limitedUserRoleArn,
-  //   });
-  // }
-
-  // private createAdminUserGroup(userPoolId: string, adminUserRoleArn: string) {
-  //   new CfnUserPoolGroup(this, 'userPoolAdminGroupPool', {
-  //     userPoolId: userPoolId,
-  //     groupName: 'es-admins',
-  //     roleArn: adminUserRoleArn,
-  //   });
-  // }
-
-  /**
-   * A magical method based on example from
-   * https://github.com/aws-samples/amazon-elasticsearch-service-with-cognito
-   */
-  // private configureIdentityPool({
-  //   userPool,
-  //   identityPool,
-  //   applicationPrefix,
-  //   esDomain,
-  //   esLimitedUserRole,
-  // }: {
-  //   userPool: cdk.aws_cognito.UserPool;
-  //   identityPool: cdk.aws_cognito.CfnIdentityPool;
-  //   applicationPrefix: string;
-  //   esDomain: cdk.aws_opensearchservice.Domain;
-  //   esLimitedUserRole: Role;
-  // }) {
-  //   // Get the userPool clientId
-  //   const userPoolClients = new AwsCustomResource(this, 'clientIdResource', {
-  //     policy: AwsCustomResourcePolicy.fromSdkCalls({
-  //       resources: [userPool.userPoolArn],
-  //     }),
-  //     onCreate: {
-  //       service: 'CognitoIdentityServiceProvider',
-  //       action: 'listUserPoolClients',
-  //       parameters: {
-  //         UserPoolId: userPool.userPoolId,
-  //       },
-  //       physicalResourceId: PhysicalResourceId.of(
-  //         `ClientId-${applicationPrefix}`,
-  //       ),
-  //     },
-  //   });
-  //   userPoolClients.node.addDependency(esDomain);
-  //   const clientId = userPoolClients.getResponseField(
-  //     'UserPoolClients.0.ClientId',
-  //   );
-
-  //   // Attach userPoolId to identityPool
-  //   const providerName = `cognito-idp.${this.region}.amazonaws.com/${userPool.userPoolId}:${clientId}`;
-  //   new CfnIdentityPoolRoleAttachment(this, 'userPoolRoleAttachment', {
-  //     identityPoolId: identityPool.ref,
-  //     roles: {
-  //       authenticated: esLimitedUserRole.roleArn,
-  //     },
-  //     roleMappings: new CfnJson(this, 'roleMappingsJson', {
-  //       value: {
-  //         [providerName]: {
-  //           Type: 'Token',
-  //           AmbiguousRoleResolution: 'AuthenticatedRole',
-  //         },
-  //       },
-  //     }),
-  //   });
-  // }
 
   private configureOpenSearchRoleMapping({
     lambdaServiceRole,
