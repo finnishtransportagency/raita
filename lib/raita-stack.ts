@@ -396,7 +396,7 @@ export class RaitaStack extends Stack {
     });
 
     // TODO: Add API call for esLimitedRole
-    new CustomResource(this, 'esRequestsResource', {
+    const esRequests = new CustomResource(this, 'esRequestsResource', {
       serviceToken: esRequestProvider.serviceToken,
       properties: {
         requests: [
@@ -415,5 +415,6 @@ export class RaitaStack extends Stack {
         ],
       },
     });
+    esRequests.node.addDependency(openSearchDomain);
   }
 }
