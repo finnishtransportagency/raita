@@ -4,7 +4,6 @@ import { IMetadataStorageInterface } from '../types/portDataStorage';
 import ConfigPort from './configPort';
 import MetadataPort from './metadataPort';
 import { S3FileRepository } from '../adapters/s3FileRepository';
-import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
 class Backend {
   constructor(

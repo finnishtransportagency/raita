@@ -26,10 +26,6 @@ export async function sendOpenSearchAPIRequest(
           path,
           body,
         });
-        // .then(res => console.log(res));
-        // logger.log(res);
-        // logger.log('heps');
-        // return res;
       },
     );
     await Promise.all(requestResponses)

@@ -14,18 +14,12 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   constructor({
     dataIndex,
     openSearchClient,
-  }: // openSearchDomain,
-  // region,
-  {
+  }: {
     dataIndex: string;
     openSearchClient: RaitaOpenSearchClient;
-    // openSearchDomain: string;
-    // region: string;
   }) {
     this.#dataIndex = dataIndex;
     this.#openSearchClient = openSearchClient;
-    // this.#openSearchDomain = openSearchDomain;
-    // this.#region = region;
   }
 
   saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
