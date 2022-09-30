@@ -30,16 +30,20 @@ import {
 import { Construct } from 'constructs';
 
 import * as path from 'path';
+import { RaitaGatewayStack } from './raita-gateway';
+import getConfig from '../lambda/config';
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
+    const config = getConfig();
     super(scope, id, props);
-    const applicationPrefix = 'raita-analysis';
+    const applicationPrefix = 'raita-analysis-' + config.env;
 
     // Create buckets
-    // TODO: Plan flexible bucket and configuration structure & naming to account for possible other source systems
-    const dataBucket = this.createBucket('mermec-data');
-    const configurationBucket = this.createBucket('mermec-configuration');
+    const dataBucket = this.createBucket(config.dataBucketName);
+    const configurationBucket = this.createBucket(
+      config.parserConfigurationBucketName,
+    );
 
     // Create Cognito user and identity pools
     const userPool = this.createUserPool(applicationPrefix);
@@ -66,7 +70,7 @@ export class RaitaStack extends Stack {
     // Create and configure OpenSearch domain
     // TODO: Might warrant refactor
     const openSearchDomain = this.createOpenSearchDomain({
-      domainName: 'raita-base',
+      domainName: config.openSearchDomainName,
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
@@ -100,11 +104,12 @@ export class RaitaStack extends Stack {
 
     // Create parser lambda
     const handleMermecFileEvents = this.createParserLambda({
-      name: 'mermec-parser',
+      name: config.parserLambdaName,
       sourceBuckets: [dataBucket],
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
       lambdaRole: lambdaServiceRole,
+      region: config.region,
     });
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     this.configureOpenSearchRoleMapping({
@@ -113,6 +118,15 @@ export class RaitaStack extends Stack {
       esLimitedUserRole,
       openSearchDomain,
     });
+
+    // TODO: Bring back
+    // // Create API Gateway
+    // new RaitaGatewayStack(this, {
+    //   dataBucket,
+    //   lambdaServiceRole,
+    //   userPool,
+    // });
+
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(handleMermecFileEvents);
   }
@@ -127,12 +141,14 @@ export class RaitaStack extends Stack {
     openSearchDomainEndpoint,
     configurationBucketName,
     lambdaRole,
+    region,
   }: {
     name: string;
     sourceBuckets: Array<cdk.aws_s3.Bucket>;
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
     lambdaRole: Role;
+    region: string;
   }) {
     const parser = new NodejsFunction(this, name, {
       memorySize: 1024,
@@ -143,8 +159,7 @@ export class RaitaStack extends Stack {
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
-        // TODO: Temporarily hard coded
-        REGION: 'eu-west-1',
+        REGION: region,
       },
       role: lambdaRole,
     });
@@ -163,6 +178,7 @@ export class RaitaStack extends Stack {
 
   /**
    * Creates OpenSearch domain
+   * TODO: Remove removalPolicy OR make it environment dependent
    */
   private createOpenSearchDomain({
     domainName,
@@ -188,7 +204,7 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
-    // TODO: Configure removalPolicy as environment dependent
+    // TODO: Environment dependent removal policy
     return new opensearch.Domain(this, domainName, {
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       ebs: {
@@ -226,11 +242,7 @@ export class RaitaStack extends Stack {
     });
   }
 
-  /**
-   * Creates a user pool.
-   * TODO: This setup is likely removed in the future as this is Raita specific user pool
-   * TODO: Configure removalPolicy as environment dependent
-   */
+  // TODO: Environment dependent removal policy
   private createUserPool(applicationPrefix: string) {
     const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
       userPoolName: applicationPrefix + ' User Pool',
@@ -250,7 +262,8 @@ export class RaitaStack extends Stack {
   }
 
   /**
-   * TODO: Configure removalPolicy as environment dependent AND autoDeleteObjects
+   * Creates a data bucket for the stacks
+   * TODO: Environment dependent removal policy (and autoDeleteObjects)
    */
   private createBucket(bucketName: string) {
     return new s3.Bucket(this, bucketName, {

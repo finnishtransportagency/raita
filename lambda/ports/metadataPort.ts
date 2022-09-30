@@ -18,7 +18,7 @@ export default class MetadataPort implements IMetadataStorageInterface {
           dataIndex: config.openSearchMetadataIndex,
           openSearchClient: new RaitaOpenSearchClient({
             region: config.region,
-            openSearchDomain: config.openSearchDomain,
+            openSearchDomain: config.openSearchDomainName,
           }),
         });
       },

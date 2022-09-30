@@ -19,8 +19,8 @@ export default class ConfigPort implements ISpecificationPortInterface {
     > = {
       s3: () =>
         new S3ConfigRepository({
-          configurationFile: config.configurationFile,
-          configurationBucket: config.configurationBucket,
+          configurationFile: config.parserConfigurationFile,
+          configurationBucket: config.parserConfigurationBucketName,
         }),
     };
     this.#backend = backends[backend]();

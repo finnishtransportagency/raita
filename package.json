@@ -17,13 +17,15 @@
     "s3:ls": "aws s3 ls $RAITA_DATA_S3",
     "s3:put:small": "aws s3 cp $RAITA_SMALL_EXAMPLE_PATH s3://$RAITA_DATA_S3",
     "s3:put:medium": "aws s3 cp --recursive $RAITA_MEDIUM_EXAMPLE_PATH s3://$RAITA_DATA_S3",
-    "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION"
+    "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
+    "synth:pipeline:dev": "cross-env ENVIRONMENT=dev BRANCH=main cd cdk synth",
+    "deploy:pipeline:dev": "cross-env ENVIRONMENT=dev BRANCH=main cd cdk --app \"ts-node bin/raita-pipeline\" deploy raita-pipeline-dev"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",
     "@types/jest": "^26.0.10",
     "@types/node": "10.17.27",
-    "aws-cdk": "2.41.0",
+    "aws-cdk": "^2.43.0",
     "husky": "^8.0.1",
     "jest": "^26.4.2",
     "lint-staged": "^13.0.3",
@@ -42,6 +44,7 @@
     "aws-lambda": "^1.0.7",
     "aws-opensearch-connector": "^1.1.0",
     "constructs": "^10.1.106",
+    "cross-env": "^7.0.3",
     "date-fns": "^2.29.3",
     "zod": "^3.19.1"
   }
