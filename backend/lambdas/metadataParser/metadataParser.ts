@@ -4,15 +4,16 @@ import {
   IExtractionSpec,
   IFileResult,
   ParseValueResult,
-} from '../types';
+} from '../../types';
 import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
   extractFileContentData,
   isContentExtractionRequired,
 } from './contentDataParser';
-import { logger } from '../utils/logger';
-import BackendFacade from '../ports/backend';
+import { logger } from '../../utils/logger';
+import BackendFacade from '../../ports/backend';
+import { z } from 'zod';
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -25,8 +26,30 @@ import BackendFacade from '../ports/backend';
  *
  */
 
-export async function handleMermecFileEvents(event: S3Event): Promise<void> {
-  const backend = BackendFacade.getBackend();
+const MetadataParserConfig = z.object({
+  configurationFile: z.string(),
+  configurationBucket: z.string(),
+  openSearchDomain: z.string(),
+  region: z.string(),
+  metadataIndex: z.string(),
+});
+
+export type IMetadataParserConfig = z.infer<typeof MetadataParserConfig>;
+
+function getLambdaConfigOrFail() {
+  const config = {
+    configurationFile: process.env['CONFIGURATION_FILE'],
+    configurationBucket: process.env['CONFIGURATION_BUCKET'],
+    openSearchDomain: process.env['OPENSEARCH_DOMAIN'],
+    region: process.env['REGION'],
+    metadataIndex: process.env['METADATA_INDEX'],
+  };
+  return MetadataParserConfig.parse(config);
+}
+
+export async function metadataParser(event: S3Event): Promise<void> {
+  const config = getLambdaConfigOrFail();
+  const backend = BackendFacade.getBackend(config);
   try {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(

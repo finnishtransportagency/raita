@@ -1,10 +1,10 @@
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
-} from '../types';
-import { ParseValueResult } from '../types';
-import { parsePrimitive } from '../utils/parsePrimitives';
-import { regexCapturePatterns } from '../utils/regex';
+} from '../../types';
+import { ParseValueResult } from '../../types';
+import { parsePrimitive } from './parsePrimitives';
+import { regexCapturePatterns } from './regex';
 
 export const isContentExtractionRequired = ({
   fileName,

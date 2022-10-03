@@ -31,23 +31,25 @@ import { Construct } from 'constructs';
 
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
-import getConfig from '../lambda/config';
+import { getRaitaStackConfig } from './config';
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
-    const config = getConfig();
+    const { config, createPrefixedName } = getRaitaStackConfig();
     super(scope, id, props);
-    const applicationPrefix = 'raita-analysis-' + config.env + 'foobar';
 
     // Create buckets
-    const dataBucket = this.createBucket(config.dataBucketName);
+    const dataBucket = this.createBucket(createPrefixedName('input-data'));
     const configurationBucket = this.createBucket(
-      config.parserConfigurationBucketName,
+      `raita-parser-configuration-${config.env}`,
     );
 
     // Create Cognito user and identity pools
-    const userPool = this.createUserPool(applicationPrefix);
-    const idPool = this.createIdentityPool(applicationPrefix);
+    const userPool = this.createUserPool(
+      applicationPrefix,
+      createPrefixedName('user-pool'),
+    );
+    const idPool = this.createIdentityPool(createPrefixedName('identity-pool'));
 
     // Create roles
     const esLimitedUserRole = this.createUserRole(idPool, 'esLimitedUserRole');
@@ -70,7 +72,7 @@ export class RaitaStack extends Stack {
     // Create and configure OpenSearch domain
     // TODO: Might warrant refactor
     const openSearchDomain = this.createOpenSearchDomain({
-      domainName: config.openSearchDomainName,
+      domainName: createPrefixedName('raita'),
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
@@ -103,8 +105,8 @@ export class RaitaStack extends Stack {
     });
 
     // Create parser lambda
-    const handleMermecFileEvents = this.createParserLambda({
-      name: config.parserLambdaName,
+    const metadataParserFn = this.createMetadataParser({
+      name: createPrefixedName('metadata-parser'),
       sourceBuckets: [dataBucket],
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
@@ -130,14 +132,14 @@ export class RaitaStack extends Stack {
     // });
 
     // Grant lambda read to configuration bucket
-    configurationBucket.grantRead(handleMermecFileEvents);
+    configurationBucket.grantRead(metadataParserFn);
   }
 
   /**
    * Creates the parser lambda and add S3 buckets as event sources,
    * granting lambda read access to these buckets
    */
-  private createParserLambda({
+  private createMetadataParser({
     name,
     sourceBuckets,
     openSearchDomainEndpoint,
@@ -161,7 +163,10 @@ export class RaitaStack extends Stack {
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleMermecFileEvents',
-      entry: path.join(__dirname, `../lambda/mermecParser/mermecParser.ts`),
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/metadataParser/metadataParser.ts`,
+      ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
@@ -251,9 +256,9 @@ export class RaitaStack extends Stack {
   }
 
   // TODO: Environment dependent removal policy
-  private createUserPool(applicationPrefix: string) {
-    const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
-      userPoolName: applicationPrefix + ' User Pool',
+  private createUserPool(applicationPrefix: string, name: string) {
+    const userPool = new UserPool(this, name, {
+      userPoolName: name,
       selfSignUpEnabled: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       signInAliases: {
@@ -281,8 +286,8 @@ export class RaitaStack extends Stack {
     });
   }
 
-  private createIdentityPool(applicationPrefix: string) {
-    return new CfnIdentityPool(this, applicationPrefix + 'IdentityPool', {
+  private createIdentityPool(name: string) {
+    return new CfnIdentityPool(this, name, {
       allowUnauthenticatedIdentities: false,
       cognitoIdentityProviders: [],
     });
@@ -401,10 +406,13 @@ export class RaitaStack extends Stack {
     openSearchDomain: cdk.aws_opensearchservice.Domain;
   }) {
     // Create lambda for sending requests to OpenSearch API
-    const esRequestsFn = new NodejsFunction(this, 'esRequestsFn', {
+    const osRequestsFn = new NodejsFunction(this, 'esRequestsFn', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
-      entry: path.join(__dirname, `../lambda/osRequests/osRequests.ts`),
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/osRequests/osRequests.ts`,
+      ),
       timeout: cdk.Duration.seconds(30),
       role: lambdaServiceRole,
       environment: {
@@ -414,7 +422,7 @@ export class RaitaStack extends Stack {
     });
 
     const esRequestProvider = new Provider(this, 'esRequestProvider', {
-      onEventHandler: esRequestsFn,
+      onEventHandler: osRequestsFn,
     });
 
     // TODO: Add API call for esLimitedRole

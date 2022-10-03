@@ -6,20 +6,19 @@ import {
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
-import getconfig from '../lambda/config';
 import { RaitaStack } from './raita-stack';
+import { getPipelineConfig } from './config';
 
 /**
  * The stack that defines the application pipeline
  */
 export class RaitaPipelineStack extends Stack {
   constructor(scope: Construct) {
-    const config = getconfig();
+    const { config } = getPipelineConfig();
     super(scope, 'raita-pipeline-' + config.env, {
       env: {
-        region: 'eu-west-1',
+        region: config.region,
       },
-
       tags: config.tags,
     });
 

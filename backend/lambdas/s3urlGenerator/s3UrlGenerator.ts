@@ -1,5 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
+import { z } from 'zod';
 
 class RaitaLambdaException extends Error {
   statusCode: number;
@@ -9,21 +10,29 @@ class RaitaLambdaException extends Error {
   }
 }
 
+const HandleS3FileRequestConfig = z.object({
+  dataBucket: z.string(),
+});
+
+function getLambdaConfigOrFail() {
+  const config = {
+    dataBucket: process.env.DATA_BUCKET,
+  };
+  return HandleS3FileRequestConfig.parse(config);
+}
+
 /**
  * Generates a pre-signed url for a file in S3 bucket
  * Currently takes input in the POST request body
  */
-export async function handleFileRequest(
+export async function handleS3FileRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
-  const { pathParameters, body } = event;
+  const { body } = event;
   const s3 = new S3();
   try {
-    const dataBucket = process.env.DATA_BUCKET;
-    if (!dataBucket) {
-      throw new Error('Data bucket not specified.');
-    }
+    const { dataBucket } = getLambdaConfigOrFail();
     const requestBody = body ? JSON.parse(body) : undefined;
     if (!requestBody?.key) {
       throw new Error('path parameter key does not exist');

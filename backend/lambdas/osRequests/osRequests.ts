@@ -1,22 +1,29 @@
-import getConfig from '../config';
-import { RaitaOpenSearchClient } from '../clients/openSearchClient';
-import { logger } from '../utils/logger';
+import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
+import { logger } from '../../utils/logger';
 import { CdkCustomResourceEvent } from 'aws-lambda';
+import { z } from 'zod';
+
+const SendOpenSearchAPIRequestConfig = z.object({
+  openSearchDomain: z.string(),
+  region: z.string(),
+});
+
+function getLambdaConfigOrFail() {
+  const config = {
+    openSearchDomain: process.env['OPENSEARCH_DOMAIN_ENDPOINT'],
+    region: process.env['REGION'],
+  };
+  return SendOpenSearchAPIRequestConfig.parse(config);
+}
 
 // TODO: Add better typing
 export async function sendOpenSearchAPIRequest(
   event: CdkCustomResourceEvent,
   _context: any,
 ) {
+  const { openSearchDomain, region } = getLambdaConfigOrFail();
   const requestType = event.RequestType;
   if (requestType === 'Create' || requestType === 'Update') {
-    const openSearchDomain = process.env['OPENSEARCH_DOMAIN_ENDPOINT'];
-    const region = process.env['REGION'];
-    if (!openSearchDomain || !region) {
-      throw new Error(
-        `Missing env values, domain ${openSearchDomain}, region: ${region}`,
-      );
-    }
     const client = await new RaitaOpenSearchClient({
       openSearchDomain,
       region,

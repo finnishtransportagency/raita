@@ -67,7 +67,10 @@ export class RaitaGatewayStack extends NestedStack {
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
       handler: 'handleFileRequest',
-      entry: path.join(__dirname, `../lambda/s3UrlGenerator/s3UrlGenerator.ts`),
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/s3UrlGenerator/handleS3FileRequest.ts`,
+      ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
       },

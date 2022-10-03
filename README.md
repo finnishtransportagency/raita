@@ -16,7 +16,12 @@ Run ` npm i`
 
 ### Pipeline
 
-Add a pipeline synth and deployment with matching endings to package.json similar to `synth:pipeline:dev` and `deploy:pipeline:dev`. Set preferred environment name (matching with script name) and branch to deploy from. Run the deployment script with credentials for the preferred AWS-account. The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app.
+Add a pipeline synth and deployment with matching endings to package.json similar to `synth:pipeline:dev` and `deploy:pipeline:dev`. Set preferred environment name (matching with script name) and branch to deploy from.
+
+- ENVIRONMENT environment variable determines TO BE CONTINUED
+- BRANCH environment variable determines the version control branch TO BE CONTINUED
+
+Run the deployment script with credentials for the preferred AWS-account. The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app.
 
 Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:status, repo_deployment` is required to be had in AWS Secrets Manager. Refer to `./lambda/config/index.ts` for authenticationToken name to be set. Set the token as plaintext value.
 
