@@ -107,7 +107,9 @@ export class RaitaStack extends Stack {
       name: config.parserLambdaName,
       sourceBuckets: [dataBucket],
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+      openSearchMetadataIndex: config.openSearchMetadataIndex,
       configurationBucketName: configurationBucket.bucketName,
+      configurationFile: config.parserConfigurationFile,
       lambdaRole: lambdaServiceRole,
       region: config.region,
     });
@@ -140,6 +142,8 @@ export class RaitaStack extends Stack {
     sourceBuckets,
     openSearchDomainEndpoint,
     configurationBucketName,
+    configurationFile,
+    openSearchMetadataIndex,
     lambdaRole,
     region,
   }: {
@@ -147,7 +151,9 @@ export class RaitaStack extends Stack {
     sourceBuckets: Array<cdk.aws_s3.Bucket>;
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
+    configurationFile: string;
     lambdaRole: Role;
+    openSearchMetadataIndex: string;
     region: string;
   }) {
     const parser = new NodejsFunction(this, name, {
@@ -159,9 +165,9 @@ export class RaitaStack extends Stack {
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
+        CONFIGURATION_FILE: configurationFile,
+        METADATA_INDEX: openSearchMetadataIndex,
         REGION: region,
-        ENVIRONMENT: this.environment,
-        BRANCH: 'main',
       },
       role: lambdaRole,
     });
