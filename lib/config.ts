@@ -11,6 +11,7 @@ const RaitaStackConfigSchema = z.object({
   region: z.string(),
   parserConfigurationFile: z.string(),
   openSearchMetadataIndex: z.string(),
+  applicationPrefix: z.string(),
   // @ts-ignore
   tags: z.object({
     Environment: z.string(), // z.enum(allEnvironments),
@@ -53,6 +54,7 @@ const baseCDKStackConfig = {
 export const getRaitaStackConfig = () => ({
   config: RaitaStackConfigSchema.parse({
     ...baseCDKStackConfig,
+    applicationPrefix,
     parserConfigurationFile: 'extractionSpec.json',
     openSearchMetadataIndex: 'metadata-index',
   }),

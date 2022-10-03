@@ -46,7 +46,7 @@ export class RaitaStack extends Stack {
 
     // Create Cognito user and identity pools
     const userPool = this.createUserPool(
-      applicationPrefix,
+      config.applicationPrefix,
       createPrefixedName('user-pool'),
     );
     const idPool = this.createIdentityPool(createPrefixedName('identity-pool'));
@@ -99,7 +99,7 @@ export class RaitaStack extends Stack {
     this.configureIdentityPool({
       userPool: userPool,
       identityPool: idPool,
-      applicationPrefix,
+      applicationPrefix: config.applicationPrefix,
       esDomain: openSearchDomain,
       esLimitedUserRole: openSearchServiceRole,
     });
