@@ -13,7 +13,7 @@ export async function sendOpenSearchAPIRequest(
   if (requestType === 'Create' || requestType === 'Update') {
     const config = getConfig();
     const client = await new RaitaOpenSearchClient({
-      openSearchDomain: config.openSearchDomain,
+      openSearchDomain: config.openSearchDomainName,
       region: config.region,
     }).getClient();
     logger.log('got client');
