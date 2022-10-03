@@ -38,7 +38,9 @@ export class RaitaStack extends Stack {
     const { config, createPrefixedName } = getRaitaStackConfig();
     super(scope, id, props);
 
+    const applicationPrefix = 'raita-analysis-' + config.applicationPrefix;
     // Create buckets
+
     const dataBucket = this.createBucket(createPrefixedName('input-data'));
     const configurationBucket = this.createBucket(
       `raita-parser-configuration-${config.env}`,
@@ -46,10 +48,10 @@ export class RaitaStack extends Stack {
 
     // Create Cognito user and identity pools
     const userPool = this.createUserPool(
-      config.applicationPrefix,
+      applicationPrefix,
       createPrefixedName('user-pool'),
     );
-    const idPool = this.createIdentityPool(createPrefixedName('identity-pool'));
+    const idPool = this.createIdentityPool(applicationPrefix);
 
     // Create roles
     const esLimitedUserRole = this.createUserRole(idPool, 'esLimitedUserRole');
@@ -99,7 +101,7 @@ export class RaitaStack extends Stack {
     this.configureIdentityPool({
       userPool: userPool,
       identityPool: idPool,
-      applicationPrefix: config.applicationPrefix,
+      applicationPrefix: applicationPrefix,
       esDomain: openSearchDomain,
       esLimitedUserRole: openSearchServiceRole,
     });
@@ -224,7 +226,7 @@ export class RaitaStack extends Stack {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
       },
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // removalPolicy: cdk.RemovalPolicy.DESTROY,
       capacity: {
         dataNodes: 1,
         dataNodeInstanceType: 't3.small.search',

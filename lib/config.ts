@@ -39,7 +39,7 @@ const applicationPrefix = `raita-${env}-${branch}`;
 
 const permanentEnvironments = ['dev', 'prod'] as const;
 
-const createPrefixedName = (name: string) => `${applicationPrefix}-${name}--`;
+const createPrefixedName = (name: string) => `${applicationPrefix}-${name}-`;
 
 const baseCDKStackConfig = {
   env,
