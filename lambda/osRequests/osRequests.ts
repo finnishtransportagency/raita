@@ -34,7 +34,6 @@ export async function sendOpenSearchAPIRequest(
       })
       .catch(err => {
         logger.log(err);
-        console.log(err);
         throw new Error(
           'An OpenSearch API request failed, see logs for details.',
         );

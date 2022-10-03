@@ -7,7 +7,7 @@ class Logger {
       (typeof data === 'string' && data) ||
       (data instanceof Error && data.message) ||
       (data instanceof ZodError && data.message) ||
-      data;
+      JSON.stringify(data);
     try {
       console.log(message);
     } catch (error) {
