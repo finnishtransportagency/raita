@@ -18,7 +18,7 @@ const branch = getEnv('BRANCH'); // TODO: Not always from env? Main as default?
 // Used any as otherwise includes isn't allowed
 const isPermanentEnvironment = (environment: string) =>
   permanentEnvironments.includes(environment as any);
-const sharedInfraEnv = isPermanentEnvironment(env) ? env : 'dev';
+const sharedInfraEnv = 'foobar'; //isPermanentEnvironment(env) ? env : 'foobar';
 
 // TODO: CDK typescript version 3.9.7 with zod causes TS2589: Type instantiation is excessively deep and possibly infinite.
 // Should be resolvable by upgrading typescript version (but trying this broke cdk synth command)

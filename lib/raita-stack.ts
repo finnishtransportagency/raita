@@ -37,7 +37,7 @@ export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     const config = getConfig();
     super(scope, id, props);
-    const applicationPrefix = 'raita-analysis-' + config.env;
+    const applicationPrefix = 'raita-analysis-' + config.env + 'foobar';
 
     // Create buckets
     const dataBucket = this.createBucket(config.dataBucketName);
@@ -160,6 +160,8 @@ export class RaitaStack extends Stack {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
         REGION: region,
+        ENVIRONMENT: this.environment,
+        BRANCH: 'main',
       },
       role: lambdaRole,
     });
@@ -400,7 +402,8 @@ export class RaitaStack extends Stack {
       timeout: cdk.Duration.seconds(30),
       role: lambdaServiceRole,
       environment: {
-        OPENSEARCH_DOMAIN: openSearchDomain.domainEndpoint,
+        OPENSEARCH_DOMAIN_ENDPOINT: openSearchDomain.domainEndpoint,
+        REGION: this.region,
       },
     });
 

@@ -1,8 +1,8 @@
-import { OpenSearchRepository } from '../adapters/openSearchRepository';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
 import { FileMetadataEntry } from '../types';
 import getConfig from '../config';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
+import { OpenSearchRepository } from '../adapters/openSearchRepository';
 
 export type IStorageBackend = 'openSearch';
 
