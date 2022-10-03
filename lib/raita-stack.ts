@@ -257,8 +257,8 @@ export class RaitaStack extends Stack {
 
   // TODO: Environment dependent removal policy
   private createUserPool(applicationPrefix: string, name: string) {
-    const userPool = new UserPool(this, name, {
-      userPoolName: name,
+    const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
+      userPoolName: applicationPrefix + 'User Pool',
       selfSignUpEnabled: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       signInAliases: {
