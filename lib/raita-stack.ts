@@ -165,7 +165,7 @@ export class RaitaStack extends Stack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleMermecFileEvents',
+      handler: 'metadataParser',
       entry: path.join(
         __dirname,
         `../backend/lambdas/metadataParser/metadataParser.ts`,
