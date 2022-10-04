@@ -1,42 +1,44 @@
-import { defaultProvider } from '@aws-sdk/credential-provider-node';
+import { FileMetadataEntry } from '../types';
 import { Client } from '@opensearch-project/opensearch';
-import createAwsOpensearchConnector from 'aws-opensearch-connector';
+import { IMetadataStorageInterface } from '../types/portDataStorage';
+import { logger } from '../utils/logger';
+import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
-export class RaitaOpenSearchClient {
-  #client: Client;
-  #openSearchDomain: string;
-  #region: string;
+/**
+ * OPEN: This could be make into a singleton but is there point?
+ */
+export class OpenSearchRepository implements IMetadataStorageInterface {
+  #dataIndex: string;
+  #openSearchClient: RaitaOpenSearchClient;
 
   constructor({
-    openSearchDomain,
-    region,
+    dataIndex,
+    openSearchClient,
   }: {
-    openSearchDomain: string;
-    region: string;
+    dataIndex: string;
+    openSearchClient: RaitaOpenSearchClient;
   }) {
-    this.#openSearchDomain = openSearchDomain;
-    this.#region = region;
+    this.#dataIndex = dataIndex;
+    this.#openSearchClient = openSearchClient;
   }
 
-  #initClient = async () => {
-    // TODO: Figure out defaultProvider usage
-    const awsCredentials = await defaultProvider()();
-    const connector = createAwsOpensearchConnector({
-      credentials: awsCredentials,
-      region: this.#region,
-      getCredentials: function (cb: () => void) {
-        return cb();
-      },
+  saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
+    const client = await this.#openSearchClient.getClient();
+    // Add entries to the index.
+    const additions = data.map(async entry => {
+      const addDocresponse = client.index({
+        index: this.#dataIndex,
+        body: entry,
+      });
+      return addDocresponse;
     });
-    const client = new Client({
-      ...connector,
-      node: `https://${this.#openSearchDomain}`,
-    });
-    this.#client = client;
-    return this.#client;
-  };
-
-  public getClient = async (): Promise<Client> => {
-    return this.#client ?? (await this.#initClient());
+    await Promise.all(additions)
+      .then(data => {
+        logger.log(data);
+      })
+      .catch(err => {
+        logger.log(err);
+        throw err;
+      });
   };
 }
