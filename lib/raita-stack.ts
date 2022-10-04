@@ -410,7 +410,7 @@ export class RaitaStack extends Stack {
     openSearchDomain: cdk.aws_opensearchservice.Domain;
   }) {
     // Create lambda for sending requests to OpenSearch API
-    const osRequestsFn = new NodejsFunction(this, 'esRequestsFn', {
+    const osRequestsFn = new NodejsFunction(this, 'osRequestsFn', {
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
       entry: path.join(
