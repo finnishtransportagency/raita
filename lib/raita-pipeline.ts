@@ -35,7 +35,10 @@ export class RaitaPipelineStack extends Stack {
             ),
           },
         ),
-        commands: ['npm ci', 'npm run synth:pipeline:' + config.env],
+        commands: [
+          'npm ci',
+          `npm run pipeline:synth --environment=${config.env} --branch=${config.branch}`,
+        ],
       }),
       dockerEnabledForSynth: true,
       codeBuildDefaults: {
