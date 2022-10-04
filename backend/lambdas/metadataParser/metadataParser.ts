@@ -13,7 +13,20 @@ import {
 } from './contentDataParser';
 import { logger } from '../../utils/logger';
 import BackendFacade from '../../ports/backend';
-import { z } from 'zod';
+import { getEnvForContext } from '../../../utils';
+
+function getLambdaConfigOrFail() {
+  const getEnv = getEnvForContext('Metadata parser lambda');
+  return {
+    configurationFile: getEnv('CONFIGURATION_FILE'),
+    configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
+    region: getEnv('REGION'),
+    metadataIndex: getEnv('METADATA_INDEX'),
+  };
+}
+
+export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -21,32 +34,7 @@ import { z } from 'zod';
  * Should we make the handling more generic from the start, accepting also HTTP trigger
  * events and using Strategy pattern possibly to plug in correct file backend based on
  * config or even event details.
- *
- * How to make this more generic, for example if incoming
- *
  */
-
-const MetadataParserConfig = z.object({
-  configurationFile: z.string(),
-  configurationBucket: z.string(),
-  openSearchDomain: z.string(),
-  region: z.string(),
-  metadataIndex: z.string(),
-});
-
-export type IMetadataParserConfig = z.infer<typeof MetadataParserConfig>;
-
-function getLambdaConfigOrFail() {
-  const config = {
-    configurationFile: process.env['CONFIGURATION_FILE'],
-    configurationBucket: process.env['CONFIGURATION_BUCKET'],
-    openSearchDomain: process.env['OPENSEARCH_DOMAIN'],
-    region: process.env['REGION'],
-    metadataIndex: process.env['METADATA_INDEX'],
-  };
-  return MetadataParserConfig.parse(config);
-}
-
 export async function metadataParser(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);

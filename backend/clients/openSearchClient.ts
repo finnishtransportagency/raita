@@ -1,44 +1,42 @@
-import { FileMetadataEntry } from '../types';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import { Client } from '@opensearch-project/opensearch';
-import { IMetadataStorageInterface } from '../types/portDataStorage';
-import { logger } from '../utils/logger';
-import { RaitaOpenSearchClient } from '../clients/openSearchClient';
+import createAwsOpensearchConnector from 'aws-opensearch-connector';
 
-/**
- * OPEN: This could be make into a singleton but is there point?
- */
-export class OpenSearchRepository implements IMetadataStorageInterface {
-  #dataIndex: string;
-  #openSearchClient: RaitaOpenSearchClient;
+export class RaitaOpenSearchClient {
+  #client: Client;
+  #openSearchDomain: string;
+  #region: string;
 
   constructor({
-    dataIndex,
-    openSearchClient,
+    openSearchDomain,
+    region,
   }: {
-    dataIndex: string;
-    openSearchClient: RaitaOpenSearchClient;
+    openSearchDomain: string;
+    region: string;
   }) {
-    this.#dataIndex = dataIndex;
-    this.#openSearchClient = openSearchClient;
+    this.#openSearchDomain = openSearchDomain;
+    this.#region = region;
   }
 
-  saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
-    const client = await this.#openSearchClient.getClient();
-    // Add entries to the index.
-    const additions = data.map(async entry => {
-      const addDocresponse = client.index({
-        index: this.#dataIndex,
-        body: entry,
-      });
-      return addDocresponse;
+  #initClient = async () => {
+    // TODO: Figure out defaultProvider usage
+    const awsCredentials = await defaultProvider()();
+    const connector = createAwsOpensearchConnector({
+      credentials: awsCredentials,
+      region: this.#region,
+      getCredentials: function (cb: () => void) {
+        return cb();
+      },
     });
-    await Promise.all(additions)
-      .then(data => {
-        logger.log(data);
-      })
-      .catch(err => {
-        logger.log(err);
-        throw err;
-      });
+    const client = new Client({
+      ...connector,
+      node: `https://${this.#openSearchDomain}`,
+    });
+    this.#client = client;
+    return this.#client;
+  };
+
+  public getClient = async (): Promise<Client> => {
+    return this.#client ?? (await this.#initClient());
   };
 }

@@ -1,19 +1,14 @@
 import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { logger } from '../../utils/logger';
 import { CdkCustomResourceEvent } from 'aws-lambda';
-import { z } from 'zod';
-
-const SendOpenSearchAPIRequestConfig = z.object({
-  openSearchDomain: z.string(),
-  region: z.string(),
-});
+import { getEnvForContext } from '../../../utils';
 
 function getLambdaConfigOrFail() {
-  const config = {
-    openSearchDomain: process.env['OPENSEARCH_DOMAIN_ENDPOINT'],
-    region: process.env['REGION'],
+  const getEnv = getEnvForContext('sendOpenSearchAPIRequests');
+  return {
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN_ENDPOINT'),
+    region: getEnv('REGION'),
   };
-  return SendOpenSearchAPIRequestConfig.parse(config);
 }
 
 // TODO: Add better typing

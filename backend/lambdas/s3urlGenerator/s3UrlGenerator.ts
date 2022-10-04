@@ -1,6 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { z } from 'zod';
+import { getEnv } from '../../../utils';
 
 class RaitaLambdaException extends Error {
   statusCode: number;
@@ -10,15 +10,10 @@ class RaitaLambdaException extends Error {
   }
 }
 
-const HandleS3FileRequestConfig = z.object({
-  dataBucket: z.string(),
-});
-
 function getLambdaConfigOrFail() {
-  const config = {
-    dataBucket: process.env.DATA_BUCKET,
+  return {
+    dataBucket: getEnv('DATA_BUCKET', 'handleS3FileRequest)'),
   };
-  return HandleS3FileRequestConfig.parse(config);
 }
 
 /**

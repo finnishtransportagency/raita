@@ -1,16 +1,8 @@
-// `Possibly relocate to general helper location to be used elsewhere
-export function getEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(name + '-environment variable has not been set');
-  }
-  return value;
-}
+import { getEnv } from '../utils';
 
 const env = getEnv('ENVIRONMENT');
 const branch = getEnv('BRANCH');
-const applicationPrefix = `raita-${env}-${branch}`;
-
+const applicationPrefix = `raita-${env.toLowerCase()}-${branch.toLowerCase()}`;
 const permanentEnvironments = ['dev', 'prod'] as const;
 
 const createPrefixedName = (name: string) => `${applicationPrefix}-${name}-`;
@@ -35,7 +27,6 @@ export const getRaitaStackConfig = () => ({
   createPrefixedName,
 });
 
-// TODO: Configuration file now hardcoded
 export const getPipelineConfig = () => ({
   config: {
     ...baseCDKStackConfig,
