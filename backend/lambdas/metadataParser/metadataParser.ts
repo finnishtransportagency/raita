@@ -13,10 +13,10 @@ import {
 } from './contentDataParser';
 import { logger } from '../../utils/logger';
 import BackendFacade from '../../ports/backend';
-import { getEnvForContext } from '../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../utils';
 
 function getLambdaConfigOrFail() {
-  const getEnv = getEnvForContext('Metadata parser lambda');
+  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),

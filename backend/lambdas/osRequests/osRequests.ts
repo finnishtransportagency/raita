@@ -1,10 +1,10 @@
 import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { logger } from '../../utils/logger';
 import { CdkCustomResourceEvent } from 'aws-lambda';
-import { getEnvForContext } from '../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../utils';
 
 function getLambdaConfigOrFail() {
-  const getEnv = getEnvForContext('sendOpenSearchAPIRequests');
+  const getEnv = getGetEnvWithPreassignedContext('sendOpenSearchAPIRequests');
   return {
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN_ENDPOINT'),
     region: getEnv('REGION'),
