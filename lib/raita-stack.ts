@@ -1,4 +1,4 @@
-import { Stack, StackProps, CfnJson } from 'aws-cdk-lib';
+import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -16,6 +16,7 @@ import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
   PhysicalResourceId,
+  Provider,
 } from 'aws-cdk-lib/custom-resources';
 import {
   ManagedPolicy,
@@ -73,8 +74,27 @@ export class RaitaStack extends Stack {
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
-      masterUserRole: esAdminUserRole,
+      masterUserRole: lambdaServiceRole,
     });
+
+    // Create a ManagedPolicy that allows admin role and lambda role to call
+    // open search endpoints
+    // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
+    const openSearchHttpPolicy = new ManagedPolicy(
+      this,
+      'openSearchHttpPolicy',
+      {
+        roles: [esAdminUserRole, lambdaServiceRole],
+      },
+    );
+    openSearchHttpPolicy.addStatements(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: [openSearchDomain.domainArn],
+        actions: ['es:ESHttpPost', 'es:ESHttpGet', 'es:ESHttpPut'],
+      }),
+    );
+
     this.configureIdentityPool({
       userPool: userPool,
       identityPool: idPool,
@@ -92,6 +112,13 @@ export class RaitaStack extends Stack {
       lambdaRole: lambdaServiceRole,
       region: config.region,
     });
+    // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
+    this.configureOpenSearchRoleMapping({
+      lambdaServiceRole,
+      esAdminUserRole,
+      esLimitedUserRole,
+      openSearchDomain,
+    });
 
     // TODO: Bring back
     // // Create API Gateway
@@ -103,8 +130,6 @@ export class RaitaStack extends Stack {
 
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(handleMermecFileEvents);
-
-    // TODO: Grant OpenSearch internal permissions
   }
 
   /**
@@ -211,7 +236,7 @@ export class RaitaStack extends Stack {
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ['es:ESHttp*'],
-          principals: [new AnyPrincipal()],
+          principals: [new AnyPrincipal(), masterUserRole],
           resources: [domainArn],
         }),
       ],
@@ -355,5 +380,55 @@ export class RaitaStack extends Stack {
         },
       }),
     });
+  }
+
+  private configureOpenSearchRoleMapping({
+    lambdaServiceRole,
+    esAdminUserRole,
+    esLimitedUserRole,
+    openSearchDomain,
+  }: {
+    lambdaServiceRole: Role;
+    esAdminUserRole: Role;
+    esLimitedUserRole: Role;
+    openSearchDomain: cdk.aws_opensearchservice.Domain;
+  }) {
+    // Create lambda for sending requests to OpenSearch API
+    const esRequestsFn = new NodejsFunction(this, 'esRequestsFn', {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'sendOpenSearchAPIRequest',
+      entry: path.join(__dirname, `../lambda/osRequests/osRequests.ts`),
+      timeout: cdk.Duration.seconds(30),
+      role: lambdaServiceRole,
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomain.domainEndpoint,
+      },
+    });
+
+    const esRequestProvider = new Provider(this, 'esRequestProvider', {
+      onEventHandler: esRequestsFn,
+    });
+
+    // TODO: Add API call for esLimitedRole
+    const esRequests = new CustomResource(this, 'esRequestsResource', {
+      serviceToken: esRequestProvider.serviceToken,
+      properties: {
+        requests: [
+          {
+            method: 'PUT',
+            path: '/_plugins/_security/api/rolesmapping/all_access',
+            body: {
+              backend_roles: [
+                esAdminUserRole.roleArn,
+                lambdaServiceRole.roleArn,
+              ],
+              hosts: [],
+              users: [],
+            },
+          },
+        ],
+      },
+    });
+    esRequests.node.addDependency(openSearchDomain);
   }
 }
