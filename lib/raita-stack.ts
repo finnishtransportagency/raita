@@ -83,6 +83,7 @@ export class RaitaStack extends Stack {
 
     // Create a ManagedPolicy that allows admin role and lambda role to call
     // open search endpoints
+    // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
     const openSearchHttpPolicy = new ManagedPolicy(
       this,
       'openSearchHttpPolicy',
