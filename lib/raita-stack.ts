@@ -38,7 +38,7 @@ export class RaitaStack extends Stack {
     const { config, createPrefixedName } = getRaitaStackConfig();
     super(scope, id, props);
 
-    const applicationPrefix = 'raita-analysis-' + config.applicationPrefix;
+    const applicationPrefix = 'raita-analysis-' + config.env + 'random';
     // Create buckets
 
     const dataBucket = this.createBucket(createPrefixedName('input-data'));
@@ -374,6 +374,7 @@ export class RaitaStack extends Stack {
       },
     });
     userPoolClients.node.addDependency(esDomain);
+    userPoolClients.node.addDependency(userPool);
     const clientId = userPoolClients.getResponseField(
       'UserPoolClients.0.ClientId',
     );
