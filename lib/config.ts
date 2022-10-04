@@ -1,40 +1,14 @@
-import { z } from 'zod';
+// `Possibly relocate to general helper location to be used elsewhere
+export function getEnv(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(name + '-environment variable has not been set');
+  }
+  return value;
+}
 
-// TODO: CDK typescript version 3.9.7 with zod causes TS2589: Type instantiation is excessively deep and possibly infinite.
-// Should be resolvable by upgrading typescript version (but trying this broke cdk synth command)
-// Note: zod
-
-// @ts-ignore
-const RaitaStackConfigSchema = z.object({
-  env: z.string(), // z.enum(allEnvironments), // TODO: Third type, extended from permanentEnvironments
-  isPermanentEnvironment: z.boolean(),
-  region: z.string(),
-  parserConfigurationFile: z.string(),
-  openSearchMetadataIndex: z.string(),
-  applicationPrefix: z.string(),
-  // @ts-ignore
-  tags: z.object({
-    Environment: z.string(), // z.enum(allEnvironments),
-    Project: z.string(),
-  }),
-});
-
-// @ts-ignore
-const PipelineStackConfigSchema = z.object({
-  env: z.string(), // z.enum(allEnvironments), // TODO: Third type, extended from permanentEnvironments
-  isPermanentEnvironment: z.boolean(),
-  branch: z.string(),
-  region: z.string(),
-  authenticationToken: z.string(),
-  // @ts-ignore
-  tags: z.object({
-    Environment: z.string(), // z.enum(allEnvironments),
-    Project: z.string(),
-  }),
-});
-
-const env = process.env['ENVIRONMENT'];
-const branch = process.env['BRANCH'];
+const env = getEnv('ENVIRONMENT');
+const branch = getEnv('BRANCH');
 const applicationPrefix = `raita-${env}-${branch}`;
 
 const permanentEnvironments = ['dev', 'prod'] as const;
@@ -52,21 +26,21 @@ const baseCDKStackConfig = {
 };
 
 export const getRaitaStackConfig = () => ({
-  config: RaitaStackConfigSchema.parse({
+  config: {
     ...baseCDKStackConfig,
     applicationPrefix,
     parserConfigurationFile: 'extractionSpec.json',
     openSearchMetadataIndex: 'metadata-index',
-  }),
+  },
   createPrefixedName,
 });
 
 // TODO: Configuration file now hardcoded
 export const getPipelineConfig = () => ({
-  config: PipelineStackConfigSchema.parse({
+  config: {
     ...baseCDKStackConfig,
     branch,
     authenticationToken: 'github-token',
-  }),
+  },
   createPrefixedName,
 });
