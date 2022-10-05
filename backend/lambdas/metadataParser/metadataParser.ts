@@ -4,15 +4,29 @@ import {
   IExtractionSpec,
   IFileResult,
   ParseValueResult,
-} from '../types';
+} from '../../types';
 import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
   extractFileContentData,
   isContentExtractionRequired,
 } from './contentDataParser';
-import { logger } from '../utils/logger';
-import BackendFacade from '../ports/backend';
+import { logger } from '../../utils/logger';
+import BackendFacade from '../../ports/backend';
+import { getGetEnvWithPreassignedContext } from '../../../utils';
+
+function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
+  return {
+    configurationFile: getEnv('CONFIGURATION_FILE'),
+    configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
+    region: getEnv('REGION'),
+    metadataIndex: getEnv('METADATA_INDEX'),
+  };
+}
+
+export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -20,13 +34,10 @@ import BackendFacade from '../ports/backend';
  * Should we make the handling more generic from the start, accepting also HTTP trigger
  * events and using Strategy pattern possibly to plug in correct file backend based on
  * config or even event details.
- *
- * How to make this more generic, for example if incoming
- *
  */
-
-export async function handleMermecFileEvents(event: S3Event): Promise<void> {
-  const backend = BackendFacade.getBackend();
+export async function metadataParser(event: S3Event): Promise<void> {
+  const config = getLambdaConfigOrFail();
+  const backend = BackendFacade.getBackend(config);
   try {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
