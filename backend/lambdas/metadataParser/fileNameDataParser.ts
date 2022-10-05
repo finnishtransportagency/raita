@@ -1,6 +1,6 @@
-import { IExtractionSpec, ParseValueResult } from '../types';
-import { logger } from '../utils/logger';
-import { parsePrimitive } from '../utils/parsePrimitives';
+import { IExtractionSpec, ParseValueResult } from '../../types';
+import { logger } from '../../utils/logger';
+import { parsePrimitive } from './parsePrimitives';
 
 export const extractFileNameData = (
   fileName: string,

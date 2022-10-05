@@ -1,6 +1,6 @@
-import { IExtractionSpec, ParseValueResult } from '../types';
-import { logger } from '../utils/logger';
-import { parsePrimitive } from '../utils/parsePrimitives';
+import { IExtractionSpec, ParseValueResult } from '../../types';
+import { logger } from '../../utils/logger';
+import { parsePrimitive } from './parsePrimitives';
 
 /**
  * Extract meta data from the file path

@@ -4,23 +4,29 @@ import {
   ISpecificationPortInterface,
 } from '../types/portSpecification';
 import { ExtractionSpec, IExtractionSpec } from '../types';
-import getConfig from '../config';
 
-export type IConfigBackend = 's3';
+export type IConfigBackend = {
+  backend: 's3';
+  configurationFile: string;
+  configurationBucket: string;
+};
 
 export default class ConfigPort implements ISpecificationPortInterface {
   #backend: ISpecificationAdapterInterface;
 
-  constructor({ backend }: { backend: IConfigBackend }) {
-    const config = getConfig();
+  constructor({
+    backend,
+    configurationBucket,
+    configurationFile,
+  }: IConfigBackend) {
     const backends: Record<
-      IConfigBackend,
+      IConfigBackend['backend'],
       () => ISpecificationAdapterInterface
     > = {
       s3: () =>
         new S3ConfigRepository({
-          configurationFile: config.parserConfigurationFile,
-          configurationBucket: config.parserConfigurationBucketName,
+          configurationFile,
+          configurationBucket,
         }),
     };
     this.#backend = backends[backend]();

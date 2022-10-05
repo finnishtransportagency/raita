@@ -4,6 +4,7 @@ import { IMetadataStorageInterface } from '../types/portDataStorage';
 import ConfigPort from './configPort';
 import MetadataPort from './metadataPort';
 import { S3FileRepository } from '../adapters/s3FileRepository';
+import { IMetadataParserConfig } from '../lambdas/metadataParser/metadataParser';
 
 class Backend {
   constructor(
@@ -15,11 +16,22 @@ class Backend {
 
 // NOTE: Breaking the pattern here, using S3File repository directly, not port
 export default class BackendFacade {
-  static getBackend = () => {
+  static getBackend = ({
+    configurationBucket,
+    configurationFile,
+    metadataIndex,
+    region,
+    openSearchDomain,
+  }: IMetadataParserConfig) => {
     return new Backend(
-      new ConfigPort({ backend: 's3' }),
+      new ConfigPort({ backend: 's3', configurationBucket, configurationFile }),
       new S3FileRepository(),
-      new MetadataPort({ storageBackend: 'openSearch' }),
+      new MetadataPort({
+        backend: 'openSearch',
+        metadataIndex,
+        region,
+        openSearchDomain,
+      }),
     );
   };
 }

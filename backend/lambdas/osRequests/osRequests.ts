@@ -1,22 +1,28 @@
-import getConfig from '../config';
-import { RaitaOpenSearchClient } from '../clients/openSearchClient';
-import { logger } from '../utils/logger';
+import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
+import { logger } from '../../utils/logger';
 import { CdkCustomResourceEvent } from 'aws-lambda';
+import { getGetEnvWithPreassignedContext } from '../../../utils';
+
+function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('sendOpenSearchAPIRequests');
+  return {
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN_ENDPOINT'),
+    region: getEnv('REGION'),
+  };
+}
 
 // TODO: Add better typing
 export async function sendOpenSearchAPIRequest(
   event: CdkCustomResourceEvent,
   _context: any,
 ) {
-  logger.log(event);
+  const { openSearchDomain, region } = getLambdaConfigOrFail();
   const requestType = event.RequestType;
   if (requestType === 'Create' || requestType === 'Update') {
-    const config = getConfig();
     const client = await new RaitaOpenSearchClient({
-      openSearchDomain: config.openSearchDomainName,
-      region: config.region,
+      openSearchDomain,
+      region,
     }).getClient();
-    logger.log('got client');
     const requestResponses = event.ResourceProperties.requests.map(
       async (request: any) => {
         logger.log({ request });
