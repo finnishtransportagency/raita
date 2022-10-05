@@ -19,6 +19,7 @@ function getLambdaConfigOrFail() {
 /**
  * Generates a pre-signed url for a file in S3 bucket
  * Currently takes input in the POST request body
+ * NOTE: Preliminary implementation
  */
 export async function handleS3FileRequest(
   event: APIGatewayEvent,
@@ -28,7 +29,7 @@ export async function handleS3FileRequest(
   const s3 = new S3();
   try {
     const { dataBucket } = getLambdaConfigOrFail();
-    const requestBody = body ? JSON.parse(body) : undefined;
+    const requestBody = body && JSON.parse(body);
     if (!requestBody?.key) {
       throw new Error('path parameter key does not exist');
     }
