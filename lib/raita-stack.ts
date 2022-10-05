@@ -28,22 +28,38 @@ import {
   FederatedPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
-
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
-import { getRaitaStackConfig } from './config';
+
+interface RaitaStackProps extends StackProps {
+  readonly stackId: string;
+  readonly tags: Record<string, string>;
+}
+
+// const permanentEnvironments = ['dev', 'prod'] as const;
+// isPermanentEnvironment: env && permanentEnvironments.includes(env as any),
+
+const getRaitaStackConfig = () => ({
+  parserConfigurationFile: 'extractionSpec.json',
+  openSearchMetadataIndex: 'metadata-index',
+});
 
 export class RaitaStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
-    const { config, createPrefixedName } = getRaitaStackConfig();
+  constructor(scope: Construct, id: string, props: RaitaStackProps) {
     super(scope, id, props);
 
-    const applicationPrefix = 'raita-analysis-' + config.env + 'random';
+    const { stackId, tags } = props;
+    const config = getRaitaStackConfig();
+
+    const applicationPrefix = `raita-${stackId}`;
+    const createPrefixedName = (name: string) =>
+      `${applicationPrefix}-${name}-`;
+
     // Create buckets
 
     const dataBucket = this.createBucket(createPrefixedName('input-data'));
     const configurationBucket = this.createBucket(
-      `raita-parser-configuration-${config.env}`,
+      createPrefixedName('parser-configuration'),
     );
 
     // Create Cognito user and identity pools
@@ -116,7 +132,7 @@ export class RaitaStack extends Stack {
       configurationBucketName: configurationBucket.bucketName,
       configurationFile: config.parserConfigurationFile,
       lambdaRole: lambdaServiceRole,
-      region: config.region,
+      region: this.region,
     });
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     this.configureOpenSearchRoleMapping({
