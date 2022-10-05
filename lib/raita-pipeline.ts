@@ -1,4 +1,4 @@
-import { SecretValue, Stack, Stage, StageProps } from 'aws-cdk-lib';
+import { SecretValue, Stack, StackProps, Stage, StageProps } from 'aws-cdk-lib';
 import {
   CodePipeline,
   CodePipelineSource,
@@ -7,38 +7,73 @@ import {
 import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
-import { getEnv } from '../utils';
+import { getEnvOrFail } from '../utils';
+import {
+  Effect,
+  ManagedPolicy,
+  Policy,
+  PolicyDocument,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from 'aws-cdk-lib/aws-iam';
+const environments = {
+  dev: 'dev',
+  prod: 'prod',
+} as const;
+// NOTE: TO BE DECIDED AND POSSIBLY MOVED AROUND
+const productionBranch = 'prod';
+const developmentMainBranch = 'main';
+const productionStackId = 'prod';
+
+// const isEnvAllowedOnAccount = (
+//   env: string,
+//   allowedEnvironments: Array<string>,
+// ) => Array.isArray(allowedEnvironments) && ;
+
+const getStackIdForNonProdEnvironment = (branch: string): string => {
+  // For development main branch the stackId is always fixed
+  if (branch == developmentMainBranch) {
+    return 'main';
+  }
+  // For production branch the stackId is always fixed (even when env is not prod)
+  if (branch == productionBranch) {
+    return 'prod';
+  }
+  // StackId can optionally explicitly given in environment variable
+  if (process.env['STACK_ID']) {
+    return process.env['STACK_ID'];
+  }
+  // Extract the ticket number as stackId
+  const ticketIdRegex = /(raita-\d+)/i;
+  const res = ticketIdRegex.exec(branch);
+  const val = res?.[1];
+  if (val) {
+    return val.toLowerCase();
+  }
+  // One of the above conditions must be met, othewise fail
+  throw new Error(`Failed to get stackId for branch ${branch}`);
+};
 
 const getPipelineConfig = () => {
-  const env = getEnv('ENVIRONMENT');
-  const stackId = getEnv('STACK_ID');
-  const branch = getEnv('BRANCH');
-  const allowedEnvironments = ['dev', 'prod'];
-
-  if (!allowedEnvironments.includes(env)) {
-    throw new Error(
-      `Only ${allowedEnvironments.join(
-        ' ,',
-      )} are allowed environment values, received ${env}`,
-    );
-  }
-
-  // TODO: Add validations that tie AWS Account to allowed environment variable values.
-  // Possibly using parameter store?
-  if (env === 'prod' && stackId !== 'prod') {
-    throw new Error('In production only allowed stackId is "prod".');
-  }
-
+  const env = getEnvOrFail('ENVIRONMENT');
+  // Determine which Gitbub branch to use: Branch for production env is fixed, for other environments it is read from environment
+  const branch =
+    env === environments.prod ? productionBranch : getEnvOrFail('BRANCH');
+  // Determine stackId: StackId in production is fixed, for other environemnts it is selected based on branch value (and optional environment variable)
+  const stackId =
+    env === environments.prod
+      ? productionStackId
+      : getStackIdForNonProdEnvironment(branch);
   return {
+    env,
+    branch,
+    stackId,
+    authenticationToken: 'github-token',
     tags: {
       Environment: env,
       Project: 'raita',
     },
-    env,
-    stackId,
-    region: 'eu-west-1',
-    branch,
-    authenticationToken: 'github-token',
   };
 };
 
@@ -46,12 +81,10 @@ const getPipelineConfig = () => {
  * The stack that defines the application pipeline
  */
 export class RaitaPipelineStack extends Stack {
-  constructor(scope: Construct) {
+  constructor(scope: Construct, id: string, props: StackProps) {
     const config = getPipelineConfig();
-    super(scope, 'stack-pipeline-raita' + config.stackId, {
-      env: {
-        region: config.region,
-      },
+    super(scope, `stack-pipeline-raita-${config.stackId}`, {
+      ...props,
       tags: config.tags,
     });
 
@@ -59,7 +92,7 @@ export class RaitaPipelineStack extends Stack {
       this,
       `pipeline-raita-${config.stackId}`,
       {
-        // pipelineName: 'pipeline-raita-' + config.stackId,
+        pipelineName: `pl-raita-${config.stackId}`,
         synth: new ShellStep('Synth', {
           input: CodePipelineSource.gitHub(
             'finnishtransportagency/raita',
@@ -72,7 +105,7 @@ export class RaitaPipelineStack extends Stack {
           ),
           commands: [
             'npm ci',
-            `npm run pipeline:synth --environment=${config.env} --branch=${config.branch}`,
+            `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
           ],
         }),
         dockerEnabledForSynth: true,
@@ -87,8 +120,8 @@ export class RaitaPipelineStack extends Stack {
       },
     );
     pipeline.addStage(
-      new RaitaApplication(this, config.env, {
-        stackId: config.env,
+      new RaitaApplicationStage(this, `raita`, {
+        stackId: config.stackId,
         tags: config.tags,
       }),
     );
@@ -100,11 +133,11 @@ interface RaitaStageProps extends StageProps {
   readonly tags: Record<string, string>;
 }
 
-class RaitaApplication extends Stage {
+class RaitaApplicationStage extends Stage {
   constructor(scope: Construct, id: string, props: RaitaStageProps) {
     super(scope, id, props);
-    const raitaStack = new RaitaStack(this, 'Raita', {
-      stackId: props.stackId,
+    const raitaStack = new RaitaStack(this, props.stackId, {
+      // stackId: props.stackId,
       tags: props.tags,
     });
   }

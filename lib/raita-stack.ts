@@ -32,12 +32,9 @@ import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 
 interface RaitaStackProps extends StackProps {
-  readonly stackId: string;
-  readonly tags: Record<string, string>;
+  // readonly stackId: string;
+  // readonly tags: Record<string, string>;
 }
-
-// const permanentEnvironments = ['dev', 'prod'] as const;
-// isPermanentEnvironment: env && permanentEnvironments.includes(env as any),
 
 const getRaitaStackConfig = () => ({
   parserConfigurationFile: 'extractionSpec.json',
@@ -45,52 +42,53 @@ const getRaitaStackConfig = () => ({
 });
 
 export class RaitaStack extends Stack {
-  constructor(scope: Construct, id: string, props: RaitaStackProps) {
-    super(scope, id, props);
+  #myStackId: string;
 
-    const { stackId, tags } = props;
+  constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
+    super(scope, stackId, props);
+    this.#myStackId = stackId;
+
+    // OPEN: Move to parameter store?
     const config = getRaitaStackConfig();
-
-    const applicationPrefix = `raita-${stackId}`;
-    const createPrefixedName = (name: string) =>
-      `${applicationPrefix}-${name}-`;
+    const cognitoDomainPrefix = `raita-${stackId}`;
 
     // Create buckets
-
-    const dataBucket = this.createBucket(createPrefixedName('input-data'));
-    const configurationBucket = this.createBucket(
-      createPrefixedName('parser-configuration'),
-    );
+    const dataBucket = this.createBucket('input-data');
+    const configurationBucket = this.createBucket('parser-configuration');
 
     // Create Cognito user and identity pools
-    const userPool = this.createUserPool(
-      applicationPrefix,
-      createPrefixedName('user-pool'),
-    );
-    const idPool = this.createIdentityPool(applicationPrefix);
+    const userPool = this.createUserPool({
+      name: 'opensearch-pool',
+      cognitoDomainPrefix: cognitoDomainPrefix,
+    });
+    const idPool = this.createIdentityPool('opensearch');
 
     // Create roles
-    const esLimitedUserRole = this.createUserRole(idPool, 'esLimitedUserRole');
-    const esAdminUserRole = this.createUserRole(idPool, 'esAdminUserRole');
+    const osAdminUserRole = this.createUserRole(
+      idPool,
+      'OpenSearchAdminUserRole',
+    );
     const openSearchServiceRole = this.createServiceRole(
-      'openSearchServiceRole',
+      'OpenSearchServiceRole',
       'es.amazonaws.com',
       'AmazonESCognitoAccess',
     );
     const lambdaServiceRole = this.createServiceRole(
-      'lambdaServiceRole',
+      'LambdaServiceRole',
       'lambda.amazonaws.com',
       'service-role/AWSLambdaBasicExecutionRole',
     );
 
     // Create Cognito user groups
-    this.createAdminUserGroup(userPool.userPoolId, esAdminUserRole.roleArn);
-    this.createLimitedUserGroup(userPool.userPoolId, esLimitedUserRole.roleArn);
+    this.createAdminUserGroup({
+      name: 'admins',
+      userPool: userPool,
+      adminUserRole: osAdminUserRole,
+    });
 
     // Create and configure OpenSearch domain
-    // TODO: Might warrant refactor
     const openSearchDomain = this.createOpenSearchDomain({
-      domainName: createPrefixedName('raita'),
+      name: 'raita',
       cognitoIdPool: idPool,
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
@@ -102,9 +100,9 @@ export class RaitaStack extends Stack {
     // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
     const openSearchHttpPolicy = new ManagedPolicy(
       this,
-      'openSearchHttpPolicy',
+      `managedpolicy-${this.#myStackId}-openSearchHttpPolicy`,
       {
-        roles: [esAdminUserRole, lambdaServiceRole],
+        roles: [osAdminUserRole, lambdaServiceRole],
       },
     );
     openSearchHttpPolicy.addStatements(
@@ -118,14 +116,14 @@ export class RaitaStack extends Stack {
     this.configureIdentityPool({
       userPool: userPool,
       identityPool: idPool,
-      applicationPrefix: applicationPrefix,
+      cognitoDomainPrefix: cognitoDomainPrefix,
       esDomain: openSearchDomain,
       esLimitedUserRole: openSearchServiceRole,
     });
 
-    // Create parser lambda
+    // Create meta data parser lambda
     const metadataParserFn = this.createMetadataParser({
-      name: createPrefixedName('metadata-parser'),
+      name: 'metadata-parser',
       sourceBuckets: [dataBucket],
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
@@ -134,17 +132,17 @@ export class RaitaStack extends Stack {
       lambdaRole: lambdaServiceRole,
       region: this.region,
     });
+
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     this.configureOpenSearchRoleMapping({
       lambdaServiceRole,
-      esAdminUserRole,
-      esLimitedUserRole,
+      osAdminUserRole: osAdminUserRole,
       openSearchDomain,
     });
 
     // TODO: Bring back
     // // Create API Gateway
-    // new RaitaGatewayStack(this, {
+    // new RaitaGatewayStack(this, 'gw', {
     //   dataBucket,
     //   lambdaServiceRole,
     //   userPool,
@@ -178,6 +176,7 @@ export class RaitaStack extends Stack {
     region: string;
   }) {
     const parser = new NodejsFunction(this, name, {
+      functionName: `${name}-${this.#myStackId}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
@@ -213,18 +212,20 @@ export class RaitaStack extends Stack {
    * TODO: Remove removalPolicy OR make it environment dependent
    */
   private createOpenSearchDomain({
-    domainName,
+    name,
     cognitoIdPool,
     cognitoOpenSearchServiceRole,
     cognitoUserPool,
     masterUserRole,
   }: {
-    domainName: string;
+    name: string;
     cognitoIdPool: CfnIdentityPool;
     cognitoOpenSearchServiceRole: Role;
     cognitoUserPool: UserPool;
     masterUserRole: Role;
   }) {
+    const domainName = `${name}-${this.#myStackId}`;
+
     // TODO: Check if asterisk can be dropped out
     const domainArn =
       'arn:aws:es:' +
@@ -238,6 +239,7 @@ export class RaitaStack extends Stack {
     // TODO: Identify parameters to move to environment (and move)
     // TODO: Environment dependent removal policy
     return new opensearch.Domain(this, domainName, {
+      domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       ebs: {
         volumeSize: 10,
@@ -274,10 +276,36 @@ export class RaitaStack extends Stack {
     });
   }
 
+  /**
+   * Creates a data bucket for the stacks
+   * TODO: Environment dependent removal policy (and autoDeleteObjects)
+   */
+  private createBucket(name: string) {
+    return new s3.Bucket(this, name, {
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+  }
+
+  private createIdentityPool(name: string) {
+    return new CfnIdentityPool(this, name, {
+      identityPoolName: `identitypool-${this.#myStackId}-${name}`,
+      allowUnauthenticatedIdentities: false,
+      cognitoIdentityProviders: [],
+    });
+  }
+
   // TODO: Environment dependent removal policy
-  private createUserPool(applicationPrefix: string, name: string) {
-    const userPool = new UserPool(this, applicationPrefix + 'UserPool', {
-      userPoolName: applicationPrefix + 'User Pool',
+  private createUserPool({
+    name,
+    cognitoDomainPrefix,
+  }: {
+    name: string;
+    cognitoDomainPrefix: string;
+  }) {
+    const userPool = new UserPool(this, name, {
+      userPoolName: `userpool-${this.#myStackId}-${name}`,
       selfSignUpEnabled: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       signInAliases: {
@@ -287,44 +315,27 @@ export class RaitaStack extends Stack {
     });
     userPool.addDomain('cognitoDomain', {
       cognitoDomain: {
-        domainPrefix: applicationPrefix,
+        domainPrefix: cognitoDomainPrefix,
       },
     });
     return userPool;
   }
 
-  /**
-   * Creates a data bucket for the stacks
-   * TODO: Environment dependent removal policy (and autoDeleteObjects)
-   */
-  private createBucket(bucketName: string) {
-    return new s3.Bucket(this, bucketName, {
-      versioned: true,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-    });
-  }
-
-  private createIdentityPool(name: string) {
-    return new CfnIdentityPool(this, name, {
-      allowUnauthenticatedIdentities: false,
-      cognitoIdentityProviders: [],
-    });
-  }
-
   private createServiceRole(
-    identifier: string,
+    name: string,
     servicePrincipal: string,
     policyName: string,
   ) {
-    return new Role(this, identifier, {
+    return new Role(this, name, {
+      roleName: `${name}-${this.#myStackId}`,
       assumedBy: new ServicePrincipal(servicePrincipal),
       managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName(policyName)],
     });
   }
 
-  private createUserRole(idPool: CfnIdentityPool, identifier: string) {
-    return new Role(this, identifier, {
+  private createUserRole(idPool: CfnIdentityPool, name: string) {
+    return new Role(this, name, {
+      roleName: `${name}-${this.#myStackId}`,
       assumedBy: new FederatedPrincipal(
         'cognito-identity.amazonaws.com',
         {
@@ -338,22 +349,19 @@ export class RaitaStack extends Stack {
     });
   }
 
-  private createLimitedUserGroup(
-    userPoolId: string,
-    limitedUserRoleArn: string,
-  ) {
-    new CfnUserPoolGroup(this, 'userPoolLimitedGroupPool', {
-      userPoolId: userPoolId,
-      groupName: 'es-limited-users',
-      roleArn: limitedUserRoleArn,
-    });
-  }
-
-  private createAdminUserGroup(userPoolId: string, adminUserRoleArn: string) {
-    new CfnUserPoolGroup(this, 'userPoolAdminGroupPool', {
-      userPoolId: userPoolId,
-      groupName: 'es-admins',
-      roleArn: adminUserRoleArn,
+  private createAdminUserGroup({
+    name,
+    userPool,
+    adminUserRole,
+  }: {
+    name: string;
+    userPool: UserPool;
+    adminUserRole: Role;
+  }) {
+    new CfnUserPoolGroup(this, name, {
+      groupName: `${name}-${this.#myStackId}`,
+      userPoolId: userPool.userPoolId,
+      roleArn: adminUserRole.roleArn,
     });
   }
 
@@ -364,13 +372,13 @@ export class RaitaStack extends Stack {
   private configureIdentityPool({
     userPool,
     identityPool,
-    applicationPrefix,
+    cognitoDomainPrefix,
     esDomain,
     esLimitedUserRole,
   }: {
     userPool: cdk.aws_cognito.UserPool;
     identityPool: cdk.aws_cognito.CfnIdentityPool;
-    applicationPrefix: string;
+    cognitoDomainPrefix: string;
     esDomain: cdk.aws_opensearchservice.Domain;
     esLimitedUserRole: Role;
   }) {
@@ -386,7 +394,7 @@ export class RaitaStack extends Stack {
           UserPoolId: userPool.userPoolId,
         },
         physicalResourceId: PhysicalResourceId.of(
-          `ClientId-${applicationPrefix}`,
+          `ClientId-${cognitoDomainPrefix}`,
         ),
       },
     });
@@ -416,17 +424,17 @@ export class RaitaStack extends Stack {
 
   private configureOpenSearchRoleMapping({
     lambdaServiceRole,
-    esAdminUserRole,
-    esLimitedUserRole,
+    osAdminUserRole,
     openSearchDomain,
   }: {
     lambdaServiceRole: Role;
-    esAdminUserRole: Role;
-    esLimitedUserRole: Role;
+    osAdminUserRole: Role;
     openSearchDomain: cdk.aws_opensearchservice.Domain;
   }) {
     // Create lambda for sending requests to OpenSearch API
-    const osRequestsFn = new NodejsFunction(this, 'osRequestsFn', {
+    const osRequestsFnName = 'osRequestsFn';
+    const osRequestsFn = new NodejsFunction(this, osRequestsFnName, {
+      functionName: `${osRequestsFnName}-${this.#myStackId}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
       entry: path.join(
@@ -445,7 +453,6 @@ export class RaitaStack extends Stack {
       onEventHandler: osRequestsFn,
     });
 
-    // TODO: Add API call for esLimitedRole
     const esRequests = new CustomResource(this, 'esRequestsResource', {
       serviceToken: esRequestProvider.serviceToken,
       properties: {
@@ -455,7 +462,7 @@ export class RaitaStack extends Stack {
             path: '/_plugins/_security/api/rolesmapping/all_access',
             body: {
               backend_roles: [
-                esAdminUserRole.roleArn,
+                osAdminUserRole.roleArn,
                 lambdaServiceRole.roleArn,
               ],
               hosts: [],

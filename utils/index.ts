@@ -10,7 +10,7 @@ type GetEnvContext = string;
  * Returns an environment variable identified by name variable or throws an error
  * Inspiration from https://github.com/finnishtransportagency/hassu/blob/main/deployment/lib/config.ts
  */
-export function getEnv(name: string, getEnvContext?: GetEnvContext) {
+export function getEnvOrFail(name: string, getEnvContext?: GetEnvContext) {
   const value = process.env[name];
   if (!value) {
     throw new Error(
@@ -27,4 +27,11 @@ export function getEnv(name: string, getEnvContext?: GetEnvContext) {
  */
 export const getGetEnvWithPreassignedContext =
   (getEnvContext: GetEnvContext) => (name: string) =>
-    getEnv(name, getEnvContext);
+    getEnvOrFail(name, getEnvContext);
+
+// export const createRaitaResourceName = (resourceType: string, name: string) =>
+//       `${resourceType}-${applicationPrefix}-${name}-`;
+
+export const getRaitaResourceNamer =
+  (raitaStackDescriptor: string) => (resourceType: string, name: string) =>
+    `${resourceType}-${raitaStackDescriptor}-${name}`;
