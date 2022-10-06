@@ -18,11 +18,6 @@ const productionBranch = 'prod';
 const developmentMainBranch = 'main';
 const productionStackId = 'prod';
 
-// const isEnvAllowedOnAccount = (
-//   env: string,
-//   allowedEnvironments: Array<string>,
-// ) => Array.isArray(allowedEnvironments) && ;
-
 const getStackIdForNonProdEnvironment = (branch: string): string => {
   // For development main branch the stackId is always fixed
   if (branch == developmentMainBranch) {
