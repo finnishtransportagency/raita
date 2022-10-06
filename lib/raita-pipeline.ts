@@ -8,15 +8,7 @@ import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
 import { getEnvOrFail } from '../utils';
-import {
-  Effect,
-  ManagedPolicy,
-  Policy,
-  PolicyDocument,
-  PolicyStatement,
-  Role,
-  ServicePrincipal,
-} from 'aws-cdk-lib/aws-iam';
+
 const environments = {
   dev: 'dev',
   prod: 'prod',
