@@ -18,9 +18,26 @@ Run ` npm i`
 
 Bootstrap CDK for the AWS account, if that has not been done yet: `ENVIRONMENT=dev BRANCH=main cdk bootstrap`. ENVIRONMENT and BRANCH don't really matter here, but the stack requires you to set them.
 
-Add a pipeline synth and deployment with matching endings to package.json similar to `synth:pipeline:dev` and `deploy:pipeline:dev`. Set preferred environment name (matching with script name) and branch to deploy from. Run the deployment script with credentials for the preferred AWS-account. The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app.
+In the pipeline deployment **AWS account** and **region** are set based on the AWS profile used to deploy the
+pipeline - either use your cli default profile or specify the profile with --profile flag when deploying the pipeline.
+TODO: TEST HOW WORKS WITH NPM COMMAND WITH --
 
-Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:status, repo_deployment` is required to be had in AWS Secrets Manager. Refer to `./lambda/config/index.ts` for authenticationToken name to be set. Set the token as plaintext value.
+There are three variables that determine how the pipeline and the application itself are deployed to the AWS Account. These variables are the following
+
+- ENVIRONMENT: Required environment variable. Allowed values **dev** and **prod**. Determines the stack resource performance characteristics and also how other environment variables, BRANCH and STACK_ID work.
+- BRANCH: Determines from which Github branch source code is pulled for the deployment. The value must correspond to a branch that exists in Github repository. If ENVIRONMENT is **prod**, the branch is always fixed to follow production branch and this environment variable is ignored. If ENVIRONMENT is anything else than **prod**, BRANCH must be given.
+- STACK_ID: An optional variable. Determines the id for the stack to be deployed for feature brances: STACK_ID is ignored if ENVIRONMENT is prod or BRANCH is set to correspond to development or production branch in Github.
+
+To initalize the pipeline, run pipeline:deploy script providing environment, branch and stackId as command line arguments with optionally also providing your AWS profile:
+
+    npm run pipeline:deploy --environment=dev --branch=main
+    npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test
+    npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test --stackid=mytestbranch
+    npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test --stackid=mytestbranch -- --profile myFavouriteAWSProfile
+
+The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app based on .
+
+Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:status, repo_deployment` is required to be in place in AWS Secrets Manager. Refer to `.lib/raita-pipeline.ts` for authenticationToken name to be set. Set the token as plaintext value.
 
 Reference for pipeline setup: https://docs.aws.amazon.com/cdk/v2/guide/cdk_pipeline.html
 
