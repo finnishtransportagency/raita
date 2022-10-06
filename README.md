@@ -18,7 +18,7 @@ Run ` npm i`
 
 Bootstrap CDK for the AWS account, if that has not been done yet: `ENVIRONMENT=dev BRANCH=main cdk bootstrap`. ENVIRONMENT and BRANCH don't really matter here, but the stack requires you to set them.
 
-To set up a new pipeline, run the deployment script (with up-top-date credentials for the preferred AWS-account). E.g. `npm run pipeline:deploy --environment=dev --branch=main` where environment is name of the environment you want to give (defaults are prod/dev). Branch is the Git branch you want to track for updates. The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app.
+To set up a new pipeline, run the deployment script (with up-top-date credentials for the preferred AWS-account). E.g. `npm run pipeline:deploy --environment=dev --branch=main` where environment is name of the environment you want to give (defaults are prod/dev) and branch is the Git branch you want to track for updates. The script will deploy CodePipeline, which will automatically set up the environment. The pipeline will automatically update itself and deploy any changes made to the app.
 
 If you update the `pipeline:synth`-script name, you need to have the old script available for at least one commit in the followed branch or you have to rerun the deployment script by hand.
 
