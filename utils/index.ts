@@ -31,7 +31,3 @@ export const getGetEnvWithPreassignedContext =
 
 // export const createRaitaResourceName = (resourceType: string, name: string) =>
 //       `${resourceType}-${applicationPrefix}-${name}-`;
-
-export const getRaitaResourceNamer =
-  (raitaStackDescriptor: string) => (resourceType: string, name: string) =>
-    `${resourceType}-${raitaStackDescriptor}-${name}`;
