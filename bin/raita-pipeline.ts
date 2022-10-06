@@ -6,8 +6,8 @@ const app = new cdk.App();
 
 new RaitaPipelineStack(app, 'RAITA', {
   env: {
-    account: '592798899605',
-    region: 'eu-west-1',
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
   },
 });
 
