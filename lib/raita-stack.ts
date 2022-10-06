@@ -31,11 +31,6 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 
-interface RaitaStackProps extends StackProps {
-  // readonly stackId: string;
-  // readonly tags: Record<string, string>;
-}
-
 const getRaitaStackConfig = () => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
@@ -44,7 +39,7 @@ const getRaitaStackConfig = () => ({
 export class RaitaStack extends Stack {
   #myStackId: string;
 
-  constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
+  constructor(scope: Construct, stackId: string, props: StackProps) {
     super(scope, stackId, props);
     this.#myStackId = stackId;
 
