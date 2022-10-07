@@ -328,8 +328,7 @@ export class RaitaStack extends Stack {
     const userPool = new UserPool(this, name, {
       userPoolName: `userpool-${this.#stackId}-${name}`,
       selfSignUpEnabled: false,
-      removalPolicy:
-        raitaEnv === 'prod' ? cdk.RemovalPolicy.DESTROY : undefined,
+      removalPolicy: raitaEnv === 'dev' ? cdk.RemovalPolicy.DESTROY : undefined,
       signInAliases: {
         username: true,
         email: true,
