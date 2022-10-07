@@ -56,11 +56,12 @@ export class RaitaStack extends Stack {
   constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
     super(scope, stackId, props);
     const { raitaEnv } = props;
-    this.#stackId = stackId;
+    this.#stackId = stackId.toLowerCase();
 
     // OPEN: Move to parameter store?
     const config = getRaitaStackConfig();
-    const cognitoDomainPrefix = `raita-${stackId}`;
+    const cognitoDomainPrefix = `raita-${this.#stackId}`.toLowerCase();
+    console.log(cognitoDomainPrefix);
 
     // Create buckets
     const dataBucket = this.createBucket({ name: 'input-data', raitaEnv });

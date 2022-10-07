@@ -21,31 +21,23 @@ const environments = {
 } as const;
 // NOTE: TO BE DECIDED AND POSSIBLY MOVED AROUND
 const productionBranch = 'prod';
+const productionStackId = productionBranch;
 const developmentMainBranch = 'main';
-const productionStackId = 'prod';
+const developmentMainStackId = developmentMainBranch;
 
-const getStackIdForNonProdEnvironment = (branch: string): string => {
-  // For development main branch the stackId is always fixed
-  if (branch == developmentMainBranch) {
-    return 'main';
+const getStackId = (branch: string): string => {
+  const stackId = getEnvOrFail('STACK_ID');
+  if (branch === developmentMainBranch && stackId !== developmentMainStackId) {
+    throw new Error(
+      `For branch ${developmentMainBranch} stack id must match the branch`,
+    );
   }
-  // For production branch the stackId is always fixed (even when env is not prod)
-  if (branch == productionBranch) {
-    return 'prod';
+  if (branch === productionBranch && stackId !== productionStackId) {
+    throw new Error(
+      `For branch ${productionBranch} stack id must match the branch`,
+    );
   }
-  // StackId can optionally explicitly given in environment variable
-  if (process.env['STACK_ID']) {
-    return process.env['STACK_ID'];
-  }
-  // Extract the ticket number as stackId
-  const ticketIdRegex = /(raita-\d+)/i;
-  const res = ticketIdRegex.exec(branch);
-  const val = res?.[1];
-  if (val) {
-    return val.toLowerCase();
-  }
-  // One of the above conditions must be met, othewise fail
-  throw new Error(`Failed to get stackId for branch ${branch}`);
+  return stackId;
 };
 
 const getPipelineConfig = () => {
@@ -56,15 +48,10 @@ const getPipelineConfig = () => {
       envFromEnvironment === environments.prod
         ? productionBranch
         : getEnvOrFail('BRANCH');
-    // Determine stackId: StackId in production is fixed, for other environemnts it is selected based on branch value (and optional environment variable)
-    const stackId =
-      envFromEnvironment === environments.prod
-        ? productionStackId
-        : getStackIdForNonProdEnvironment(branch);
     return {
       env: envFromEnvironment,
       branch,
-      stackId,
+      stackId: getStackId(branch),
       authenticationToken: 'github-token',
       tags: {
         Environment: envFromEnvironment,
