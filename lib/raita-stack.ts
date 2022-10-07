@@ -38,7 +38,7 @@ import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { RaitaEnvironment } from './raita-pipeline';
 
-// These values are used solely by metadata parser!
+// These values are used solely by metadata parser
 // Pending possible move to SSM Parameter Store (after discussion)
 const getRaitaStackConfig = () => ({
   parserConfigurationFile: 'extractionSpec.json',
@@ -51,7 +51,6 @@ interface RaitaStackProps extends StackProps {
 
 export class RaitaStack extends Stack {
   #stackId: string;
-  // #raitaEnv: string;
 
   constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
     super(scope, stackId, props);
