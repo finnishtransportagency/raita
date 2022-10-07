@@ -22,11 +22,13 @@ In the pipeline deployment **AWS account** and **region** are set based on the A
 pipeline - either use your cli default profile or specify the profile with --profile flag when deploying the pipeline.
 TODO: TEST HOW WORKS WITH NPM COMMAND WITH --
 
-There are three variables that determine how the pipeline and the application itself are deployed to the AWS Account. These variables are the following
+There are three variables that determine how the pipeline and the application itself are deployed to the AWS Account. These variables are listed below in format [ENVIRONMENT VARIABLE] --> [deduced stack variable]
 
-- ENVIRONMENT: Required environment variable. Allowed values **dev** and **prod**. Determines the stack resource performance characteristics and also how other environment variables, BRANCH and STACK_ID work.
-- BRANCH: Determines from which Github branch source code is pulled for the deployment. The value must correspond to a branch that exists in Github repository. If ENVIRONMENT is **prod**, the branch is always fixed to follow production branch and this environment variable is ignored. If ENVIRONMENT is anything else than **prod**, BRANCH must be given.
-- STACK_ID: An optional variable. Determines the id for the stack to be deployed for feature brances: STACK_ID is ignored if ENVIRONMENT is prod or BRANCH is set to correspond to development or production branch in Github.
+- ENVIRONMENT --> env: Required environment variable. Allowed values **dev** and **prod**. Determines the stack resource performance characteristics and also how other environment variables, BRANCH and STACK_ID work. Also sets removalPolicy for stack resources.
+- BRANCH --> branch: Determines from which Github branch source code is pulled for the deployment. The value must correspond to a branch that exists in Github repository. If ENVIRONMENT is **prod**, the branch is always fixed to follow production branch and this environment variable is ignored. If ENVIRONMENT is anything else than **prod**, BRANCH must be given.
+- STACK_ID --> stackId: Determines the naming of stack resources for **feature brances** feature branches here encompassing all other brances than **development branch (main)** and **production branch**. As an environment variable STACK_ID is optional. Determines the id for : STACK_ID is ignored if ENVIRONMENT is prod or BRANCH is set to correspond to development or production branch in Github, in these cases STACK_ID is always fixed. If STACK_ID is not given for a feature branch the stackId value in the
+
+Note! Naming of certain AWS resources must be globally unique, these resources in Raita Stack include buckets and domains (OpenSearch, UserPool, API Gateway). Current naming scheme does not support using the same stackId in multiple AWS Accounts. Using the same name will lead into naming collisions and thus deployment failure.
 
 To initalize the pipeline, run pipeline:deploy script providing environment, branch and stackId as command line arguments with optionally also providing your AWS profile:
 
