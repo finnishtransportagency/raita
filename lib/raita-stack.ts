@@ -1,4 +1,10 @@
-import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
+import {
+  Stack,
+  StackProps,
+  CfnJson,
+  CustomResource,
+  RemovalPolicy,
+} from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -30,31 +36,44 @@ import {
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
+import { RaitaEnvironment } from './raita-pipeline';
 
+// These values are used solely by metadata parser.
+// Pending possible move to SSM Parameter Store (after discussion)
 const getRaitaStackConfig = () => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
 });
 
-export class RaitaStack extends Stack {
-  #myStackId: string;
+interface RaitaStackProps extends StackProps {
+  readonly raitaEnv: RaitaEnvironment;
+}
 
-  constructor(scope: Construct, stackId: string, props: StackProps) {
+export class RaitaStack extends Stack {
+  #stackId: string;
+  // #raitaEnv: string;
+
+  constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
     super(scope, stackId, props);
-    this.#myStackId = stackId;
+    const { raitaEnv } = props;
+    this.#stackId = stackId;
 
     // OPEN: Move to parameter store?
     const config = getRaitaStackConfig();
     const cognitoDomainPrefix = `raita-${stackId}`;
 
     // Create buckets
-    const dataBucket = this.createBucket('input-data');
-    const configurationBucket = this.createBucket('parser-configuration');
+    const dataBucket = this.createBucket({ name: 'input-data', raitaEnv });
+    const configurationBucket = this.createBucket({
+      name: 'parser-configuration',
+      raitaEnv,
+    });
 
     // Create Cognito user and identity pools
     const userPool = this.createUserPool({
       name: 'opensearch-pool',
       cognitoDomainPrefix: cognitoDomainPrefix,
+      raitaEnv,
     });
     const idPool = this.createIdentityPool('opensearch');
 
@@ -88,6 +107,7 @@ export class RaitaStack extends Stack {
       cognitoOpenSearchServiceRole: openSearchServiceRole,
       cognitoUserPool: userPool,
       masterUserRole: lambdaServiceRole,
+      raitaEnv: props.raitaEnv,
     });
 
     // Create a ManagedPolicy that allows admin role and lambda role to call
@@ -95,7 +115,7 @@ export class RaitaStack extends Stack {
     // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
     const openSearchHttpPolicy = new ManagedPolicy(
       this,
-      `managedpolicy-${this.#myStackId}-openSearchHttpPolicy`,
+      `managedpolicy-${this.#stackId}-openSearchHttpPolicy`,
       {
         roles: [osAdminUserRole, lambdaServiceRole],
       },
@@ -171,7 +191,7 @@ export class RaitaStack extends Stack {
     region: string;
   }) {
     const parser = new NodejsFunction(this, name, {
-      functionName: `${name}-${this.#myStackId}`,
+      functionName: `${name}-${this.#stackId}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
@@ -204,7 +224,6 @@ export class RaitaStack extends Stack {
 
   /**
    * Creates OpenSearch domain
-   * TODO: Remove removalPolicy OR make it environment dependent
    */
   private createOpenSearchDomain({
     name,
@@ -212,14 +231,16 @@ export class RaitaStack extends Stack {
     cognitoOpenSearchServiceRole,
     cognitoUserPool,
     masterUserRole,
+    raitaEnv,
   }: {
     name: string;
     cognitoIdPool: CfnIdentityPool;
     cognitoOpenSearchServiceRole: Role;
     cognitoUserPool: UserPool;
     masterUserRole: Role;
+    raitaEnv: RaitaEnvironment;
   }) {
-    const domainName = `${name}-${this.#myStackId}`;
+    const domainName = `${name}-${this.#stackId}`;
 
     // TODO: Check if asterisk can be dropped out
     const domainArn =
@@ -232,15 +253,14 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
-    // TODO: Environment dependent removal policy
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
+      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
       ebs: {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
       },
-      // removalPolicy: cdk.RemovalPolicy.DESTROY,
       capacity: {
         dataNodes: 1,
         dataNodeInstanceType: 't3.small.search',
@@ -273,36 +293,43 @@ export class RaitaStack extends Stack {
 
   /**
    * Creates a data bucket for the stacks
-   * TODO: Environment dependent removal policy (and autoDeleteObjects)
    */
-  private createBucket(name: string) {
+  private createBucket({
+    name,
+    raitaEnv,
+  }: {
+    name: string;
+    raitaEnv: RaitaEnvironment;
+  }) {
     return new s3.Bucket(this, name, {
       versioned: true,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
+      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
+      autoDeleteObjects: raitaEnv === 'dev' ? true : false,
     });
   }
 
   private createIdentityPool(name: string) {
     return new CfnIdentityPool(this, name, {
-      identityPoolName: `identitypool-${this.#myStackId}-${name}`,
+      identityPoolName: `identitypool-${this.#stackId}-${name}`,
       allowUnauthenticatedIdentities: false,
       cognitoIdentityProviders: [],
     });
   }
 
-  // TODO: Environment dependent removal policy
   private createUserPool({
     name,
     cognitoDomainPrefix,
+    raitaEnv,
   }: {
     name: string;
     cognitoDomainPrefix: string;
+    raitaEnv: RaitaEnvironment;
   }) {
     const userPool = new UserPool(this, name, {
-      userPoolName: `userpool-${this.#myStackId}-${name}`,
+      userPoolName: `userpool-${this.#stackId}-${name}`,
       selfSignUpEnabled: false,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy:
+        raitaEnv === 'prod' ? cdk.RemovalPolicy.DESTROY : undefined,
       signInAliases: {
         username: true,
         email: true,
@@ -322,7 +349,7 @@ export class RaitaStack extends Stack {
     policyName: string,
   ) {
     return new Role(this, name, {
-      roleName: `${name}-${this.#myStackId}`,
+      roleName: `${name}-${this.#stackId}`,
       assumedBy: new ServicePrincipal(servicePrincipal),
       managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName(policyName)],
     });
@@ -330,7 +357,7 @@ export class RaitaStack extends Stack {
 
   private createUserRole(idPool: CfnIdentityPool, name: string) {
     return new Role(this, name, {
-      roleName: `${name}-${this.#myStackId}`,
+      roleName: `${name}-${this.#stackId}`,
       assumedBy: new FederatedPrincipal(
         'cognito-identity.amazonaws.com',
         {
@@ -354,7 +381,7 @@ export class RaitaStack extends Stack {
     adminUserRole: Role;
   }) {
     new CfnUserPoolGroup(this, name, {
-      groupName: `${name}-${this.#myStackId}`,
+      groupName: `${name}-${this.#stackId}`,
       userPoolId: userPool.userPoolId,
       roleArn: adminUserRole.roleArn,
     });
@@ -429,7 +456,7 @@ export class RaitaStack extends Stack {
     // Create lambda for sending requests to OpenSearch API
     const osRequestsFnName = 'osRequestsFn';
     const osRequestsFn = new NodejsFunction(this, osRequestsFnName, {
-      functionName: `${osRequestsFnName}-${this.#myStackId}`,
+      functionName: `${osRequestsFnName}-${this.#stackId}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
       entry: path.join(
