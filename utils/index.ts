@@ -28,6 +28,3 @@ export function getEnvOrFail(name: string, getEnvContext?: GetEnvContext) {
 export const getGetEnvWithPreassignedContext =
   (getEnvContext: GetEnvContext) => (name: string) =>
     getEnvOrFail(name, getEnvContext);
-
-// export const createRaitaResourceName = (resourceType: string, name: string) =>
-//       `${resourceType}-${applicationPrefix}-${name}-`;
