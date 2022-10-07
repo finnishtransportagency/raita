@@ -107,7 +107,7 @@ export class RaitaPipelineStack extends Stack {
       },
     );
     pipeline.addStage(
-      new RaitaApplicationStage(this, `raita`, {
+      new RaitaApplicationStage(this, `Raita`, {
         stackId: config.stackId,
         raitaEnv: config.env,
       }),
