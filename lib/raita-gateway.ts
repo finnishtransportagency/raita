@@ -78,7 +78,7 @@ export class RaitaGatewayStack extends NestedStack {
       handler: 'handleFileRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/s3UrlGenerator/handleS3FileRequest.ts`,
+        `../backend/lambdas/s3UrlGenerator/s3UrlGenerator.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
