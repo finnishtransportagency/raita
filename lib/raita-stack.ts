@@ -56,16 +56,20 @@ export class RaitaStack extends Stack {
     super(scope, stackId, props);
     const { raitaEnv } = props;
     this.#stackId = stackId.toLowerCase();
+    // Use stackId as cognitoDomainPrefix
+    const cognitoDomainPrefix = this.#stackId;
 
     // OPEN: Move to parameter store?
     const config = getRaitaStackConfig();
-    const cognitoDomainPrefix = `raita-${this.#stackId}`.toLowerCase();
     console.log(cognitoDomainPrefix);
 
     // Create buckets
-    const dataBucket = this.createBucket({ name: 'input-data', raitaEnv });
+    const dataBucket = this.createBucket({
+      name: 'parser-input-data',
+      raitaEnv,
+    });
     const configurationBucket = this.createBucket({
-      name: 'parser-configuration',
+      name: 'parser-configuration-data',
       raitaEnv,
     });
 
@@ -302,6 +306,7 @@ export class RaitaStack extends Stack {
     raitaEnv: RaitaEnvironment;
   }) {
     return new s3.Bucket(this, name, {
+      bucketName: `s3-${this.#stackId}-${name}`,
       versioned: true,
       removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
       autoDeleteObjects: raitaEnv === 'dev' ? true : false,

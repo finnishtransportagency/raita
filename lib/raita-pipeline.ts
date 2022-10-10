@@ -123,8 +123,12 @@ interface RaitaStageProps extends StageProps {
 class RaitaApplicationStage extends Stage {
   constructor(scope: Construct, id: string, props: RaitaStageProps) {
     super(scope, id, props);
-    const raitaStack = new RaitaStack(this, props.stackId, {
-      raitaEnv: props.raitaEnv,
-    });
+    const raitaStack = new RaitaStack(
+      this,
+      `raita-${props.raitaEnv}-${props.stackId}`,
+      {
+        raitaEnv: props.raitaEnv,
+      },
+    );
   }
 }
