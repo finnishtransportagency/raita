@@ -30,6 +30,8 @@ export class RaitaGatewayStack extends NestedStack {
       cognitoUserPools: [props.userPool],
     });
 
+    authorizer.node.addDependency(props.userPool);
+
     const restApi = new RestApi(this, 'api', {
       restApiName: `restapi-${raitaStackId}-raita-api`,
       deploy: true,
