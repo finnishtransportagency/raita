@@ -61,6 +61,10 @@ export class RaitaGatewayStack extends Stack {
     });
 
     const filesResource = restApi.root.addResource('files');
+    filesResource.addMethod('POST', new LambdaIntegration(urlGeneratorFn), {
+      // authorizer: authorizer,
+      // authorizationType: AuthorizationType.COGNITO,
+    });
     filesResource.addMethod('GET', new LambdaIntegration(urlGeneratorFn), {
       // authorizer: authorizer,
       // authorizationType: AuthorizationType.COGNITO,
