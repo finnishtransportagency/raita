@@ -83,7 +83,7 @@ export class RaitaGatewayStack extends Stack {
     lambdaRole: Role;
   }) {
     return new NodejsFunction(this, name, {
-      functionName: ``,
+      functionName: `lambda-${raitaStackId}-${name}`,
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
