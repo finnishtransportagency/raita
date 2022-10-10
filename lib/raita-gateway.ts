@@ -25,18 +25,22 @@ export class RaitaGatewayStack extends NestedStack {
     super(scope, id, props);
     const { raitaStackId } = props;
 
-    const restApi = new RestApi(this, 'api', {
-      restApiName: `restapi-${raitaStackId}-raita-api`,
-      deploy: true,
-    });
-
     const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
       authorizerName: `userpool-authorizer-${raitaStackId}-raita`,
       cognitoUserPools: [props.userPool],
     });
 
+    const restApi = new RestApi(this, 'api', {
+      restApiName: `restapi-${raitaStackId}-raita-api`,
+      deploy: true,
+      defaultMethodOptions: {
+        authorizer: authorizer,
+        authorizationType: AuthorizationType.COGNITO,
+      },
+    });
+
     // TODO: Assess lambdaRole requirements and implement least privilege
-    const urlGenerator = this.createS3urlGenerator({
+    const urlGeneratorFn = this.createS3urlGenerator({
       name: 'file-access-handler',
       raitaStackId,
       lambdaRole: props.lambdaServiceRole,
@@ -45,7 +49,7 @@ export class RaitaGatewayStack extends NestedStack {
 
     const test = restApi.root
       .addResource('files')
-      .addMethod('POST', new LambdaIntegration(urlGenerator), {
+      .addMethod('POST', new LambdaIntegration(urlGeneratorFn), {
         methodResponses: [
           { statusCode: '200' },
           { statusCode: '400' },
@@ -55,8 +59,8 @@ export class RaitaGatewayStack extends NestedStack {
         authorizationType: AuthorizationType.COGNITO,
       });
 
-    test.node.addDependency(restApi);
-    test.node.addDependency(authorizer);
+    // test.node.addDependency(restApi);
+    // test.node.addDependency(authorizer);
   }
 
   /**
