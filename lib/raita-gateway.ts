@@ -1,123 +1,80 @@
+import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import {
-  Duration,
-  NestedStack,
-  NestedStackProps,
-  RemovalPolicy,
-} from 'aws-cdk-lib';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
-import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-
+  AuthorizationType,
+  CognitoUserPoolsAuthorizer,
+  LambdaIntegration,
+  RestApi,
+} from 'aws-cdk-lib/aws-apigateway';
+import { Role } from 'aws-cdk-lib/aws-iam';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
+import * as path from 'path';
+import { UserPool } from 'aws-cdk-lib/aws-cognito';
 
-interface FrontendInfraStackProps extends NestedStackProps {}
+interface ResourceNestedStackProps extends NestedStackProps {
+  readonly dataBucket: Bucket;
+  readonly lambdaServiceRole: Role;
+  readonly userPool: UserPool;
+}
 
-// Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
 export class RaitaGatewayStack extends NestedStack {
-  constructor(scope: Construct, props: FrontendInfraStackProps) {
-    super(scope, 'stack-fe', props);
+  constructor(scope: Construct, props: ResourceNestedStackProps) {
+    super(scope, 'GatewayStack', props);
 
-    // TODO: Make env dependent, currently hardcoded to dev --> test
-    const domainName = 'raita-dev.vayla.fi';
-
-    const feBucket = new s3.Bucket(this, 'WebsiteBucket', {
-      publicReadAccess: false,
-      accessControl: s3.BucketAccessControl.PRIVATE,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      // TODO - Update to env dependency
-      removalPolicy: RemovalPolicy.DESTROY,
-      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      encryption: s3.BucketEncryption.S3_MANAGED,
+    const restApi = new RestApi(this, 'RaitaApi', {
+      deploy: true,
     });
 
-    const cloudfrontOAI = new cloudfront.OriginAccessIdentity(
-      this,
-      'CloudFrontOriginAccessIdentity',
-    );
+    const auth = new CognitoUserPoolsAuthorizer(this, 'raitaApiAuthorizer', {
+      cognitoUserPools: [props.userPool],
+    });
 
-    feBucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        actions: ['s3:GetObject'],
-        resources: [feBucket.arnForObjects('*')],
-        principals: [
-          new iam.CanonicalUserPrincipal(
-            cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
-          ),
+    const urlGenerator = this.createS3urlGenerator({
+      name: 'fileAccessHandler',
+      lambdaRole: props.lambdaServiceRole,
+      dataBucket: props.dataBucket,
+    });
+
+    restApi.root
+      .addResource('files')
+      .addMethod('POST', new LambdaIntegration(urlGenerator), {
+        methodResponses: [
+          { statusCode: '200' },
+          { statusCode: '400' },
+          { statusCode: '500' },
         ],
-      }),
-    );
+        authorizer: auth,
+        authorizationType: AuthorizationType.COGNITO,
+      });
+  }
 
-    // const zone = route53.HostedZone.fromLookup(this, 'HostedZone',
-    // { domainName: domainName });
-    // const certificate = new acm.DnsValidatedCertificate(this,
-    //   'SiteCertificate',
-    //   {
-    //       domainName: domainName,
-    //       hostedZone: zone,
-    //       region: 'us-east-1',
-    //   });
-
-    //   const responseHeaderPolicy = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeadersResponseHeaderPolicy', {
-    //     comment: 'Security headers response header policy',
-    //     securityHeadersBehavior: {
-    //         contentSecurityPolicy: {
-    //             override: true,
-    //             contentSecurityPolicy: "default-src 'self'"
-    //         },
-    //         strictTransportSecurity: {
-    //             override: true,
-    //             accessControlMaxAge: Duration.days(2 * 365),
-    //             includeSubdomains: true,
-    //             preload: true
-    //         },
-    //         contentTypeOptions: {
-    //             override: true
-    //         },
-    //         referrerPolicy: {
-    //             override: true,
-    //             referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
-    //         },
-    //         xssProtection: {
-    //             override: true,
-    //             protection: true,
-    //             modeBlock: true
-    //         },
-    //         frameOptions: {
-    //             override: true,
-    //             frameOption: cloudfront.HeadersFrameOption.DENY
-    //         }
-    //     }
-    // });
-
-    const cloudfrontDistribution = new cloudfront.Distribution(
-      this,
-      'cloudfront',
-      {
-        // certificate: certificate,
-        domainNames: [domainName],
-        defaultRootObject: 'index.html',
-        defaultBehavior: {
-          origin: new origins.S3Origin(feBucket, {
-            originAccessIdentity: cloudfrontOAI,
-          }),
-          viewerProtocolPolicy:
-            cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          // responseHeadersPolicy: responseHeaderPolicy
-        },
+  /**
+   * Returns lambda function that generates presigned urls
+   */
+  private createS3urlGenerator({
+    name,
+    dataBucket,
+    lambdaRole,
+  }: {
+    name: string;
+    dataBucket: Bucket;
+    lambdaRole: Role;
+  }) {
+    return new NodejsFunction(this, name, {
+      memorySize: 1024,
+      timeout: Duration.seconds(5),
+      runtime: Runtime.NODEJS_16_X,
+      handler: 'handleFileRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/s3UrlGenerator/handleS3FileRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
       },
-    );
-
-    new cloudfront.Distribution(this, 'distro', {
-      defaultBehavior: {
-        origin: new origins.S3Origin(feBucket),
-        // edgeLambdas: [
-        //   {
-        //     functionVersion,
-        //     eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
-        //   },
-        // ],
-      },
+      role: lambdaRole,
     });
   }
 }
