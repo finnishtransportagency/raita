@@ -118,6 +118,7 @@ export class RaitaGatewayStack extends NestedStack {
         //   },
         // ],
       },
+      additionalBehaviors: {},
     });
   }
 }
