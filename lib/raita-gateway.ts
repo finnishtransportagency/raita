@@ -26,7 +26,7 @@ export class RaitaGatewayStack extends NestedStack {
     const { raitaStackId } = props;
 
     const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
-      authorizerName: `userpool-authorizer-${raitaStackId}-raita`,
+      authorizerName: `alpha-userpool-authorizer-${raitaStackId}-raita`,
       cognitoUserPools: [props.userPool],
     });
 
@@ -40,6 +40,8 @@ export class RaitaGatewayStack extends NestedStack {
         authorizationType: AuthorizationType.COGNITO,
       },
     });
+
+    restApi.node.addDependency(authorizer);
 
     // TODO: Assess lambdaRole requirements and implement least privilege
     const urlGeneratorFn = this.createS3urlGenerator({
