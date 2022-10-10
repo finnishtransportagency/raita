@@ -38,6 +38,16 @@ export class RaitaGatewayStack extends Stack {
 
     // authorizer.node.addDependency(props.userPool);
 
+    // restApi.node.addDependency(authorizer);
+
+    // TODO: Assess lambdaRole requirements and implement least privilege
+    const urlGeneratorFn = this.createS3urlGenerator({
+      name: 'file-access-handler',
+      raitaStackId,
+      lambdaRole: props.lambdaServiceRole,
+      dataBucket: props.dataBucket,
+    });
+
     const restApi = new RestApi(this, 'api', {
       restApiName: `restapi-${raitaStackId}-raita-api`,
       deploy: true,
@@ -49,17 +59,6 @@ export class RaitaGatewayStack extends Stack {
       //   authorizationType: AuthorizationType.COGNITO,
       // },
     });
-
-    // restApi.node.addDependency(authorizer);
-
-    // TODO: Assess lambdaRole requirements and implement least privilege
-    const urlGeneratorFn = this.createS3urlGenerator({
-      name: 'file-access-handler',
-      raitaStackId,
-      lambdaRole: props.lambdaServiceRole,
-      dataBucket: props.dataBucket,
-    });
-
     const filesResource = restApi.root.addResource('files');
     filesResource.addMethod('POST', new LambdaIntegration(urlGeneratorFn), {
       // authorizer: authorizer,
