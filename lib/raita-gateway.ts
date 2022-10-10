@@ -30,7 +30,7 @@ export class RaitaGatewayStack extends NestedStack {
       deploy: true,
     });
 
-    const auth = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
+    const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
       authorizerName: `userpool-authorizer-${raitaStackId}-raita`,
       cognitoUserPools: [props.userPool],
     });
@@ -43,7 +43,7 @@ export class RaitaGatewayStack extends NestedStack {
       dataBucket: props.dataBucket,
     });
 
-    restApi.root
+    const test = restApi.root
       .addResource('files')
       .addMethod('POST', new LambdaIntegration(urlGenerator), {
         methodResponses: [
@@ -51,9 +51,12 @@ export class RaitaGatewayStack extends NestedStack {
           { statusCode: '400' },
           { statusCode: '500' },
         ],
-        authorizer: auth,
+        authorizer: authorizer,
         authorizationType: AuthorizationType.COGNITO,
       });
+
+    test.node.addDependency(restApi);
+    test.node.addDependency(authorizer);
   }
 
   /**
