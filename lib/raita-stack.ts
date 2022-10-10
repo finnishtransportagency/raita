@@ -54,7 +54,6 @@ export class RaitaStack extends Stack {
 
     // OPEN: Move to parameter store?
     const config = getRaitaStackConfig();
-    console.log(cognitoDomainPrefix);
 
     // Create buckets
     const dataBucket = this.createBucket({
