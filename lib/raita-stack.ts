@@ -36,7 +36,7 @@ import {
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
-import { RaitaEnvironment } from './config';
+import { getRaitaStackConfig, RaitaEnvironment } from './config';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -493,7 +493,4 @@ export class RaitaStack extends Stack {
     });
     esRequests.node.addDependency(openSearchDomain);
   }
-}
-function getRaitaStackConfig() {
-  throw new Error('Function not implemented.');
 }
