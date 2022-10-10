@@ -151,13 +151,13 @@ export class RaitaStack extends Stack {
       openSearchDomain,
     });
 
-    // TODO: Bring back
-    // // Create API Gateway
-    // new RaitaGatewayStack(this, 'gw', {
-    //   dataBucket,
-    //   lambdaServiceRole,
-    //   userPool,
-    // });
+    // Create API Gateway
+    new RaitaGatewayStack(this, 'stack-gw', {
+      dataBucket,
+      lambdaServiceRole,
+      userPool,
+      raitaStackId: this.#stackId,
+    });
 
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(metadataParserFn);

@@ -14,6 +14,7 @@ import * as path from 'path';
 import { UserPool } from 'aws-cdk-lib/aws-cognito';
 
 interface ResourceNestedStackProps extends NestedStackProps {
+  readonly raitaStackId: string;
   readonly dataBucket: Bucket;
   readonly lambdaServiceRole: Role;
   readonly userPool: UserPool;
@@ -22,17 +23,22 @@ interface ResourceNestedStackProps extends NestedStackProps {
 export class RaitaGatewayStack extends NestedStack {
   constructor(scope: Construct, id: string, props: ResourceNestedStackProps) {
     super(scope, id, props);
+    const { raitaStackId } = props;
 
     const restApi = new RestApi(this, 'api', {
+      restApiName: `restapi-${raitaStackId}-raita-api`,
       deploy: true,
     });
 
     const auth = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
+      authorizerName: `userpool-authorizer-${raitaStackId}-raita`,
       cognitoUserPools: [props.userPool],
     });
 
+    // TODO: Assess lambdaRole requirements and implement least privilege
     const urlGenerator = this.createS3urlGenerator({
-      name: 'fileAccessHandler',
+      name: 'file-access-handler',
+      raitaStackId,
       lambdaRole: props.lambdaServiceRole,
       dataBucket: props.dataBucket,
     });
@@ -55,14 +61,17 @@ export class RaitaGatewayStack extends NestedStack {
    */
   private createS3urlGenerator({
     name,
+    raitaStackId,
     dataBucket,
     lambdaRole,
   }: {
     name: string;
+    raitaStackId: string;
     dataBucket: Bucket;
     lambdaRole: Role;
   }) {
     return new NodejsFunction(this, name, {
+      functionName: ``,
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
