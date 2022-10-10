@@ -87,7 +87,7 @@ export class RaitaGatewayStack extends Stack {
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
-      handler: 'handleFileRequest',
+      handler: 'handleS3FileRequest',
       entry: path.join(
         __dirname,
         `../backend/lambdas/s3UrlGenerator/s3UrlGenerator.ts`,
