@@ -20,14 +20,14 @@ interface ResourceNestedStackProps extends NestedStackProps {
 }
 
 export class RaitaGatewayStack extends NestedStack {
-  constructor(scope: Construct, props: ResourceNestedStackProps) {
-    super(scope, 'GatewayStack', props);
+  constructor(scope: Construct, id: string, props: ResourceNestedStackProps) {
+    super(scope, id, props);
 
-    const restApi = new RestApi(this, 'RaitaApi', {
+    const restApi = new RestApi(this, 'api', {
       deploy: true,
     });
 
-    const auth = new CognitoUserPoolsAuthorizer(this, 'raitaApiAuthorizer', {
+    const auth = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
       cognitoUserPools: [props.userPool],
     });
 

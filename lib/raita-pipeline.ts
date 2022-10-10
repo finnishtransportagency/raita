@@ -1,4 +1,4 @@
-import { SecretValue, Stack, Stage, StageProps } from 'aws-cdk-lib';
+import { SecretValue, Stack, StackProps, Stage, StageProps } from 'aws-cdk-lib';
 import {
   CodePipeline,
   CodePipelineSource,
@@ -7,54 +7,73 @@ import {
 import { Construct } from 'constructs';
 import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
-import { getPipelineConfig } from './config';
+import { getPipelineConfig, RaitaEnvironment } from './config';
 
 /**
  * The stack that defines the application pipeline
  */
 export class RaitaPipelineStack extends Stack {
-  constructor(scope: Construct) {
-    const { config } = getPipelineConfig();
-    super(scope, 'raita-pipeline-' + config.env, {
-      env: {
-        region: config.region,
-      },
+  constructor(scope: Construct, id: string, props: StackProps) {
+    const config = getPipelineConfig();
+    super(scope, `stack-pipeline-raita-${config.stackId}`, {
+      ...props,
       tags: config.tags,
     });
 
-    const pipeline = new CodePipeline(this, 'Raita-Pipeline', {
-      pipelineName: 'Raita-' + config.env,
-      synth: new ShellStep('Synth', {
-        input: CodePipelineSource.gitHub(
-          'finnishtransportagency/raita',
-          config.branch,
-          {
-            authentication: SecretValue.secretsManager(
-              config.authenticationToken,
-            ),
-          },
-        ),
-        commands: [
-          'npm ci',
-          `npm run pipeline:synth --environment=${config.env} --branch=${config.branch}`,
-        ],
-      }),
-      dockerEnabledForSynth: true,
-      codeBuildDefaults: {
-        // TODO: Cacheing not working currently
-        cache: Cache.local(
-          LocalCacheMode.CUSTOM,
-          LocalCacheMode.SOURCE,
-          LocalCacheMode.DOCKER_LAYER,
-        ),
+    const pipeline = new CodePipeline(
+      this,
+      `pipeline-raita-${config.stackId}`,
+      {
+        pipelineName: `pl-raita-${config.stackId}`,
+        synth: new ShellStep('Synth', {
+          input: CodePipelineSource.gitHub(
+            'finnishtransportagency/raita',
+            config.branch,
+            {
+              authentication: SecretValue.secretsManager(
+                config.authenticationToken,
+              ),
+            },
+          ),
+          commands: [
+            'npm ci',
+            `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
+          ],
+        }),
+        dockerEnabledForSynth: true,
+        codeBuildDefaults: {
+          // TODO: Cacheing not working currently
+          cache: Cache.local(
+            LocalCacheMode.CUSTOM,
+            LocalCacheMode.SOURCE,
+            LocalCacheMode.DOCKER_LAYER,
+          ),
+        },
       },
-    });
-    pipeline.addStage(new RaitaApplication(this, config.env));
+    );
+    pipeline.addStage(
+      new RaitaApplicationStage(this, `Raita`, {
+        stackId: config.stackId,
+        raitaEnv: config.env,
+      }),
+    );
   }
 }
-class RaitaApplication extends Stage {
-  constructor(scope: Construct, id: string, props?: StageProps) {
+
+interface RaitaStageProps extends StageProps {
+  readonly stackId: string;
+  readonly raitaEnv: RaitaEnvironment;
+}
+
+class RaitaApplicationStage extends Stage {
+  constructor(scope: Construct, id: string, props: RaitaStageProps) {
     super(scope, id, props);
-    const raitaStack = new RaitaStack(this, 'Raita');
+    const raitaStack = new RaitaStack(
+      this,
+      `raita-${props.raitaEnv}-${props.stackId}`,
+      {
+        raitaEnv: props.raitaEnv,
+      },
+    );
   }
 }

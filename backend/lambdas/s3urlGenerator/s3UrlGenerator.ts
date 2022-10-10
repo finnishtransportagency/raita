@@ -1,6 +1,6 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { getEnv } from '../../../utils';
+import { getEnvOrFail } from '../../../utils';
 
 class RaitaLambdaException extends Error {
   statusCode: number;
@@ -12,7 +12,7 @@ class RaitaLambdaException extends Error {
 
 function getLambdaConfigOrFail() {
   return {
-    dataBucket: getEnv('DATA_BUCKET', 'handleS3FileRequest)'),
+    dataBucket: getEnvOrFail('DATA_BUCKET', 'handleS3FileRequest)'),
   };
 }
 
