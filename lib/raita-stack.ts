@@ -36,14 +36,7 @@ import {
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
-import { RaitaEnvironment } from './raita-pipeline';
-
-// These values are used solely by metadata parser
-// Pending possible move to SSM Parameter Store (after discussion)
-const getRaitaStackConfig = () => ({
-  parserConfigurationFile: 'extractionSpec.json',
-  openSearchMetadataIndex: 'metadata-index',
-});
+import { RaitaEnvironment } from './config';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -500,4 +493,7 @@ export class RaitaStack extends Stack {
     });
     esRequests.node.addDependency(openSearchDomain);
   }
+}
+function getRaitaStackConfig() {
+  throw new Error('Function not implemented.');
 }
