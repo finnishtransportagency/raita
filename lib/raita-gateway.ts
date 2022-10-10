@@ -31,14 +31,10 @@ export class RaitaGatewayStack extends Stack {
     super(scope, id, props);
     const { raitaStackId } = props;
 
-    // const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
-    //   authorizerName: `alpha-userpool-authorizer-${raitaStackId}-raita`,
-    //   cognitoUserPools: [props.userPool],
-    // });
-
-    // authorizer.node.addDependency(props.userPool);
-
-    // restApi.node.addDependency(authorizer);
+    const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
+      authorizerName: `alpha-userpool-authorizer-${raitaStackId}-raita`,
+      cognitoUserPools: [props.userPool],
+    });
 
     // TODO: Assess lambdaRole requirements and implement least privilege
     const urlGeneratorFn = this.createS3urlGenerator({
@@ -61,16 +57,9 @@ export class RaitaGatewayStack extends Stack {
     });
     const filesResource = restApi.root.addResource('files');
     filesResource.addMethod('POST', new LambdaIntegration(urlGeneratorFn), {
-      // authorizer: authorizer,
-      // authorizationType: AuthorizationType.COGNITO,
+      authorizer: authorizer,
+      authorizationType: AuthorizationType.COGNITO,
     });
-    filesResource.addMethod('GET', new LambdaIntegration(urlGeneratorFn), {
-      // authorizer: authorizer,
-      // authorizationType: AuthorizationType.COGNITO,
-    });
-
-    // test.node.addDependency(restApi);
-    // test.node.addDependency(authorizer);
   }
 
   /**
