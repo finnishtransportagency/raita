@@ -41,6 +41,9 @@ export class RaitaGatewayStack extends Stack {
     const restApi = new RestApi(this, 'api', {
       restApiName: `restapi-${raitaStackId}-raita-api`,
       deploy: true,
+      deployOptions: {
+        stageName: 'dev', // TODO: Hardcoded stageName
+      },
       // defaultMethodOptions: {
       //   authorizer: authorizer,
       //   authorizationType: AuthorizationType.COGNITO,
@@ -57,12 +60,11 @@ export class RaitaGatewayStack extends Stack {
       dataBucket: props.dataBucket,
     });
 
-    const test = restApi.root
-      .addResource('files')
-      .addMethod('GET', new LambdaIntegration(urlGeneratorFn), {
-        // authorizer: authorizer,
-        // authorizationType: AuthorizationType.COGNITO,
-      });
+    const filesResource = restApi.root.addResource('files');
+    filesResource.addMethod('GET', new LambdaIntegration(urlGeneratorFn), {
+      // authorizer: authorizer,
+      // authorizationType: AuthorizationType.COGNITO,
+    });
 
     // test.node.addDependency(restApi);
     // test.node.addDependency(authorizer);
