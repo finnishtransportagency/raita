@@ -59,12 +59,7 @@ export class RaitaGatewayStack extends Stack {
 
     const test = restApi.root
       .addResource('files')
-      .addMethod('POST', new LambdaIntegration(urlGeneratorFn), {
-        methodResponses: [
-          { statusCode: '200' },
-          { statusCode: '400' },
-          { statusCode: '500' },
-        ],
+      .addMethod('GET', new LambdaIntegration(urlGeneratorFn), {
         authorizer: authorizer,
         authorizationType: AuthorizationType.COGNITO,
       });
