@@ -1,4 +1,10 @@
-import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import {
+  Duration,
+  NestedStack,
+  NestedStackProps,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib';
 import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
@@ -13,14 +19,14 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import { UserPool } from 'aws-cdk-lib/aws-cognito';
 
-interface ResourceNestedStackProps extends NestedStackProps {
+interface ResourceNestedStackProps extends StackProps {
   readonly raitaStackId: string;
   readonly dataBucket: Bucket;
   readonly lambdaServiceRole: Role;
   readonly userPool: UserPool;
 }
 
-export class RaitaGatewayStack extends NestedStack {
+export class RaitaGatewayStack extends Stack {
   constructor(scope: Construct, id: string, props: ResourceNestedStackProps) {
     super(scope, id, props);
     const { raitaStackId } = props;
