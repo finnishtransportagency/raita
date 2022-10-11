@@ -37,6 +37,8 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
+import { getRemovalPolicy } from './utils';
+import { FrontendInfraStack } from './frontend-infra';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -160,6 +162,12 @@ export class RaitaStack extends Stack {
       raitaEnv: raitaEnv,
     });
 
+    // Create frontend infrastucture
+    new FrontendInfraStack(this, 'stack-fe', {
+      raitaStackId: this.#stackId,
+      raitaEnv: raitaEnv,
+    });
+
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(metadataParserFn);
   }
@@ -253,7 +261,7 @@ export class RaitaStack extends Stack {
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
-      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       ebs: {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
@@ -301,7 +309,7 @@ export class RaitaStack extends Stack {
     return new s3.Bucket(this, name, {
       bucketName: `s3-${this.#stackId}-${name}`,
       versioned: true,
-      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       autoDeleteObjects: raitaEnv === 'dev' ? true : false,
     });
   }
@@ -326,7 +334,7 @@ export class RaitaStack extends Stack {
     const userPool = new UserPool(this, name, {
       userPoolName: `userpool-${this.#stackId}-${name}`,
       selfSignUpEnabled: false,
-      removalPolicy: raitaEnv === 'dev' ? cdk.RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       signInAliases: {
         username: true,
         email: true,
