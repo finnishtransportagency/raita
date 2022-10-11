@@ -25,6 +25,7 @@ export async function handleOpenSearchQuery(
 ): Promise<APIGatewayProxyResult> {
   try {
     const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
+    console.log(JSON.stringify(event));
     const query = event.body && JSON.parse(event.body);
     console.log(`this is the event ${JSON.stringify(query)}`);
     if (!query) {
