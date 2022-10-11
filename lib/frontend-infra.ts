@@ -1,27 +1,29 @@
-import {
-  Duration,
-  NestedStack,
-  NestedStackProps,
-  RemovalPolicy,
-} from 'aws-cdk-lib';
+import { NestedStack, NestedStackProps, RemovalPolicy } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-
 import { Construct } from 'constructs';
+import { RaitaEnvironment } from './config';
+import { getRemovalPolicy } from './utils';
 
-interface FrontendInfraStackProps extends NestedStackProps {}
+interface FrontendInfraStackProps extends NestedStackProps {
+  readonly raitaStackId: string;
+  readonly raitaEnv: RaitaEnvironment;
+}
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
 export class RaitaGatewayStack extends NestedStack {
   constructor(scope: Construct, props: FrontendInfraStackProps) {
     super(scope, 'stack-fe', props);
+    const { raitaEnv, raitaStackId } = props;
 
-    // TODO: Make env dependent, currently hardcoded to dev --> test
-    const domainName = 'raita-dev.vayla.fi';
+    // TODO: Set correct domainName for production environment
+    const domainName =
+      raitaEnv === 'dev' ? 'raita-dev.vayla.fi' : 'UNKNOWN.vayla.fi';
 
     const feBucket = new s3.Bucket(this, 'WebsiteBucket', {
+      bucketName: `s3-${raitaStackId}-frontend`,
       publicReadAccess: false,
       accessControl: s3.BucketAccessControl.PRIVATE,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -47,53 +49,10 @@ export class RaitaGatewayStack extends NestedStack {
       }),
     );
 
-    // const zone = route53.HostedZone.fromLookup(this, 'HostedZone',
-    // { domainName: domainName });
-    // const certificate = new acm.DnsValidatedCertificate(this,
-    //   'SiteCertificate',
-    //   {
-    //       domainName: domainName,
-    //       hostedZone: zone,
-    //       region: 'us-east-1',
-    //   });
-
-    //   const responseHeaderPolicy = new cloudfront.ResponseHeadersPolicy(this, 'SecurityHeadersResponseHeaderPolicy', {
-    //     comment: 'Security headers response header policy',
-    //     securityHeadersBehavior: {
-    //         contentSecurityPolicy: {
-    //             override: true,
-    //             contentSecurityPolicy: "default-src 'self'"
-    //         },
-    //         strictTransportSecurity: {
-    //             override: true,
-    //             accessControlMaxAge: Duration.days(2 * 365),
-    //             includeSubdomains: true,
-    //             preload: true
-    //         },
-    //         contentTypeOptions: {
-    //             override: true
-    //         },
-    //         referrerPolicy: {
-    //             override: true,
-    //             referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
-    //         },
-    //         xssProtection: {
-    //             override: true,
-    //             protection: true,
-    //             modeBlock: true
-    //         },
-    //         frameOptions: {
-    //             override: true,
-    //             frameOption: cloudfront.HeadersFrameOption.DENY
-    //         }
-    //     }
-    // });
-
     const cloudfrontDistribution = new cloudfront.Distribution(
       this,
-      'cloudfront',
+      `cloudfront`,
       {
-        // certificate: certificate,
         domainNames: [domainName],
         defaultRootObject: 'index.html',
         defaultBehavior: {
@@ -102,7 +61,6 @@ export class RaitaGatewayStack extends NestedStack {
           }),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          // responseHeadersPolicy: responseHeaderPolicy
         },
       },
     );
@@ -110,12 +68,6 @@ export class RaitaGatewayStack extends NestedStack {
     new cloudfront.Distribution(this, 'distro', {
       defaultBehavior: {
         origin: new origins.S3Origin(feBucket),
-        // edgeLambdas: [
-        //   {
-        //     functionVersion,
-        //     eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
-        //   },
-        // ],
       },
       additionalBehaviors: {},
     });
