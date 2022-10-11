@@ -1,51 +1,43 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { getEnvOrFail } from '../../../utils';
+import { getEnvOrFail, getGetEnvWithPreassignedContext } from '../../../utils';
+import MetadataPort from '../../ports/metadataPort';
 import { RaitaLambdaException } from '../utils';
 
 function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
-    dataBucket: getEnvOrFail('DATA_BUCKET', 'handleS3FileRequest)'),
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
+    region: getEnv('REGION'),
+    metadataIndex: getEnv('METADATA_INDEX'),
   };
 }
 
 /**
- * Generates a pre-signed url for a file in S3 bucket
+ * Returns OpenSearch data based on request query
  * Currently takes input in the POST request body
  * NOTE: Preliminary implementation
  */
-export async function handleFileRequest(
+export async function handleOpenSearchQuery(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
-  const s3 = new S3();
   try {
-    const { dataBucket } = getLambdaConfigOrFail();
+    const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
-    if (!requestBody?.key) {
-      throw new Error('Key not specified');
-    }
-    const { key } = requestBody;
-
-    // Check if file exists
-    const exists = await s3
-      .headObject({
-        Bucket: dataBucket,
-        Key: key,
-      })
-      .promise();
-
-    if (!exists) {
-      throw new RaitaLambdaException('Invalid input', 400);
+    if (!requestBody.query) {
+      throw new Error('No query in the request.');
     }
 
-    // Create pre-signed url
-    const url = s3.getSignedUrl('getObject', {
-      Bucket: dataBucket,
-      Key: key,
-      Expires: 30,
+    const metadata = new MetadataPort({
+      backend: 'openSearch',
+      metadataIndex,
+      region,
+      openSearchDomain,
     });
+
+    const result = await metadata.queryOpenSearchMetadata(requestBody.query);
 
     return {
       statusCode: 200,
@@ -54,7 +46,7 @@ export async function handleFileRequest(
       },
       body: JSON.stringify(
         {
-          url,
+          result,
         },
         null,
         2,

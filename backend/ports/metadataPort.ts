@@ -23,7 +23,6 @@ export default class MetadataPort implements IMetadataStorageInterface {
       IStorageBackend['backend'],
       () => IMetadataStorageInterface
     > = {
-      // OPEN: Figure out if better way of accessing the region would be Stack.of(this).region approach
       openSearch: () => {
         return new OpenSearchRepository({
           dataIndex: metadataIndex,
@@ -39,5 +38,12 @@ export default class MetadataPort implements IMetadataStorageInterface {
 
   saveFileMetadata = (data: FileMetadataEntry[]) => {
     return this.#backend.saveFileMetadata(data);
+  };
+
+  // NOTE: This is OpenSearchSpecific initial implementation that is coupled with using
+  // OpenSearch as the underlying database. To replace with database agnostic methods(s).
+  // TODO: Provide best possible types
+  queryOpenSearchMetadata = (query: any) => {
+    return this.#backend.queryOpenSearchMetadata(query);
   };
 }
