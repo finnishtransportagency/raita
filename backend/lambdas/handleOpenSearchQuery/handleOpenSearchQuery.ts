@@ -27,6 +27,7 @@ export async function handleOpenSearchQuery(
   try {
     const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
+    console.log(event);
     if (!requestBody?.query) {
       logger.log(body);
       throw new Error('No query in the request.');
