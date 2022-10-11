@@ -18,8 +18,8 @@
     "s3:put:small": "aws s3 cp $RAITA_SMALL_EXAMPLE_PATH s3://$RAITA_DATA_S3",
     "s3:put:medium": "aws s3 cp --recursive $RAITA_MEDIUM_EXAMPLE_PATH s3://$RAITA_DATA_S3",
     "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
-    "pipeline:deploy": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch cdk --app \"ts-node bin/raita-pipeline\" deploy raita-pipeline-dev",
-    "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch cdk synth"
+    "pipeline:deploy": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk --app \"ts-node bin/raita-pipeline\" deploy stack-pipeline-raita-$npm_config_stackid",
+    "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk synth"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",
