@@ -160,6 +160,8 @@ export class RaitaStack extends Stack {
       userPool,
       raitaStackId: this.#stackId,
       raitaEnv: raitaEnv,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+      openSearchMetadataIndex: config.openSearchMetadataIndex,
     });
 
     // Create frontend infrastucture
