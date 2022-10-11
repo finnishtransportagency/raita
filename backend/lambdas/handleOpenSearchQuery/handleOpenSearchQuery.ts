@@ -40,7 +40,7 @@ export async function handleOpenSearchQuery(
       openSearchDomain,
     });
 
-    const result = await metadata.queryOpenSearchMetadata(requestBody.query);
+    const result = await metadata.queryOpenSearchMetadata(requestBody);
 
     return {
       statusCode: 200,
