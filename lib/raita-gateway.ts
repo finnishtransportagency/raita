@@ -18,9 +18,11 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { UserPool } from 'aws-cdk-lib/aws-cognito';
+import { RaitaEnvironment } from './config';
 
 interface ResourceNestedStackProps extends StackProps {
   readonly raitaStackId: string;
+  readonly raitaEnv: RaitaEnvironment;
   readonly dataBucket: Bucket;
   readonly lambdaServiceRole: Role;
   readonly userPool: UserPool;
@@ -29,7 +31,7 @@ interface ResourceNestedStackProps extends StackProps {
 export class RaitaGatewayStack extends Stack {
   constructor(scope: Construct, id: string, props: ResourceNestedStackProps) {
     super(scope, id, props);
-    const { raitaStackId } = props;
+    const { raitaStackId, raitaEnv } = props;
 
     const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
       authorizerName: `alpha-userpool-authorizer-${raitaStackId}-raita`,
@@ -44,16 +46,13 @@ export class RaitaGatewayStack extends Stack {
       dataBucket: props.dataBucket,
     });
 
+    // TODO: Evaluate and choose restApi props
     const restApi = new RestApi(this, 'api', {
       restApiName: `restapi-${raitaStackId}-raita-api`,
       deploy: true,
       deployOptions: {
-        stageName: 'dev', // TODO: Hardcoded stageName
+        stageName: raitaEnv,
       },
-      // defaultMethodOptions: {
-      //   authorizer: authorizer,
-      //   authorizationType: AuthorizationType.COGNITO,
-      // },
     });
     const filesResource = restApi.root.addResource('files');
     filesResource.addMethod('POST', new LambdaIntegration(urlGeneratorFn), {

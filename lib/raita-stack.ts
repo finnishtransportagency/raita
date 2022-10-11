@@ -157,6 +157,7 @@ export class RaitaStack extends Stack {
       lambdaServiceRole,
       userPool,
       raitaStackId: this.#stackId,
+      raitaEnv: raitaEnv,
     });
 
     // Grant lambda read to configuration bucket
