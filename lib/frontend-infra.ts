@@ -22,7 +22,7 @@ export class FrontendInfraStack extends NestedStack {
     const domainName =
       raitaEnv === 'dev' ? 'raita-dev.vayla.fi' : 'UNKNOWN.vayla.fi';
 
-    const feBucket = new s3.Bucket(this, 'WebsiteBucket', {
+    const feBucket = new s3.Bucket(this, 'frontend', {
       bucketName: `s3-${raitaStackId}-frontend`,
       publicReadAccess: false,
       accessControl: s3.BucketAccessControl.PRIVATE,
