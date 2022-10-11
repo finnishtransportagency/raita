@@ -72,7 +72,7 @@ export class RaitaGatewayStack extends NestedStack {
       authorizationType: AuthorizationType.COGNITO,
     });
     const filesResource = restApi.root.addResource('files');
-    fileResource.addMethod('POST', new LambdaIntegration(osQueryHandlerFn), {
+    filesResource.addMethod('POST', new LambdaIntegration(osQueryHandlerFn), {
       authorizer: authorizer,
       authorizationType: AuthorizationType.COGNITO,
     });
