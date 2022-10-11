@@ -64,12 +64,5 @@ export class FrontendInfraStack extends NestedStack {
         },
       },
     );
-
-    new cloudfront.Distribution(this, 'distro', {
-      defaultBehavior: {
-        origin: new origins.S3Origin(feBucket),
-      },
-      additionalBehaviors: {},
-    });
   }
 }
