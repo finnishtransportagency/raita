@@ -253,7 +253,7 @@ export class RaitaStack extends Stack {
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
-      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       ebs: {
         volumeSize: 10,
         volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
@@ -301,7 +301,7 @@ export class RaitaStack extends Stack {
     return new s3.Bucket(this, name, {
       bucketName: `s3-${this.#stackId}-${name}`,
       versioned: true,
-      removalPolicy: raitaEnv === 'dev' ? RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       autoDeleteObjects: raitaEnv === 'dev' ? true : false,
     });
   }
@@ -326,7 +326,7 @@ export class RaitaStack extends Stack {
     const userPool = new UserPool(this, name, {
       userPoolName: `userpool-${this.#stackId}-${name}`,
       selfSignUpEnabled: false,
-      removalPolicy: raitaEnv === 'dev' ? cdk.RemovalPolicy.DESTROY : undefined,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       signInAliases: {
         username: true,
         email: true,

@@ -25,8 +25,7 @@ export class RaitaGatewayStack extends NestedStack {
       publicReadAccess: false,
       accessControl: s3.BucketAccessControl.PRIVATE,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      // TODO - Update to env dependency
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: getRemovalPolicy(raitaEnv),
       objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
       encryption: s3.BucketEncryption.S3_MANAGED,
     });
