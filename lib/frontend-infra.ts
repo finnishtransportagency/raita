@@ -13,9 +13,9 @@ interface FrontendInfraStackProps extends NestedStackProps {
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
-export class RaitaGatewayStack extends NestedStack {
-  constructor(scope: Construct, props: FrontendInfraStackProps) {
-    super(scope, 'stack-fe', props);
+export class FrontendInfraStack extends NestedStack {
+  constructor(scope: Construct, id: string, props: FrontendInfraStackProps) {
+    super(scope, id, props);
     const { raitaEnv, raitaStackId } = props;
 
     // TODO: Set correct domainName for production environment

@@ -38,6 +38,7 @@ import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
+import { FrontendInfraStack } from './frontend-infra';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -157,6 +158,12 @@ export class RaitaStack extends Stack {
       dataBucket,
       lambdaServiceRole,
       userPool,
+      raitaStackId: this.#stackId,
+      raitaEnv: raitaEnv,
+    });
+
+    // Create frontend infrastucture
+    new FrontendInfraStack(this, 'stack-fe', {
       raitaStackId: this.#stackId,
       raitaEnv: raitaEnv,
     });
