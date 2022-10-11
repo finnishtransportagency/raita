@@ -1,4 +1,10 @@
-import { NestedStack, NestedStackProps, RemovalPolicy } from 'aws-cdk-lib';
+import {
+  NestedStack,
+  NestedStackProps,
+  RemovalPolicy,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
@@ -7,13 +13,13 @@ import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
 
-interface FrontendInfraStackProps extends NestedStackProps {
+interface FrontendInfraStackProps extends StackProps {
   readonly raitaStackId: string;
   readonly raitaEnv: RaitaEnvironment;
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
-export class FrontendInfraStack extends NestedStack {
+export class FrontendInfraStack extends Stack {
   constructor(scope: Construct, id: string, props: FrontendInfraStackProps) {
     super(scope, id, props);
     const { raitaEnv, raitaStackId } = props;
