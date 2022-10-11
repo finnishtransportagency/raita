@@ -23,15 +23,11 @@ export async function handleOpenSearchQuery(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
-  const { body } = event;
   try {
     const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
-    const requestBody = body && JSON.parse(body);
-    console.log(event);
-    console.log(`this is the event ${event}`);
-    console.log(`this is the event body ${event.body}`);
-    if (!requestBody?.query) {
-      logger.log(body);
+    const query = event.body && JSON.parse(event.body);
+    console.log(`this is the event ${JSON.stringify(query)}`);
+    if (!query) {
       throw new Error('No query in the request.');
     }
 
@@ -42,7 +38,7 @@ export async function handleOpenSearchQuery(
       openSearchDomain,
     });
 
-    const result = await metadata.queryOpenSearchMetadata(requestBody);
+    const result = await metadata.queryOpenSearchMetadata(query);
 
     return {
       statusCode: 200,
