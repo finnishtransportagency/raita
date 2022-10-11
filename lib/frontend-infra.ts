@@ -59,7 +59,7 @@ export class FrontendInfraStack extends Stack {
       this,
       `cloudfront`,
       {
-        domainNames: [domainName],
+        // domainNames: [domainName],
         defaultRootObject: 'index.html',
         defaultBehavior: {
           origin: new origins.S3Origin(feBucket, {
