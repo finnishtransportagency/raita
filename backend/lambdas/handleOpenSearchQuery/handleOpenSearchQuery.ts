@@ -2,6 +2,7 @@ import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { getEnvOrFail, getGetEnvWithPreassignedContext } from '../../../utils';
 import MetadataPort from '../../ports/metadataPort';
+import { logger } from '../../utils/logger';
 import { RaitaLambdaException } from '../utils';
 
 function getLambdaConfigOrFail() {
@@ -26,7 +27,8 @@ export async function handleOpenSearchQuery(
   try {
     const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
-    if (!requestBody.query) {
+    if (!requestBody?.query) {
+      logger.log(body);
       throw new Error('No query in the request.');
     }
 
