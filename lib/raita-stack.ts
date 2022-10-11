@@ -151,13 +151,14 @@ export class RaitaStack extends Stack {
       openSearchDomain,
     });
 
-    // TODO: Bring back
-    // // Create API Gateway
-    // new RaitaGatewayStack(this, 'gw', {
-    //   dataBucket,
-    //   lambdaServiceRole,
-    //   userPool,
-    // });
+    // Create API Gateway
+    new RaitaGatewayStack(this, 'stack-gw', {
+      dataBucket,
+      lambdaServiceRole,
+      userPool,
+      raitaStackId: this.#stackId,
+      raitaEnv: raitaEnv,
+    });
 
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(metadataParserFn);
@@ -187,7 +188,7 @@ export class RaitaStack extends Stack {
     region: string;
   }) {
     const parser = new NodejsFunction(this, name, {
-      functionName: `${name}-${this.#stackId}`,
+      functionName: `lambda-${this.#stackId}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
@@ -450,9 +451,9 @@ export class RaitaStack extends Stack {
     openSearchDomain: cdk.aws_opensearchservice.Domain;
   }) {
     // Create lambda for sending requests to OpenSearch API
-    const osRequestsFnName = 'osRequestsFn';
+    const osRequestsFnName = 'handle-os-request';
     const osRequestsFn = new NodejsFunction(this, osRequestsFnName, {
-      functionName: `${osRequestsFnName}-${this.#stackId}`,
+      functionName: `lambda-${this.#stackId}-${osRequestsFnName}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
       entry: path.join(

@@ -21,7 +21,7 @@ function getLambdaConfigOrFail() {
  * Currently takes input in the POST request body
  * NOTE: Preliminary implementation
  */
-export async function handleS3FileRequest(
+export async function handleFileRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
