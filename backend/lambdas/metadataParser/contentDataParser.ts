@@ -6,6 +6,7 @@ import { ParseValueResult } from '../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncudeInMetadataParsing } from '../../../constants';
+import { RaitaParseError } from '../utils';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -46,7 +47,7 @@ const extractValue = (
     }
     return null;
   } catch (err) {
-    throw new Error(
+    throw new RaitaParseError(
       `Parsing failed for the term: ${propertyKey}: ${
         err instanceof Error ? err.message : err
       }`,

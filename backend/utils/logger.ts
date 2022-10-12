@@ -1,8 +1,14 @@
 import { S3EventRecord } from 'aws-lambda/trigger/s3';
 import { ZodError } from 'zod';
+import { RaitaParseError } from '../lambdas/utils';
 
 class Logger {
   log = (data: unknown) => {
+    if (data instanceof RaitaParseError) {
+      this.logParsingException(data.message);
+      return;
+    }
+
     const message =
       (typeof data === 'string' && data) ||
       (data instanceof Error && data.message) ||
@@ -18,6 +24,9 @@ class Logger {
       );
     }
   };
+
+  logParsingException = (msg: string) =>
+    this.log(`Raita Parsing Exception: ${msg}`);
 
   logS3EventRecord = (eventRecord: S3EventRecord) => {
     this.log(`File arn: ${eventRecord.s3.bucket.arn}`);

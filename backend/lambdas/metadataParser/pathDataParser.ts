@@ -11,7 +11,7 @@ export const extractPathData = (
 ) => {
   const expectedPathLength = Object.keys(folderLabels).length;
   if (path.length !== expectedPathLength) {
-    logger.log(
+    logger.logParsingException(
       `Unexpected folder path length for path ${path}. Folder path analysis not carried out`,
     );
     return {};

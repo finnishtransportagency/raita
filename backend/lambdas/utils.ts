@@ -9,6 +9,12 @@ export class RaitaLambdaError extends Error {
   }
 }
 
+export class RaitaParseError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 /**
  * Returns error message to be returned to client
  */

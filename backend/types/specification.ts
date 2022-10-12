@@ -32,6 +32,7 @@ export const ExtractionSpec = z.object({
   fileNameExtractionSpec: z.object({
     csv: z.record(z.string(), FieldExtractionSpecObject),
     txt: z.record(z.string(), FieldExtractionSpecObject),
+    pdf: z.record(z.string(), FieldExtractionSpecObject),
   }),
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
