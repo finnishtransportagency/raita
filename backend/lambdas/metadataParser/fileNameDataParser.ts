@@ -3,8 +3,8 @@ import { logger } from '../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
 // TODO: Remove this typeguard by improving types
-function suffixIsKnown (arg: string): arg is 'csv'|'txt'|'pdf' {
-  return [ 'pdf', 'txt', 'csv'].includes(arg)
+function suffixIsKnown(arg: string): arg is 'csv' | 'txt' | 'pdf' {
+  return ['pdf', 'txt', 'csv'].includes(arg);
 }
 
 export const extractFileNameData = (
@@ -18,9 +18,6 @@ export const extractFileNameData = (
   }
   const [baseName, suffix] = fileNameParts;
 
-  // TODO: Improve typing by removing casting
-  const knownSuffixes = Object.keys(fileNamePartLabels) as ;
-
   if (!suffixIsKnown(suffix)) {
     logger.logParsingException(`Unexpected suffix in file: ${fileName}`);
     return {};
@@ -28,8 +25,8 @@ export const extractFileNameData = (
 
   const labels = fileNamePartLabels[suffix];
 
-  const fileBaseNameParts = baseName.split('_')
-  const expectedFileNameLength = Object.keys(labels).length
+  const fileBaseNameParts = baseName.split('_');
+  const expectedFileNameLength = Object.keys(labels).length;
 
   if (fileBaseNameParts.length !== expectedFileNameLength) {
     logger.logParsingException(
