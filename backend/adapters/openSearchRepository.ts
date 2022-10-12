@@ -1,11 +1,10 @@
 import { FileMetadataEntry } from '../types';
-import { Client } from '@opensearch-project/opensearch';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
 import { logger } from '../utils/logger';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
 /**
- * OPEN: This could be make into a singleton but is there point?
+ * OPEN: This could be make into a singleton but is is worth it?
  */
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
@@ -35,5 +34,15 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     await Promise.all(additions).catch(err => {
       throw err;
     });
+  };
+
+  // TODO: Provide best possible types
+  queryOpenSearchMetadata = async (query: any) => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.search({
+      index: this.#dataIndex,
+      body: query,
+    });
+    return response;
   };
 }
