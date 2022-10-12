@@ -8,7 +8,7 @@ export const parsePrimitive = (
   const parsers: Record<typeof target, (x: string) => number | string> = {
     integer: x => parseInt(x),
     float: x => parseFloat(x),
-    date: x => parse(x, 'M/d/y h:m:s a', new Date()).toISOString(),
+    date: x => parse(x, 'd/M/y h:m:s a', new Date()).toISOString(),
   };
   try {
     return { key, value: parsers[target](data) };
