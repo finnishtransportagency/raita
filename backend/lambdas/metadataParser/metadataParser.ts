@@ -69,7 +69,7 @@ export async function metadataParser(event: S3Event): Promise<void> {
     // Check if lambda supports es2022 and if so, switch to Promise.allSettled
     const entries = await Promise.all(recordResults);
     await backend.metadataStorage.saveFileMetadata(entries);
-    logger.log('Entries persisted in OpenSearch.');
+    // logger.log('Entries persisted in OpenSearch.');
   } catch (err) {
     // TODO: Figure out proper error handling.
     logger.log(`An error occured while processing events: ${err}`);
