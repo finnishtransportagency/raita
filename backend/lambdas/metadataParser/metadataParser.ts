@@ -81,11 +81,15 @@ export async function metadataParser(event: S3Event): Promise<void> {
           metadata,
         };
       },
-    ).filter(x => Boolean(x)) as Array<Promise<FileMetadataEntry>>;
+    );
     // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
     // Switch to granular error handling.
     // Check if lambda supports es2022 and if so, switch to Promise.allSettled
-    const entries = await Promise.all(recordResults);
+
+    const entries = await Promise.all(recordResults).then(
+      results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
+    );
+
     await backend.metadataStorage.saveFileMetadata(entries);
   } catch (err) {
     // TODO: Figure out proper error handling.
