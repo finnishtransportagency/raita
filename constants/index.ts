@@ -12,3 +12,5 @@ export const raitaSourceSystems = {
   Emma: 'Emma',
   Elli: 'Elli',
 } as const;
+
+export const RAITA_PARSING_EXCEPTION = '[RAITA PARSING EXCEPTION]';

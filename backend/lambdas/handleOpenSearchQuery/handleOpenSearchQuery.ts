@@ -55,7 +55,7 @@ export async function handleOpenSearchQuery(
       ),
     };
   } catch (err: unknown) {
-    logger.log(err);
+    logger.logError(err);
     return getRaitaLambdaError(err);
   }
 }

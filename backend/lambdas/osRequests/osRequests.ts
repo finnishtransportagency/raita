@@ -25,7 +25,7 @@ export async function sendOpenSearchAPIRequest(
     }).getClient();
     const requestResponses = event.ResourceProperties.requests.map(
       async (request: any) => {
-        logger.log({ request });
+        logger.logError({ request });
         const { body, method, path } = request;
         return client.transport.request({
           method,
@@ -36,10 +36,10 @@ export async function sendOpenSearchAPIRequest(
     );
     await Promise.all(requestResponses)
       .then(() => {
-        logger.log('All OpenSearch API requests processed.');
+        logger.logError('All OpenSearch API requests processed.');
       })
       .catch(err => {
-        logger.log(err);
+        logger.logError(err);
         throw new Error(
           'An OpenSearch API request failed, see logs for details.',
         );

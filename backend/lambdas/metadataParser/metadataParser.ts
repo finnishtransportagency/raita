@@ -61,7 +61,7 @@ export async function metadataParser(event: S3Event): Promise<void> {
             rootFolder as RaitaSourceSystem,
           )
         ) {
-          logger.log(
+          logger.logError(
             `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
           );
           return null;
@@ -95,7 +95,7 @@ export async function metadataParser(event: S3Event): Promise<void> {
     await backend.metadataStorage.saveFileMetadata(entries);
   } catch (err) {
     // TODO: Figure out proper error handling.
-    logger.log(`An error occured while processing events: ${err}`);
+    logger.logError(`An error occured while processing events: ${err}`);
   }
 }
 
