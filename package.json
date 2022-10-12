@@ -15,8 +15,8 @@
     "test": "jest",
     "cdk": "cdk",
     "s3:ls": "aws s3 ls $RAITA_DATA_S3",
-    "s3:put:small": "aws s3 cp $RAITA_SMALL_EXAMPLE_PATH s3://$RAITA_DATA_S3",
-    "s3:put:medium": "aws s3 cp --recursive $RAITA_MEDIUM_EXAMPLE_PATH s3://$RAITA_DATA_S3",
+    "s3:put:file:meeri": "aws s3 cp $RAITA_TEST_DATA_ROOT/single-files/$npm_config_file s3://$RAITA_DATA_S3/Meeri",
+    "s3:put:folder:meeri": "aws s3 cp --recursive --exclude \"**.DS_Store\" $RAITA_TEST_DATA_ROOT/folders/$npm_config_folder s3://$RAITA_DATA_S3/Meeri",
     "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
     "pipeline:deploy": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk --app \"ts-node bin/raita-pipeline\" deploy stack-pipeline-raita-$npm_config_stackid",
     "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk synth"
