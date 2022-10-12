@@ -7,6 +7,8 @@ function suffixIsKnown(arg: string): arg is 'csv' | 'txt' | 'pdf' {
   return ['pdf', 'txt', 'csv'].includes(arg);
 }
 
+const EMPTY_FILE_INDICATOR = 'EMPTY';
+
 export const extractFileNameData = (
   fileName: string,
   fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
@@ -26,7 +28,10 @@ export const extractFileNameData = (
   const labels = fileNamePartLabels[suffix];
 
   const fileBaseNameParts = baseName.split('_');
-  const expectedFileNameLength = Object.keys(labels).length;
+  const lastFileBaseNamePart = fileBaseNameParts[fileBaseNameParts.length - 1];
+  const labelCount = Object.keys(labels).length;
+  const expectedFileNameLength =
+    lastFileBaseNamePart === EMPTY_FILE_INDICATOR ? labelCount + 1 : labelCount;
 
   if (fileBaseNameParts.length !== expectedFileNameLength) {
     logger.logParsingException(
@@ -35,6 +40,13 @@ export const extractFileNameData = (
     return {};
   }
   return fileBaseNameParts.reduce<ParseValueResult>((acc, cur, index) => {
+    // Handle the empty file indicator as special case.
+    // Implementation depends on this incicator being in the end of the string.
+    if (cur === EMPTY_FILE_INDICATOR) {
+      acc['isEmpty'] = true;
+      return acc;
+    }
+
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
     const { name, parseAs } = labels[index + 1];
     if (name) {
