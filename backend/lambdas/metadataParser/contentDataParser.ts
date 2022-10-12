@@ -5,18 +5,26 @@ import {
 import { ParseValueResult } from '../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
+import { fileSuffixesToIncudeInMetadataParsing } from '../../../constants';
 
-export const isContentExtractionRequired = ({
+/**
+ * Resolves whether content data parsing is needed for the file
+ */
+export const shouldParseContent = ({
   fileName,
-  contentType,
-  includeSpec,
-}: {
+}: // contentType,
+// includeSpec,
+{
   fileName: string;
-  contentType: string | undefined;
-  includeSpec: IExtractionSpec['include'];
-}) =>
-  (contentType && includeSpec.includeContentTypes.includes(contentType)) ||
-  includeSpec.includeFileNames.includes(fileName);
+  // contentType: string | undefined;
+  // includeSpec: IExtractionSpec['include'];
+}) => {
+  const suffix = fileName.substring(
+    fileName.lastIndexOf('.') + 1,
+    fileName.length,
+  );
+  return suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
+};
 
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,

@@ -39,6 +39,10 @@ import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
 import { FrontendInfraStack } from './frontend-infra';
+import {
+  fileSuffixesToIncudeInMetadataParsing,
+  RaitaSourceSystem,
+} from '../constants';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -144,6 +148,7 @@ export class RaitaStack extends Stack {
       configurationFile: config.parserConfigurationFile,
       lambdaRole: lambdaServiceRole,
       region: this.region,
+      raitaSourceSystems: config.raitaSourceSystems,
     });
 
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
@@ -187,6 +192,7 @@ export class RaitaStack extends Stack {
     openSearchMetadataIndex,
     lambdaRole,
     region,
+    raitaSourceSystems,
   }: {
     name: string;
     sourceBuckets: Array<cdk.aws_s3.Bucket>;
@@ -196,6 +202,7 @@ export class RaitaStack extends Stack {
     lambdaRole: Role;
     openSearchMetadataIndex: string;
     region: string;
+    raitaSourceSystems: Array<RaitaSourceSystem>;
   }) {
     const parser = new NodejsFunction(this, name, {
       functionName: `lambda-${this.#stackId}-${name}`,
@@ -216,14 +223,40 @@ export class RaitaStack extends Stack {
       },
       role: lambdaRole,
     });
+
     sourceBuckets.forEach(bucket => {
-      // OPEN: Figure out if some filtering can be applied alredy
-      // at this level with filter property
-      parser.addEventSource(
-        new S3EventSource(bucket, {
-          events: [s3.EventType.OBJECT_CREATED, s3.EventType.OBJECT_REMOVED],
-        }),
-      );
+      // Generate filters array based on suffixes and source systems
+      // Envents should be triggered only for specified suffixes AND
+      // only if the file is in allowed top level source system folder in the bucket
+      // TODO: Replace the concat.apply when ES2019/later available using flaMap
+      const fileSuffixes = Object.values(fileSuffixesToIncudeInMetadataParsing);
+      // const nested = fileSuffixes.map(fileSuffix =>
+      //   raitaSourceSystems.map(sourceSystem => ({
+      //     prefix: `${sourceSystem}/`,
+      //     suffix: `.${fileSuffix}`,
+      //   })),
+      // );
+      // const filters = new Array<{
+      //   prefix: string;
+      //   suffix: string;
+      // }>().concat.apply([], nested);
+
+      // console.log(filters);
+      // TODO: Currently reacts only to CREATE events
+      // OPEN: Currently separate event source for each suffix type
+      fileSuffixes.forEach(suffix => {
+        parser.addEventSource(
+          new S3EventSource(bucket, {
+            events: [s3.EventType.OBJECT_CREATED],
+            filters: [
+              {
+                suffix,
+              },
+            ],
+          }),
+        );
+      });
+
       bucket.grantRead(parser);
     });
     return parser;

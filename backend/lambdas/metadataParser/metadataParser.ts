@@ -9,11 +9,12 @@ import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
   extractFileContentData,
-  isContentExtractionRequired,
+  shouldParseContent,
 } from './contentDataParser';
 import { logger } from '../../utils/logger';
 import BackendFacade from '../../ports/backend';
 import { getGetEnvWithPreassignedContext } from '../../../utils';
+import { RaitaSourceSystem, raitaSourceSystems } from '../../../constants';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -45,10 +46,27 @@ export async function metadataParser(event: S3Event): Promise<void> {
         // HERE flow control if multiple event types (S3, HTTP...)
         // or files in multiple repositories
         const file = await backend.files.getFile(eventRecord);
-        if (!spec.include.includeContentTypes.includes(file.contentType)) {
+
+        // if (!spec.include.includeContentTypes.includes(file.contentType)) {
+        //   return null;
+        // }
+
+        const path = eventRecord.s3.object.key.split('/');
+        const rootFolder = path[0];
+
+        // Return empty null result if the top level folder does not match any of the names
+        // of the designated source systems.
+        if (
+          !Object.values(raitaSourceSystems).includes(
+            rootFolder as RaitaSourceSystem,
+          )
+        ) {
+          logger.log(
+            `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
+          );
           return null;
         }
-        const path = eventRecord.s3.object.key.split('/');
+
         const fileName = path[path.length - 1];
         const metadata = await parseFileMetadata({
           fileName,
@@ -69,7 +87,6 @@ export async function metadataParser(event: S3Event): Promise<void> {
     // Check if lambda supports es2022 and if so, switch to Promise.allSettled
     const entries = await Promise.all(recordResults);
     await backend.metadataStorage.saveFileMetadata(entries);
-    // logger.log('Entries persisted in OpenSearch.');
   } catch (err) {
     // TODO: Figure out proper error handling.
     logger.log(`An error occured while processing events: ${err}`);
@@ -92,10 +109,8 @@ async function parseFileMetadata({
     spec.fileNameExtractionSpec,
   );
   const pathData = extractPathData(path, spec.folderTreeExtractionSpec);
-  const parseContentData = isContentExtractionRequired({
+  const parseContentData = shouldParseContent({
     fileName,
-    contentType: file.contentType,
-    includeSpec: spec.include,
   });
   const fileContentData = parseContentData
     ? extractFileContentData(spec, file.fileBody?.toString())

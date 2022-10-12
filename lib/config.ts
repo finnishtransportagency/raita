@@ -1,3 +1,4 @@
+import { raitaSourceSystems } from '../constants';
 import { getEnvOrFail } from '../utils';
 
 export type RaitaEnvironment = typeof environments[keyof typeof environments];
@@ -62,4 +63,5 @@ export const getPipelineConfig = () => {
 export const getRaitaStackConfig = () => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
+  raitaSourceSystems: Object.values(raitaSourceSystems),
 });
