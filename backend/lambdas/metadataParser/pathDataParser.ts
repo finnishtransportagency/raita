@@ -15,7 +15,7 @@ export const extractPathData = (
   // TODO: Temporary check for the path parts, update for real setup
   if (folderNames.length < 6 || folderNames.length > 7) {
     logger.log(
-      'Unexpected folder path length. Folder path analysis not carried out.',
+      `Unexpected folder path length. Folder path analysis not carried out: ${path}`,
     );
     return {};
   }

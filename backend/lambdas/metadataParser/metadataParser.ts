@@ -67,6 +67,8 @@ export async function metadataParser(event: S3Event): Promise<void> {
           return null;
         }
 
+        // TODO: Handle tag creation based on root folder
+
         const fileName = path[path.length - 1];
         const metadata = await parseFileMetadata({
           fileName,
