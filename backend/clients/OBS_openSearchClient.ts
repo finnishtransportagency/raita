@@ -33,10 +33,10 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     });
     await Promise.all(additions)
       .then(data => {
-        logger.log(data);
+        logger.logError(data);
       })
       .catch(err => {
-        logger.log(err);
+        logger.logError(err);
         throw err;
       });
   };
