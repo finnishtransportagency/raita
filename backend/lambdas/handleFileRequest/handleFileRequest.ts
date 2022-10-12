@@ -1,7 +1,13 @@
+import { LogGroupTargetInput } from 'aws-cdk-lib/aws-events-targets';
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { getEnvOrFail } from '../../../utils';
-import { RaitaLambdaException } from '../utils';
+import { logger } from '../../utils/logger';
+import {
+  getClientErrorMessage,
+  getRaitaLambdaError,
+  RaitaLambdaError,
+} from '../utils';
 
 function getLambdaConfigOrFail() {
   return {
@@ -10,9 +16,8 @@ function getLambdaConfigOrFail() {
 }
 
 /**
- * Generates a pre-signed url for a file in S3 bucket
- * Currently takes input in the POST request body
- * NOTE: Preliminary implementation
+ * DRAFT IMPLEMENTATION
+ * Generates a pre-signed url for a file in S3 bucket. Currently takes input in the POST request body.
  */
 export async function handleFileRequest(
   event: APIGatewayEvent,
@@ -37,7 +42,7 @@ export async function handleFileRequest(
       .promise();
 
     if (!exists) {
-      throw new RaitaLambdaException('Invalid input', 400);
+      throw new RaitaLambdaError('Invalid input', 400);
     }
 
     // Create pre-signed url
@@ -61,18 +66,7 @@ export async function handleFileRequest(
       ),
     };
   } catch (err: unknown) {
-    const errorMessage =
-      ((err instanceof Error || err instanceof RaitaLambdaException) &&
-        err.message) ||
-      (typeof err === 'string' && err) ||
-      'An error occurred.';
-    return {
-      statusCode:
-        (err instanceof RaitaLambdaException && err.statusCode) || 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message: errorMessage }, null, 2),
-    };
+    logger.log(err);
+    return getRaitaLambdaError(err);
   }
 }
