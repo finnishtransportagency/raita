@@ -77,9 +77,11 @@ export async function metadataParser(event: S3Event): Promise<void> {
           spec,
         });
         return {
-          fileName,
-          arn: eventRecord.s3.bucket.arn,
-          bucket: eventRecord.s3.bucket.name,
+          file_name: fileName,
+          key: eventRecord.s3.object.key,
+          bucket_arn: eventRecord.s3.bucket.arn,
+          bucket_name: eventRecord.s3.bucket.name,
+          size: eventRecord.s3.object.size,
           metadata,
         };
       },
