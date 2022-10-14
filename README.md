@@ -31,8 +31,6 @@ Note! Naming of certain AWS resources must be globally unique, these resources i
 
 To set up a new pipeline, run the deployment script `pipeline:deploy` providing environment, branch and stackId as command line arguments with optionally also providing your AWS profile (here environment, branch and stackid correspond to variables explained above):
 
-    npm run pipeline:deploy --environment=dev --branch=main
-    npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test
     npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test --stackid=mytestbranch
     npm run pipeline:deploy --environment=dev --branch=feature/RAITA-07-test --stackid=mytestbranch -- --profile myFavouriteAWSProfile
 
