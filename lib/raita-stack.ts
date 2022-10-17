@@ -41,7 +41,7 @@ import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
-import { FrontendInfraStack } from './frontend-infra';
+import { CloudfrontStack } from './cloudfront';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -168,9 +168,11 @@ export class RaitaStack extends Stack {
     });
 
     // Create frontend infrastucture
-    new FrontendInfraStack(this, 'stack-fe', {
+    new CloudfrontStack(this, 'stack-fe', {
       raitaStackId: this.#stackId,
       raitaEnv: raitaEnv,
+      cloudfrontCertificateArn: config.cloudfrontCertificateArn,
+      cloudfrontDomainName: config.cloudfrontDomainName,
     });
 
     // Grant lambda read to configuration bucket

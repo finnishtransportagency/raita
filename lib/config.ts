@@ -1,7 +1,10 @@
 import { getEnvOrFail } from '../utils';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 // import { Construct } from '@aws-cdk/core';
-import { SSM_CLOUDFRONT_CERTIFICATE_ARN } from '../constants';
+import {
+  SSM_CLOUDFRONT_CERTIFICATE_ARN,
+  SSM_CLOUDFRONT_DOMAIN_NAME,
+} from '../constants';
 import { Construct } from 'constructs';
 
 export type RaitaEnvironment = typeof environments[keyof typeof environments];
@@ -70,5 +73,9 @@ export const getPipelineConfig = () => {
 export const getRaitaStackConfig = (scope: Construct) => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
-  certificate: getSSMParameter(scope, SSM_CLOUDFRONT_CERTIFICATE_ARN),
+  cloudfrontCertificateArn: getSSMParameter(
+    scope,
+    SSM_CLOUDFRONT_CERTIFICATE_ARN,
+  ),
+  cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
 });
