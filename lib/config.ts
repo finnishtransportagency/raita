@@ -1,4 +1,8 @@
 import { getEnvOrFail } from '../utils';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+// import { Construct } from '@aws-cdk/core';
+import { SSM_CLOUDFRONT_CERTIFICATE_ARN } from '../constants';
+import { Construct } from 'constructs';
 
 export type RaitaEnvironment = typeof environments[keyof typeof environments];
 
@@ -16,6 +20,10 @@ const productionBranch = 'prod';
 const productionStackId = productionBranch;
 const developmentMainBranch = 'main';
 const developmentMainStackId = developmentMainBranch;
+
+// Returns token that resolves during deployment to SSM parameter value
+const getSSMParameter = (scope: Construct, parameterName: string) =>
+  ssm.StringParameter.valueForStringParameter(scope, parameterName);
 
 const getStackId = (branch: string): string => {
   const stackId = getEnvOrFail('STACK_ID');
@@ -59,7 +67,8 @@ export const getPipelineConfig = () => {
 // RaitaStack specific configuration
 // These values are used solely by metadata parser
 // Pending possible move to SSM Parameter Store (after discussion)
-export const getRaitaStackConfig = () => ({
+export const getRaitaStackConfig = (scope: Construct) => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
+  certificate: getSSMParameter(scope, SSM_CLOUDFRONT_CERTIFICATE_ARN),
 });

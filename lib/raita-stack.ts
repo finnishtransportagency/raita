@@ -34,6 +34,7 @@ import {
   FederatedPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
@@ -55,7 +56,7 @@ export class RaitaStack extends Stack {
     const cognitoDomainPrefix = this.#stackId;
 
     // OPEN: Move to parameter store?
-    const config = getRaitaStackConfig();
+    const config = getRaitaStackConfig(scope);
 
     // Create buckets
     const dataBucket = this.createBucket({
