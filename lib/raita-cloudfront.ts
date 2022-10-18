@@ -65,9 +65,7 @@ export class CloudfrontStack extends Stack {
       {
         // domainNames: [cloudfrontDomainName],
         // certificate,
-        domainNames: [cloudfrontDomainName],
         defaultRootObject: 'index.html',
-        certificate,
         comment: `cloudfront for ${raitaStackId}`,
         defaultBehavior: {
           origin: new origins.S3Origin(feBucket, {
