@@ -40,7 +40,7 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
-import { getRemovalPolicy } from './utils';
+import { getRemovalPolicy, isPermanentStack } from './utils';
 import { CloudfrontStack } from './cloudfront';
 import {
   DEVELOPMENT_MAIN_STACK_ID,
@@ -175,11 +175,7 @@ export class RaitaStack extends Stack {
 
     // Cloudfront stack is created conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
-    if (
-      (stackId === DEVELOPMENT_MAIN_STACK_ID &&
-        raitaEnv === ENVIRONMENTS.dev) ||
-      (stackId === PRODUCTION_STACK_ID && raitaEnv === ENVIRONMENTS.prod)
-    ) {
+    if (isPermanentStack(stackId, raitaEnv)) {
       new CloudfrontStack(this, 'stack-cf', {
         raitaStackId: this.#raitaStackIdentifier,
         raitaEnv: raitaEnv,
