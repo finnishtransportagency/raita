@@ -36,7 +36,7 @@ import {
   RaitaSourceSystem,
 } from '../constants';
 import { getRemovalPolicy, isPermanentStack } from './utils';
-import { CloudfrontStack } from './cloudfront';
+import { CloudfrontStack } from './raita-cloudfront';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
