@@ -1,10 +1,4 @@
-import {
-  Stack,
-  StackProps,
-  CfnJson,
-  CustomResource,
-  RemovalPolicy,
-} from 'aws-cdk-lib';
+import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
