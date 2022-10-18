@@ -7,7 +7,6 @@ export const ENVIRONMENTS = {
   prod: 'prod',
 } as const;
 
-// NOTE: TO BE DECIDED AND POSSIBLY MOVED AROUND
 export const PRODUCTION_BRANCH = 'prod';
 export const PRODUCTION_STACK_ID = PRODUCTION_BRANCH;
 export const DEVELOPMENT_MAIN_BRANCH = 'main';
