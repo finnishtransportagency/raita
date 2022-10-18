@@ -34,9 +34,6 @@ import {
   FederatedPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
-
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
@@ -46,11 +43,6 @@ import {
 } from '../constants';
 import { getRemovalPolicy, isPermanentStack } from './utils';
 import { CloudfrontStack } from './cloudfront';
-import {
-  DEVELOPMENT_MAIN_STACK_ID,
-  ENVIRONMENTS,
-  PRODUCTION_STACK_ID,
-} from '../constants';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
