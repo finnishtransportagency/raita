@@ -1,10 +1,4 @@
-import {
-  Stack,
-  StackProps,
-  CfnJson,
-  CustomResource,
-  RemovalPolicy,
-} from 'aws-cdk-lib';
+import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -35,18 +29,11 @@ import {
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { getRemovalPolicy, isPermanentStack } from './utils';
-import { CloudfrontStack } from './cloudfront';
-import {
-  DEVELOPMENT_MAIN_STACK_ID,
-  ENVIRONMENTS,
-  PRODUCTION_STACK_ID,
-} from '../constants';
+import { CloudfrontStack } from './raita-cloudfront';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
