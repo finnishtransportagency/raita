@@ -1,25 +1,13 @@
 import { Button } from 'components';
 import { useState, useEffect } from 'react';
-import { assoc, dissoc } from 'rambda';
+import { assoc, dissoc, fromPairs, map, pipe, toPairs } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import css from './filter.module.css';
 import { App } from 'shared/types';
 
-type FilterItem = {
-  key: string;
-  value: string;
-};
-
-type State = {
-  keys: string[];
-  filters: Record<string, string>;
-};
-
-/**
- * Placeholder value for an empty filter
- */
+/** Placeholder value for an empty filter */
 const EMPTY_KEY = '__EMPTY__' as const;
 
 export function Filter(props: Props) {
@@ -30,38 +18,52 @@ export function Filter(props: Props) {
     filters: { system: '123' },
   });
 
+  /**
+   * Ensure the given `onUpdate` callback is called when filters change
+   */
   const invokeUpdate = () => props.onUpdate(state.filters);
 
-  const setFilterValue = (k: string, v?: string) => {
-    setState(s => ({
-      ...s,
-      filters: { ...s.filters, [k]: v ? v : s.filters[k] },
+  const setFilterValue = (key: string, value?: string) => {
+    setState(prevState => ({
+      ...prevState,
+      filters: {
+        ...prevState.filters,
+        [key]: value ? value : prevState.filters[key],
+      },
     }));
   };
 
-  const renameFilter = (oldKey: string, k: string) => {
-    setState(s => {
-      if (k === EMPTY_KEY) return s;
+  const renameFilter = (oldKey: string, newKey: string) => {
+    setState(prevState => {
+      if (newKey === EMPTY_KEY) return prevState;
 
-      const as = Object.entries(s.filters).map(([key, value]) => {
-        if (key === oldKey) {
-          console.log('Found key;', { key, k });
-          return [k, value];
-        }
+      return {
+        ...prevState,
+        filters: Object.fromEntries(
+          Object.entries(prevState.filters).map(([key, value]) => {
+            if (key === oldKey) {
+              return [newKey, value];
+            }
 
-        return [key, value];
-      });
-
-      return { ...s, filters: Object.fromEntries(as) };
+            return [key, value];
+          }),
+        ),
+      };
     });
   };
 
-  const deleteFilter = (k: string) => {
-    setState(s => ({ ...s, filters: dissoc(k, s.filters) }));
+  const deleteFilter = (key: string) => {
+    setState(prevState => ({
+      ...prevState,
+      filters: dissoc(key, prevState.filters),
+    }));
   };
 
   const addFilter = () => {
-    setState(s => ({ ...s, filters: assoc(EMPTY_KEY, '', s.filters) }));
+    setState(prevState => ({
+      ...prevState,
+      filters: assoc(EMPTY_KEY, '', prevState.filters),
+    }));
   };
 
   useEffect(() => {
@@ -71,43 +73,48 @@ export function Filter(props: Props) {
   return (
     <div className={css.root}>
       <ul className="space-y-3 mb-2">
-        {Object.entries(state.filters).map(([f, v], ix) => {
-          return (
-            <li key={ix}>
-              <article className="grid grid-cols-12 gap-3 items-center">
-                <select
-                  className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
-                  value={f}
-                  onChange={e => renameFilter(f, e.target.value)}
-                >
-                  <option value={EMPTY_KEY}>---</option>
-                  <hr />
+        {Object.entries(state.filters).map(([filterKey, value], ix) => (
+          <li key={ix}>
+            <article className="grid grid-cols-12 gap-3 items-center">
+              {/**
+               * @todo Extract dropdowns out into their own component
+               * @todo Streamline classnames to fit visuals
+               */}
+              <select
+                className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
+                value={filterKey}
+                onChange={e => renameFilter(filterKey, e.target.value)}
+              >
+                <option value={EMPTY_KEY}>---</option>
 
-                  {state.keys.map((k, ix) => (
-                    <option key={ix} value={k}>
-                      {k}
-                    </option>
-                  ))}
-                </select>
+                {state.keys.map((key, keyIx) => (
+                  <option key={keyIx} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
 
-                <input
-                  className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
-                  placeholder="two"
-                  value={v}
-                  onChange={e => setFilterValue(f, e.target.value)}
+              {/**
+               * @todo Extract into own component at a suitable time
+               * @todo Streamline classnames to fit visuals
+               */}
+              <input
+                className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
+                placeholder={t('common:value')}
+                value={value}
+                onChange={e => setFilterValue(filterKey, e.target.value)}
+              />
+
+              <div className="col-span-2">
+                <Button
+                  label={t('common:delete')}
+                  size="sm"
+                  onClick={() => deleteFilter(filterKey)}
                 />
-
-                <div className="col-span-2">
-                  <Button
-                    label={t('common:delete')}
-                    size="sm"
-                    onClick={() => deleteFilter(f)}
-                  />
-                </div>
-              </article>
-            </li>
-          );
-        })}
+              </div>
+            </article>
+          </li>
+        ))}
       </ul>
 
       <Button
@@ -130,6 +137,10 @@ export type Props = {
 
 //
 
+/**
+ * @todo Check if this needs attention, as `getStaticProps` is discarded
+ *       when only doing `next export`
+ */
 export async function getStaticProps(props: StaticProps) {
   const { locale } = props;
 
@@ -140,6 +151,18 @@ export async function getStaticProps(props: StaticProps) {
   };
 }
 
+//
+
 export type StaticProps = {
   locale: App.Locales;
+};
+
+type FilterItem = {
+  key: string;
+  value: string;
+};
+
+type State = {
+  keys: string[];
+  filters: Record<string, string>;
 };
