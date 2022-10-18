@@ -1,10 +1,4 @@
-import {
-  NestedStack,
-  NestedStackProps,
-  RemovalPolicy,
-  Stack,
-  StackProps,
-} from 'aws-cdk-lib';
+import { Stack, StackProps } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -69,12 +63,9 @@ export class CloudfrontStack extends Stack {
       this,
       `cloudfront`,
       {
-<<<<<<<< HEAD:lib/raita-cloudfront.ts
         // domainNames: [cloudfrontDomainName],
         // certificate,
-========
         domainNames: [cloudfrontDomainName],
->>>>>>>> main:lib/cloudfront.ts
         defaultRootObject: 'index.html',
         certificate,
         comment: `cloudfront for ${raitaStackId}`,
