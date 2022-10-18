@@ -1,0 +1,12 @@
+.root {
+  /* @apply border border-red-500; */
+  @apply mb-4;
+}
+
+.dropdown {
+  @apply border border-red-500;
+}
+
+.dropdown option {
+  @apply px-2 py-1;
+}
