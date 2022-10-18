@@ -6,6 +6,7 @@ import {
   StackProps,
 } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
@@ -16,17 +17,20 @@ import { getRemovalPolicy } from './utils';
 interface FrontendInfraStackProps extends StackProps {
   readonly raitaStackId: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly cloudfrontCertificateArn: string;
+  readonly cloudfrontDomainName: string;
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
-export class FrontendInfraStack extends Stack {
+export class CloudfrontStack extends Stack {
   constructor(scope: Construct, id: string, props: FrontendInfraStackProps) {
     super(scope, id, props);
-    const { raitaEnv, raitaStackId } = props;
-
-    // TODO: Set correct domainName for production environment
-    const domainName =
-      raitaEnv === 'dev' ? 'raita-dev.vayla.fi' : 'UNKNOWN.vayla.fi';
+    const {
+      raitaEnv,
+      raitaStackId,
+      cloudfrontCertificateArn,
+      cloudfrontDomainName,
+    } = props;
 
     const feBucket = new s3.Bucket(this, 'frontend', {
       bucketName: `s3-${raitaStackId}-frontend`,
@@ -55,11 +59,19 @@ export class FrontendInfraStack extends Stack {
       }),
     );
 
+    const certificate = acm.Certificate.fromCertificateArn(
+      this,
+      `certificate-${raitaStackId}`,
+      cloudfrontCertificateArn,
+    );
+
     const cloudfrontDistribution = new cloudfront.Distribution(
       this,
       `cloudfront`,
       {
+        domainNames: [cloudfrontDomainName],
         defaultRootObject: 'index.html',
+        certificate,
         comment: `cloudfront for ${raitaStackId}`,
         defaultBehavior: {
           origin: new origins.S3Origin(feBucket, {

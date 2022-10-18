@@ -34,32 +34,41 @@ import {
   FederatedPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
-import { getRemovalPolicy } from './utils';
-import { FrontendInfraStack } from './frontend-infra';
 import {
   fileSuffixesToIncudeInMetadataParsing,
   RaitaSourceSystem,
 } from '../constants';
+import { getRemovalPolicy, isPermanentStack } from './utils';
+import { CloudfrontStack } from './cloudfront';
+import {
+  DEVELOPMENT_MAIN_STACK_ID,
+  ENVIRONMENTS,
+  PRODUCTION_STACK_ID,
+} from '../constants';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
+  readonly stackId: string;
 }
 
 export class RaitaStack extends Stack {
-  #stackId: string;
+  #raitaStackIdentifier: string;
 
-  constructor(scope: Construct, stackId: string, props: RaitaStackProps) {
-    super(scope, stackId, props);
-    const { raitaEnv } = props;
-    this.#stackId = stackId.toLowerCase();
+  constructor(scope: Construct, id: string, props: RaitaStackProps) {
+    super(scope, id, props);
+    const { raitaEnv, stackId } = props;
+    this.#raitaStackIdentifier = id.toLowerCase();
     // Use stackId as cognitoDomainPrefix
-    const cognitoDomainPrefix = this.#stackId;
+    const cognitoDomainPrefix = this.#raitaStackIdentifier;
 
     // OPEN: Move to parameter store?
-    const config = getRaitaStackConfig();
+    const config = getRaitaStackConfig(this);
 
     // Create buckets
     const dataBucket = this.createBucket({
@@ -117,7 +126,7 @@ export class RaitaStack extends Stack {
     // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
     const openSearchHttpPolicy = new ManagedPolicy(
       this,
-      `managedpolicy-${this.#stackId}-openSearchHttpPolicy`,
+      `managedpolicy-${this.#raitaStackIdentifier}-openSearchHttpPolicy`,
       {
         roles: [osAdminUserRole, lambdaServiceRole],
       },
@@ -163,17 +172,22 @@ export class RaitaStack extends Stack {
       dataBucket,
       lambdaServiceRole,
       userPool,
-      raitaStackId: this.#stackId,
+      raitaStackId: this.#raitaStackIdentifier,
       raitaEnv: raitaEnv,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
     });
 
-    // Create frontend infrastucture
-    new FrontendInfraStack(this, 'stack-fe', {
-      raitaStackId: this.#stackId,
-      raitaEnv: raitaEnv,
-    });
+    // Cloudfront stack is created conditionally - only for main and prod stackIds
+    // Feature branches do not provide access from outside
+    if (isPermanentStack(stackId, raitaEnv)) {
+      new CloudfrontStack(this, 'stack-cf', {
+        raitaStackId: this.#raitaStackIdentifier,
+        raitaEnv: raitaEnv,
+        cloudfrontCertificateArn: config.cloudfrontCertificateArn,
+        cloudfrontDomainName: config.cloudfrontDomainName,
+      });
+    }
 
     // Grant lambda read to configuration bucket
     configurationBucket.grantRead(metadataParserFn);
@@ -205,7 +219,7 @@ export class RaitaStack extends Stack {
     raitaSourceSystems: Array<RaitaSourceSystem>;
   }) {
     const parser = new NodejsFunction(this, name, {
-      functionName: `lambda-${this.#stackId}-${name}`,
+      functionName: `lambda-${this.#raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
@@ -280,7 +294,7 @@ export class RaitaStack extends Stack {
     masterUserRole: Role;
     raitaEnv: RaitaEnvironment;
   }) {
-    const domainName = `${name}-${this.#stackId}`;
+    const domainName = `${name}-${this.#raitaStackIdentifier}`;
 
     // TODO: Check if asterisk can be dropped out
     const domainArn =
@@ -342,7 +356,7 @@ export class RaitaStack extends Stack {
     raitaEnv: RaitaEnvironment;
   }) {
     return new s3.Bucket(this, name, {
-      bucketName: `s3-${this.#stackId}-${name}`,
+      bucketName: `s3-${this.#raitaStackIdentifier}-${name}`,
       versioned: true,
       removalPolicy: getRemovalPolicy(raitaEnv),
       autoDeleteObjects: raitaEnv === 'dev' ? true : false,
@@ -351,7 +365,7 @@ export class RaitaStack extends Stack {
 
   private createIdentityPool(name: string) {
     return new CfnIdentityPool(this, name, {
-      identityPoolName: `identitypool-${this.#stackId}-${name}`,
+      identityPoolName: `identitypool-${this.#raitaStackIdentifier}-${name}`,
       allowUnauthenticatedIdentities: false,
       cognitoIdentityProviders: [],
     });
@@ -367,7 +381,7 @@ export class RaitaStack extends Stack {
     raitaEnv: RaitaEnvironment;
   }) {
     const userPool = new UserPool(this, name, {
-      userPoolName: `userpool-${this.#stackId}-${name}`,
+      userPoolName: `userpool-${this.#raitaStackIdentifier}-${name}`,
       selfSignUpEnabled: false,
       removalPolicy: getRemovalPolicy(raitaEnv),
       signInAliases: {
@@ -389,7 +403,7 @@ export class RaitaStack extends Stack {
     policyName: string,
   ) {
     return new Role(this, name, {
-      roleName: `${name}-${this.#stackId}`,
+      roleName: `${name}-${this.#raitaStackIdentifier}`,
       assumedBy: new ServicePrincipal(servicePrincipal),
       managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName(policyName)],
     });
@@ -397,7 +411,7 @@ export class RaitaStack extends Stack {
 
   private createUserRole(idPool: CfnIdentityPool, name: string) {
     return new Role(this, name, {
-      roleName: `${name}-${this.#stackId}`,
+      roleName: `${name}-${this.#raitaStackIdentifier}`,
       assumedBy: new FederatedPrincipal(
         'cognito-identity.amazonaws.com',
         {
@@ -421,7 +435,7 @@ export class RaitaStack extends Stack {
     adminUserRole: Role;
   }) {
     new CfnUserPoolGroup(this, name, {
-      groupName: `${name}-${this.#stackId}`,
+      groupName: `${name}-${this.#raitaStackIdentifier}`,
       userPoolId: userPool.userPoolId,
       roleArn: adminUserRole.roleArn,
     });
@@ -496,7 +510,7 @@ export class RaitaStack extends Stack {
     // Create lambda for sending requests to OpenSearch API
     const osRequestsFnName = 'handle-os-request';
     const osRequestsFn = new NodejsFunction(this, osRequestsFnName, {
-      functionName: `lambda-${this.#stackId}-${osRequestsFnName}`,
+      functionName: `lambda-${this.#raitaStackIdentifier}-${osRequestsFnName}`,
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'sendOpenSearchAPIRequest',
       entry: path.join(

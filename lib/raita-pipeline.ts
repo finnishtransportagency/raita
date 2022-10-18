@@ -73,6 +73,7 @@ class RaitaApplicationStage extends Stage {
       `raita-${props.raitaEnv}-${props.stackId}`,
       {
         raitaEnv: props.raitaEnv,
+        stackId: props.stackId,
       },
     );
   }

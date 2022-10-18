@@ -1,33 +1,41 @@
 import { raitaSourceSystems } from '../constants';
 import { getEnvOrFail } from '../utils';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+// import { Construct } from '@aws-cdk/core';
+import {
+  DEVELOPMENT_MAIN_BRANCH,
+  DEVELOPMENT_MAIN_STACK_ID,
+  ENVIRONMENTS,
+  PRODUCTION_BRANCH,
+  PRODUCTION_STACK_ID,
+  SSM_CLOUDFRONT_CERTIFICATE_ARN,
+  SSM_CLOUDFRONT_DOMAIN_NAME,
+} from '../constants';
+import { Construct } from 'constructs';
 
-export type RaitaEnvironment = typeof environments[keyof typeof environments];
+export type RaitaEnvironment = typeof ENVIRONMENTS[keyof typeof ENVIRONMENTS];
 
 function isRaitaEnvironment(arg: string | undefined): arg is RaitaEnvironment {
-  return !!arg && Object.values(environments).includes(arg as any);
+  return !!arg && Object.values(ENVIRONMENTS).includes(arg as any);
 }
 
-const environments = {
-  dev: 'dev',
-  prod: 'prod',
-} as const;
-
-// NOTE: TO BE DECIDED AND POSSIBLY MOVED AROUND
-const productionBranch = 'prod';
-const productionStackId = productionBranch;
-const developmentMainBranch = 'main';
-const developmentMainStackId = developmentMainBranch;
+// Returns token that resolves during deployment to SSM parameter value
+const getSSMParameter = (scope: Construct, parameterName: string) =>
+  ssm.StringParameter.valueForStringParameter(scope, parameterName);
 
 const getStackId = (branch: string): string => {
   const stackId = getEnvOrFail('STACK_ID');
-  if (branch === developmentMainBranch && stackId !== developmentMainStackId) {
+  if (
+    branch === DEVELOPMENT_MAIN_BRANCH &&
+    stackId !== DEVELOPMENT_MAIN_STACK_ID
+  ) {
     throw new Error(
-      `For branch ${developmentMainBranch} stack id must match the branch`,
+      `For branch ${DEVELOPMENT_MAIN_BRANCH} stack id must match the branch`,
     );
   }
-  if (branch === productionBranch && stackId !== productionStackId) {
+  if (branch === PRODUCTION_BRANCH && stackId !== PRODUCTION_STACK_ID) {
     throw new Error(
-      `For branch ${productionBranch} stack id must match the branch`,
+      `For branch ${PRODUCTION_BRANCH} stack id must match the branch`,
     );
   }
   return stackId;
@@ -38,8 +46,8 @@ export const getPipelineConfig = () => {
   if (isRaitaEnvironment(envFromEnvironment)) {
     // Determine which Gitbub branch to use: Branch for production env is fixed, for other environments it is read from environment
     const branch =
-      envFromEnvironment === environments.prod
-        ? productionBranch
+      envFromEnvironment === ENVIRONMENTS.prod
+        ? PRODUCTION_BRANCH
         : getEnvOrFail('BRANCH');
     return {
       env: envFromEnvironment,
@@ -60,8 +68,13 @@ export const getPipelineConfig = () => {
 // RaitaStack specific configuration
 // These values are used solely by metadata parser
 // Pending possible move to SSM Parameter Store (after discussion)
-export const getRaitaStackConfig = () => ({
+export const getRaitaStackConfig = (scope: Construct) => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
   raitaSourceSystems: Object.values(raitaSourceSystems),
+  cloudfrontCertificateArn: getSSMParameter(
+    scope,
+    SSM_CLOUDFRONT_CERTIFICATE_ARN,
+  ),
+  cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
 });
