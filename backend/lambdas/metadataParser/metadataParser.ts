@@ -8,7 +8,9 @@ import {
 import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
+  calculateHash,
   extractFileContentData,
+  shouldCalculateHash,
   shouldParseContent,
 } from './contentDataParser';
 import { logger } from '../../utils/logger';
@@ -117,15 +119,21 @@ async function parseFileMetadata({
     spec.fileNameExtractionSpec,
   );
   const pathData = extractPathData(path, spec.folderTreeExtractionSpec);
-  const parseContentData = shouldParseContent({
-    fileName,
-  });
-  const fileContentData = parseContentData
-    ? extractFileContentData(spec, file.fileBody?.toString())
-    : {};
+  const fileBody = file.fileBody?.toString();
+  const fileContentData =
+    shouldParseContent({
+      fileName,
+    }) && fileBody
+      ? extractFileContentData(spec, fileBody)
+      : {};
+  const hashData =
+    shouldCalculateHash({ fileName }) && fileBody
+      ? calculateHash(fileBody)
+      : {};
   return {
     ...pathData,
     ...fileContentData,
     ...fileNameData,
+    ...hashData,
   };
 }
