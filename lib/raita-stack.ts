@@ -41,7 +41,7 @@ import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { getRemovalPolicy, isPermanentStack } from './utils';
-import { CloudfrontStack } from './cloudfront';
+import { CloudfrontStack } from './raita-cloudfront';
 import {
   DEVELOPMENT_MAIN_STACK_ID,
   ENVIRONMENTS,
