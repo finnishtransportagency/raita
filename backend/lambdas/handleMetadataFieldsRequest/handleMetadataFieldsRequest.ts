@@ -1,13 +1,13 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import MetadataPort from '../../ports/metadataPort';
 import { logger } from '../../utils/logger';
-import { getRaitaLambdaError, RaitaLambdaError } from '../utils';
+import { getRaitaLambdaError } from '../utils';
 
 /**
  * DRAFT IMPLEMENTATION
  * Returns meta data fields that are available in the data base
  */
-export async function handleOpenSearchQuery(
+export async function handleMetadataFieldsRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {

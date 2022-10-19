@@ -58,6 +58,14 @@ export class RaitaGatewayStack extends NestedStack {
       openSearchMetadataIndex,
     });
 
+    const osFieldsRequestHandlerFn = this.createOpenSearchFieldRequestHandler({
+      name: 'os-fields-request-handler',
+      raitaStackId,
+      lambdaRole: lambdaServiceRole,
+      openSearchDomainEndpoint,
+      openSearchMetadataIndex,
+    });
+
     // TODO: Evaluate and choose restApi props
     const restApi = new RestApi(this, 'api', {
       restApiName: `restapi-${raitaStackId}-raita-api`,
@@ -76,6 +84,15 @@ export class RaitaGatewayStack extends NestedStack {
       authorizer: authorizer,
       authorizationType: AuthorizationType.COGNITO,
     });
+    const metadataFieldsResource = restApi.root.addResource('metadata-fields');
+    metadataFieldsResource.addMethod(
+      'GET',
+      new LambdaIntegration(osFieldsRequestHandlerFn),
+      {
+        authorizer: authorizer,
+        authorizationType: AuthorizationType.COGNITO,
+      },
+    );
   }
 
   /**
@@ -131,6 +148,38 @@ export class RaitaGatewayStack extends NestedStack {
       entry: path.join(
         __dirname,
         `../backend/lambdas/handleOpenSearchQuery/handleOpenSearchQuery.ts`,
+      ),
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        METADATA_INDEX: openSearchMetadataIndex,
+        REGION: this.region,
+      },
+      role: lambdaRole,
+    });
+  }
+
+  private createOpenSearchFieldRequestHandler({
+    name,
+    raitaStackId,
+    lambdaRole,
+    openSearchDomainEndpoint,
+    openSearchMetadataIndex,
+  }: {
+    name: string;
+    raitaStackId: string;
+    lambdaRole: Role;
+    openSearchDomainEndpoint: string;
+    openSearchMetadataIndex: string;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackId}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleMetadataFieldsRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/handleMetadataFieldsRequest/handleMetadataFieldsRequest.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
