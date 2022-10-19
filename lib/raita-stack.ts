@@ -94,6 +94,26 @@ export class RaitaStack extends Stack {
       adminUserRole: osAdminUserRole,
     });
 
+    /**
+     * START VPC
+     */
+
+    const raitaVPC = new ec2.Vpc(this, `vpc-${this.#raitaStackIdentifier}`, {
+      // cidr: "10.0.0.0/16",
+      // maxAzs: 3,
+      subnetConfiguration: [
+        {
+          name: 'private-subnet',
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          cidrMask: 24,
+        },
+      ],
+    });
+
+    /**
+     * END VPC
+     */
+
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
       name: 'raita',
@@ -102,6 +122,7 @@ export class RaitaStack extends Stack {
       cognitoUserPool: userPool,
       masterUserRole: lambdaServiceRole,
       raitaEnv: props.raitaEnv,
+      // vpc: raitaVPC,
     });
 
     // Create a ManagedPolicy that allows admin role and lambda role to call
@@ -240,13 +261,15 @@ export class RaitaStack extends Stack {
     cognitoUserPool,
     masterUserRole,
     raitaEnv,
-  }: {
+  }: // vpc,
+  {
     name: string;
     cognitoIdPool: CfnIdentityPool;
     cognitoOpenSearchServiceRole: Role;
     cognitoUserPool: UserPool;
     masterUserRole: Role;
     raitaEnv: RaitaEnvironment;
+    // vpc: ec2.Vpc;
   }) {
     const domainName = `${name}-${this.#raitaStackIdentifier}`;
 
@@ -296,6 +319,8 @@ export class RaitaStack extends Stack {
           resources: [domainArn],
         }),
       ],
+      // vpc,
+      // vpcSubnets: vpc.privateSubnets
     });
   }
 
