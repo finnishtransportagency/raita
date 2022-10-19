@@ -340,7 +340,6 @@ export class RaitaStack extends Stack {
       vpc,
       vpcSubnets: [
         {
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
           subnets: vpc.isolatedSubnets,
         },
       ],
