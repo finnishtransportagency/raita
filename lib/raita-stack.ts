@@ -289,6 +289,19 @@ export class RaitaStack extends Stack {
     raitaEnv: RaitaEnvironment;
     vpc: ec2.Vpc;
   }) {
+    // From: https://github.com/aws/aws-cdk/issues/3734
+    const serviceLinkedRole = new cdk.CfnResource(
+      this,
+      'os-service-linked-role',
+      {
+        type: 'AWS::IAM::ServiceLinkedRole',
+        properties: {
+          AWSServiceName: 'opensearchservice.amazonaws.com',
+          Description: 'Role for OpenSearch to access resources in the VPC',
+        },
+      },
+    );
+
     const domainName = `${name}-${this.#raitaStackIdentifier}`;
 
     // TODO: Check if asterisk can be dropped out
@@ -302,7 +315,7 @@ export class RaitaStack extends Stack {
       '/*';
 
     // TODO: Identify parameters to move to environment (and move)
-    return new opensearch.Domain(this, domainName, {
+    const osDomain = new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
       removalPolicy: getRemovalPolicy(raitaEnv),
@@ -337,6 +350,7 @@ export class RaitaStack extends Stack {
           resources: [domainArn],
         }),
       ],
+
       vpc,
       vpcSubnets: [
         {
@@ -344,6 +358,9 @@ export class RaitaStack extends Stack {
         },
       ],
     });
+
+    osDomain.node.addDependency(serviceLinkedRole);
+    return osDomain;
   }
 
   /**
