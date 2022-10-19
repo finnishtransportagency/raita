@@ -1,11 +1,7 @@
 import { FileMetadataEntry } from '../types';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
-import { logger } from '../utils/logger';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
-/**
- * OPEN: This could be make into a singleton but is is worth it?
- */
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
   #openSearchClient: RaitaOpenSearchClient;
