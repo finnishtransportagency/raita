@@ -1,18 +1,24 @@
 import { useState, useMemo, Fragment } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { assoc, prop } from 'rambda';
+import { useRouter } from 'next/router';
+import { assoc, isEmpty } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
+import { clsx } from 'clsx';
+import { format } from 'date-fns/fp';
 
 import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { Button } from 'components';
 import { useFieldQuery, useReportTypeQuery, useSearch } from './hooks';
-import { DateRange, Filter } from './components';
+import { DateRange, Filter, Pager } from './components';
 import Footer from './components/footer';
+
+import css from './reports.module.css';
+import { RANGE_DATE_FMT } from 'shared/constants';
 
 //
 
@@ -20,28 +26,20 @@ const ReportsIndex: NextPage = () => {
   const { t } = useTranslation('common');
   const f = useFieldQuery();
   const reportTypes = useReportTypeQuery();
+  const router = useRouter();
+
+  const curPage_ = parseInt(router.query['p'] as string, 10);
+  const curPage = !isNaN(curPage_) ? curPage_ : 0;
 
   const [state, setState] = useState<ReportsState>({
     filters: {},
-    dateRange: {
-      start: new Date(),
-      end: new Date(),
-    },
+    dateRange: {},
     reportTypes: [],
     paging: {
-      size: 10,
-      offset: 0,
+      size: 5,
+      page: curPage,
     },
   });
-
-  // const reportTypes = useMemo(
-  //   () =>
-  //     xs.data?.aggregations.types.buckets.map(it => ({
-  //       key: it.key,
-  //       count: it.doc_count,
-  //     })),
-  //   [xs.data?.aggregations.types.buckets],
-  // );
 
   /**
    * @todo Extract into something more reusable
@@ -57,6 +55,8 @@ const ReportsIndex: NextPage = () => {
           must: terms,
         },
       },
+      from: state.paging.page * state.paging.size,
+      size: state.paging.size,
     };
   }, [state.filters]);
 
@@ -79,7 +79,7 @@ const ReportsIndex: NextPage = () => {
   //
 
   return (
-    <div>
+    <div className={clsx(css.root)}>
       <Head>
         <title>Reports</title>
       </Head>
@@ -95,24 +95,33 @@ const ReportsIndex: NextPage = () => {
               {t('common:reports_search')}
             </header>
 
-            <div className="space-y-4">
-              <section>
+            <div className="space-y-4 divide-y-2 divide-main-gray-10 ">
+              <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
 
-                <Filter keys={Object.keys(f.data)} onUpdate={updateFilters} />
+                <Filter
+                  keys={Object.keys(f.data)}
+                  data={f.data}
+                  onUpdate={updateFilters}
+                />
               </section>
 
-              <section>
+              <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
-                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
+                <DateRange
+                  range={state.dateRange}
+                  onUpdate={updateDateRange}
+                  disabled={true}
+                />
               </section>
 
-              <section>
+              <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_report_types')}</header>
 
                 <select
-                  className="border-2 border-main-gray-50 rounded"
+                  className="border-2 border-main-gray-50 rounded h-40 w-1/2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={true}
                   multiple={true}
                   onChange={e =>
                     console.log(
@@ -128,7 +137,7 @@ const ReportsIndex: NextPage = () => {
                 </select>
               </section>
 
-              <footer>
+              <footer className="pt-4">
                 {/* Search controls for doing the search, reset */}
                 <div className="space-x-2">
                   <Button
@@ -195,13 +204,6 @@ const ReportsIndex: NextPage = () => {
                 })}
             </header>
 
-            {mutation.data && (
-              <div>
-                {t('common:took_ms', { took: mutation.data?.took })}
-                {mutation.data?.took}
-              </div>
-            )}
-
             <section>
               {!mutation.data && <div>{t('common:no_results')}</div>}
 
@@ -219,7 +221,10 @@ const ReportsIndex: NextPage = () => {
                           <article className="py-2 space-y-2">
                             <header>
                               {doc.fileName}{' '}
-                              <span className="text-xs">Score={it._score}</span>
+                              <span className="text-xs">
+                                Score=
+                                <span className="font-mono">{it._score}</span>
+                              </span>
                             </header>
 
                             <div className="text-xs">
@@ -257,12 +262,25 @@ const ReportsIndex: NextPage = () => {
                 </div>
               )}
 
-              <footer className="space-y-2 mt-2">
+              <footer className="space-y-2 flex justify-between mt-2">
                 <Button
+                  disabled={true}
                   label={t('common:download_all')}
                   type="secondary"
                   onClick={() => {}}
                 />
+
+                <div>
+                  {mutation.isSuccess && (
+                    <Pager
+                      size={state.paging.size}
+                      page={state.paging.page}
+                      count={
+                        (mutation.data?.hits.total as SearchTotalHits).value
+                      }
+                    />
+                  )}
+                </div>
               </footer>
             </section>
           </section>
@@ -297,11 +315,11 @@ export type StaticProps = {
 
 type ReportsState = {
   filters: Record<string, string>;
-  dateRange: Range<Date>;
+  dateRange?: Range<Date>;
   reportTypes: string[];
   paging: {
     size: number;
-    offset: number;
+    page: number;
   };
 };
 

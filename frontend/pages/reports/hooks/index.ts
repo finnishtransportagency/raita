@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { webClient } from 'shared/rest';
 import { IDocument, Rest } from 'shared/types';
-import { prop } from 'rambda';
+import { prop, tap } from 'rambda';
 import {
   MsearchBody,
   SearchResponse,
@@ -41,7 +41,8 @@ export function useSearch() {
   return useMutation((query: MsearchBody) => {
     return webClient
       .post<SearchResponse<IDocument>>('/reports', query)
-      .then(prop('data'));
+      .then(prop('data'))
+      .then(tap(x => console.log({ x })));
   });
 }
 
@@ -50,3 +51,7 @@ export function useSearch() {
 //
 
 export function useReportState() {}
+
+//
+
+export function useMemoQuery() {}

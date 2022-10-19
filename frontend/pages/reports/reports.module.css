@@ -1,0 +1,20 @@
+.root {
+}
+
+.subSection {
+  /* @apply border-2 border-green-500; */
+}
+
+.subSection header {
+  @apply text-lg;
+  @apply mb-2;
+}
+
+.pager {
+  @apply border-2 border-red-500;
+}
+
+.pager li {
+  @apply border-2 border-red-500;
+  @apply px-3 py-1;
+}
