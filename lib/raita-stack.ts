@@ -125,7 +125,7 @@ export class RaitaStack extends Stack {
       cognitoUserPool: userPool,
       masterUserRole: lambdaServiceRole,
       raitaEnv: props.raitaEnv,
-      // vpc: raitaVPC,
+      vpc: raitaVPC,
     });
 
     // Create a ManagedPolicy that allows admin role and lambda role to call
@@ -276,15 +276,15 @@ export class RaitaStack extends Stack {
     cognitoUserPool,
     masterUserRole,
     raitaEnv,
-  }: // vpc,
-  {
+    vpc,
+  }: {
     name: string;
     cognitoIdPool: CfnIdentityPool;
     cognitoOpenSearchServiceRole: Role;
     cognitoUserPool: UserPool;
     masterUserRole: Role;
     raitaEnv: RaitaEnvironment;
-    // vpc: ec2.Vpc;
+    vpc: ec2.Vpc;
   }) {
     const domainName = `${name}-${this.#raitaStackIdentifier}`;
 
@@ -334,7 +334,7 @@ export class RaitaStack extends Stack {
           resources: [domainArn],
         }),
       ],
-      // vpc,
+      vpc,
       // vpcSubnets: vpc.privateSubnets
     });
   }
