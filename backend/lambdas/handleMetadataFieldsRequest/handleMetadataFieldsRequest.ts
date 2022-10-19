@@ -1,7 +1,7 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import MetadataPort from '../../ports/metadataPort';
 import { logger } from '../../utils/logger';
-import { getRaitaLambdaError } from '../utils';
+import { getOpenSearchLambdaConfigOrFail, getRaitaLambdaError } from '../utils';
 
 /**
  * DRAFT IMPLEMENTATION
@@ -20,7 +20,7 @@ export async function handleMetadataFieldsRequest(
       region,
       openSearchDomain,
     });
-    const result = await metadata.getMetadataIndexFields();
+    const result = await metadata.;
     return {
       statusCode: 200,
       headers: {
@@ -38,11 +38,4 @@ export async function handleMetadataFieldsRequest(
     logger.logError(err);
     return getRaitaLambdaError(err);
   }
-}
-function getOpenSearchLambdaConfigOrFail(): {
-  openSearchDomain: any;
-  region: any;
-  metadataIndex: any;
-} {
-  throw new Error('Function not implemented.');
 }
