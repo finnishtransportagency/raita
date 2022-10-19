@@ -340,7 +340,7 @@ export class RaitaStack extends Stack {
       vpc,
       vpcSubnets: [
         {
-          subnets: vpc.isolatedSubnets,
+          subnets: vpc.isolatedSubnets.slice(0, 1),
         },
       ],
     });
