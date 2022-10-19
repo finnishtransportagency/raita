@@ -225,25 +225,9 @@ export class RaitaStack extends Stack {
     });
 
     sourceBuckets.forEach(bucket => {
-      // Generate filters array based on suffixes and source systems
-      // Envents should be triggered only for specified suffixes AND
-      // only if the file is in allowed top level source system folder in the bucket
-      // TODO: Replace the concat.apply when ES2019/later available using flaMap
       const fileSuffixes = Object.values(fileSuffixesToIncudeInMetadataParsing);
-      // const nested = fileSuffixes.map(fileSuffix =>
-      //   raitaSourceSystems.map(sourceSystem => ({
-      //     prefix: `${sourceSystem}/`,
-      //     suffix: `.${fileSuffix}`,
-      //   })),
-      // );
-      // const filters = new Array<{
-      //   prefix: string;
-      //   suffix: string;
-      // }>().concat.apply([], nested);
-
-      // console.log(filters);
       // TODO: Currently reacts only to CREATE events
-      // OPEN: Currently separate event source for each suffix type
+      // OPEN: Currently separate event source for each suffix type. Replace with better alternative is exists?
       fileSuffixes.forEach(suffix => {
         parser.addEventSource(
           new S3EventSource(bucket, {
@@ -256,7 +240,6 @@ export class RaitaStack extends Stack {
           }),
         );
       });
-
       bucket.grantRead(parser);
     });
     return parser;
