@@ -1,0 +1,14 @@
+.root {
+  /* @apply border-2 border-red-500; */
+}
+
+.page {
+  @apply px-2 py-1;
+  @apply border-2 border-main-gray-10;
+  @apply w-8;
+  @apply text-center;
+}
+
+.pageCurrent {
+  @apply border-main-gray-50;
+}
