@@ -13,18 +13,21 @@ import { IDocument } from 'shared/types';
 
 //
 
-export default async function handler(
+export default function handler(
   req: NextApiRequest,
   res: NextApiResponse<any>,
 ) {
-  const data = await client.get<SearchResponse<IDocument>>(
-    `/${cfg.openSearch.indexName}/_search`,
-    {
+  const data = client
+    .get<SearchResponse<IDocument>>(`/${cfg.openSearch.indexName}/_search`, {
       data: req.body,
-    },
-  );
-
-  res.status(200).json(data.data);
+    })
+    .then(r => {
+      res.status(200).json(r.data);
+    })
+    .catch(err => {
+      console.log({ err });
+      res.status(500).json({ err });
+    });
 }
 
 //
