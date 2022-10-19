@@ -101,16 +101,17 @@ export class RaitaStack extends Stack {
      * START VPC
      */
 
-    const raitaVPC = new ec2.Vpc(this, `vpc-${this.#raitaStackIdentifier}`, {
+    const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
+      vpcName: `vpc-${this.#raitaStackIdentifier}`,
       // cidr: "10.0.0.0/16",
       // maxAzs: 3,
-      subnetConfiguration: [
-        {
-          name: 'private-subnet',
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-          cidrMask: 24,
-        },
-      ],
+      // subnetConfiguration: [
+      //   {
+      //     name: 'private-subnet',
+      //     subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      //     cidrMask: 24,
+      //   },
+      // ],
     });
 
     /**
