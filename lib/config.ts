@@ -1,3 +1,4 @@
+import { raitaSourceSystems } from '../constants';
 import { getEnvOrFail } from '../utils';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 // import { Construct } from '@aws-cdk/core';
@@ -70,6 +71,7 @@ export const getPipelineConfig = () => {
 export const getRaitaStackConfig = (scope: Construct) => ({
   parserConfigurationFile: 'extractionSpec.json',
   openSearchMetadataIndex: 'metadata-index',
+  raitaSourceSystems: Object.values(raitaSourceSystems),
   cloudfrontCertificateArn: getSSMParameter(
     scope,
     SSM_CLOUDFRONT_CERTIFICATE_ARN,

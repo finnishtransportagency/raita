@@ -2,26 +2,53 @@ import { IExtractionSpec, ParseValueResult } from '../../types';
 import { logger } from '../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
+// TODO: Remove this typeguard by improving types
+function suffixIsKnown(arg: string): arg is 'csv' | 'txt' | 'pdf' {
+  return ['pdf', 'txt', 'csv'].includes(arg);
+}
+
+const EMPTY_FILE_INDICATOR = 'EMPTY';
+
 export const extractFileNameData = (
   fileName: string,
   fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
 ) => {
-  const [baseName, suffix] = fileName.split('.');
-  // Validations to separate function...
-  // Note: Would be safer to analyze the length but this should suffice.
-  if (!baseName || !suffix || !['csv', 'txt'].includes(suffix)) {
-    logger.log(
-      'Unexpected file name structure. File name analysis not carried out.',
+  const fileNameParts = fileName.split('.');
+  if (fileNameParts.length !== 2) {
+    logger.logParsingException(`Unexpected filename: ${fileName}`);
+    return {};
+  }
+  const [baseName, suffix] = fileNameParts;
+
+  if (!suffixIsKnown(suffix)) {
+    logger.logParsingException(`Unexpected suffix in file: ${fileName}`);
+    return {};
+  }
+
+  const labels = fileNamePartLabels[suffix];
+
+  const fileBaseNameParts = baseName.split('_');
+  const lastFileBaseNamePart = fileBaseNameParts[fileBaseNameParts.length - 1];
+  const labelCount = Object.keys(labels).length;
+  const expectedFileNameLength =
+    lastFileBaseNamePart === EMPTY_FILE_INDICATOR ? labelCount + 1 : labelCount;
+
+  if (fileBaseNameParts.length !== expectedFileNameLength) {
+    logger.logParsingException(
+      `Unexpected number of parts in file name. Expected ${expectedFileNameLength} but got ${fileBaseNameParts.length} for file ${fileName}. File name analysis not carried out.`,
     );
     return {};
   }
-  if (!(suffix === 'csv' || suffix === 'txt')) {
-    logger.log('Unexpected file suffix. File name analysis not carried out.');
-    return {};
-  }
-  return baseName.split('_').reduce<ParseValueResult>((acc, cur, index) => {
+  return fileBaseNameParts.reduce<ParseValueResult>((acc, cur, index) => {
+    // Handle the empty file indicator as special case.
+    // Implementation depends on this incicator being in the end of the string.
+    if (cur === EMPTY_FILE_INDICATOR) {
+      acc['isEmpty'] = true;
+      return acc;
+    }
+
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
-    const { name, parseAs } = fileNamePartLabels[suffix][index + 1];
+    const { name, parseAs } = labels[index + 1];
     if (name) {
       const { key, value } = parseAs
         ? parsePrimitive(name, cur, parseAs)

@@ -5,18 +5,27 @@ import {
 import { ParseValueResult } from '../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
+import { fileSuffixesToIncudeInMetadataParsing } from '../../../constants';
+import { RaitaParseError } from '../utils';
+import { createHash } from 'crypto';
+/**
+ * Resolves whether content data parsing is needed for the file
+ */
+export const shouldParseContent = ({ fileName }: { fileName: string }) => {
+  const suffix = fileName.substring(
+    fileName.lastIndexOf('.') + 1,
+    fileName.length,
+  );
+  return suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
+};
 
-export const isContentExtractionRequired = ({
-  fileName,
-  contentType,
-  includeSpec,
-}: {
-  fileName: string;
-  contentType: string | undefined;
-  includeSpec: IExtractionSpec['include'];
-}) =>
-  (contentType && includeSpec.includeContentTypes.includes(contentType)) ||
-  includeSpec.includeFileNames.includes(fileName);
+/**
+ * Resolves whether hash should be calculated for the file contents
+ * The logic for now is the same as for when content needs to be parsed
+ * If the logic between these two cases differ in future, implement hash calculation
+ * specific logic below
+ */
+export const shouldCalculateHash = shouldParseContent;
 
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
@@ -38,7 +47,7 @@ const extractValue = (
     }
     return null;
   } catch (err) {
-    throw new Error(
+    throw new RaitaParseError(
       `Parsing failed for the term: ${propertyKey}: ${
         err instanceof Error ? err.message : err
       }`,
@@ -48,15 +57,21 @@ const extractValue = (
 
 export const extractFileContentData = (
   spec: IExtractionSpec,
-  fileBody: string | undefined,
+  fileBody: string,
 ) =>
-  !fileBody
-    ? {}
-    : spec.fileContentExtractionSpec
-        .map(extractSpecItem => extractValue(extractSpecItem, fileBody))
-        .reduce<ParseValueResult>((acc, cur) => {
-          if (cur) {
-            acc[cur.key] = cur.value;
-          }
-          return acc;
-        }, {});
+  spec.fileContentExtractionSpec
+    .map(extractSpecItem => extractValue(extractSpecItem, fileBody))
+    .reduce<ParseValueResult>((acc, cur) => {
+      if (cur) {
+        acc[cur.key] = cur.value;
+      }
+      return acc;
+    }, {});
+
+/**
+ * Returns hex encoded hash for given file input
+ */
+export const calculateHash = (fileBody: string): ParseValueResult => {
+  const hash = createHash('sha256');
+  return { hash: hash.update(fileBody).digest('hex') };
+};

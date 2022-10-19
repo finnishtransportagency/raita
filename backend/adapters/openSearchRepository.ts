@@ -31,14 +31,9 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       });
       return addDocresponse;
     });
-    await Promise.all(additions)
-      .then(data => {
-        logger.log(data);
-      })
-      .catch(err => {
-        logger.log(err);
-        throw err;
-      });
+    await Promise.all(additions).catch(err => {
+      throw err;
+    });
   };
 
   // TODO: Provide best possible types
