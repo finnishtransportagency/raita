@@ -20,7 +20,7 @@ export async function handleMetadataFieldsRequest(
       region,
       openSearchDomain,
     });
-    const result = await metadata.;
+    const result = await metadata.getMetadataFields();
     return {
       statusCode: 200,
       headers: {
