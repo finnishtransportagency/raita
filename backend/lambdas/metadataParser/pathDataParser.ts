@@ -9,17 +9,15 @@ export const extractPathData = (
   path: Array<string>,
   folderLabels: IExtractionSpec['folderTreeExtractionSpec'],
 ) => {
-  // Exclude the filename
-  const folderNames = path.slice(0, -1);
-  // If validation becomes more complex, extract into validation function
-  // TODO: Temporary check for the path parts, update for real setup
-  if (folderNames.length < 6 || folderNames.length > 7) {
-    logger.log(
-      'Unexpected folder path length. Folder path analysis not carried out.',
+  const expectedPathLength = Object.keys(folderLabels).length;
+  if (path.length !== expectedPathLength) {
+    logger.logParsingException(
+      `Unexpected folder path length for path ${path}. Folder path analysis not carried out`,
     );
     return {};
   }
-
+  // Exclude the filename
+  const folderNames = path.slice(0, -1);
   // TODO: Duplicates now implementation for file name parsing
   return folderNames.reduce<ParseValueResult>((acc, cur, index) => {
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1

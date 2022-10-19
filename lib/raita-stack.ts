@@ -28,10 +28,13 @@ import {
   FederatedPrincipal,
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
-
 import * as path from 'path';
 import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
+import {
+  fileSuffixesToIncudeInMetadataParsing,
+  RaitaSourceSystem,
+} from '../constants';
 import { getRemovalPolicy, isPermanentStack } from './utils';
 import { CloudfrontStack } from './raita-cloudfront';
 
@@ -161,6 +164,7 @@ export class RaitaStack extends Stack {
       configurationFile: config.parserConfigurationFile,
       lambdaRole: lambdaServiceRole,
       region: this.region,
+      raitaSourceSystems: config.raitaSourceSystems,
     });
 
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
@@ -209,6 +213,7 @@ export class RaitaStack extends Stack {
     openSearchMetadataIndex,
     lambdaRole,
     region,
+    raitaSourceSystems,
   }: {
     name: string;
     sourceBuckets: Array<cdk.aws_s3.Bucket>;
@@ -218,6 +223,7 @@ export class RaitaStack extends Stack {
     lambdaRole: Role;
     openSearchMetadataIndex: string;
     region: string;
+    raitaSourceSystems: Array<RaitaSourceSystem>;
   }) {
     const parser = new NodejsFunction(this, name, {
       functionName: `lambda-${this.#raitaStackIdentifier}-${name}`,
@@ -238,14 +244,23 @@ export class RaitaStack extends Stack {
       },
       role: lambdaRole,
     });
+
     sourceBuckets.forEach(bucket => {
-      // OPEN: Figure out if some filtering can be applied alredy
-      // at this level with filter property
-      parser.addEventSource(
-        new S3EventSource(bucket, {
-          events: [s3.EventType.OBJECT_CREATED, s3.EventType.OBJECT_REMOVED],
-        }),
-      );
+      const fileSuffixes = Object.values(fileSuffixesToIncudeInMetadataParsing);
+      // TODO: Currently reacts only to CREATE events
+      // OPEN: Currently separate event source for each suffix type. Replace with better alternative is exists?
+      fileSuffixes.forEach(suffix => {
+        parser.addEventSource(
+          new S3EventSource(bucket, {
+            events: [s3.EventType.OBJECT_CREATED],
+            filters: [
+              {
+                suffix,
+              },
+            ],
+          }),
+        );
+      });
       bucket.grantRead(parser);
     });
     return parser;

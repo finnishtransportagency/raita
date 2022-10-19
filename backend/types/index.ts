@@ -3,12 +3,14 @@ export * from './portDataStorage';
 export * from './portFile';
 export * from './portSpecification';
 
-export type ParseValueResult = Record<string, string | number>;
+export type ParseValueResult = Record<string, string | number | boolean>;
 
 export interface FileMetadataEntry {
-  fileName: string;
-  bucket: string;
-  arn: string;
+  file_name: string;
+  key: string;
+  size: number;
+  bucket_name: string;
+  bucket_arn: string;
   metadata: ParseValueResult;
 }
 

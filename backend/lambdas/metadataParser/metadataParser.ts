@@ -8,12 +8,16 @@ import {
 import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
+  calculateHash,
   extractFileContentData,
-  isContentExtractionRequired,
+  shouldCalculateHash,
+  shouldParseContent,
 } from './contentDataParser';
 import { logger } from '../../utils/logger';
 import BackendFacade from '../../ports/backend';
 import { getGetEnvWithPreassignedContext } from '../../../utils';
+import { RaitaSourceSystem, raitaSourceSystems } from '../../../constants';
+import { decodeUriString } from '../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -45,11 +49,30 @@ export async function metadataParser(event: S3Event): Promise<void> {
         // HERE flow control if multiple event types (S3, HTTP...)
         // or files in multiple repositories
         const file = await backend.files.getFile(eventRecord);
-        if (!spec.include.includeContentTypes.includes(file.contentType)) {
+
+        // if (!spec.include.includeContentTypes.includes(file.contentType)) {
+        //   return null;
+        // }
+
+        const path = eventRecord.s3.object.key.split('/');
+        const rootFolder = path[0];
+
+        // Return empty null result if the top level folder does not match any of the names
+        // of the designated source systems.
+        if (
+          !Object.values(raitaSourceSystems).includes(
+            rootFolder as RaitaSourceSystem,
+          )
+        ) {
+          logger.logError(
+            `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
+          );
           return null;
         }
-        const path = eventRecord.s3.object.key.split('/');
-        const fileName = path[path.length - 1];
+
+        // TODO: Handle tag creation based on root folder
+
+        const fileName = decodeUriString(path[path.length - 1]);
         const metadata = await parseFileMetadata({
           fileName,
           path,
@@ -57,22 +80,27 @@ export async function metadataParser(event: S3Event): Promise<void> {
           spec,
         });
         return {
-          fileName,
-          arn: eventRecord.s3.bucket.arn,
-          bucket: eventRecord.s3.bucket.name,
+          file_name: fileName,
+          key: eventRecord.s3.object.key,
+          bucket_arn: eventRecord.s3.bucket.arn,
+          bucket_name: eventRecord.s3.bucket.name,
+          size: eventRecord.s3.object.size,
           metadata,
         };
       },
-    ).filter(x => Boolean(x)) as Array<Promise<FileMetadataEntry>>;
+    );
     // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
     // Switch to granular error handling.
     // Check if lambda supports es2022 and if so, switch to Promise.allSettled
-    const entries = await Promise.all(recordResults);
+
+    const entries = await Promise.all(recordResults).then(
+      results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
+    );
+
     await backend.metadataStorage.saveFileMetadata(entries);
-    logger.log('Entries persisted in OpenSearch.');
   } catch (err) {
     // TODO: Figure out proper error handling.
-    logger.log(`An error occured while processing events: ${err}`);
+    logger.logError(`An error occured while processing events: ${err}`);
   }
 }
 
@@ -92,17 +120,22 @@ async function parseFileMetadata({
     spec.fileNameExtractionSpec,
   );
   const pathData = extractPathData(path, spec.folderTreeExtractionSpec);
-  const parseContentData = isContentExtractionRequired({
-    fileName,
-    contentType: file.contentType,
-    includeSpec: spec.include,
-  });
-  const fileContentData = parseContentData
-    ? extractFileContentData(spec, file.fileBody?.toString())
-    : {};
+  const fileBody = file.fileBody?.toString();
+  const fileContentData =
+    shouldParseContent({
+      fileName,
+    }) && fileBody
+      ? extractFileContentData(spec, fileBody)
+      : {};
+  const hashData =
+    shouldCalculateHash({ fileName }) && fileBody
+      ? calculateHash(fileBody)
+      : {};
+
   return {
     ...pathData,
     ...fileContentData,
     ...fileNameData,
+    ...hashData,
   };
 }
