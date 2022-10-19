@@ -17,6 +17,7 @@ import { logger } from '../../utils/logger';
 import BackendFacade from '../../ports/backend';
 import { getGetEnvWithPreassignedContext } from '../../../utils';
 import { RaitaSourceSystem, raitaSourceSystems } from '../../../constants';
+import { decodeUriString } from '../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -71,7 +72,7 @@ export async function metadataParser(event: S3Event): Promise<void> {
 
         // TODO: Handle tag creation based on root folder
 
-        const fileName = path[path.length - 1];
+        const fileName = decodeUriString(path[path.length - 1]);
         const metadata = await parseFileMetadata({
           fileName,
           path,

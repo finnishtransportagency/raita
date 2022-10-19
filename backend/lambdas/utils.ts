@@ -32,3 +32,14 @@ export const getRaitaLambdaError = (err: unknown) => ({
   },
   body: JSON.stringify({ message: getClientErrorMessage(err) }, null, 2),
 });
+
+/**
+ * Return decoded uri string or if decode fails, the original uri string
+ */
+export const decodeUriString = (uriString: string) => {
+  try {
+    return decodeURI(uriString);
+  } catch (error) {
+    return uriString;
+  }
+};
