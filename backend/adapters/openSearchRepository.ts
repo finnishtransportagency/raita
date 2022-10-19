@@ -45,4 +45,13 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     });
     return response;
   };
+
+  // TODO: Provide best possible types
+  getMetadataIndexFields = async () => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.indices.getMapping({
+      index: this.#dataIndex,
+    });
+    return response;
+  };
 }
