@@ -5,6 +5,7 @@
  */
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import * as cfg from 'shared/config';
 import { client } from 'shared/rest';
 
 /**
@@ -12,7 +13,7 @@ import { client } from 'shared/rest';
  *       this is currently used just to get us going.
  */
 type MetadataMapping = {
-  'metadata-index': {
+  [cfg.openSearch.indexName]: {
     mappings: {
       properties: {
         metadata: {
@@ -34,11 +35,14 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   return client
-    .get<MetadataMapping>('/metadata-index')
+    .get<MetadataMapping>(cfg.openSearch.indexName)
     .then(d =>
       res
         .status(200)
-        .json(d.data['metadata-index'].mappings.properties.metadata.properties),
+        .json(
+          d.data[cfg.openSearch.indexName].mappings.properties.metadata
+            .properties,
+        ),
     )
     .catch(err => res.status(500).json({ err }));
 }
