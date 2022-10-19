@@ -132,13 +132,6 @@ async function parseFileMetadata({
       ? calculateHash(fileBody)
       : {};
 
-  console.log({
-    ...pathData,
-    ...fileContentData,
-    ...fileNameData,
-    ...hashData,
-  });
-
   return {
     ...pathData,
     ...fileContentData,
