@@ -71,10 +71,7 @@ export const extractFileContentData = (
 /**
  * Returns hex encoded hash for given file input
  */
-export const calculateHash = (fileBody: string | undefined) => {
-  if (!fileBody) {
-    return undefined;
-  }
+export const calculateHash = (fileBody: string): ParseValueResult => {
   const hash = createHash('sha256');
-  return hash.update(fileBody).digest('hex');
+  return { hash: hash.update(fileBody).digest('hex') };
 };

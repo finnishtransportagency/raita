@@ -130,6 +130,7 @@ async function parseFileMetadata({
     shouldCalculateHash({ fileName }) && fileBody
       ? calculateHash(fileBody)
       : {};
+
   return {
     ...pathData,
     ...fileContentData,
