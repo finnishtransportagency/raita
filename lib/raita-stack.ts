@@ -105,13 +105,15 @@ export class RaitaStack extends Stack {
       vpcName: `vpc-${this.#raitaStackIdentifier}`,
       // cidr: "10.0.0.0/16",
       // maxAzs: 3,
-      // subnetConfiguration: [
-      //   {
-      //     name: 'private-subnet',
-      //     subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-      //     cidrMask: 24,
-      //   },
-      // ],
+      // natGateways: 1,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          name: 'private-subnet',
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          cidrMask: 24,
+        },
+      ],
     });
 
     /**
@@ -317,7 +319,7 @@ export class RaitaStack extends Stack {
         enabled: true,
       },
       enforceHttps: true,
-      useUnsignedBasicAuth: true,
+      // useUnsignedBasicAuth: true,
       fineGrainedAccessControl: {
         masterUserArn: masterUserRole.roleArn,
       },
@@ -336,7 +338,11 @@ export class RaitaStack extends Stack {
         }),
       ],
       vpc,
-      // vpcSubnets: vpc.privateSubnets
+      vpcSubnets: [
+        {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
+      ],
     });
   }
 
