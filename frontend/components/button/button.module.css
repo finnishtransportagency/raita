@@ -9,5 +9,7 @@
 }
 
 .secondary {
-  @apply border-2 border-primary bg-transparent text-black;
+  @apply border-2 border-primary text-primary bg-transparent;
+  @apply hover:bg-primary hover:text-white hover:shadow-lg;
+  @apply disabled:bg-white disabled:text-main-gray-50 disabled:border-main-gray-50 disabled:shadow-none;
 }
