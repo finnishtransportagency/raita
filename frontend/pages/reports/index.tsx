@@ -4,16 +4,14 @@ import Head from 'next/head';
 import { assoc, prop } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMutation } from '@tanstack/react-query';
 import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 
-import type { App, Rest } from 'shared/types';
-import { webClient } from 'shared/rest';
+import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { Button } from 'components';
-import { useFieldQuery } from './hooks';
-import { Filter } from './components';
+import { useFieldQuery, useReportTypeQuery, useSearch } from './hooks';
+import { DateRange, Filter } from './components';
 import Footer from './components/footer';
 
 //
@@ -21,9 +19,29 @@ import Footer from './components/footer';
 const ReportsIndex: NextPage = () => {
   const { t } = useTranslation('common');
   const f = useFieldQuery();
+  const reportTypes = useReportTypeQuery();
+
   const [state, setState] = useState<ReportsState>({
     filters: {},
+    dateRange: {
+      start: new Date(),
+      end: new Date(),
+    },
+    reportTypes: [],
+    paging: {
+      size: 10,
+      offset: 0,
+    },
   });
+
+  // const reportTypes = useMemo(
+  //   () =>
+  //     xs.data?.aggregations.types.buckets.map(it => ({
+  //       key: it.key,
+  //       count: it.doc_count,
+  //     })),
+  //   [xs.data?.aggregations.types.buckets],
+  // );
 
   /**
    * @todo Extract into something more reusable
@@ -42,11 +60,15 @@ const ReportsIndex: NextPage = () => {
     };
   }, [state.filters]);
 
-  const mutation = useMutation<Rest.Reports>(() => {
-    return webClient.post<Rest.Reports>('/reports', query).then(prop('data'));
-  });
+  const mutation = useSearch();
 
   const updateFilters = (fs: ReportFilters) => setState(assoc('filters', fs));
+
+  const updateDateRange = (range: Range<Date>) => {
+    setState(assoc('dateRange', range));
+  };
+
+  const updateReportType = () => {};
 
   //
 
@@ -80,12 +102,38 @@ const ReportsIndex: NextPage = () => {
                 <Filter keys={Object.keys(f.data)} onUpdate={updateFilters} />
               </section>
 
+              <section>
+                <header>{t('common:reports_timespan')}</header>
+
+                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
+              </section>
+
+              <section>
+                <header>{t('common:reports_report_types')}</header>
+
+                <select
+                  className="border-2 border-main-gray-50 rounded"
+                  multiple={true}
+                  onChange={e =>
+                    console.log(
+                      Array.from(e.target.selectedOptions).map(x => x.value),
+                    )
+                  }
+                >
+                  {reportTypes?.map((it, ix) => (
+                    <option className="px-2" key={ix} value={it.key}>
+                      {it.key}
+                    </option>
+                  ))}
+                </select>
+              </section>
+
               <footer>
                 {/* Search controls for doing the search, reset */}
                 <div className="space-x-2">
                   <Button
                     label={t('common:search')}
-                    onClick={() => mutation.mutate()}
+                    onClick={() => mutation.mutate(query)}
                   />
                   <Button
                     label={t('common:clear')}
@@ -249,6 +297,12 @@ export type StaticProps = {
 
 type ReportsState = {
   filters: Record<string, string>;
+  dateRange: Range<Date>;
+  reportTypes: string[];
+  paging: {
+    size: number;
+    offset: number;
+  };
 };
 
 type ReportFilters = Record<string, string>;
