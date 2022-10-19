@@ -4,18 +4,17 @@ import { assoc, dissoc, fromPairs, map, pipe, toPairs } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
-import css from './filter.module.css';
 import { App } from 'shared/types';
+import { EMPTY_KEY } from 'shared/constants';
 
-/** Placeholder value for an empty filter */
-const EMPTY_KEY = '__EMPTY__' as const;
+import css from './filter.module.css';
 
 export function Filter(props: Props) {
   const { t } = useTranslation(['common']);
 
   const [state, setState] = useState<State>({
     keys: props.keys,
-    filters: { system: '123' },
+    filters: {},
   });
 
   /**
@@ -108,6 +107,7 @@ export function Filter(props: Props) {
               <div className="col-span-2">
                 <Button
                   label={t('common:delete')}
+                  type={'secondary'}
                   size="sm"
                   onClick={() => deleteFilter(filterKey)}
                 />

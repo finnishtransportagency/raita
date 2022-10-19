@@ -1,0 +1,14 @@
+.root {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.input {
+  @apply border-2 border-main-gray-50;
+  @apply rounded;
+  @apply flex-grow;
+}
+
+.group {
+  @apply flex;
+  @apply space-x-2;
+}
