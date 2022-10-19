@@ -10,6 +10,10 @@
   "search": "Search",
   "clear": "Clear",
   "add_filter": "Add filter",
+  "preview": "Preview",
   "download": "Download",
-  "download_all": "Download all"
+  "download_all": "Download all",
+  "reports_timespan": "Time span",
+  "reports_report_types": "Report types",
+  "filters_none_added": "No filters added."
 }
