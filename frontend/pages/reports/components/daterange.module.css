@@ -6,6 +6,7 @@
   @apply border-2 border-main-gray-50;
   @apply rounded;
   @apply flex-grow;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 .group {

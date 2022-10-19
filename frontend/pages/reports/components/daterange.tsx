@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
-import { format } from 'date-fns/fp';
+import { format as formatDate } from 'date-fns/fp';
 
 import { Button } from 'components';
 
@@ -13,7 +13,7 @@ import { useTranslation } from 'next-i18next';
 export function DateRange(props: Props) {
   const { t } = useTranslation(['common']);
 
-  const { range, onUpdate } = props;
+  const { range, format, disabled = false, onUpdate } = props;
 
   const [state, setState] = useState({
     start: range?.start,
@@ -24,8 +24,8 @@ export function DateRange(props: Props) {
 
   const rangeValues = useMemo(() => {
     const r = [
-      state.start ? format(DATE_FMT, state.start) : void 0,
-      state.end ? format(DATE_FMT, state.end) : void 0,
+      state.start ? formatDate(DATE_FMT, state.start) : void 0,
+      state.end ? formatDate(DATE_FMT, state.end) : void 0,
     ];
 
     return r;
@@ -34,7 +34,7 @@ export function DateRange(props: Props) {
   //
 
   useEffect(() => {
-    onUpdate && onUpdate({ start: state.start, end: state.end });
+    onUpdate && onUpdate(state);
   }, [state]);
 
   return (
@@ -42,6 +42,7 @@ export function DateRange(props: Props) {
       <div className={clsx(css.root)}>
         <div className={clsx(css.group)}>
           <input
+            {...{ disabled }}
             type={'date'}
             value={rangeValues[0]}
             className={clsx(css.input)}
@@ -51,6 +52,7 @@ export function DateRange(props: Props) {
           />
 
           <Button
+            {...{ disabled }}
             label={t('common:clear')}
             type={'secondary'}
             size={'sm'}
@@ -60,6 +62,7 @@ export function DateRange(props: Props) {
 
         <div className={clsx(css.group)}>
           <input
+            {...{ disabled }}
             type={'date'}
             value={rangeValues[1]}
             className={clsx(css.input)}
@@ -67,6 +70,7 @@ export function DateRange(props: Props) {
           />
 
           <Button
+            {...{ disabled }}
             label={t('common:clear')}
             type={'secondary'}
             size={'sm'}
@@ -84,5 +88,7 @@ export default DateRange;
 
 export type Props = {
   range?: Range<Date>;
+  format?: Range<string>;
+  disabled?: boolean;
   onUpdate: (range: Range<Date>) => void;
 };

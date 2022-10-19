@@ -1,6 +1,6 @@
 import { Button } from 'components';
-import { useState, useEffect } from 'react';
-import { assoc, dissoc, fromPairs, map, pipe, toPairs } from 'rambda';
+import { useState, useEffect, useMemo } from 'react';
+import { assoc, dissoc, isEmpty, not } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -16,6 +16,13 @@ export function Filter(props: Props) {
     keys: props.keys,
     filters: {},
   });
+
+  const hasFilters = useMemo(
+    () => not(isEmpty(state.filters)),
+    [state.filters],
+  );
+
+  console.log({ props });
 
   /**
    * Ensure the given `onUpdate` callback is called when filters change
@@ -71,6 +78,12 @@ export function Filter(props: Props) {
 
   return (
     <div className={css.root}>
+      {!hasFilters && (
+        <div className="border border-main-gray-50 bg-main-gray-10 px-4 py-2 mt-2">
+          {t('common:filters_none_added')}
+        </div>
+      )}
+
       <ul className="space-y-3 mb-2">
         {Object.entries(state.filters).map(([filterKey, value], ix) => (
           <li key={ix}>
@@ -132,6 +145,7 @@ export default Filter;
 
 export type Props = {
   keys: string[];
+  data: Record<string, Field>;
   onUpdate: (fs: Record<string, string>) => void;
 };
 
@@ -164,5 +178,11 @@ type FilterItem = {
 
 type State = {
   keys: string[];
+  data?: Record<string, Field>;
   filters: Record<string, string>;
 };
+
+type Field =
+  | { type: 'date'; format: string }
+  | { type: 'long' }
+  | { type: 'text' };
