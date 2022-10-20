@@ -26,7 +26,7 @@ export async function handleMetadataFieldsRequest(
       openSearchDomain,
     });
     const rawFieldsResponse = await metadata.getMetadataFields();
-    const fields = parseMetadataFields(rawFieldsResponse);
+    const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
     return {
       statusCode: 200,
       headers: {
@@ -34,7 +34,7 @@ export async function handleMetadataFieldsRequest(
       },
       body: JSON.stringify(
         {
-          result,
+          fields,
         },
         null,
         2,
@@ -46,9 +46,20 @@ export async function handleMetadataFieldsRequest(
   }
 }
 
-const FieldMappingsSchema = z.object({});
+const FieldMappingsSchema = z.record(
+  z.string(),
+  z.object({
+    mappings: z.object({
+      properties: z.object({
+        metadata: z.object({
+          properties: z.record(z.string(), z.any()),
+        }),
+      }),
+    }),
+  }),
+);
 
-function parseMetadataFields(res: any) {
+function parseMetadataFields(res: any, metadataIndexName: string) {
   if (typeof res !== 'string') {
     throw new RaitaLambdaError(
       'Unexpected response type from database port',
@@ -56,6 +67,13 @@ function parseMetadataFields(res: any) {
     );
   }
   const parsed = JSON.parse(res);
-  const fields = FieldMappingsSchema.parse(parsed);
-  return fields;
+  const responseData = FieldMappingsSchema.parse(parsed);
+  const metadataIndexData = responseData[metadataIndexName];
+  if (!metadataIndexData) {
+    throw new RaitaLambdaError(
+      'Response from database port does not contain data for given index.',
+      500,
+    );
+  }
+  return metadataIndexData.mappings.properties.metadata.properties;
 }
