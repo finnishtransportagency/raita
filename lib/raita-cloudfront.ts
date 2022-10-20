@@ -63,8 +63,8 @@ export class CloudfrontStack extends Stack {
       this,
       `cloudfront`,
       {
-        // domainNames: [cloudfrontDomainName],
-        // certificate,
+        domainNames: [cloudfrontDomainName],
+        certificate,
         defaultRootObject: 'index.html',
         comment: `cloudfront for ${raitaStackId}`,
         defaultBehavior: {
