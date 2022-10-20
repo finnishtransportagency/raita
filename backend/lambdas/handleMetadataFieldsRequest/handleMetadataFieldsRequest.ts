@@ -1,7 +1,12 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { z } from 'zod';
 import MetadataPort from '../../ports/metadataPort';
 import { logger } from '../../utils/logger';
-import { getOpenSearchLambdaConfigOrFail, getRaitaLambdaError } from '../utils';
+import {
+  getOpenSearchLambdaConfigOrFail,
+  getRaitaLambdaError,
+  RaitaLambdaError,
+} from '../utils';
 
 /**
  * DRAFT IMPLEMENTATION
@@ -20,7 +25,8 @@ export async function handleMetadataFieldsRequest(
       region,
       openSearchDomain,
     });
-    const result = await metadata.getMetadataFields();
+    const rawFieldsResponse = await metadata.getMetadataFields();
+    const fields = parseMetadataFields(rawFieldsResponse);
     return {
       statusCode: 200,
       headers: {
@@ -38,4 +44,18 @@ export async function handleMetadataFieldsRequest(
     logger.logError(err);
     return getRaitaLambdaError(err);
   }
+}
+
+const FieldMappingsSchema = z.object({});
+
+function parseMetadataFields(res: any) {
+  if (typeof res !== 'string') {
+    throw new RaitaLambdaError(
+      'Unexpected response type from database port',
+      500,
+    );
+  }
+  const parsed = JSON.parse(res);
+  const fields = FieldMappingsSchema.parse(parsed);
+  return fields;
 }
