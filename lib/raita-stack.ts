@@ -533,12 +533,16 @@ export class RaitaStack extends Stack {
       },
     });
 
-    const esRequestProvider = new Provider(this, 'esRequestProvider', {
+    const osRequestProvider = new Provider(this, 'os-request-provider', {
       onEventHandler: osRequestsFn,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.isolatedSubnets.slice(0, 1),
+      },
     });
 
-    const esRequests = new CustomResource(this, 'esRequestsResource', {
-      serviceToken: esRequestProvider.serviceToken,
+    const osRequests = new CustomResource(this, 'os-requests-resource', {
+      serviceToken: osRequestProvider.serviceToken,
       properties: {
         requests: [
           {
@@ -556,6 +560,6 @@ export class RaitaStack extends Stack {
         ],
       },
     });
-    esRequests.node.addDependency(openSearchDomain);
+    osRequests.node.addDependency(openSearchDomain);
   }
 }
