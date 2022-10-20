@@ -59,16 +59,14 @@ const FieldMappingsSchema = z.record(
   }),
 );
 
-function parseMetadataFields(data: any, metadataIndexName: string) {
-  console.log(typeof data);
-  // if (typeof data !== 'string') {
-  //   throw new RaitaLambdaError(
-  //     'Unexpected response type from database port',
-  //     500,
-  //   );
-  // }
+function parseMetadataFields(res: any, metadataIndexName: string) {
+  console.log(typeof res);
+  console.log(res);
+  if (!res.body) {
+    throw new RaitaLambdaError('Missing response body', 500);
+  }
   // const parsed = JSON.parse(data);
-  const responseData = FieldMappingsSchema.parse(data);
+  const responseData = FieldMappingsSchema.parse(res.body);
   const metadataIndexData = responseData[metadataIndexName];
   if (!metadataIndexData) {
     throw new RaitaLambdaError(
