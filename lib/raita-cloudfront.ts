@@ -67,6 +67,7 @@ export class CloudfrontStack extends Stack {
         certificate,
         defaultRootObject: 'index.html',
         comment: `cloudfront for ${raitaStackId}`,
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         defaultBehavior: {
           origin: new origins.S3Origin(feBucket, {
             originAccessIdentity: cloudfrontOAI,
