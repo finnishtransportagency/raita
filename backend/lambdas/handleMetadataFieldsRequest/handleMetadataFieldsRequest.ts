@@ -46,13 +46,17 @@ export async function handleMetadataFieldsRequest(
   }
 }
 
+const MetadataFieldSchema = z.object({
+  type: z.string(),
+});
+
 const FieldMappingsSchema = z.record(
   z.string(),
   z.object({
     mappings: z.object({
       properties: z.object({
         metadata: z.object({
-          properties: z.record(z.string(), z.any()),
+          properties: z.record(z.string(), MetadataFieldSchema),
         }),
       }),
     }),
@@ -74,5 +78,9 @@ function parseMetadataFields(res: any, metadataIndexName: string) {
       500,
     );
   }
-  return metadataIndexData.mappings.properties.metadata.properties;
+  const fields = metadataIndexData.mappings.properties.metadata.properties;
+  return Object.keys(fields).map(key => {
+    const value = fields[key];
+    return { [key]: { type: value.type } };
+  });
 }
