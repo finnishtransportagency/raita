@@ -175,6 +175,7 @@ export class RaitaStack extends Stack {
       lambdaServiceRole,
       osAdminUserRole: osAdminUserRole,
       openSearchDomain,
+      vpc: raitaVPC,
     });
 
     // Create API Gateway
@@ -503,10 +504,12 @@ export class RaitaStack extends Stack {
     lambdaServiceRole,
     osAdminUserRole,
     openSearchDomain,
+    vpc,
   }: {
     lambdaServiceRole: Role;
     osAdminUserRole: Role;
     openSearchDomain: cdk.aws_opensearchservice.Domain;
+    vpc: ec2.Vpc;
   }) {
     // Create lambda for sending requests to OpenSearch API
     const osRequestsFnName = 'handle-os-request';
@@ -523,6 +526,10 @@ export class RaitaStack extends Stack {
       environment: {
         OPENSEARCH_DOMAIN_ENDPOINT: openSearchDomain.domainEndpoint,
         REGION: this.region,
+      },
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.isolatedSubnets.slice(0, 1),
       },
     });
 
