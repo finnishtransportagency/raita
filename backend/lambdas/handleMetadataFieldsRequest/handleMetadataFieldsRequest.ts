@@ -59,15 +59,16 @@ const FieldMappingsSchema = z.record(
   }),
 );
 
-function parseMetadataFields(res: any, metadataIndexName: string) {
-  if (typeof res !== 'string') {
-    throw new RaitaLambdaError(
-      'Unexpected response type from database port',
-      500,
-    );
-  }
-  const parsed = JSON.parse(res);
-  const responseData = FieldMappingsSchema.parse(parsed);
+function parseMetadataFields(data: any, metadataIndexName: string) {
+  console.log(typeof data);
+  // if (typeof data !== 'string') {
+  //   throw new RaitaLambdaError(
+  //     'Unexpected response type from database port',
+  //     500,
+  //   );
+  // }
+  // const parsed = JSON.parse(data);
+  const responseData = FieldMappingsSchema.parse(data);
   const metadataIndexData = responseData[metadataIndexName];
   if (!metadataIndexData) {
     throw new RaitaLambdaError(
