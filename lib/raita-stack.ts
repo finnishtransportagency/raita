@@ -85,6 +85,7 @@ export class RaitaStack extends Stack {
       // cidr: "10.0.0.0/16",
       // maxAzs: 3,
       // natGateways: 1,
+      enableDnsSupport: true,
       natGateways: 0,
       subnetConfiguration: [
         {
@@ -216,6 +217,7 @@ export class RaitaStack extends Stack {
       vpc,
       vpcSubnets: [
         {
+          // Temporary setup
           subnets: vpc.isolatedSubnets.slice(0, 1),
         },
       ],
@@ -386,14 +388,20 @@ export class RaitaStack extends Stack {
       },
       vpc,
       vpcSubnets: {
+        // Temporary setup
         subnets: vpc.isolatedSubnets.slice(0, 1),
       },
     });
+
+    // const osRequestsWithAwsCustomResource = new AwsCustomResource(this, 'os-requests-with-aws-custom-resource', {
+
+    // })
 
     const osRequestProvider = new Provider(this, 'os-request-provider', {
       onEventHandler: osRequestsFn,
       vpc,
       vpcSubnets: {
+        // Temporary setup
         subnets: vpc.isolatedSubnets.slice(0, 1),
       },
     });
