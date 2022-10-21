@@ -1,9 +1,7 @@
 import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
@@ -29,14 +27,8 @@ import {
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
-import { RaitaGatewayStack } from './raita-gateway';
-import { getRaitaStackConfig, RaitaEnvironment } from './config';
-import {
-  fileSuffixesToIncudeInMetadataParsing,
-  RaitaSourceSystem,
-} from '../constants';
-import { getRemovalPolicy, isPermanentStack } from './utils';
-import { CloudfrontStack } from './raita-cloudfront';
+import { RaitaEnvironment } from './config';
+import { getRemovalPolicy } from './utils';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -52,19 +44,6 @@ export class RaitaStack extends Stack {
     this.#raitaStackIdentifier = id.toLowerCase();
     // Use stackId as cognitoDomainPrefix
     const cognitoDomainPrefix = this.#raitaStackIdentifier;
-
-    // OPEN: Move to parameter store?
-    const config = getRaitaStackConfig(this);
-
-    // Create buckets
-    const dataBucket = this.createBucket({
-      name: 'parser-input-data',
-      raitaEnv,
-    });
-    const configurationBucket = this.createBucket({
-      name: 'parser-configuration-data',
-      raitaEnv,
-    });
 
     // Create Cognito user and identity pools
     const userPool = this.createUserPool({
@@ -157,19 +136,6 @@ export class RaitaStack extends Stack {
       esLimitedUserRole: openSearchServiceRole,
     });
 
-    // Create meta data parser lambda
-    const metadataParserFn = this.createMetadataParser({
-      name: 'metadata-parser',
-      sourceBuckets: [dataBucket],
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex: config.openSearchMetadataIndex,
-      configurationBucketName: configurationBucket.bucketName,
-      configurationFile: config.parserConfigurationFile,
-      lambdaRole: lambdaServiceRole,
-      region: this.region,
-      raitaSourceSystems: config.raitaSourceSystems,
-    });
-
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     this.configureOpenSearchRoleMapping({
       lambdaServiceRole,
@@ -177,97 +143,6 @@ export class RaitaStack extends Stack {
       openSearchDomain,
       vpc: raitaVPC,
     });
-
-    // Create API Gateway
-    new RaitaGatewayStack(this, 'stack-gw', {
-      dataBucket,
-      lambdaServiceRole,
-      userPool,
-      raitaStackId: this.#raitaStackIdentifier,
-      raitaEnv: raitaEnv,
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex: config.openSearchMetadataIndex,
-    });
-
-    // Cloudfront stack is created conditionally - only for main and prod stackIds
-    // Feature branches do not provide access from outside
-    if (isPermanentStack(stackId, raitaEnv)) {
-      new CloudfrontStack(this, 'stack-cf', {
-        raitaStackId: this.#raitaStackIdentifier,
-        raitaEnv: raitaEnv,
-        cloudfrontCertificateArn: config.cloudfrontCertificateArn,
-        cloudfrontDomainName: config.cloudfrontDomainName,
-      });
-    }
-
-    // Grant lambda read to configuration bucket
-    configurationBucket.grantRead(metadataParserFn);
-  }
-
-  /**
-   * Creates the parser lambda and add S3 buckets as event sources,
-   * granting lambda read access to these buckets
-   */
-  private createMetadataParser({
-    name,
-    sourceBuckets,
-    openSearchDomainEndpoint,
-    configurationBucketName,
-    configurationFile,
-    openSearchMetadataIndex,
-    lambdaRole,
-    region,
-    raitaSourceSystems,
-  }: {
-    name: string;
-    sourceBuckets: Array<cdk.aws_s3.Bucket>;
-    openSearchDomainEndpoint: string;
-    configurationBucketName: string;
-    configurationFile: string;
-    lambdaRole: Role;
-    openSearchMetadataIndex: string;
-    region: string;
-    raitaSourceSystems: Array<RaitaSourceSystem>;
-  }) {
-    const parser = new NodejsFunction(this, name, {
-      functionName: `lambda-${this.#raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'metadataParser',
-      entry: path.join(
-        __dirname,
-        `../backend/lambdas/metadataParser/metadataParser.ts`,
-      ),
-      environment: {
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
-        CONFIGURATION_BUCKET: configurationBucketName,
-        CONFIGURATION_FILE: configurationFile,
-        METADATA_INDEX: openSearchMetadataIndex,
-        REGION: region,
-      },
-      role: lambdaRole,
-    });
-
-    sourceBuckets.forEach(bucket => {
-      const fileSuffixes = Object.values(fileSuffixesToIncudeInMetadataParsing);
-      // TODO: Currently reacts only to CREATE events
-      // OPEN: Currently separate event source for each suffix type. Replace with better alternative is exists?
-      fileSuffixes.forEach(suffix => {
-        parser.addEventSource(
-          new S3EventSource(bucket, {
-            events: [s3.EventType.OBJECT_CREATED],
-            filters: [
-              {
-                suffix,
-              },
-            ],
-          }),
-        );
-      });
-      bucket.grantRead(parser);
-    });
-    return parser;
   }
 
   /**
@@ -344,24 +219,6 @@ export class RaitaStack extends Stack {
           subnets: vpc.isolatedSubnets.slice(0, 1),
         },
       ],
-    });
-  }
-
-  /**
-   * Creates a data bucket for the stacks
-   */
-  private createBucket({
-    name,
-    raitaEnv,
-  }: {
-    name: string;
-    raitaEnv: RaitaEnvironment;
-  }) {
-    return new s3.Bucket(this, name, {
-      bucketName: `s3-${this.#raitaStackIdentifier}-${name}`,
-      versioned: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      autoDeleteObjects: raitaEnv === 'dev' ? true : false,
     });
   }
 
