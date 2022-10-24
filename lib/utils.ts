@@ -5,6 +5,8 @@ import {
   PRODUCTION_STACK_ID,
 } from '../constants';
 import { RaitaEnvironment } from './config';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import { Construct } from 'constructs';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
@@ -36,3 +38,56 @@ export const isProductionStack = (
 export const isPermanentStack = (stackId: string, raitaEnv: RaitaEnvironment) =>
   isDevelopmentMainStack(stackId, raitaEnv) ||
   isProductionStack(stackId, raitaEnv);
+
+/**
+ * Creates a data bucket for the stacks
+ */
+export const createRaitaBucket = ({
+  scope,
+  name,
+  raitaEnv,
+  raitaStackIdentifier,
+}: {
+  scope: Construct;
+  name: string;
+  raitaEnv: RaitaEnvironment;
+  raitaStackIdentifier: string;
+}) => {
+  const removalPolicy = getRemovalPolicy(raitaEnv);
+  const autoDeleteObjects = removalPolicy === RemovalPolicy.DESTROY;
+  return new s3.Bucket(scope, name, {
+    bucketName: `s3-${raitaStackIdentifier}-${name}`,
+    removalPolicy: getRemovalPolicy(raitaEnv),
+    autoDeleteObjects,
+    versioned: false,
+    accessControl: s3.BucketAccessControl.PRIVATE,
+    blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+    encryption: s3.BucketEncryption.S3_MANAGED,
+  });
+};
+
+export const getRaitaS3BucketProps = ({
+  scope,
+  name,
+  raitaEnv,
+  raitaStackIdentifier,
+}: {
+  scope: Construct;
+  name: string;
+  raitaEnv: RaitaEnvironment;
+  raitaStackIdentifier: string;
+}) => {
+  const removalPolicy = getRemovalPolicy(raitaEnv);
+  const autoDeleteObjects = removalPolicy === RemovalPolicy.DESTROY;
+  return {
+    bucketName: `s3-${raitaStackIdentifier}-${name}`,
+    removalPolicy: getRemovalPolicy(raitaEnv),
+    autoDeleteObjects,
+    versioned: false,
+    accessControl: s3.BucketAccessControl.PRIVATE,
+    blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+    encryption: s3.BucketEncryption.S3_MANAGED,
+  };
+};

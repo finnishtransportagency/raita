@@ -1,4 +1,10 @@
-import { Stack, StackProps, CfnJson, CustomResource } from 'aws-cdk-lib';
+import {
+  Stack,
+  StackProps,
+  CfnJson,
+  CustomResource,
+  RemovalPolicy,
+} from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
@@ -35,8 +41,9 @@ import {
   fileSuffixesToIncudeInMetadataParsing,
   RaitaSourceSystem,
 } from '../constants';
-import { getRemovalPolicy, isPermanentStack } from './utils';
+import { createRaitaBucket, getRemovalPolicy, isPermanentStack } from './utils';
 import { CloudfrontStack } from './raita-cloudfront';
+import { RaitaDataIngestionStack } from './raita-data-ingestion';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -57,13 +64,18 @@ export class RaitaStack extends Stack {
     const config = getRaitaStackConfig(this);
 
     // Create buckets
-    const dataBucket = this.createBucket({
+    const dataBucket = createRaitaBucket({
+      scope: this,
       name: 'parser-input-data',
       raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
     });
-    const configurationBucket = this.createBucket({
+
+    const configurationBucket = createRaitaBucket({
+      scope: this,
       name: 'parser-configuration-data',
       raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
     });
 
     // Create Cognito user and identity pools
@@ -96,6 +108,32 @@ export class RaitaStack extends Stack {
       userPool: userPool,
       adminUserRole: osAdminUserRole,
     });
+
+    // START DATA INGESTION
+
+    // new RaitaDataIngestionStack(this, 'data-ingestion', {
+    //   raitaStackIdentifier: this.#raitaStackIdentifier,
+    //   raitaEnv,
+    //   targetBucket: dataBucket,
+    //   lambdaServiceRole,
+    // });
+
+    const dataReceptionBucket = createRaitaBucket({
+      scope: this,
+      name: 'data-reception',
+      raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
+    });
+
+    const zipHandlerFn = this.createZipHandler({
+      name: 'zip-handler',
+      sourceBuckets: [dataReceptionBucket],
+      targetBucket: dataBucket,
+      lambdaRole: lambdaServiceRole,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
+    });
+
+    // END DATA INGESTION
 
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
@@ -314,24 +352,6 @@ export class RaitaStack extends Stack {
     });
   }
 
-  /**
-   * Creates a data bucket for the stacks
-   */
-  private createBucket({
-    name,
-    raitaEnv,
-  }: {
-    name: string;
-    raitaEnv: RaitaEnvironment;
-  }) {
-    return new s3.Bucket(this, name, {
-      bucketName: `s3-${this.#raitaStackIdentifier}-${name}`,
-      versioned: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      autoDeleteObjects: raitaEnv === 'dev' ? true : false,
-    });
-  }
-
   private createIdentityPool(name: string) {
     return new CfnIdentityPool(this, name, {
       identityPoolName: `identitypool-${this.#raitaStackIdentifier}-${name}`,
@@ -518,5 +538,60 @@ export class RaitaStack extends Stack {
       },
     });
     esRequests.node.addDependency(openSearchDomain);
+  }
+
+  /**
+   * Creates the parser lambda and add S3 buckets as event sources,
+   * granting lambda read access to these buckets
+   */
+  private createZipHandler({
+    name,
+    sourceBuckets,
+    targetBucket,
+    lambdaRole,
+    raitaStackIdentifier,
+  }: {
+    name: string;
+    sourceBuckets: Array<s3.Bucket>;
+    targetBucket: s3.Bucket;
+    lambdaRole: Role;
+    raitaStackIdentifier: string;
+  }) {
+    const zipHandlerFn = new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleZipCreated',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/handleZipCreated/handleZipCreated.ts`,
+      ),
+      environment: {
+        TARGET_BUCKET_NAME: targetBucket.bucketName,
+      },
+      role: lambdaRole,
+    });
+
+    targetBucket.grantWrite(zipHandlerFn);
+
+    sourceBuckets.forEach(bucket => {
+      // Hard coded in initial setup
+      const fileSuffixes = ['zip'];
+      fileSuffixes.forEach(suffix => {
+        zipHandlerFn.addEventSource(
+          new S3EventSource(bucket, {
+            events: [s3.EventType.OBJECT_CREATED],
+            filters: [
+              {
+                suffix,
+              },
+            ],
+          }),
+        );
+      });
+      bucket.grantRead(zipHandlerFn);
+    });
+    return zipHandlerFn;
   }
 }
