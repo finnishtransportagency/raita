@@ -1,4 +1,4 @@
-import { Duration, NestedStack, StackProps } from 'aws-cdk-lib';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -31,7 +31,7 @@ type ListenerTargetLambdas = {
   path: [string];
 };
 
-export class RaitaApiStack extends NestedStack {
+export class RaitaApiStack extends Stack {
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
