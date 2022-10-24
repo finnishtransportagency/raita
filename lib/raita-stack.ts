@@ -171,12 +171,12 @@ export class RaitaStack extends Stack {
     });
 
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
-    this.configureOpenSearchRoleMapping({
-      lambdaServiceRole,
-      osAdminUserRole: osAdminUserRole,
-      openSearchDomain,
-      vpc: raitaVPC,
-    });
+    // this.configureOpenSearchRoleMapping({
+    //   lambdaServiceRole,
+    //   osAdminUserRole: osAdminUserRole,
+    //   openSearchDomain,
+    //   vpc: raitaVPC,
+    // });
 
     // Create API Gateway
     new RaitaGatewayStack(this, 'stack-gw', {
