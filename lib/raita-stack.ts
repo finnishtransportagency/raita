@@ -196,7 +196,7 @@ export class RaitaStack extends Stack {
         enabled: true,
       },
       enforceHttps: true,
-      // useUnsignedBasicAuth: true,
+      useUnsignedBasicAuth: true,
       fineGrainedAccessControl: {
         masterUserArn: masterUserRole.roleArn,
       },
