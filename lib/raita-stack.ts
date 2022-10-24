@@ -37,6 +37,7 @@ import {
 } from '../constants';
 import { getRemovalPolicy, isPermanentStack } from './utils';
 import { CloudfrontStack } from './raita-cloudfront';
+import { RaitaApiStack } from './raita-api';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -97,6 +98,21 @@ export class RaitaStack extends Stack {
       adminUserRole: osAdminUserRole,
     });
 
+    const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
+      vpcName: `vpc-${this.#raitaStackIdentifier}`,
+      // cidr: "10.0.0.0/16",
+      // maxAzs: 3,
+      // natGateways: 1,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          name: 'private-subnet',
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+          cidrMask: 24,
+        },
+      ],
+    });
+
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
       name: 'raita',
@@ -154,14 +170,15 @@ export class RaitaStack extends Stack {
     });
 
     // Create API Gateway
-    new RaitaGatewayStack(this, 'stack-gw', {
+    new RaitaApiStack(this, 'stack-api', {
       dataBucket,
       lambdaServiceRole,
       userPool,
-      raitaStackId: this.#raitaStackIdentifier,
-      raitaEnv: raitaEnv,
+      raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
+      vpc: raitaVPC,
     });
 
     // Cloudfront stack is created conditionally - only for main and prod stackIds
