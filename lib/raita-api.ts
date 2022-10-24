@@ -110,6 +110,9 @@ export class RaitaApiStack extends NestedStack {
       },
       role: lambdaRole,
       vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
     });
   }
 
@@ -145,6 +148,9 @@ export class RaitaApiStack extends NestedStack {
       },
       role: lambdaRole,
       vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
     });
   }
 
