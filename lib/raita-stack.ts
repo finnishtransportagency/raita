@@ -88,7 +88,7 @@ export class RaitaStack extends Stack {
     const lambdaServiceRole = this.createServiceRole(
       'LambdaServiceRole',
       'lambda.amazonaws.com',
-      'service-role/AWSLambdaBasicExecutionRole',
+      'service-role/AWSLambdaVPCAccessExecutionRole',
     );
 
     // Create Cognito user groups
