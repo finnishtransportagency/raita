@@ -103,9 +103,8 @@ export class RaitaStack extends Stack {
 
     const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
       vpcName: `vpc-${this.#raitaStackIdentifier}`,
-      // cidr: "10.0.0.0/16",
-      // maxAzs: 3,
-      // natGateways: 1,
+      cidr: '10.0.0.0/16',
+      maxAzs: 3,
       natGateways: 0,
       subnetConfiguration: [
         {
@@ -320,24 +319,24 @@ export class RaitaStack extends Stack {
         enabled: true,
       },
       enforceHttps: true,
-      useUnsignedBasicAuth: true,
-      fineGrainedAccessControl: {
-        masterUserArn: masterUserRole.roleArn,
-      },
-      cognitoDashboardsAuth: {
-        identityPoolId: cognitoIdPool.ref,
-        role: cognitoOpenSearchServiceRole,
-        userPoolId: cognitoUserPool.userPoolId,
-      },
+      // useUnsignedBasicAuth: true,
+      // fineGrainedAccessControl: {
+      //   masterUserArn: masterUserRole.roleArn,
+      // },
+      // cognitoDashboardsAuth: {
+      //   identityPoolId: cognitoIdPool.ref,
+      //   role: cognitoOpenSearchServiceRole,
+      //   userPoolId: cognitoUserPool.userPoolId,
+      // },
       // TODO: Define least privileges access policy here
-      accessPolicies: [
-        new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: ['es:ESHttp*'],
-          principals: [new AnyPrincipal(), masterUserRole],
-          resources: [domainArn],
-        }),
-      ],
+      // accessPolicies: [
+      //   new PolicyStatement({
+      //     effect: Effect.ALLOW,
+      //     actions: ['es:ESHttp*'],
+      //     principals: [new AnyPrincipal(), masterUserRole],
+      //     resources: [domainArn],
+      //   }),
+      // ],
       vpc,
       vpcSubnets: [
         {
