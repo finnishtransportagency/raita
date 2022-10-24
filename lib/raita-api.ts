@@ -109,6 +109,7 @@ export class RaitaApiStack extends NestedStack {
         DATA_BUCKET: dataBucket.bucketName,
       },
       role: lambdaRole,
+      vpc,
     });
   }
 
@@ -143,6 +144,7 @@ export class RaitaApiStack extends NestedStack {
         REGION: this.region,
       },
       role: lambdaRole,
+      vpc,
     });
   }
 
