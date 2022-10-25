@@ -72,18 +72,18 @@ export class RaitaStack extends Stack {
       cognitoDomainPrefix: cognitoDomainPrefix,
       raitaEnv,
     });
-    const idPool = this.createIdentityPool('opensearch');
+    // const idPool = this.createIdentityPool('opensearch');
 
     // Create roles
-    const osAdminUserRole = this.createUserRole(
-      idPool,
-      'OpenSearchAdminUserRole',
-    );
-    const openSearchServiceRole = this.createServiceRole(
-      'OpenSearchServiceRole',
-      'es.amazonaws.com',
-      'AmazonESCognitoAccess',
-    );
+    // const osAdminUserRole = this.createUserRole(
+    //   idPool,
+    //   'OpenSearchAdminUserRole',
+    // );
+    // const openSearchServiceRole = this.createServiceRole(
+    //   'OpenSearchServiceRole',
+    //   'es.amazonaws.com',
+    //   'AmazonESCognitoAccess',
+    // );
     const lambdaServiceRole = this.createServiceRole(
       'LambdaServiceRole',
       'lambda.amazonaws.com',
@@ -91,11 +91,11 @@ export class RaitaStack extends Stack {
     );
 
     // Create Cognito user groups
-    this.createAdminUserGroup({
-      name: 'admins',
-      userPool: userPool,
-      adminUserRole: osAdminUserRole,
-    });
+    // this.createAdminUserGroup({
+    //   name: 'admins',
+    //   userPool: userPool,
+    //   adminUserRole: osAdminUserRole,
+    // });
 
     /**
      * START VPC
@@ -137,7 +137,7 @@ export class RaitaStack extends Stack {
       this,
       `managedpolicy-${this.#raitaStackIdentifier}-openSearchHttpPolicy`,
       {
-        roles: [osAdminUserRole, lambdaServiceRole],
+        roles: [lambdaServiceRole],
       },
     );
     openSearchHttpPolicy.addStatements(
@@ -148,13 +148,13 @@ export class RaitaStack extends Stack {
       }),
     );
 
-    this.configureIdentityPool({
-      userPool: userPool,
-      identityPool: idPool,
-      cognitoDomainPrefix: cognitoDomainPrefix,
-      esDomain: openSearchDomain,
-      esLimitedUserRole: openSearchServiceRole,
-    });
+    // this.configureIdentityPool({
+    //   userPool: userPool,
+    //   identityPool: idPool,
+    //   cognitoDomainPrefix: cognitoDomainPrefix,
+    //   esDomain: openSearchDomain,
+    //   esLimitedUserRole: openSearchServiceRole,
+    // });
 
     // Create meta data parser lambda
     const metadataParserFn = this.createMetadataParser({
