@@ -6,11 +6,9 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { UserPool } from 'aws-cdk-lib/aws-cognito';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
-
 import { RaitaApiStack } from './raita-api';
 import { CloudfrontStack } from './raita-cloudfront';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
@@ -43,13 +41,6 @@ export class RaitaStack extends Stack {
       raitaEnv,
     });
 
-    // Create Cognito user and identity pools
-    const userPool = this.createUserPool({
-      name: 'opensearch-pool',
-      cognitoDomainPrefix: this.#raitaStackIdentifier,
-      raitaEnv,
-    });
-
     const lambdaServiceRole = this.createServiceRole(
       'LambdaServiceRole',
       'lambda.amazonaws.com',
@@ -77,8 +68,7 @@ export class RaitaStack extends Stack {
       vpc: raitaVPC,
     });
 
-    // Create a ManagedPolicy that allows admin role and lambda role to call
-    // open search endpoints
+    // Create a ManagedPolicy that allows lambda role to call open search endpoints
     // TODO: Least privileges approach to lambda service roles (separate roles for lambdas calling OpenSearch?)
     const openSearchHttpPolicy = new iam.ManagedPolicy(
       this,
@@ -106,7 +96,9 @@ export class RaitaStack extends Stack {
       lambdaRole: lambdaServiceRole,
       region: this.region,
     });
-
+    // Grant lambda read to configuration bucket
+    configurationBucket.grantRead(metadataParserFn);
+    // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       config.openSearchMetadataIndex,
       metadataParserFn,
@@ -116,7 +108,6 @@ export class RaitaStack extends Stack {
     new RaitaApiStack(this, 'stack-api', {
       dataBucket,
       lambdaServiceRole,
-      userPool,
       raitaEnv,
       raitaStackIdentifier: this.#raitaStackIdentifier,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
@@ -134,9 +125,6 @@ export class RaitaStack extends Stack {
         cloudfrontDomainName: config.cloudfrontDomainName,
       });
     }
-
-    // Grant lambda read to configuration bucket
-    configurationBucket.grantRead(metadataParserFn);
   }
 
   /**
@@ -262,32 +250,10 @@ export class RaitaStack extends Stack {
     });
   }
 
-  private createUserPool({
-    name,
-    cognitoDomainPrefix,
-    raitaEnv,
-  }: {
-    name: string;
-    cognitoDomainPrefix: string;
-    raitaEnv: RaitaEnvironment;
-  }) {
-    const userPool = new UserPool(this, name, {
-      userPoolName: `userpool-${this.#raitaStackIdentifier}-${name}`,
-      selfSignUpEnabled: false,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      signInAliases: {
-        username: true,
-        email: true,
-      },
-    });
-    userPool.addDomain('cognitoDomain', {
-      cognitoDomain: {
-        domainPrefix: cognitoDomainPrefix,
-      },
-    });
-    return userPool;
-  }
-
+  /**
+   * Creates service role with based on AWS managed policy
+   * identified by policyName
+   */
   private createServiceRole(
     name: string,
     servicePrincipal: string,
