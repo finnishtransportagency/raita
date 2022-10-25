@@ -122,10 +122,10 @@ export class RaitaStack extends Stack {
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
       name: 'raita',
-      cognitoIdPool: idPool,
-      cognitoOpenSearchServiceRole: openSearchServiceRole,
-      cognitoUserPool: userPool,
-      masterUserRole: lambdaServiceRole,
+      // cognitoIdPool: idPool,
+      // cognitoOpenSearchServiceRole: openSearchServiceRole,
+      // cognitoUserPool: userPool,
+      // masterUserRole: lambdaServiceRole,
       raitaEnv: props.raitaEnv,
       vpc: raitaVPC,
     });
@@ -168,6 +168,11 @@ export class RaitaStack extends Stack {
       region: this.region,
       raitaSourceSystems: config.raitaSourceSystems,
     });
+
+    openSearchDomain.grantIndexReadWrite(
+      config.openSearchMetadataIndex,
+      metadataParserFn,
+    );
 
     // Configure the mapping between OS roles and AWS roles (a.k.a. backend roles)
     // this.configureOpenSearchRoleMapping({
@@ -274,18 +279,18 @@ export class RaitaStack extends Stack {
    */
   private createOpenSearchDomain({
     name,
-    cognitoIdPool,
-    cognitoOpenSearchServiceRole,
-    cognitoUserPool,
-    masterUserRole,
+    // cognitoIdPool,
+    // cognitoOpenSearchServiceRole,
+    // cognitoUserPool,
+    // masterUserRole,
     raitaEnv,
     vpc,
   }: {
     name: string;
-    cognitoIdPool: CfnIdentityPool;
-    cognitoOpenSearchServiceRole: Role;
-    cognitoUserPool: UserPool;
-    masterUserRole: Role;
+    // cognitoIdPool: CfnIdentityPool;
+    // cognitoOpenSearchServiceRole: Role;
+    // cognitoUserPool: UserPool;
+    // masterUserRole: Role;
     raitaEnv: RaitaEnvironment;
     vpc: ec2.Vpc;
   }) {
