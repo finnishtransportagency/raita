@@ -11,7 +11,7 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 
-import { RaitaGatewayStack } from './raita-gateway';
+import { RaitaApiStack } from './raita-api';
 import { CloudfrontStack } from './raita-cloudfront';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { fileSuffixesToIncudeInMetadataParsing } from '../constants';
@@ -113,14 +113,15 @@ export class RaitaStack extends Stack {
     );
 
     // Create API Gateway
-    new RaitaGatewayStack(this, 'stack-gw', {
+    new RaitaApiStack(this, 'stack-api', {
       dataBucket,
       lambdaServiceRole,
       userPool,
-      raitaStackId: this.#raitaStackIdentifier,
-      raitaEnv: raitaEnv,
+      raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
+      vpc: raitaVPC,
     });
 
     // Cloudfront stack is created conditionally - only for main and prod stackIds
