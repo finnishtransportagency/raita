@@ -7,6 +7,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import * as path from 'path';
 
 interface FrontendInfraStackProps extends StackProps {
   readonly raitaStackId: string;
@@ -26,7 +28,7 @@ export class CloudfrontStack extends Stack {
       cloudfrontDomainName,
     } = props;
 
-    const feBucket = new s3.Bucket(this, 'frontend', {
+    const frontendBucket = new s3.Bucket(this, 'frontend', {
       bucketName: `s3-${raitaStackId}-frontend`,
       publicReadAccess: false,
       accessControl: s3.BucketAccessControl.PRIVATE,
@@ -36,15 +38,21 @@ export class CloudfrontStack extends Stack {
       encryption: s3.BucketEncryption.S3_MANAGED,
     });
 
+    const buildDir = '../packages/frontend/build';
+    new BucketDeployment(this, 'FrontendDeployment', {
+      sources: [Source.asset(path.join(__dirname, buildDir))],
+      destinationBucket: frontendBucket,
+    });
+
     const cloudfrontOAI = new cloudfront.OriginAccessIdentity(
       this,
       'CloudFrontOriginAccessIdentity',
     );
 
-    feBucket.addToResourcePolicy(
+    frontendBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ['s3:GetObject'],
-        resources: [feBucket.arnForObjects('*')],
+        resources: [frontendBucket.arnForObjects('*')],
         principals: [
           new iam.CanonicalUserPrincipal(
             cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
@@ -69,7 +77,7 @@ export class CloudfrontStack extends Stack {
         comment: `cloudfront for ${raitaStackId}`,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         defaultBehavior: {
-          origin: new origins.S3Origin(feBucket, {
+          origin: new origins.S3Origin(frontendBucket, {
             originAccessIdentity: cloudfrontOAI,
           }),
           viewerProtocolPolicy:
