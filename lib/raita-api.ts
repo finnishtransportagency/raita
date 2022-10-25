@@ -1,4 +1,4 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -13,7 +13,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 
-interface RaitaApiStackProps extends StackProps {
+interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly dataBucket: Bucket;
@@ -34,7 +34,7 @@ type ListenerTargetLambdas = {
 /**
  * TODO: Assess lambda role requirements and implement least privilege
  */
-export class RaitaApiStack extends Stack {
+export class RaitaApiStack extends NestedStack {
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
