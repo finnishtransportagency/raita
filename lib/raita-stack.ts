@@ -29,7 +29,6 @@ import {
 } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import * as path from 'path';
-import { RaitaGatewayStack } from './raita-gateway';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import {
   fileSuffixesToIncudeInMetadataParsing,
@@ -100,9 +99,6 @@ export class RaitaStack extends Stack {
 
     const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
       vpcName: `vpc-${this.#raitaStackIdentifier}`,
-      // cidr: "10.0.0.0/16",
-      // maxAzs: 3,
-      // natGateways: 1,
       natGateways: 0,
       subnetConfiguration: [
         {

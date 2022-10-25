@@ -31,6 +31,9 @@ type ListenerTargetLambdas = {
   path: [string];
 };
 
+/**
+ * TODO: Assess lambda role requirements and implement least privilege
+ */
 export class RaitaApiStack extends Stack {
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -42,12 +45,7 @@ export class RaitaApiStack extends Stack {
       vpc,
     } = props;
 
-    // const authorizer = new CognitoUserPoolsAuthorizer(this, 'api-authorizer', {
-    //   authorizerName: `alpha-userpool-authorizer-${raitaStackIdentifier}-raita`,
-    //   cognitoUserPools: [props.userPool],
-    // });
-
-    // TODO: Assess lambdaRole requirements and implement least privilege
+    // Create handler lambdas
     const urlGeneratorFn = this.createS3urlGenerator({
       name: 'file-access-handler',
       raitaStackIdentifier,
@@ -55,7 +53,6 @@ export class RaitaApiStack extends Stack {
       dataBucket: props.dataBucket,
       vpc,
     });
-
     const osQueryHandlerFn = this.createOpenSearchQueryHandler({
       name: 'os-query-handler',
       raitaStackIdentifier,
@@ -66,21 +63,54 @@ export class RaitaApiStack extends Stack {
     });
 
     // Add all lambdas here to add as alb targets
-    const lambdas: ListenerTargetLambdas[] = [
-      { lambda: urlGeneratorFn, priority: 90, path: ['/test'] },
-      { lambda: osQueryHandlerFn, priority: 100, path: ['/'] },
+    const albLambdaTargets: ListenerTargetLambdas[] = [
+      { lambda: urlGeneratorFn, priority: 90, path: ['/file'] },
+      { lambda: osQueryHandlerFn, priority: 100, path: ['/files'] },
     ];
+
     // ALB for API
     const alb = this.createlAlb({
       raitaStackIdentifier: raitaStackIdentifier,
       name: 'api',
       vpc,
-      listenerTargets: lambdas,
+      listenerTargets: albLambdaTargets,
     });
   }
 
   /**
-   * Returns lambda function that generates presigned urls
+   * Creates application load balancer
+   */
+  private createlAlb({
+    raitaStackIdentifier,
+    name,
+    vpc,
+    listenerTargets,
+  }: {
+    raitaStackIdentifier: string;
+    name: string;
+    vpc: ec2.Vpc;
+    listenerTargets: ListenerTargetLambdas[];
+  }) {
+    const alb = new elbv2.ApplicationLoadBalancer(this, name, {
+      loadBalancerName: `alb-${raitaStackIdentifier}-${name}`,
+      internetFacing: false,
+      vpc,
+    });
+    const listener = alb.addListener('raita-listener', {
+      port: 80,
+      defaultAction: elbv2.ListenerAction.fixedResponse(404),
+    });
+    const targets = listenerTargets.map((target, index) =>
+      listener.addTargets(`target-${index}`, {
+        targets: [new LambdaTarget(target.lambda)],
+        priority: target.priority,
+        conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
+      }),
+    );
+  }
+
+  /**
+   * Creates and returns lambda function for generating presigned urls
    */
   private createS3urlGenerator({
     name,
@@ -116,6 +146,9 @@ export class RaitaApiStack extends Stack {
     });
   }
 
+  /**
+   * Creates and returns OpenSearchQuery handler
+   */
   private createOpenSearchQueryHandler({
     name,
     raitaStackIdentifier,
@@ -152,42 +185,5 @@ export class RaitaApiStack extends Stack {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
     });
-  }
-
-  private createlAlb({
-    raitaStackIdentifier,
-    name,
-    vpc,
-    internetFacing = false,
-    listenerTargets,
-  }: {
-    raitaStackIdentifier: string;
-    name: string;
-    vpc: ec2.Vpc;
-    listenerTargets: ListenerTargetLambdas[];
-    internetFacing?: boolean;
-  }) {
-    const alb = new elbv2.ApplicationLoadBalancer(
-      this,
-      `alb-${raitaStackIdentifier}-${name}`,
-      {
-        vpc,
-        internetFacing,
-        loadBalancerName: `alb-${raitaStackIdentifier}-${name}`,
-      },
-    );
-    const listener = alb.addListener('Listener', {
-      port: 80,
-      defaultAction: elbv2.ListenerAction.fixedResponse(404),
-    });
-
-    // TODO: Add each Lambda individually with unique paths
-    const targets = listenerTargets.map((target, index) =>
-      listener.addTargets(`Target-${index}`, {
-        targets: [new LambdaTarget(target.lambda)],
-        priority: target.priority,
-        conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
-      }),
-    );
   }
 }
