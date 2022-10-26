@@ -35,7 +35,7 @@ export class RaitaPipelineStack extends Stack {
               ),
             },
           ),
-          installCommands: ['npm --prefix frontend ci'],
+          installCommands: ['npm i -g npm@latest', 'npm --prefix frontend ci'],
           commands: [
             'npm run --prefix frontend build',
             'npm ci',
