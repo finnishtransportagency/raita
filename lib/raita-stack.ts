@@ -50,7 +50,8 @@ export class RaitaStack extends Stack {
     const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
       vpcName: `vpc-${this.#raitaStackIdentifier}`,
       cidr: '10.0.0.0/16',
-      maxAzs: 3,
+      enableDnsHostnames: true,
+      enableDnsSupport: true,
       natGateways: 0,
       subnetConfiguration: [
         {
