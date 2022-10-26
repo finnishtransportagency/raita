@@ -45,14 +45,14 @@ export class RaitaApiStack extends NestedStack {
 
     // Create handler lambdas
     const urlGeneratorFn = this.createS3urlGenerator({
-      name: 'file-access-handler',
+      name: 'api-handler-file-access',
       raitaStackIdentifier,
       lambdaRole: lambdaServiceRole,
       dataBucket: props.dataBucket,
       vpc,
     });
     const osQueryHandlerFn = this.createOpenSearchQueryHandler({
-      name: 'os-query-handler',
+      name: 'api-handler-os-query',
       raitaStackIdentifier,
       lambdaRole: lambdaServiceRole,
       openSearchDomainEndpoint,
