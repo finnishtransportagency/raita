@@ -35,8 +35,8 @@ export class RaitaPipelineStack extends Stack {
               ),
             },
           ),
+          installCommands: ['npm --prefix frontend ci'],
           commands: [
-            'npm --prefix frontend ci',
             'npm run --prefix frontend build',
             'npm ci',
             `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
