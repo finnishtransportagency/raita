@@ -118,14 +118,14 @@ export class RaitaStack extends Stack {
 
     // Cloudfront stack is created conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
-    if (isPermanentStack(stackId, raitaEnv)) {
-      new CloudfrontStack(this, 'stack-cf', {
-        raitaStackId: this.#raitaStackIdentifier,
-        raitaEnv: raitaEnv,
-        cloudfrontCertificateArn: config.cloudfrontCertificateArn,
-        cloudfrontDomainName: config.cloudfrontDomainName,
-      });
-    }
+    // if (isPermanentStack(stackId, raitaEnv)) {
+    new CloudfrontStack(this, 'stack-cf', {
+      raitaStackIdentifier: this.#raitaStackIdentifier,
+      raitaEnv: raitaEnv,
+      cloudfrontCertificateArn: config.cloudfrontCertificateArn,
+      cloudfrontDomainName: config.cloudfrontDomainName,
+    });
+    // }
   }
 
   /**
