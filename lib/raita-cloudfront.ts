@@ -8,7 +8,7 @@ import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
 
-interface FrontendInfraStackProps extends StackProps {
+interface CloudfrontStackProps extends StackProps {
   readonly raitaStackId: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly cloudfrontCertificateArn: string;
@@ -16,8 +16,8 @@ interface FrontendInfraStackProps extends StackProps {
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
-export class CloudfrontStack extends Stack {
-  constructor(scope: Construct, id: string, props: FrontendInfraStackProps) {
+export class RaitaCloudfrontStack extends Stack {
+  constructor(scope: Construct, id: string, props: CloudfrontStackProps) {
     super(scope, id, props);
     const {
       raitaEnv,

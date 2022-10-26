@@ -11,12 +11,12 @@ import { Construct } from 'constructs';
 import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
+import { createRaitaServiceRole } from './raitaResourceCreators';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
-  readonly dataBucket: Bucket;
-  readonly lambdaServiceRole: Role;
+  readonly inspectionDataBucket: Bucket;
   readonly openSearchDomainEndpoint: string;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.Vpc;
@@ -33,28 +33,39 @@ type ListenerTargetLambdas = {
  * TODO: Assess lambda role requirements and implement least privilege
  */
 export class RaitaApiStack extends NestedStack {
+  public readonly raitaApilambdaServiceRole: Role;
+
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
-      lambdaServiceRole,
       openSearchDomainEndpoint,
       openSearchMetadataIndex,
       vpc,
+      inspectionDataBucket,
     } = props;
+
+    this.raitaApilambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
 
     // Create handler lambdas
     const urlGeneratorFn = this.createS3urlGenerator({
       name: 'api-handler-file-access',
       raitaStackIdentifier,
-      lambdaRole: lambdaServiceRole,
-      dataBucket: props.dataBucket,
+      lambdaRole: this.raitaApilambdaServiceRole,
+      dataBucket: inspectionDataBucket,
       vpc,
     });
+
     const osQueryHandlerFn = this.createOpenSearchQueryHandler({
       name: 'api-handler-os-query',
       raitaStackIdentifier,
-      lambdaRole: lambdaServiceRole,
+      lambdaRole: this.raitaApilambdaServiceRole,
       openSearchDomainEndpoint,
       openSearchMetadataIndex,
       vpc,
