@@ -59,11 +59,19 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
+    const osMetaHandlerFn = this.createOpenSearchFieldRequestHandler({
+      name: 'api-handler-os-meta',
+      raitaStackIdentifier,
+      lambdaRole: lambdaServiceRole,
+      openSearchDomainEndpoint,
+      openSearchMetadataIndex,
+    });
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
       { lambda: urlGeneratorFn, priority: 90, path: ['/file'] },
       { lambda: osQueryHandlerFn, priority: 100, path: ['/files'] },
+      { lambda: osMetaHandlerFn, priority: 110, path: ['/meta'] },
     ];
 
     // ALB for API
@@ -182,6 +190,38 @@ export class RaitaApiStack extends NestedStack {
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
+    });
+  }
+
+  private createOpenSearchFieldRequestHandler({
+    name,
+    raitaStackIdentifier,
+    lambdaRole,
+    openSearchDomainEndpoint,
+    openSearchMetadataIndex,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    lambdaRole: Role;
+    openSearchDomainEndpoint: string;
+    openSearchMetadataIndex: string;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleMetadataFieldsRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/handleMetadataFieldsRequest/handleMetadataFieldsRequest.ts`,
+      ),
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        METADATA_INDEX: openSearchMetadataIndex,
+        REGION: this.region,
+      },
+      role: lambdaRole,
     });
   }
 }

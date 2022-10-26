@@ -50,4 +50,22 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     });
     return response;
   };
+
+  getReportTypes = async () => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.search({
+      index: this.#dataIndex,
+      body: {
+        size: 0,
+        aggs: {
+          types: {
+            terms: {
+              field: 'metadata.report_type.keyword',
+              size: 10,
+            },
+          },
+        },
+      },
+    });
+  };
 }

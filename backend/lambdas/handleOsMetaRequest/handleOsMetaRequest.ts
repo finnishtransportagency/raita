@@ -12,7 +12,7 @@ import {
  * DRAFT IMPLEMENTATION
  * Returns meta data fields that are available in the data base
  */
-export async function handleMetadataFieldsRequest(
+export async function handleOsMetaRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
@@ -26,7 +26,9 @@ export async function handleMetadataFieldsRequest(
       openSearchDomain,
     });
     const rawFieldsResponse = await metadata.getMetadataFields();
+    const rawReportTypesResponse = await metadata.getReportTypes();
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
+    console.log(rawReportTypesResponse);
     return {
       statusCode: 200,
       headers: {
@@ -46,6 +48,7 @@ export async function handleMetadataFieldsRequest(
   }
 }
 
+// NOTE: This is not complete description of all fields in metadata
 const MetadataFieldSchema = z.object({
   type: z.string(),
 });
