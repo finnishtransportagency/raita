@@ -211,10 +211,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleMetadataFieldsRequest',
+      handler: 'handleOsMetaRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/handleMetadataFieldsRequest/handleMetadataFieldsRequest.ts`,
+        `../backend/lambdas/handleOsMetaRequest/handleOsMetaRequest.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
