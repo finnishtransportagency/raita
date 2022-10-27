@@ -62,9 +62,9 @@ export class RaitaDatabaseStack extends NestedStack {
       },
       enforceHttps: true,
       // must be enabled if VPC contains multiple private subnets.
-      zoneAwareness: {
-        enabled: true,
-      },
+      // zoneAwareness: {
+      //   enabled: true,
+      // },
       vpc,
       vpcSubnets: [
         {
