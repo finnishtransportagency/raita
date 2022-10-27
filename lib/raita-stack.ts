@@ -64,9 +64,9 @@ export class RaitaStack extends Stack {
     // Create API Gateway
     const raitaApi = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+      openSearchDomain: dbStack.openSearchDomain,
       raitaEnv,
       raitaStackIdentifier: this.#raitaStackIdentifier,
-      openSearchDomainEndpoint: dbStack.openSearchDomain.domainEndpoint,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       vpc: raitaVPC,
     });
@@ -76,7 +76,7 @@ export class RaitaStack extends Stack {
       name: 'DataProcessOpenSearchHttpPolicy',
       serviceRoles: [dataProcessStack.dataProcessorlambdaServiceRole],
       resources: [dbStack.openSearchDomain.domainArn],
-      actions: ['es:ESHttpPost', 'es:ESHttpPut'],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
     // Grant api lambdas permissions to call OpenSearch endpoints
@@ -84,7 +84,7 @@ export class RaitaStack extends Stack {
       name: 'ApiOpenSearchHttpPolicy',
       serviceRoles: [raitaApi.raitaApilambdaServiceRole],
       resources: [dbStack.openSearchDomain.domainArn],
-      actions: ['es:ESHttpGet'],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
     // Cloudfront stack is created conditionally - only for main and prod stackIds

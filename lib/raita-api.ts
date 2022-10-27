@@ -12,14 +12,15 @@ import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaServiceRole } from './raitaResourceCreators';
+import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly inspectionDataBucket: Bucket;
-  readonly openSearchDomainEndpoint: string;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.Vpc;
+  readonly openSearchDomain: Domain;
 }
 
 type ListenerTargetLambdas = {
@@ -39,10 +40,10 @@ export class RaitaApiStack extends NestedStack {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
-      openSearchDomainEndpoint,
       openSearchMetadataIndex,
       vpc,
       inspectionDataBucket,
+      openSearchDomain,
     } = props;
 
     this.raitaApilambdaServiceRole = createRaitaServiceRole({
@@ -66,10 +67,11 @@ export class RaitaApiStack extends NestedStack {
       name: 'api-handler-os-query',
       raitaStackIdentifier,
       lambdaRole: this.raitaApilambdaServiceRole,
-      openSearchDomainEndpoint,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
       vpc,
     });
+    openSearchDomain.grantIndexRead(openSearchMetadataIndex, osQueryHandlerFn);
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
