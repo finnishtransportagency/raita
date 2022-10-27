@@ -33,6 +33,9 @@ export async function handleFileRequest(
     }
     const { key } = requestBody;
 
+    console.log(event.body);
+    console.log(requestBody);
+
     // Check if file exists
     const exists = await s3
       .headObject({
