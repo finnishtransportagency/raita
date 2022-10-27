@@ -22,6 +22,7 @@ export async function handleOpenSearchQuery(
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
+    console.log('performing handle open search query');
     const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
     // TODO: Add better type check (zod) if endpoint is used permanently
     const queryObject = event.body && JSON.parse(event.body);

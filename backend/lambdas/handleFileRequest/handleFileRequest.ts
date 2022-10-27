@@ -66,7 +66,7 @@ export async function handleFileRequest(
       ),
     };
   } catch (err: unknown) {
-    logger.log(err);
+    logger.logError(err);
     return getRaitaLambdaError(err);
   }
 }
