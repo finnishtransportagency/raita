@@ -6,15 +6,17 @@ import { Role } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { Port, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
-import { createRaitaBucket } from './utils';
 import { fileSuffixesToIncudeInMetadataParsing } from '../constants';
-import { createRaitaServiceRole } from './raitaResourceCreators';
+import {
+  createRaitaBucket,
+  createRaitaServiceRole,
+} from './raitaResourceCreators';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -114,6 +116,13 @@ export class RaitaDataProcessStack extends NestedStack {
     const metaDataFileSuffixes = Object.values(
       fileSuffixesToIncudeInMetadataParsing,
     );
+
+    openSearchDomain.connections.allowFrom(
+      metadataParserFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
+
     // TODO: Currently reacts only to CREATE events
     // OPEN: Currently separate event source for each suffix type. Replace with better alternative is exists?
     metaDataFileSuffixes.forEach(suffix => {

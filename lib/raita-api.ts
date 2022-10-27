@@ -13,6 +13,7 @@ import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaServiceRole } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
+import { Port } from 'aws-cdk-lib/aws-ec2';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -76,6 +77,12 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
+
+    openSearchDomain.connections.allowFrom(
+      osQueryHandlerFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
