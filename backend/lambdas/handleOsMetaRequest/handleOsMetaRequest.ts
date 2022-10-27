@@ -28,10 +28,10 @@ export async function handleOsMetaRequest(
     console.log('calling os for fields');
     const rawFieldsResponse = await metadata.getMetadataFields();
     console.log('calling os for report types');
-    const rawReportTypesResponse = await metadata.getReportTypes();
+    // const rawReportTypesResponse = await metadata.getReportTypes();
     console.log('got report types');
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
-    console.log(rawReportTypesResponse);
+    // console.log(rawReportTypesResponse);
     return {
       statusCode: 200,
       headers: {
