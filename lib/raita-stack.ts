@@ -65,7 +65,7 @@ export class RaitaStack extends Stack {
 
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
-      name: 'raita',
+      name: 'raitadb',
       raitaEnv: props.raitaEnv,
       vpc: raitaVPC,
     });
