@@ -57,6 +57,7 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       this.raitaApilambdaServiceRole,
     );
+    inspectionDataBucket.grantRead(this.raitaApilambdaServiceRole);
 
     // Create handler lambdas
     const urlGeneratorFn = this.createS3urlGenerator({
