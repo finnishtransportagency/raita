@@ -50,6 +50,6 @@ export default class MetadataPort implements IMetadataStorageInterface {
     return this.#backend.getMetadataFields();
   };
   getReportTypes = () => {
-    return this.#backend.getMetadataFields();
+    return this.#backend.getReportTypes();
   };
 }
