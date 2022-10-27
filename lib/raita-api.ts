@@ -53,6 +53,10 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
+    openSearchDomain.grantIndexRead(
+      openSearchMetadataIndex,
+      this.raitaApilambdaServiceRole,
+    );
 
     // Create handler lambdas
     const urlGeneratorFn = this.createS3urlGenerator({
@@ -71,7 +75,6 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
-    openSearchDomain.grantIndexRead(openSearchMetadataIndex, osQueryHandlerFn);
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
