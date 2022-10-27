@@ -27,7 +27,7 @@ export class CloudfrontStack extends Stack {
     } = props;
 
     const feBucket = new s3.Bucket(this, 'frontend', {
-      bucketName: `s3-${raitaStackId}-frontend`,
+      bucketName: `s3-${raitaStackId}-frontend-old`,
       publicReadAccess: false,
       accessControl: s3.BucketAccessControl.PRIVATE,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
