@@ -22,7 +22,7 @@ export const createRaitaBucket = ({
   const autoDeleteObjects = removalPolicy === RemovalPolicy.DESTROY;
   return new s3.Bucket(scope, name, {
     bucketName: `s3-${raitaStackIdentifier}-${name}`,
-    removalPolicy: getRemovalPolicy(raitaEnv),
+    removalPolicy,
     autoDeleteObjects,
     versioned: false,
     accessControl: s3.BucketAccessControl.PRIVATE,
