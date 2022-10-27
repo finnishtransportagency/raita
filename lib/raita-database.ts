@@ -4,6 +4,7 @@ import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
+import { AnyPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 interface DatabaseStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -42,7 +43,14 @@ export class RaitaDatabaseStack extends NestedStack {
     raitaStackIdentifier: string;
   }) {
     const domainName = `${name}-${raitaStackIdentifier}`;
-
+    const domainArn =
+      'arn:aws:es:' +
+      this.region +
+      ':' +
+      this.account +
+      ':domain/' +
+      domainName +
+      '/*';
     // TODO: Identify parameters to move to environment (and move)
     return new opensearch.Domain(this, domainName, {
       domainName,
@@ -70,6 +78,14 @@ export class RaitaDatabaseStack extends NestedStack {
         {
           subnets: vpc.isolatedSubnets.slice(0, 1),
         },
+      ],
+      accessPolicies: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ['es:ESHttp*'],
+          principals: [new AnyPrincipal()],
+          resources: [domainArn],
+        }),
       ],
     });
   }
