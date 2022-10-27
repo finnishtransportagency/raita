@@ -5,7 +5,11 @@ import {
   ShellStep,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
-import { Cache, LocalCacheMode } from 'aws-cdk-lib/aws-codebuild';
+import {
+  Cache,
+  LinuxBuildImage,
+  LocalCacheMode,
+} from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
 import { getPipelineConfig, RaitaEnvironment } from './config';
 
@@ -35,15 +39,17 @@ export class RaitaPipelineStack extends Stack {
               ),
             },
           ),
-          installCommands: ['npm i -g npm@latest', 'npm --prefix frontend ci'],
+          installCommands: ['npm ci', 'npm --prefix frontend ci'],
           commands: [
             'npm run --prefix frontend build',
-            'npm ci',
             `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
           ],
         }),
         dockerEnabledForSynth: true,
         codeBuildDefaults: {
+          buildEnvironment: {
+            buildImage: LinuxBuildImage.STANDARD_6_0,
+          },
           // TODO: Cacheing not working currently
           cache: Cache.local(
             LocalCacheMode.CUSTOM,
