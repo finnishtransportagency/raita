@@ -65,6 +65,7 @@ export class RaitaApiStack extends NestedStack {
       lambdaRole: lambdaServiceRole,
       openSearchDomainEndpoint,
       openSearchMetadataIndex,
+      vpc,
     });
 
     // Add all lambdas here to add as alb targets
@@ -199,12 +200,14 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole,
     openSearchDomainEndpoint,
     openSearchMetadataIndex,
+    vpc,
   }: {
     name: string;
     raitaStackIdentifier: string;
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
     openSearchMetadataIndex: string;
+    vpc: ec2.Vpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -222,6 +225,10 @@ export class RaitaApiStack extends NestedStack {
         REGION: this.region,
       },
       role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+      },
     });
   }
 }
