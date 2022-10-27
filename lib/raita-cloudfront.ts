@@ -1,50 +1,40 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { getRemovalPolicy } from './utils';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 
-interface FrontendInfraStackProps extends StackProps {
-  readonly raitaStackId: string;
+interface CloudfrontStackProps extends StackProps {
+  readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly cloudfrontCertificateArn: string;
   readonly cloudfrontDomainName: string;
+  readonly frontendBucket: Bucket;
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
 export class CloudfrontStack extends Stack {
-  constructor(scope: Construct, id: string, props: FrontendInfraStackProps) {
+  constructor(scope: Construct, id: string, props: CloudfrontStackProps) {
     super(scope, id, props);
     const {
-      raitaEnv,
-      raitaStackId,
+      raitaStackIdentifier,
       cloudfrontCertificateArn,
       cloudfrontDomainName,
+      frontendBucket,
     } = props;
-
-    const feBucket = new s3.Bucket(this, 'frontend', {
-      bucketName: `s3-${raitaStackId}-frontend-old`,
-      publicReadAccess: false,
-      accessControl: s3.BucketAccessControl.PRIVATE,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-    });
 
     const cloudfrontOAI = new cloudfront.OriginAccessIdentity(
       this,
       'CloudFrontOriginAccessIdentity',
     );
 
-    feBucket.addToResourcePolicy(
+    frontendBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ['s3:GetObject'],
-        resources: [feBucket.arnForObjects('*')],
+        resources: [frontendBucket.arnForObjects('*')],
         principals: [
           new iam.CanonicalUserPrincipal(
             cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
@@ -55,7 +45,7 @@ export class CloudfrontStack extends Stack {
 
     const certificate = acm.Certificate.fromCertificateArn(
       this,
-      `certificate-${raitaStackId}`,
+      `certificate-${raitaStackIdentifier}`,
       cloudfrontCertificateArn,
     );
 
@@ -66,10 +56,10 @@ export class CloudfrontStack extends Stack {
         domainNames: [cloudfrontDomainName],
         certificate,
         defaultRootObject: 'index.html',
-        comment: `cloudfront for ${raitaStackId}`,
+        comment: `cloudfront for ${raitaStackIdentifier}`,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         defaultBehavior: {
-          origin: new origins.S3Origin(feBucket, {
+          origin: new origins.S3Origin(frontendBucket, {
             originAccessIdentity: cloudfrontOAI,
           }),
           viewerProtocolPolicy:

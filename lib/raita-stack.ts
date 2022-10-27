@@ -14,6 +14,7 @@ import { CloudfrontStack } from './raita-cloudfront';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { fileSuffixesToIncudeInMetadataParsing } from '../constants';
 import { getRemovalPolicy, isPermanentStack } from './utils';
+import { FrontendStack } from './raita-frontend';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -116,14 +117,20 @@ export class RaitaStack extends Stack {
       vpc: raitaVPC,
     });
 
+    const frontendStack = new FrontendStack(this, 'stack-fe', {
+      raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
+    });
+
     // Cloudfront stack is created conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
     if (isPermanentStack(stackId, raitaEnv)) {
       new CloudfrontStack(this, 'stack-cf', {
-        raitaStackId: this.#raitaStackIdentifier,
+        raitaStackIdentifier: this.#raitaStackIdentifier,
         raitaEnv: raitaEnv,
         cloudfrontCertificateArn: config.cloudfrontCertificateArn,
         cloudfrontDomainName: config.cloudfrontDomainName,
+        frontendBucket: frontendStack.frontendBucket,
       });
     }
   }
