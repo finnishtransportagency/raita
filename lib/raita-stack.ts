@@ -40,6 +40,10 @@ export class RaitaStack extends Stack {
       ],
     });
 
+    const s3GatewayEndpoint = raitaVPC.addGatewayEndpoint('s3-endpoint', {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+    });
+
     // Create databases resources
     const dbStack = new RaitaDatabaseStack(this, 'stack-db', {
       raitaStackIdentifier: this.#raitaStackIdentifier,
