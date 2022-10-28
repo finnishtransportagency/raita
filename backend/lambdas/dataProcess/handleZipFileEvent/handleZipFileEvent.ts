@@ -1,7 +1,7 @@
 import { S3Event } from 'aws-lambda';
-import { logger } from '../../utils/logger';
+import { logger } from '../../../utils/logger';
 
-export async function handleZipCreated(event: S3Event): Promise<void> {
+export async function handleZipFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
       // TODO: Unzip and store results.

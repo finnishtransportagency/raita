@@ -1,11 +1,11 @@
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { RaitaCloudfrontStack } from './raita-cloudfront';
-import { RaitaDatabaseStack } from './raita-database';
+import { CloudfrontStack } from './raita-cloudfront';
 import { FrontendStack } from './raita-frontend';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
 import { isPermanentStack } from './utils';
+import { ApplicationStack } from './raita-application';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -42,8 +42,8 @@ export class RaitaStack extends Stack {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
 
-    // Create databases resources
-    const dbStack = new RaitaDatabaseStack(this, 'stack-db', {
+    // Create application resources (db, data process resources, api resources)
+    new ApplicationStack(this, 'stack-db', {
       raitaStackIdentifier: this.#raitaStackIdentifier,
       raitaEnv,
       vpc: raitaVPC,
@@ -60,7 +60,7 @@ export class RaitaStack extends Stack {
     // Create Cloudfront stack conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
     if (isPermanentStack(stackId, raitaEnv)) {
-      new RaitaCloudfrontStack(this, 'stack-cf', {
+      new CloudfrontStack(this, 'stack-cf', {
         raitaStackIdentifier: this.#raitaStackIdentifier,
         raitaEnv: raitaEnv,
         cloudfrontCertificateArn: config.cloudfrontCertificateArn,

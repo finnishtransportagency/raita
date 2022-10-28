@@ -1,13 +1,13 @@
 import { LogGroupTargetInput } from 'aws-cdk-lib/aws-events-targets';
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { getEnvOrFail } from '../../../utils';
-import { logger } from '../../utils/logger';
+import { getEnvOrFail } from '../../../../utils';
+import { logger } from '../../../utils/logger';
 import {
   getClientErrorMessage,
   getRaitaLambdaError,
   RaitaLambdaError,
-} from '../utils';
+} from '../../utils';
 
 function getLambdaConfigOrFail() {
   return {

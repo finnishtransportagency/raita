@@ -4,7 +4,7 @@ import {
   IExtractionSpec,
   IFileResult,
   ParseValueResult,
-} from '../../types';
+} from '../../../types';
 import { extractPathData } from './pathDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import {
@@ -13,11 +13,11 @@ import {
   shouldCalculateHash,
   shouldParseContent,
 } from './contentDataParser';
-import { logger } from '../../utils/logger';
-import BackendFacade from '../../ports/backend';
-import { getGetEnvWithPreassignedContext } from '../../../utils';
-import { RaitaSourceSystem, raitaSourceSystems } from '../../../constants';
-import { decodeUriString } from '../utils';
+import { logger } from '../../../utils/logger';
+import BackendFacade from '../../../ports/backend';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { RaitaSourceSystem, raitaSourceSystems } from '../../../../constants';
+import { decodeUriString } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -38,8 +38,11 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  * Should we make the handling more generic from the start, accepting also HTTP trigger
  * events and using Strategy pattern possibly to plug in correct file backend based on
  * config or even event details.
+ *
+ * TODO: Parsing should be extracted out out the S3Event handler.
+ *
  */
-export async function metadataParser(event: S3Event): Promise<void> {
+export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
   try {

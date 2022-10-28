@@ -27,8 +27,8 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
 }
 
-export class RaitaDataProcessStack extends NestedStack {
-  public readonly dataProcessorlambdaServiceRole: Role;
+export class DataProcessStack extends NestedStack {
+  public readonly dataProcessorLambdaServiceRole: Role;
   public readonly inspectionDataBucket: Bucket;
   public readonly metadataParserFn: NodejsFunction;
 
@@ -43,7 +43,7 @@ export class RaitaDataProcessStack extends NestedStack {
       parserConfigurationFile,
     } = props;
 
-    this.dataProcessorlambdaServiceRole = createRaitaServiceRole({
+    this.dataProcessorLambdaServiceRole = createRaitaServiceRole({
       scope: this,
       name: 'DataProcessorLambdaServiceRole',
       servicePrincipal: 'lambda.amazonaws.com',
@@ -72,18 +72,18 @@ export class RaitaDataProcessStack extends NestedStack {
     });
 
     // Create zip handler lambda, grant permissions and create event sources
-    const zipHandlerFn = this.createZipHandler({
+    const handleZipFileEventFn = this.createZipFileEventHandler({
       name: 'zip-handler',
       targetBucket: this.inspectionDataBucket,
-      lambdaRole: this.dataProcessorlambdaServiceRole,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
     });
-    this.inspectionDataBucket.grantWrite(zipHandlerFn);
-    dataReceptionBucket.grantRead(zipHandlerFn);
+    this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
+    dataReceptionBucket.grantRead(handleZipFileEventFn);
     const fileSuffixes = ['zip']; // Hard coded in initial setup
     fileSuffixes.forEach(suffix => {
-      zipHandlerFn.addEventSource(
+      handleZipFileEventFn.addEventSource(
         new S3EventSource(dataReceptionBucket, {
           events: [s3.EventType.OBJECT_CREATED],
           filters: [
@@ -102,7 +102,7 @@ export class RaitaDataProcessStack extends NestedStack {
       configurationBucketName: configurationBucket.bucketName,
       openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
-      lambdaRole: this.dataProcessorlambdaServiceRole,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
     });
@@ -137,7 +137,7 @@ export class RaitaDataProcessStack extends NestedStack {
    * Creates the parser lambda and add S3 buckets as event sources,
    * granting lambda read access to these buckets
    */
-  private createZipHandler({
+  private createZipFileEventHandler({
     name,
     targetBucket,
     lambdaRole,
@@ -155,10 +155,10 @@ export class RaitaDataProcessStack extends NestedStack {
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
-      handler: 'handleZipCreated',
+      handler: 'handleZipFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/handleZipCreated/handleZipCreated.ts`,
+        `../backend/lambdas/dataProcess/handleZipFileEvent/handleZipFileEvent.ts`,
       ),
       environment: {
         TARGET_BUCKET_NAME: targetBucket.bucketName,
@@ -199,10 +199,10 @@ export class RaitaDataProcessStack extends NestedStack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'metadataParser',
+      handler: 'handleInspectionFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/metadataParser/metadataParser.ts`,
+        `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,

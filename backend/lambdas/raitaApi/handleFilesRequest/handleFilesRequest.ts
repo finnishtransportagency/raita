@@ -1,8 +1,8 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { getGetEnvWithPreassignedContext } from '../../../utils';
-import MetadataPort from '../../ports/metadataPort';
-import { logger } from '../../utils/logger';
-import { getRaitaLambdaError, RaitaLambdaError } from '../utils';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import MetadataPort from '../../../ports/metadataPort';
+import { logger } from '../../../utils/logger';
+import { getRaitaLambdaError, RaitaLambdaError } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -17,7 +17,7 @@ function getLambdaConfigOrFail() {
  * DRAFT IMPLEMENTATION
  * Returns OpenSearch data based on request query. Currently takes input in the POST request body.
  */
-export async function handleOpenSearchQuery(
+export async function handleFilesRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {

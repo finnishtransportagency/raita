@@ -14,10 +14,9 @@ import { Port } from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { RaitaApiStack } from './raita-api';
-import { RaitaDataProcessStack } from './raita-data-process';
-import { string } from 'zod';
+import { DataProcessStack } from './raita-data-process';
 
-interface DatabaseStackProps extends NestedStackProps {
+interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly vpc: ec2.Vpc;
@@ -25,10 +24,13 @@ interface DatabaseStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
 }
 
-export class RaitaDatabaseStack extends NestedStack {
+/**
+ * OpenSearch documentation available at: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html
+ */
+export class ApplicationStack extends NestedStack {
   public readonly openSearchDomain: opensearch.Domain;
 
-  constructor(scope: Construct, id: string, props: DatabaseStackProps) {
+  constructor(scope: Construct, id: string, props: ApplicationStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
@@ -47,18 +49,14 @@ export class RaitaDatabaseStack extends NestedStack {
     });
 
     // Create data processing resources
-    const dataProcessStack = new RaitaDataProcessStack(
-      this,
-      'stack-dataprocess',
-      {
-        raitaStackIdentifier: raitaStackIdentifier,
-        raitaEnv,
-        vpc,
-        openSearchDomain: this.openSearchDomain,
-        openSearchMetadataIndex: openSearchMetadataIndex,
-        parserConfigurationFile: parserConfigurationFile,
-      },
-    );
+    const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
+      raitaStackIdentifier: raitaStackIdentifier,
+      raitaEnv,
+      vpc,
+      openSearchDomain: this.openSearchDomain,
+      openSearchMetadataIndex: openSearchMetadataIndex,
+      parserConfigurationFile: parserConfigurationFile,
+    });
 
     // Create API Gateway
     const raitaApi = new RaitaApiStack(this, 'stack-api', {
@@ -74,7 +72,7 @@ export class RaitaDatabaseStack extends NestedStack {
     this.createManagedPolicy({
       name: 'DataProcessOpenSearchHttpPolicy',
       raitaStackIdentifier,
-      serviceRoles: [dataProcessStack.dataProcessorlambdaServiceRole],
+      serviceRoles: [dataProcessStack.dataProcessorLambdaServiceRole],
       resources: [this.openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
@@ -83,7 +81,7 @@ export class RaitaDatabaseStack extends NestedStack {
     this.createManagedPolicy({
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
-      serviceRoles: [raitaApi.raitaApilambdaServiceRole],
+      serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
       resources: [this.openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
@@ -95,7 +93,7 @@ export class RaitaDatabaseStack extends NestedStack {
       'Allows parser lambda to connect to Opensearch.',
     );
     this.openSearchDomain.connections.allowFrom(
-      raitaApi.osQueryHandlerFn,
+      raitaApi.handleFilesRequestFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
     );

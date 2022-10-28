@@ -16,7 +16,7 @@ interface CloudfrontStackProps extends StackProps {
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
-export class RaitaCloudfrontStack extends Stack {
+export class CloudfrontStack extends Stack {
   constructor(scope: Construct, id: string, props: CloudfrontStackProps) {
     super(scope, id, props);
     const {
