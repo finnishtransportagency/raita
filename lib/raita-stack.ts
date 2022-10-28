@@ -10,6 +10,7 @@ import { RaitaDataProcessStack } from './raita-data-process';
 import { RaitaDatabaseStack } from './raita-database';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Port } from 'aws-cdk-lib/aws-ec2';
+import { FrontendStack } from './raita-frontend';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -77,6 +78,11 @@ export class RaitaStack extends Stack {
       vpc: raitaVPC,
     });
 
+    const frontendStack = new FrontendStack(this, 'stack-fe', {
+      raitaEnv,
+      raitaStackIdentifier: this.#raitaStackIdentifier,
+    });
+
     // Grant data processor lambdas permissions to call OpenSearch endpoints
     this.createManagedPolicy({
       name: 'DataProcessOpenSearchHttpPolicy',
@@ -105,14 +111,23 @@ export class RaitaStack extends Stack {
       'Allows parser lambda to connect to Opensearch.',
     );
 
+    // if (isPermanentStack(stackId, raitaEnv)) {
+    //   new RaitaCloudfrontStack(this, 'stack-cf', {
+    //     raitaStackId: this.#raitaStackIdentifier,
+    // const frontendStack = new FrontendStack(this, 'stack-fe', {
+    //   raitaEnv,
+    //   raitaStackIdentifier: this.#raitaStackIdentifier,
+    // });
+
     // Create Cloudfront stack conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
     if (isPermanentStack(stackId, raitaEnv)) {
       new RaitaCloudfrontStack(this, 'stack-cf', {
-        raitaStackId: this.#raitaStackIdentifier,
+        raitaStackIdentifier: this.#raitaStackIdentifier,
         raitaEnv: raitaEnv,
         cloudfrontCertificateArn: config.cloudfrontCertificateArn,
         cloudfrontDomainName: config.cloudfrontDomainName,
+        frontendBucket: frontendStack.frontendBucket,
       });
     }
   }
