@@ -88,7 +88,7 @@ export class ApplicationStack extends NestedStack {
 
     // Allow traffic from lambdas to OpenSearch
     this.openSearchDomain.connections.allowFrom(
-      dataProcessStack.metadataParserFn,
+      dataProcessStack.handleInspectionFileEventFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
     );

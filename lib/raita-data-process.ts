@@ -30,7 +30,7 @@ interface DataProcessStackProps extends NestedStackProps {
 export class DataProcessStack extends NestedStack {
   public readonly dataProcessorLambdaServiceRole: Role;
   public readonly inspectionDataBucket: Bucket;
-  public readonly metadataParserFn: NodejsFunction;
+  public readonly handleInspectionFileEventFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -60,7 +60,7 @@ export class DataProcessStack extends NestedStack {
     });
     const configurationBucket = createRaitaBucket({
       scope: this,
-      name: 'parser-configuration-data',
+      name: 'parser-configuration',
       raitaEnv,
       raitaStackIdentifier: raitaStackIdentifier,
     });
@@ -73,7 +73,7 @@ export class DataProcessStack extends NestedStack {
 
     // Create zip handler lambda, grant permissions and create event sources
     const handleZipFileEventFn = this.createZipFileEventHandler({
-      name: 'zip-handler',
+      name: 'dp-handler-zip-file',
       targetBucket: this.inspectionDataBucket,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
@@ -96,8 +96,8 @@ export class DataProcessStack extends NestedStack {
     });
 
     // Create meta data parser lambda, grant permissions and create event sources
-    this.metadataParserFn = this.createMetadataParser({
-      name: 'metadata-parser',
+    this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
+      name: 'dp-handler-inspection-file',
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
       openSearchMetadataIndex: openSearchMetadataIndex,
@@ -107,12 +107,12 @@ export class DataProcessStack extends NestedStack {
       vpc,
     });
     // Grant lambda permissions to buckets
-    configurationBucket.grantRead(this.metadataParserFn);
-    this.inspectionDataBucket.grantRead(this.metadataParserFn);
+    configurationBucket.grantRead(this.handleInspectionFileEventFn);
+    this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
-      this.metadataParserFn,
+      this.handleInspectionFileEventFn,
     );
 
     // Add s3 event source with filter for each targeted file suffix
@@ -120,7 +120,7 @@ export class DataProcessStack extends NestedStack {
       fileSuffixesToIncudeInMetadataParsing,
     );
     metaDataFileSuffixes.forEach(suffix => {
-      this.metadataParserFn.addEventSource(
+      this.handleInspectionFileEventFn.addEventSource(
         new S3EventSource(this.inspectionDataBucket, {
           events: [s3.EventType.OBJECT_CREATED],
           filters: [
@@ -175,7 +175,7 @@ export class DataProcessStack extends NestedStack {
    * Creates the parser lambda and add S3 buckets as event sources,
    * granting lambda read access to these buckets
    */
-  private createMetadataParser({
+  private createInspectionFileEventHandler({
     name,
     openSearchDomainEndpoint,
     configurationBucketName,

@@ -27,15 +27,11 @@ export async function handleFileRequest(
   const s3 = new S3();
   try {
     const { dataBucket } = getLambdaConfigOrFail();
-    console.log(event.body);
     const requestBody = body && JSON.parse(body);
     if (!requestBody?.key) {
       throw new Error('Key not specified');
     }
     const { key } = requestBody;
-
-    console.log(requestBody);
-
     // Check if file exists
     const exists = await s3
       .headObject({
