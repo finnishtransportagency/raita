@@ -4,12 +4,25 @@ import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
-import { AnyPrincipal, Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import {
+  AnyPrincipal,
+  Effect,
+  PolicyStatement,
+  Role,
+} from 'aws-cdk-lib/aws-iam';
+import { Port } from 'aws-cdk-lib/aws-ec2';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+import { RaitaApiStack } from './raita-api';
+import { RaitaDataProcessStack } from './raita-data-process';
+import { string } from 'zod';
 
 interface DatabaseStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly vpc: ec2.Vpc;
+  readonly openSearchMetadataIndex: string;
+  readonly parserConfigurationFile: string;
 }
 
 export class RaitaDatabaseStack extends NestedStack {
@@ -17,7 +30,13 @@ export class RaitaDatabaseStack extends NestedStack {
 
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
-    const { raitaStackIdentifier, raitaEnv, vpc } = props;
+    const {
+      raitaStackIdentifier,
+      raitaEnv,
+      vpc,
+      openSearchMetadataIndex,
+      parserConfigurationFile,
+    } = props;
 
     // Create and configure OpenSearch domain
     this.openSearchDomain = this.createOpenSearchDomain({
@@ -26,6 +45,60 @@ export class RaitaDatabaseStack extends NestedStack {
       vpc,
       raitaStackIdentifier,
     });
+
+    // Create data processing resources
+    const dataProcessStack = new RaitaDataProcessStack(
+      this,
+      'stack-dataprocess',
+      {
+        raitaStackIdentifier: raitaStackIdentifier,
+        raitaEnv,
+        vpc,
+        openSearchDomain: this.openSearchDomain,
+        openSearchMetadataIndex: openSearchMetadataIndex,
+        parserConfigurationFile: parserConfigurationFile,
+      },
+    );
+
+    // Create API Gateway
+    const raitaApi = new RaitaApiStack(this, 'stack-api', {
+      inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+      openSearchDomain: this.openSearchDomain,
+      raitaEnv,
+      raitaStackIdentifier: raitaStackIdentifier,
+      openSearchMetadataIndex: openSearchMetadataIndex,
+      vpc,
+    });
+
+    // Grant data processor lambdas permissions to call OpenSearch endpoints
+    this.createManagedPolicy({
+      name: 'DataProcessOpenSearchHttpPolicy',
+      raitaStackIdentifier,
+      serviceRoles: [dataProcessStack.dataProcessorlambdaServiceRole],
+      resources: [this.openSearchDomain.domainArn],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
+    });
+
+    // Grant api lambdas permissions to call OpenSearch endpoints
+    this.createManagedPolicy({
+      name: 'ApiOpenSearchHttpPolicy',
+      raitaStackIdentifier,
+      serviceRoles: [raitaApi.raitaApilambdaServiceRole],
+      resources: [this.openSearchDomain.domainArn],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
+    });
+
+    // Allow traffic from lambdas to OpenSearch
+    this.openSearchDomain.connections.allowFrom(
+      dataProcessStack.metadataParserFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
+    this.openSearchDomain.connections.allowFrom(
+      raitaApi.osQueryHandlerFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
   }
 
   /**
@@ -88,5 +161,36 @@ export class RaitaDatabaseStack extends NestedStack {
         }),
       ],
     });
+  }
+
+  private createManagedPolicy({
+    name,
+    serviceRoles,
+    actions,
+    resources,
+    raitaStackIdentifier,
+  }: {
+    name: string;
+    serviceRoles: Array<Role>;
+    actions: Array<string>;
+    resources: Array<string>;
+    raitaStackIdentifier: string;
+  }) {
+    // Create a ManagedPolicy that allows lambda role to call open search endpoints
+    const managedPolicy = new iam.ManagedPolicy(
+      this,
+      `managedpolicy-${raitaStackIdentifier}-${name}`,
+      {
+        roles: serviceRoles,
+      },
+    );
+    managedPolicy.addStatements(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources,
+        actions,
+      }),
+    );
+    return managedPolicy;
   }
 }
