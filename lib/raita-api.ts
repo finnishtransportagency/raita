@@ -13,7 +13,6 @@ import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaServiceRole } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
-import { Port } from 'aws-cdk-lib/aws-ec2';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -36,6 +35,7 @@ type ListenerTargetLambdas = {
  */
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApilambdaServiceRole: Role;
+  public readonly osQueryHandlerFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -69,7 +69,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    const osQueryHandlerFn = this.createOpenSearchQueryHandler({
+    this.osQueryHandlerFn = this.createOpenSearchQueryHandler({
       name: 'api-handler-os-query',
       raitaStackIdentifier,
       lambdaRole: this.raitaApilambdaServiceRole,
@@ -78,16 +78,10 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    openSearchDomain.connections.allowFrom(
-      osQueryHandlerFn,
-      Port.allTraffic(),
-      'Allows parser lambda to connect to Opensearch.',
-    );
-
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
       { lambda: urlGeneratorFn, priority: 90, path: ['/file'] },
-      { lambda: osQueryHandlerFn, priority: 100, path: ['/files'] },
+      { lambda: this.osQueryHandlerFn, priority: 100, path: ['/files'] },
     ];
 
     // ALB for API

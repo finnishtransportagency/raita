@@ -30,6 +30,7 @@ interface DataProcessStackProps extends NestedStackProps {
 export class RaitaDataProcessStack extends NestedStack {
   public readonly dataProcessorlambdaServiceRole: Role;
   public readonly inspectionDataBucket: Bucket;
+  public readonly metadataParserFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -95,7 +96,7 @@ export class RaitaDataProcessStack extends NestedStack {
     });
 
     // Create meta data parser lambda, grant permissions and create event sources
-    const metadataParserFn = this.createMetadataParser({
+    this.metadataParserFn = this.createMetadataParser({
       name: 'metadata-parser',
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
@@ -106,27 +107,20 @@ export class RaitaDataProcessStack extends NestedStack {
       vpc,
     });
     // Grant lambda permissions to buckets
-    configurationBucket.grantRead(metadataParserFn);
-    this.inspectionDataBucket.grantRead(metadataParserFn);
+    configurationBucket.grantRead(this.metadataParserFn);
+    this.inspectionDataBucket.grantRead(this.metadataParserFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
-      metadataParserFn,
+      this.metadataParserFn,
     );
+
+    // Add s3 event source with filter for each targeted file suffix
     const metaDataFileSuffixes = Object.values(
       fileSuffixesToIncudeInMetadataParsing,
     );
-
-    openSearchDomain.connections.allowFrom(
-      metadataParserFn,
-      Port.allTraffic(),
-      'Allows parser lambda to connect to Opensearch.',
-    );
-
-    // TODO: Currently reacts only to CREATE events
-    // OPEN: Currently separate event source for each suffix type. Replace with better alternative is exists?
     metaDataFileSuffixes.forEach(suffix => {
-      metadataParserFn.addEventSource(
+      this.metadataParserFn.addEventSource(
         new S3EventSource(this.inspectionDataBucket, {
           events: [s3.EventType.OBJECT_CREATED],
           filters: [

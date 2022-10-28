@@ -9,6 +9,7 @@ import { isPermanentStack } from './utils';
 import { RaitaDataProcessStack } from './raita-data-process';
 import { RaitaDatabaseStack } from './raita-database';
 import { Role } from 'aws-cdk-lib/aws-iam';
+import { Port } from 'aws-cdk-lib/aws-ec2';
 
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
@@ -40,6 +41,7 @@ export class RaitaStack extends Stack {
       ],
     });
 
+    // Add s3 Gateway enpoint to allow for lambda access to s3
     const s3GatewayEndpoint = raitaVPC.addGatewayEndpoint('s3-endpoint', {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
@@ -91,7 +93,19 @@ export class RaitaStack extends Stack {
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
-    // Cloudfront stack is created conditionally - only for main and prod stackIds
+    // Allow traffic from lambdas to OpenSearch
+    dbStack.openSearchDomain.connections.allowFrom(
+      dataProcessStack.metadataParserFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
+    dbStack.openSearchDomain.connections.allowFrom(
+      raitaApi.osQueryHandlerFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
+
+    // Create Cloudfront stack conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
     if (isPermanentStack(stackId, raitaEnv)) {
       new RaitaCloudfrontStack(this, 'stack-cf', {
