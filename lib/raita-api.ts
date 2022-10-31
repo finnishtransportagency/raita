@@ -36,6 +36,7 @@ type ListenerTargetLambdas = {
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
+  public readonly handleMetaRequestFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -68,7 +69,6 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: inspectionDataBucket,
       vpc,
     });
-
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
@@ -77,7 +77,7 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
-    const osMetaHandlerFn = this.createOpenSearchFieldRequestHandler({
+    this.handleMetaRequestFn = this.createMetaRequestHandler({
       name: 'api-handler-os-meta',
       raitaStackIdentifier,
       lambdaRole: this.raitaApiLambdaServiceRole,
@@ -90,7 +90,7 @@ export class RaitaApiStack extends NestedStack {
     const albLambdaTargets: ListenerTargetLambdas[] = [
       { lambda: handleFileRequestFn, priority: 90, path: ['/file'] },
       { lambda: this.handleFilesRequestFn, priority: 100, path: ['/files'] },
-      { lambda: osMetaHandlerFn, priority: 110, path: ['/meta'] },
+      { lambda: this.handleMetaRequestFn, priority: 110, path: ['/meta'] },
     ];
 
     // ALB for API
@@ -212,7 +212,7 @@ export class RaitaApiStack extends NestedStack {
     });
   }
 
-  private createOpenSearchFieldRequestHandler({
+  private createMetaRequestHandler({
     name,
     raitaStackIdentifier,
     lambdaRole,
@@ -232,10 +232,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleOsMetaRequest',
+      handler: 'handleMetaRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/handleOsMetaRequest/handleOsMetaRequest.ts`,
+        `../backend/lambdas/raitaApi/handleMetaRequest/handleMetaRequest.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,

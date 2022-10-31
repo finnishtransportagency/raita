@@ -90,7 +90,12 @@ export class ApplicationStack extends NestedStack {
     this.openSearchDomain.connections.allowFrom(
       dataProcessStack.handleInspectionFileEventFn,
       Port.allTraffic(),
-      'Allows parser lambda to connect to Opensearch.',
+      'Allows inspection file request handler to connect to Opensearch.',
+    );
+    this.openSearchDomain.connections.allowFrom(
+      raitaApi.handleMetaRequestFn,
+      Port.allTraffic(),
+      'Allows meta request handler to connect to Opensearch.',
     );
     this.openSearchDomain.connections.allowFrom(
       raitaApi.handleFilesRequestFn,

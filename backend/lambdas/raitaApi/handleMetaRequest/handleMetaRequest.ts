@@ -1,18 +1,18 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { z } from 'zod';
-import MetadataPort from '../../ports/metadataPort';
-import { logger } from '../../utils/logger';
+import MetadataPort from '../../../ports/metadataPort';
+import { logger } from '../../../utils/logger';
 import {
   getOpenSearchLambdaConfigOrFail,
   getRaitaLambdaError,
   RaitaLambdaError,
-} from '../utils';
+} from '../../utils';
 
 /**
  * DRAFT IMPLEMENTATION
  * Returns meta data fields that are available in the data base
  */
-export async function handleOsMetaRequest(
+export async function handleMetaRequest(
   event: APIGatewayEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
