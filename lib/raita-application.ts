@@ -147,7 +147,7 @@ export class ApplicationStack extends NestedStack {
       vpc,
       vpcSubnets: [
         {
-          subnets: vpc.isolatedSubnets.slice(0, 1),
+          subnets: vpc.privateSubnets.slice(0, 1),
         },
       ],
       accessPolicies: [
