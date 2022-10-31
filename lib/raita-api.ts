@@ -11,15 +11,16 @@ import { Construct } from 'constructs';
 import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
+import { createRaitaServiceRole } from './raitaResourceCreators';
+import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
-  readonly dataBucket: Bucket;
-  readonly lambdaServiceRole: Role;
-  readonly openSearchDomainEndpoint: string;
+  readonly inspectionDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.Vpc;
+  readonly openSearchDomain: Domain;
 }
 
 type ListenerTargetLambdas = {
@@ -33,45 +34,62 @@ type ListenerTargetLambdas = {
  * TODO: Assess lambda role requirements and implement least privilege
  */
 export class RaitaApiStack extends NestedStack {
+  public readonly raitaApiLambdaServiceRole: Role;
+  public readonly handleFilesRequestFn: NodejsFunction;
+
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
-      lambdaServiceRole,
-      openSearchDomainEndpoint,
       openSearchMetadataIndex,
       vpc,
+      inspectionDataBucket,
+      openSearchDomain,
     } = props;
 
-    // Create handler lambdas
-    const urlGeneratorFn = this.createS3urlGenerator({
-      name: 'api-handler-file-access',
+    this.raitaApiLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
-      lambdaRole: lambdaServiceRole,
-      dataBucket: props.dataBucket,
+    });
+    openSearchDomain.grantIndexRead(
+      openSearchMetadataIndex,
+      this.raitaApiLambdaServiceRole,
+    );
+    inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
+
+    // Create handler lambdas
+    const handleFileRequestFn = this.createFileRequestHandler({
+      name: 'api-handler-file',
+      raitaStackIdentifier,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: inspectionDataBucket,
       vpc,
     });
-    const osQueryHandlerFn = this.createOpenSearchQueryHandler({
-      name: 'api-handler-os-query',
+
+    this.handleFilesRequestFn = this.createFilesRequestHandler({
+      name: 'api-handler-files',
       raitaStackIdentifier,
-      lambdaRole: lambdaServiceRole,
-      openSearchDomainEndpoint,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
       vpc,
     });
     const osMetaHandlerFn = this.createOpenSearchFieldRequestHandler({
       name: 'api-handler-os-meta',
       raitaStackIdentifier,
-      lambdaRole: lambdaServiceRole,
-      openSearchDomainEndpoint,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
       vpc,
     });
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: urlGeneratorFn, priority: 90, path: ['/file'] },
-      { lambda: osQueryHandlerFn, priority: 100, path: ['/files'] },
+      { lambda: handleFileRequestFn, priority: 90, path: ['/file'] },
+      { lambda: this.handleFilesRequestFn, priority: 100, path: ['/files'] },
       { lambda: osMetaHandlerFn, priority: 110, path: ['/meta'] },
     ];
 
@@ -119,7 +137,7 @@ export class RaitaApiStack extends NestedStack {
   /**
    * Creates and returns lambda function for generating presigned urls
    */
-  private createS3urlGenerator({
+  private createFileRequestHandler({
     name,
     raitaStackIdentifier,
     dataBucket,
@@ -140,7 +158,7 @@ export class RaitaApiStack extends NestedStack {
       handler: 'handleFileRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/handleFileRequest/handleFileRequest.ts`,
+        `../backend/lambdas/raitaApi/handleFileRequest/handleFileRequest.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
@@ -156,7 +174,7 @@ export class RaitaApiStack extends NestedStack {
   /**
    * Creates and returns OpenSearchQuery handler
    */
-  private createOpenSearchQueryHandler({
+  private createFilesRequestHandler({
     name,
     raitaStackIdentifier,
     lambdaRole,
@@ -176,10 +194,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleOpenSearchQuery',
+      handler: 'handleFilesRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/handleOpenSearchQuery/handleOpenSearchQuery.ts`,
+        `../backend/lambdas/raitaApi/handleFilesRequest/handleFilesRequest.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,

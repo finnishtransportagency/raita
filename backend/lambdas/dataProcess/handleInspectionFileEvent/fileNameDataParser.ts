@@ -1,5 +1,5 @@
-import { IExtractionSpec, ParseValueResult } from '../../types';
-import { logger } from '../../utils/logger';
+import { IExtractionSpec, ParseValueResult } from '../../../types';
+import { logger } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
 // TODO: Remove this typeguard by improving types
