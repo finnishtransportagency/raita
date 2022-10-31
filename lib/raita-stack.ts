@@ -27,7 +27,7 @@ export class RaitaStack extends Stack {
     });
 
     // Create application resources (db, data process resources, api resources)
-    new ApplicationStack(this, 'stack-db', {
+    new ApplicationStack(this, 'stack-app', {
       raitaStackIdentifier: this.#raitaStackIdentifier,
       raitaEnv,
       vpc: raitaVPC,
