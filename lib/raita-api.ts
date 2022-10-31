@@ -78,7 +78,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
     this.handleMetaRequestFn = this.createMetaRequestHandler({
-      name: 'api-handler-os-meta',
+      name: 'api-handler-meta',
       raitaStackIdentifier,
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,

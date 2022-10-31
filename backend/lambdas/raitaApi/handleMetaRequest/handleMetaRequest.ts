@@ -25,25 +25,20 @@ export async function handleMetaRequest(
       region,
       openSearchDomain,
     });
-    console.log('calling os for fields');
     const rawFieldsResponse = await metadata.getMetadataFields();
-    console.log('calling os for report types');
-    // const rawReportTypesResponse = await metadata.getReportTypes();
-    console.log('got report types');
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
+    const rawReportTypesResponse = await metadata.getReportTypes();
+    const reportTypes = parseReportTypes(rawReportTypesResponse);
     // console.log(rawReportTypesResponse);
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(
-        {
-          fields,
-        },
-        null,
-        2,
-      ),
+      body: JSON.stringify({
+        fields,
+        reportTypes,
+      }),
     };
   } catch (err: unknown) {
     logger.logError(err);
@@ -70,12 +65,9 @@ const FieldMappingsSchema = z.record(
 );
 
 function parseMetadataFields(res: any, metadataIndexName: string) {
-  console.log(typeof res);
-  console.log(res);
   if (!res.body) {
     throw new RaitaLambdaError('Missing response body', 500);
   }
-  // const parsed = JSON.parse(data);
   const responseData = FieldMappingsSchema.parse(res.body);
   const metadataIndexData = responseData[metadataIndexName];
   if (!metadataIndexData) {
@@ -89,4 +81,13 @@ function parseMetadataFields(res: any, metadataIndexName: string) {
     const value = fields[key];
     return { [key]: { type: value.type } };
   });
+}
+
+function parseReportTypes(res: any) {
+  if (!res.body) {
+    throw new RaitaLambdaError('Missing response body', 500);
+  }
+  console.log(res.body);
+  console.log(JSON.stringify(res.body));
+  return { coming: 'soon' };
 }
