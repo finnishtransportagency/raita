@@ -42,9 +42,9 @@ export class RaitaStack extends Stack {
     });
 
     // Add s3 Gateway enpoint to allow for lambda access to s3
-    const s3GatewayEndpoint = raitaVPC.addGatewayEndpoint('s3-endpoint', {
-      service: ec2.GatewayVpcEndpointAwsService.S3,
-    });
+    // const s3GatewayEndpoint = raitaVPC.addGatewayEndpoint('s3-endpoint', {
+    //   service: ec2.GatewayVpcEndpointAwsService.S3,
+    // });
 
     // Create application resources (db, data process resources, api resources)
     new ApplicationStack(this, 'stack-db', {
