@@ -4,7 +4,7 @@ import { IMetadataStorageInterface } from '../types/portDataStorage';
 import ConfigPort from './configPort';
 import MetadataPort from './metadataPort';
 import { S3FileRepository } from '../adapters/s3FileRepository';
-import { IMetadataParserConfig } from '../lambdas/metadataParser/metadataParser';
+import { IMetadataParserConfig } from '../lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent';
 
 class Backend {
   constructor(

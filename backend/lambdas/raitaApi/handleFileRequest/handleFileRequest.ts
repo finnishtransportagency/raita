@@ -1,13 +1,13 @@
 import { LogGroupTargetInput } from 'aws-cdk-lib/aws-events-targets';
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { getEnvOrFail } from '../../../utils';
-import { logger } from '../../utils/logger';
+import { getEnvOrFail } from '../../../../utils';
+import { logger } from '../../../utils/logger';
 import {
   getClientErrorMessage,
   getRaitaLambdaError,
   RaitaLambdaError,
-} from '../utils';
+} from '../../utils';
 
 function getLambdaConfigOrFail() {
   return {
@@ -32,7 +32,6 @@ export async function handleFileRequest(
       throw new Error('Key not specified');
     }
     const { key } = requestBody;
-
     // Check if file exists
     const exists = await s3
       .headObject({
@@ -66,7 +65,7 @@ export async function handleFileRequest(
       ),
     };
   } catch (err: unknown) {
-    logger.log(err);
+    logger.logError(err);
     return getRaitaLambdaError(err);
   }
 }

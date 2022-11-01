@@ -1,12 +1,12 @@
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
-} from '../../types';
-import { ParseValueResult } from '../../types';
+} from '../../../types';
+import { ParseValueResult } from '../../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
-import { fileSuffixesToIncudeInMetadataParsing } from '../../../constants';
-import { RaitaParseError } from '../utils';
+import { fileSuffixesToIncudeInMetadataParsing } from '../../../../constants';
+import { RaitaParseError } from '../../utils';
 import { createHash } from 'crypto';
 /**
  * Resolves whether content data parsing is needed for the file

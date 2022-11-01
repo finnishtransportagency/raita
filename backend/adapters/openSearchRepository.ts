@@ -1,6 +1,5 @@
 import { FileMetadataEntry } from '../types';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
-import { logger } from '../utils/logger';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
 /**

@@ -5,6 +5,8 @@ import {
   PRODUCTION_STACK_ID,
 } from '../constants';
 import { RaitaEnvironment } from './config';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import { Construct } from 'constructs';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
