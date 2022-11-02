@@ -19,7 +19,7 @@ import { DataProcessStack } from './raita-data-process';
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
-  readonly vpc: ec2.Vpc;
+  readonly vpc: ec2.IVpc;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
 }
@@ -115,7 +115,7 @@ export class ApplicationStack extends NestedStack {
   }: {
     name: string;
     raitaEnv: RaitaEnvironment;
-    vpc: ec2.Vpc;
+    vpc: ec2.IVpc;
     raitaStackIdentifier: string;
   }) {
     const domainName = `${name}-${raitaStackIdentifier}`;
@@ -152,7 +152,7 @@ export class ApplicationStack extends NestedStack {
       vpc,
       vpcSubnets: [
         {
-          subnets: vpc.isolatedSubnets.slice(0, 1),
+          subnets: vpc.privateSubnets.slice(0, 1),
         },
       ],
       accessPolicies: [

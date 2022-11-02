@@ -6,7 +6,7 @@ import { Role } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Port, SubnetType, Vpc } from 'aws-cdk-lib/aws-ec2';
+import { IVpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
@@ -21,7 +21,7 @@ import {
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
-  readonly vpc: Vpc;
+  readonly vpc: IVpc;
   readonly openSearchDomain: Domain;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
@@ -148,7 +148,7 @@ export class DataProcessStack extends NestedStack {
     targetBucket: s3.Bucket;
     lambdaRole: Role;
     raitaStackIdentifier: string;
-    vpc: Vpc;
+    vpc: IVpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -166,7 +166,7 @@ export class DataProcessStack extends NestedStack {
       role: lambdaRole,
       vpc,
       vpcSubnets: {
-        subnetType: SubnetType.PRIVATE_ISOLATED,
+        subnets: vpc.privateSubnets,
       },
     });
   }
@@ -192,7 +192,7 @@ export class DataProcessStack extends NestedStack {
     lambdaRole: Role;
     openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
-    vpc: Vpc;
+    vpc: IVpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -214,7 +214,7 @@ export class DataProcessStack extends NestedStack {
       role: lambdaRole,
       vpc,
       vpcSubnets: {
-        subnetType: SubnetType.PRIVATE_ISOLATED,
+        subnets: vpc.privateSubnets,
       },
     });
   }

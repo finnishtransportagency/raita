@@ -19,7 +19,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaEnv: RaitaEnvironment;
   readonly inspectionDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
-  readonly vpc: ec2.Vpc;
+  readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
 }
 
@@ -113,7 +113,7 @@ export class RaitaApiStack extends NestedStack {
   }: {
     raitaStackIdentifier: string;
     name: string;
-    vpc: ec2.Vpc;
+    vpc: ec2.IVpc;
     listenerTargets: ListenerTargetLambdas[];
   }) {
     const alb = new elbv2.ApplicationLoadBalancer(this, name, {
@@ -148,7 +148,7 @@ export class RaitaApiStack extends NestedStack {
     raitaStackIdentifier: string;
     dataBucket: Bucket;
     lambdaRole: Role;
-    vpc: ec2.Vpc;
+    vpc: ec2.IVpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -166,7 +166,7 @@ export class RaitaApiStack extends NestedStack {
       role: lambdaRole,
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        subnets: vpc.privateSubnets,
       },
     });
   }
@@ -187,7 +187,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
     openSearchMetadataIndex: string;
-    vpc: ec2.Vpc;
+    vpc: ec2.IVpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -207,7 +207,7 @@ export class RaitaApiStack extends NestedStack {
       role: lambdaRole,
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        subnets: vpc.privateSubnets,
       },
     });
   }

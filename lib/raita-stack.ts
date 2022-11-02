@@ -21,25 +21,9 @@ export class RaitaStack extends Stack {
     const { raitaEnv, stackId } = props;
     const config = getRaitaStackConfig(this);
 
-    // Create vpc
-    const raitaVPC = new ec2.Vpc(this, `raita-vpc`, {
-      vpcName: `vpc-${this.#raitaStackIdentifier}`,
-      cidr: '10.0.0.0/16',
-      enableDnsHostnames: true,
-      enableDnsSupport: true,
-      natGateways: 0,
-      subnetConfiguration: [
-        {
-          name: 'private-subnet',
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-          cidrMask: 24,
-        },
-      ],
-    });
-
-    // Add s3 Gateway enpoint to allow for lambda access to s3
-    const s3GatewayEndpoint = raitaVPC.addGatewayEndpoint('s3-endpoint', {
-      service: ec2.GatewayVpcEndpointAwsService.S3,
+    // Get existing vpc based on predetermined attributes
+    const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'rataextra-vpc', {
+      ...config.vpc,
     });
 
     // Create application resources (db, data process resources, api resources)

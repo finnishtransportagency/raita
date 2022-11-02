@@ -77,4 +77,9 @@ export const getRaitaStackConfig = (scope: Construct) => ({
     SSM_CLOUDFRONT_CERTIFICATE_ARN,
   ),
   cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
+  vpc: {
+    vpcId: 'vpc-02e4e06ed07180dfc',
+    availabilityZones: ['eu-west-1a', 'eu-west-1b'],
+    privateSubnetIds: ['subnet-030193d252c16075a', 'subnet-0bcfa0aec6736ca62'],
+  },
 });
