@@ -42,7 +42,7 @@ export class ApplicationStack extends NestedStack {
 
     // Create and configure OpenSearch domain
     this.openSearchDomain = this.createOpenSearchDomain({
-      name: 'raitadb',
+      name: 'db',
       raitaEnv: raitaEnv,
       vpc,
       raitaStackIdentifier,
