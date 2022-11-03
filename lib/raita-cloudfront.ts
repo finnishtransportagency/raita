@@ -5,14 +5,15 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { isPermanentStack } from './utils';
+import { FrontendStack } from './raita-frontend';
 
 interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly stackId: string;
   readonly cloudfrontCertificateArn: string;
   readonly cloudfrontDomainName: string;
-  readonly frontendBucket: Bucket;
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
@@ -23,49 +24,56 @@ export class CloudfrontStack extends Stack {
       raitaStackIdentifier,
       cloudfrontCertificateArn,
       cloudfrontDomainName,
-      frontendBucket,
+      stackId,
+      raitaEnv,
     } = props;
 
-    const cloudfrontOAI = new cloudfront.OriginAccessIdentity(
-      this,
-      'CloudFrontOriginAccessIdentity',
-    );
+    // Create frontend stack to hold frontend artifacts
+    const frontendStack = new FrontendStack(this, 'stack-fe', {
+      raitaEnv,
+      raitaStackIdentifier,
+    });
 
-    frontendBucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        actions: ['s3:GetObject'],
-        resources: [frontendBucket.arnForObjects('*')],
-        principals: [
-          new iam.CanonicalUserPrincipal(
-            cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
-          ),
-        ],
-      }),
-    );
+    // Create Cloudfront itself conditionally - only for main and prod stackIds
+    // Feature branches do not provide access from outside
+    if (isPermanentStack(stackId, raitaEnv)) {
+      const cloudfrontOAI = new cloudfront.OriginAccessIdentity(
+        this,
+        'CloudFrontOriginAccessIdentity',
+      );
+      const certificate = acm.Certificate.fromCertificateArn(
+        this,
+        `certificate-${raitaStackIdentifier}`,
+        cloudfrontCertificateArn,
+      );
 
-    const certificate = acm.Certificate.fromCertificateArn(
-      this,
-      `certificate-${raitaStackIdentifier}`,
-      cloudfrontCertificateArn,
-    );
-
-    const cloudfrontDistribution = new cloudfront.Distribution(
-      this,
-      `cloudfront`,
-      {
+      new cloudfront.Distribution(this, `cloudfront`, {
         domainNames: [cloudfrontDomainName],
         certificate,
         defaultRootObject: 'index.html',
         comment: `cloudfront for ${raitaStackIdentifier}`,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         defaultBehavior: {
-          origin: new origins.S3Origin(frontendBucket, {
+          origin: new origins.S3Origin(frontendStack.frontendBucket, {
             originAccessIdentity: cloudfrontOAI,
           }),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         },
-      },
-    );
+      });
+
+      // Grant OAI permissions to access the frontend bucket resources
+      frontendStack.frontendBucket.addToResourcePolicy(
+        new iam.PolicyStatement({
+          actions: ['s3:GetObject'],
+          resources: [frontendStack.frontendBucket.arnForObjects('*')],
+          principals: [
+            new iam.CanonicalUserPrincipal(
+              cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
+            ),
+          ],
+        }),
+      );
+    }
   }
 }
