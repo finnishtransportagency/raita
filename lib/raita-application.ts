@@ -28,8 +28,6 @@ interface ApplicationStackProps extends NestedStackProps {
  * OpenSearch documentation available at: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html
  */
 export class ApplicationStack extends NestedStack {
-  // public readonly openSearchDomain: opensearch.Domain;
-
   constructor(scope: Construct, id: string, props: ApplicationStackProps) {
     super(scope, id, props);
     const {
