@@ -11,11 +11,9 @@ interface RaitaStackProps extends StackProps {
 }
 
 export class RaitaStack extends Stack {
-  #raitaStackIdentifier: string;
-
   constructor(scope: Construct, id: string, props: RaitaStackProps) {
     super(scope, id, props);
-    this.#raitaStackIdentifier = id.toLowerCase();
+    const raitaStackIdentifier = id.toLowerCase();
     const { raitaEnv, stackId } = props;
     const config = getRaitaStackConfig(this);
 
@@ -25,17 +23,17 @@ export class RaitaStack extends Stack {
     });
 
     // Create application resources (db, data process resources, api resources)
-    // new ApplicationStack(this, 'stack-app', {
-    //   raitaStackIdentifier: this.#raitaStackIdentifier,
-    //   raitaEnv,
-    //   vpc: raitaVPC,
-    //   openSearchMetadataIndex: config.openSearchMetadataIndex,
-    //   parserConfigurationFile: config.parserConfigurationFile,
-    // });
+    new ApplicationStack(this, 'stack-app', {
+      raitaStackIdentifier,
+      raitaEnv,
+      vpc: raitaVPC,
+      openSearchMetadataIndex: config.openSearchMetadataIndex,
+      parserConfigurationFile: config.parserConfigurationFile,
+    });
 
     // Create Cloudfront stack
     new CloudfrontStack(this, 'stack-cf', {
-      raitaStackIdentifier: this.#raitaStackIdentifier,
+      raitaStackIdentifier,
       raitaEnv,
       stackId,
       cloudfrontCertificateArn: config.cloudfrontCertificateArn,
