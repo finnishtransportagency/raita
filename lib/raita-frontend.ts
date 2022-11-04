@@ -20,7 +20,7 @@ export class FrontendStack extends NestedStack {
 
     this.frontendBucket = createRaitaBucket({
       scope: this,
-      name: 'frontend',
+      name: 'front',
       raitaEnv,
       raitaStackIdentifier,
     });

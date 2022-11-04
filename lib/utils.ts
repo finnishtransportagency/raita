@@ -5,14 +5,12 @@ import {
   PRODUCTION_STACK_ID,
 } from '../constants';
 import { RaitaEnvironment } from './config';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
  */
 export const getRemovalPolicy = (raitaEnv: RaitaEnvironment) =>
-  raitaEnv === 'dev' ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN;
+  raitaEnv === ENVIRONMENTS.dev ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN;
 
 /**
  * Returns whether the stack is the main development stack
