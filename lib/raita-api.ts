@@ -17,10 +17,10 @@ import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
-  readonly inspectionDataBucket: Bucket;
+  // readonly inspectionDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
-  readonly openSearchDomain: Domain;
+  // readonly openSearchDomain: Domain;
 }
 
 type ListenerTargetLambdas = {
@@ -43,53 +43,53 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
       openSearchMetadataIndex,
       vpc,
-      inspectionDataBucket,
-      openSearchDomain,
+      // inspectionDataBucket,
+      // openSearchDomain,
     } = props;
 
-    this.raitaApiLambdaServiceRole = createRaitaServiceRole({
-      scope: this,
-      name: 'RaitaApiLambdaServiceRole',
-      servicePrincipal: 'lambda.amazonaws.com',
-      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
-      raitaStackIdentifier,
-    });
-    openSearchDomain.grantIndexRead(
-      openSearchMetadataIndex,
-      this.raitaApiLambdaServiceRole,
-    );
-    inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
+    // this.raitaApiLambdaServiceRole = createRaitaServiceRole({
+    //   scope: this,
+    //   name: 'RaitaApiLambdaServiceRole',
+    //   servicePrincipal: 'lambda.amazonaws.com',
+    //   policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+    //   raitaStackIdentifier,
+    // });
+    // openSearchDomain.grantIndexRead(
+    //   openSearchMetadataIndex,
+    //   this.raitaApiLambdaServiceRole,
+    // );
+    // inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
 
-    // Create handler lambdas
-    const handleFileRequestFn = this.createFileRequestHandler({
-      name: 'api-handler-file',
-      raitaStackIdentifier,
-      lambdaRole: this.raitaApiLambdaServiceRole,
-      dataBucket: inspectionDataBucket,
-      vpc,
-    });
+    // // Create handler lambdas
+    // const handleFileRequestFn = this.createFileRequestHandler({
+    //   name: 'api-handler-file',
+    //   raitaStackIdentifier,
+    //   lambdaRole: this.raitaApiLambdaServiceRole,
+    //   dataBucket: inspectionDataBucket,
+    //   vpc,
+    // });
 
-    this.handleFilesRequestFn = this.createFilesRequestHandler({
-      name: 'api-handler-files',
-      raitaStackIdentifier,
-      lambdaRole: this.raitaApiLambdaServiceRole,
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex,
-      vpc,
-    });
+    // this.handleFilesRequestFn = this.createFilesRequestHandler({
+    //   name: 'api-handler-files',
+    //   raitaStackIdentifier,
+    //   lambdaRole: this.raitaApiLambdaServiceRole,
+    //   openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+    //   openSearchMetadataIndex,
+    //   vpc,
+    // });
 
-    // Add all lambdas here to add as alb targets
-    const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: handleFileRequestFn, priority: 90, path: ['/file'] },
-      { lambda: this.handleFilesRequestFn, priority: 100, path: ['/files'] },
-    ];
+    // // Add all lambdas here to add as alb targets
+    // const albLambdaTargets: ListenerTargetLambdas[] = [
+    //   { lambda: handleFileRequestFn, priority: 90, path: ['/file'] },
+    //   { lambda: this.handleFilesRequestFn, priority: 100, path: ['/files'] },
+    // ];
 
     // ALB for API
     this.createlAlb({
       raitaStackIdentifier: raitaStackIdentifier,
       name: 'raita-api',
       vpc,
-      listenerTargets: albLambdaTargets,
+      listenerTargets: [], // albLambdaTargets,
     });
   }
 
