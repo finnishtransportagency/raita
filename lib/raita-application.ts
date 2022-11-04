@@ -41,27 +41,27 @@ export class ApplicationStack extends NestedStack {
     } = props;
 
     // Create and configure OpenSearch domain
-    // this.openSearchDomain = this.createOpenSearchDomain({
-    //   name: 'db',
-    //   raitaEnv: raitaEnv,
-    //   vpc,
-    //   raitaStackIdentifier,
-    // });
+    const openSearchDomain = this.createOpenSearchDomain({
+      name: 'db',
+      raitaEnv: raitaEnv,
+      vpc,
+      raitaStackIdentifier,
+    });
 
     // Create data processing resources
-    // const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
-    //   raitaStackIdentifier: raitaStackIdentifier,
-    //   raitaEnv,
-    //   vpc,
-    //   openSearchDomain: this.openSearchDomain,
-    //   openSearchMetadataIndex: openSearchMetadataIndex,
-    //   parserConfigurationFile: parserConfigurationFile,
-    // });
+    const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
+      raitaStackIdentifier: raitaStackIdentifier,
+      raitaEnv,
+      vpc,
+      openSearchDomain: openSearchDomain,
+      openSearchMetadataIndex: openSearchMetadataIndex,
+      parserConfigurationFile: parserConfigurationFile,
+    });
 
     // Create API Gateway
     const raitaApi = new RaitaApiStack(this, 'stack-api', {
-      // inspectionDataBucket: dataProcessStack.inspectionDataBucket,
-      // openSearchDomain: this.openSearchDomain,
+      inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+      openSearchDomain: openSearchDomain,
       raitaEnv,
       raitaStackIdentifier: raitaStackIdentifier,
       openSearchMetadataIndex: openSearchMetadataIndex,
@@ -69,34 +69,34 @@ export class ApplicationStack extends NestedStack {
     });
 
     // Grant data processor lambdas permissions to call OpenSearch endpoints
-    // this.createManagedPolicy({
-    //   name: 'DataProcessOpenSearchHttpPolicy',
-    //   raitaStackIdentifier,
-    //   serviceRoles: [dataProcessStack.dataProcessorLambdaServiceRole],
-    //   resources: [this.openSearchDomain.domainArn],
-    //   actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
-    // });
+    this.createManagedPolicy({
+      name: 'DataProcessOpenSearchHttpPolicy',
+      raitaStackIdentifier,
+      serviceRoles: [dataProcessStack.dataProcessorLambdaServiceRole],
+      resources: [openSearchDomain.domainArn],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
+    });
 
-    // // Grant api lambdas permissions to call OpenSearch endpoints
-    // this.createManagedPolicy({
-    //   name: 'ApiOpenSearchHttpPolicy',
-    //   raitaStackIdentifier,
-    //   serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
-    //   resources: [this.openSearchDomain.domainArn],
-    //   actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
-    // });
+    // Grant api lambdas permissions to call OpenSearch endpoints
+    this.createManagedPolicy({
+      name: 'ApiOpenSearchHttpPolicy',
+      raitaStackIdentifier,
+      serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
+      resources: [openSearchDomain.domainArn],
+      actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
+    });
 
-    // // Allow traffic from lambdas to OpenSearch
-    // this.openSearchDomain.connections.allowFrom(
-    //   dataProcessStack.handleInspectionFileEventFn,
-    //   Port.allTraffic(),
-    //   'Allows parser lambda to connect to Opensearch.',
-    // );
-    // this.openSearchDomain.connections.allowFrom(
-    //   raitaApi.handleFilesRequestFn,
-    //   Port.allTraffic(),
-    //   'Allows parser lambda to connect to Opensearch.',
-    // );
+    // Allow traffic from lambdas to OpenSearch
+    openSearchDomain.connections.allowFrom(
+      dataProcessStack.handleInspectionFileEventFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
+    openSearchDomain.connections.allowFrom(
+      raitaApi.handleFilesRequestFn,
+      Port.allTraffic(),
+      'Allows parser lambda to connect to Opensearch.',
+    );
   }
 
   /**
