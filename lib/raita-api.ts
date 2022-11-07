@@ -69,6 +69,7 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: inspectionDataBucket,
       vpc,
     });
+
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
@@ -77,6 +78,7 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
+
     this.handleMetaRequestFn = this.createMetaRequestHandler({
       name: 'api-handler-meta',
       raitaStackIdentifier,
@@ -96,7 +98,7 @@ export class RaitaApiStack extends NestedStack {
     // ALB for API
     this.createlAlb({
       raitaStackIdentifier: raitaStackIdentifier,
-      name: 'api',
+      name: 'raita-api',
       vpc,
       listenerTargets: albLambdaTargets,
     });
@@ -225,7 +227,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
     openSearchMetadataIndex: string;
-    vpc: ec2.Vpc;
+    vpc: ec2.IVpc;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -245,7 +247,7 @@ export class RaitaApiStack extends NestedStack {
       role: lambdaRole,
       vpc,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        subnets: vpc.privateSubnets,
       },
     });
   }
