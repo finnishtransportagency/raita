@@ -80,8 +80,12 @@ export class RaitaApiStack extends NestedStack {
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: handleFileRequestFn, priority: 90, path: ['/file'] },
-      { lambda: this.handleFilesRequestFn, priority: 100, path: ['/files'] },
+      { lambda: handleFileRequestFn, priority: 90, path: ['/api/file'] },
+      {
+        lambda: this.handleFilesRequestFn,
+        priority: 100,
+        path: ['/api/files'],
+      },
     ];
 
     // ALB for API
