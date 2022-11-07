@@ -10,6 +10,7 @@ import {
   PRODUCTION_STACK_ID,
   SSM_CLOUDFRONT_CERTIFICATE_ARN,
   SSM_CLOUDFRONT_DOMAIN_NAME,
+  SSM_DMZ_API_DOMAIN_NAME,
 } from '../constants';
 import { Construct } from 'constructs';
 
@@ -77,6 +78,7 @@ export const getRaitaStackConfig = (scope: Construct) => ({
     SSM_CLOUDFRONT_CERTIFICATE_ARN,
   ),
   cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
+  dmzApiEndpoint: getSSMParameter(scope, SSM_DMZ_API_DOMAIN_NAME),
   vpc: {
     vpcId: 'vpc-02e4e06ed07180dfc',
     availabilityZones: ['eu-west-1a', 'eu-west-1b'],
