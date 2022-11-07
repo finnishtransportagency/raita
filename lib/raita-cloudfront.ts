@@ -7,6 +7,13 @@ import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { isPermanentStack } from './utils';
 import { FrontendStack } from './raita-frontend';
+import {
+  AllowedMethods,
+  BehaviorOptions,
+  CachePolicy,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
 
 interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
@@ -14,6 +21,7 @@ interface CloudfrontStackProps extends StackProps {
   readonly stackId: string;
   readonly cloudfrontCertificateArn: string;
   readonly cloudfrontDomainName: string;
+  readonly dmzApiEndpoint: string;
 }
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
@@ -24,6 +32,7 @@ export class CloudfrontStack extends Stack {
       raitaStackIdentifier,
       cloudfrontCertificateArn,
       cloudfrontDomainName,
+      dmzApiEndpoint,
       stackId,
       raitaEnv,
     } = props;
@@ -47,6 +56,14 @@ export class CloudfrontStack extends Stack {
         cloudfrontCertificateArn,
       );
 
+      const apiProxyBehavior: BehaviorOptions = {
+        origin: new origins.HttpOrigin(dmzApiEndpoint),
+        cachePolicy: CachePolicy.CACHING_DISABLED,
+        originRequestPolicy: OriginRequestPolicy.ALL_VIEWER,
+        allowedMethods: AllowedMethods.ALLOW_ALL,
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      };
+
       new cloudfront.Distribution(this, `cloudfront`, {
         domainNames: [cloudfrontDomainName],
         certificate,
@@ -59,6 +76,10 @@ export class CloudfrontStack extends Stack {
           }),
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        },
+        additionalBehaviors: {
+          '/api/*': apiProxyBehavior,
+          '/oauth2*': apiProxyBehavior,
         },
       });
 
