@@ -78,7 +78,7 @@ export class CloudfrontStack extends Stack {
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         },
         additionalBehaviors: {
-          '/api/*': apiProxyBehavior,
+          '/api*': apiProxyBehavior,
           '/oauth2*': apiProxyBehavior,
         },
       });
