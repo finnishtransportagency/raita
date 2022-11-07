@@ -87,7 +87,7 @@ export class RaitaApiStack extends NestedStack {
     // ALB for API
     this.createlAlb({
       raitaStackIdentifier: raitaStackIdentifier,
-      name: 'api',
+      name: 'raita-api',
       vpc,
       listenerTargets: albLambdaTargets,
     });

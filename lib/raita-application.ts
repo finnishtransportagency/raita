@@ -28,8 +28,6 @@ interface ApplicationStackProps extends NestedStackProps {
  * OpenSearch documentation available at: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html
  */
 export class ApplicationStack extends NestedStack {
-  public readonly openSearchDomain: opensearch.Domain;
-
   constructor(scope: Construct, id: string, props: ApplicationStackProps) {
     super(scope, id, props);
     const {
@@ -41,8 +39,8 @@ export class ApplicationStack extends NestedStack {
     } = props;
 
     // Create and configure OpenSearch domain
-    this.openSearchDomain = this.createOpenSearchDomain({
-      name: 'raitadb',
+    const openSearchDomain = this.createOpenSearchDomain({
+      name: 'db',
       raitaEnv: raitaEnv,
       vpc,
       raitaStackIdentifier,
@@ -53,7 +51,7 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier: raitaStackIdentifier,
       raitaEnv,
       vpc,
-      openSearchDomain: this.openSearchDomain,
+      openSearchDomain: openSearchDomain,
       openSearchMetadataIndex: openSearchMetadataIndex,
       parserConfigurationFile: parserConfigurationFile,
     });
@@ -61,7 +59,7 @@ export class ApplicationStack extends NestedStack {
     // Create API Gateway
     const raitaApi = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
-      openSearchDomain: this.openSearchDomain,
+      openSearchDomain: openSearchDomain,
       raitaEnv,
       raitaStackIdentifier: raitaStackIdentifier,
       openSearchMetadataIndex: openSearchMetadataIndex,
@@ -73,7 +71,7 @@ export class ApplicationStack extends NestedStack {
       name: 'DataProcessOpenSearchHttpPolicy',
       raitaStackIdentifier,
       serviceRoles: [dataProcessStack.dataProcessorLambdaServiceRole],
-      resources: [this.openSearchDomain.domainArn],
+      resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
@@ -82,17 +80,17 @@ export class ApplicationStack extends NestedStack {
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
       serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
-      resources: [this.openSearchDomain.domainArn],
+      resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
     // Allow traffic from lambdas to OpenSearch
-    this.openSearchDomain.connections.allowFrom(
+    openSearchDomain.connections.allowFrom(
       dataProcessStack.handleInspectionFileEventFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
     );
-    this.openSearchDomain.connections.allowFrom(
+    openSearchDomain.connections.allowFrom(
       raitaApi.handleFilesRequestFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
