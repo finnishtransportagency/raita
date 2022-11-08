@@ -2,9 +2,6 @@ import { FileMetadataEntry } from '../types';
 import { IMetadataStorageInterface } from '../types/portDataStorage';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
 
-/**
- * OPEN: This could be make into a singleton but is is worth it?
- */
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
   #openSearchClient: RaitaOpenSearchClient;
@@ -41,6 +38,34 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     const response = await client.search({
       index: this.#dataIndex,
       body: query,
+    });
+    return response;
+  };
+
+  // TODO: Provide best possible types
+  getMetadataFields = async () => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.indices.getMapping({
+      index: this.#dataIndex,
+    });
+    return response;
+  };
+
+  getReportTypes = async () => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.search({
+      index: this.#dataIndex,
+      body: {
+        size: 0,
+        aggs: {
+          types: {
+            terms: {
+              field: 'metadata.report_type.keyword',
+              size: 10,
+            },
+          },
+        },
+      },
     });
     return response;
   };

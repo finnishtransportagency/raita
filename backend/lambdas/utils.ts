@@ -1,3 +1,5 @@
+import { getGetEnvWithPreassignedContext } from '../../utils';
+
 /**
  * Error class for Raita API lambdas
  */
@@ -42,4 +44,13 @@ export const decodeUriString = (uriString: string) => {
   } catch (error) {
     return uriString;
   }
+};
+
+export const getOpenSearchLambdaConfigOrFail = () => {
+  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
+  return {
+    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
+    region: getEnv('REGION'),
+    metadataIndex: getEnv('METADATA_INDEX'),
+  };
 };
