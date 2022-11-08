@@ -1,5 +1,4 @@
 import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { z } from 'zod';
 import MetadataPort from '../../../ports/metadataPort';
 import { logger } from '../../../utils/logger';
 import {
@@ -7,10 +6,13 @@ import {
   getRaitaLambdaError,
   RaitaLambdaError,
 } from '../../utils';
+import {
+  FieldMappingsSchema,
+  ReportTypesSchema,
+} from './handleMetaRequestSchemas';
 
 /**
- * DRAFT IMPLEMENTATION
- * Returns meta data fields that are available in the data base
+ * Returns meta information about report (meta) data stored in Raita database
  */
 export async function handleMetaRequest(
   event: APIGatewayEvent,
@@ -29,7 +31,6 @@ export async function handleMetaRequest(
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
     const rawReportTypesResponse = await metadata.getReportTypes();
     const reportTypes = parseReportTypes(rawReportTypesResponse);
-    // console.log(rawReportTypesResponse);
     return {
       statusCode: 200,
       headers: {
@@ -37,7 +38,7 @@ export async function handleMetaRequest(
       },
       body: JSON.stringify({
         fields,
-        reportTypes: rawReportTypesResponse,
+        reportTypes,
       }),
     };
   } catch (err: unknown) {
@@ -45,24 +46,6 @@ export async function handleMetaRequest(
     return getRaitaLambdaError(err);
   }
 }
-
-// NOTE: This is not complete description of all fields in metadata
-const MetadataFieldSchema = z.object({
-  type: z.string(),
-});
-
-const FieldMappingsSchema = z.record(
-  z.string(),
-  z.object({
-    mappings: z.object({
-      properties: z.object({
-        metadata: z.object({
-          properties: z.record(z.string(), MetadataFieldSchema),
-        }),
-      }),
-    }),
-  }),
-);
 
 function parseMetadataFields(res: any, metadataIndexName: string) {
   if (!res.body) {
@@ -77,8 +60,7 @@ function parseMetadataFields(res: any, metadataIndexName: string) {
     );
   }
   const fields = metadataIndexData.mappings.properties.metadata.properties;
-  return Object.keys(fields).map(key => {
-    const value = fields[key];
+  return Object.entries(fields).map(([key, value]) => {
     return { [key]: { type: value.type } };
   });
 }
@@ -87,7 +69,11 @@ function parseReportTypes(res: any) {
   if (!res.body) {
     throw new RaitaLambdaError('Missing response body', 500);
   }
+  const responseData = ReportTypesSchema.parse(res.body);
   console.log(res.body);
   console.log(JSON.stringify(res.body));
-  return { coming: 'soon' };
+  return responseData.aggregations.types.buckets.map(element => ({
+    reportType: element.key,
+    count: element.doc_count,
+  }));
 }
