@@ -23,7 +23,7 @@ const BucketElementSchema = z.object({
   doc_count: z.number(),
 });
 
-// NOTE: This is INCOMPLETE typing of report type response
+// NOTE: This is INCOMPLETE schema typing of report type response
 export const ReportTypesSchema = z.object({
   aggregations: z.object({
     types: z.object({
