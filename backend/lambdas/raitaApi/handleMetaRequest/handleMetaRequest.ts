@@ -49,7 +49,10 @@ export async function handleMetaRequest(
 
 function parseMetadataFields(res: any, metadataIndexName: string) {
   if (!res.body) {
-    throw new RaitaLambdaError('Missing response body', 500);
+    throw new RaitaLambdaError(
+      'Missing backend meta data fields response body',
+      500,
+    );
   }
   const responseData = FieldMappingsSchema.parse(res.body);
   const metadataIndexData = responseData[metadataIndexName];
@@ -67,7 +70,10 @@ function parseMetadataFields(res: any, metadataIndexName: string) {
 
 function parseReportTypes(res: any) {
   if (!res.body) {
-    throw new RaitaLambdaError('Missing response body', 500);
+    throw new RaitaLambdaError(
+      'Missing backend report types response body',
+      500,
+    );
   }
   return ReportTypesSchema.parse(res.body).aggregations.types.buckets.map(
     element => ({
