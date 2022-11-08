@@ -41,7 +41,6 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       });
       console.log('got object');
 
-      // env-specific stream with added mixin methods.
       const bodyStream = getObjectResult.Body;
       console.log(typeof getObjectResult.Body);
 
@@ -58,6 +57,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         if (type === 'File') {
           // const entryMimeType = mime.lookup(entryName); // function to use for getting the MIME for each entry extracted
 
+          //
           const uploadParams = {
             Bucket: config.targetBucketName,
             Key: filepath + entryName,

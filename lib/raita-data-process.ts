@@ -152,8 +152,8 @@ export class DataProcessStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
-      timeout: Duration.seconds(5),
+      memorySize: 8192,
+      timeout: Duration.seconds(900),
       runtime: Runtime.NODEJS_16_X,
       handler: 'handleZipFileEvent',
       entry: path.join(
