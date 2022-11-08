@@ -37,7 +37,7 @@ export async function handleMetaRequest(
       },
       body: JSON.stringify({
         fields,
-        reportTypes,
+        reportTypes: rawReportTypesResponse,
       }),
     };
   } catch (err: unknown) {

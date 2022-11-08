@@ -95,6 +95,11 @@ export class ApplicationStack extends NestedStack {
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
     );
+    openSearchDomain.connections.allowFrom(
+      raitaApi.handleMetaRequestFn,
+      Port.allTraffic(),
+      'Allows meta endpoint handler lambda to connect to Opensearch.',
+    );
   }
 
   /**
