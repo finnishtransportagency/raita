@@ -27,14 +27,17 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         Bucket: eventRecord.s3.bucket.name,
         Key: eventRecord.s3.object.key,
       });
+      console.log('got object');
 
       // env-specific stream with added mixin methods.
       const bodyStream = getObjectResult.Body;
+      console.log(typeof getObjectResult.Body);
 
       bodyStream
         .on('error', (e: unknown) => console.log(`Error extracting file: `, e))
         .pipe(
           unzipper.Parse().on('data', async data => {
+            console.log('data received.');
             const fileName = data.path;
             const type = data.type;
             await s3.putObject({
@@ -45,7 +48,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
           }),
         );
     });
-
+    console.log('awaiting done');
     await Promise.all(recordResults);
   } catch (err) {
     // TODO: Implement proper error handling.
