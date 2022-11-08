@@ -12,7 +12,7 @@ import {
 } from './handleMetaRequestSchemas';
 
 /**
- * Returns meta information about report (meta) data stored in Raita database
+ * Returns meta information about inspection report (meta) data stored in Raita database
  */
 export async function handleMetaRequest(
   event: APIGatewayEvent,
@@ -21,15 +21,15 @@ export async function handleMetaRequest(
   try {
     const { openSearchDomain, region, metadataIndex } =
       getOpenSearchLambdaConfigOrFail();
-    const metadata = new MetadataPort({
+    const metadataPort = new MetadataPort({
       backend: 'openSearch',
       metadataIndex,
       region,
       openSearchDomain,
     });
-    const rawFieldsResponse = await metadata.getMetadataFields();
+    const rawFieldsResponse = await metadataPort.getMetadataFields();
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
-    const rawReportTypesResponse = await metadata.getReportTypes();
+    const rawReportTypesResponse = await metadataPort.getReportTypes();
     const reportTypes = parseReportTypes(rawReportTypesResponse);
     return {
       statusCode: 200,
@@ -69,11 +69,10 @@ function parseReportTypes(res: any) {
   if (!res.body) {
     throw new RaitaLambdaError('Missing response body', 500);
   }
-  const responseData = ReportTypesSchema.parse(res.body);
-  console.log(res.body);
-  console.log(JSON.stringify(res.body));
-  return responseData.aggregations.types.buckets.map(element => ({
-    reportType: element.key,
-    count: element.doc_count,
-  }));
+  return ReportTypesSchema.parse(res.body).aggregations.types.buckets.map(
+    element => ({
+      reportType: element.key,
+      count: element.doc_count,
+    }),
+  );
 }
