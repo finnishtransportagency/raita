@@ -4,7 +4,7 @@ import A from 'axios';
  * API client for use in calling the REST API endpoint
  */
 export const apiClient = A.create({
-  baseURL: process.env.API_ENDPOINT,
+  baseURL: process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL,
 });
 
 //
@@ -15,8 +15,9 @@ export const getFiles = (q: object) =>
 export const getFile = (key: string) =>
   apiClient.post<GetSignedUrlResult>('/meta', { key });
 
-export const getMeta = () =>
-  apiClient.get<GetMetaResult>('/meta').then(res => res.data);
+export const getMeta = () => {
+  return apiClient.get<GetMetaResult>('/meta').then(res => res.data);
+};
 
 type GetFilesResult = {};
 
