@@ -17,7 +17,7 @@ import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { Button } from 'components';
-import { useMetadataQuery, useReportTypeQuery, useSearch } from './hooks';
+import { useMetadataQuery, useSearch, useFileQuery } from './hooks';
 import { DateRange, Filter, Pager } from './components';
 import Footer from './components/footer';
 
@@ -30,7 +30,6 @@ const ReportsIndex: NextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
   const meta = useMetadataQuery();
 
-  const reportTypes = useReportTypeQuery();
   const router = useRouter();
 
   const curPage_ = parseInt(router.query['p'] as string, 10);
@@ -121,6 +120,9 @@ const ReportsIndex: NextPage = () => {
   }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
 
   const mutation = useSearch();
+  const getFileUrl = useFileQuery();
+
+  const resultsData = mutation.data?.result.body;
 
   const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
 
@@ -201,7 +203,7 @@ const ReportsIndex: NextPage = () => {
 
                   {meta.data?.reportTypes?.map((it, ix) => (
                     <option className="px-2" key={ix} value={it.reportType}>
-                      {it.reportType} ({it.count})
+                      {it.reportType}
                     </option>
                   ))}
                 </select>
@@ -225,7 +227,7 @@ const ReportsIndex: NextPage = () => {
                 <div className="space-x-2">
                   <Button
                     label={t('common:search')}
-                    onClick={() => mutation.mutate(query)}
+                    onClick={() => mutation.mutate(query as any)}
                   />
                   <Button
                     label={t('common:clear')}
@@ -283,17 +285,17 @@ const ReportsIndex: NextPage = () => {
 
               {mutation.data &&
                 t('search_result_count', {
-                  count: (mutation.data?.hits.total as SearchTotalHits).value,
+                  count: (resultsData?.hits.total as SearchTotalHits).value,
                 })}
             </header>
 
             <section>
-              {!mutation.data && <div>{t('common:no_results')}</div>}
+              {!resultsData && <div>{t('common:no_results')}</div>}
 
               {mutation.isSuccess && mutation.data && (
                 <div>
                   <ul className="space-y-2 divide-y-2">
-                    {mutation.data.hits.hits.map((it, ix) => {
+                    {resultsData?.hits.hits.map((it, ix) => {
                       const { _source: doc } = it;
 
                       // Bail out if we have nothing
@@ -331,10 +333,11 @@ const ReportsIndex: NextPage = () => {
                                 onClick={() => {}}
                               />
                               <Button
-                                disabled={true}
                                 size="sm"
                                 label={t('common:download')}
-                                onClick={() => {}}
+                                onClick={() => {
+                                  getFileUrl.mutate(doc.fileName);
+                                }}
                               />
                             </footer>
                           </article>
@@ -359,7 +362,8 @@ const ReportsIndex: NextPage = () => {
                       size={state.paging.size}
                       page={state.paging.page}
                       count={
-                        (mutation.data?.hits.total as SearchTotalHits).value
+                        1
+                        // (mutation.data?.hits.total).value
                       }
                     />
                   )}

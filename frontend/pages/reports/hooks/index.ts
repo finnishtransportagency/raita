@@ -1,14 +1,15 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-
-import { webClient, getMeta, apiClient } from 'shared/rest';
-import { IDocument, Rest } from 'shared/types';
+import { DependencyList, useMemo, useState } from 'react';
 import * as R from 'rambda';
 import {
   MsearchBody,
   SearchResponse,
 } from '@opensearch-project/opensearch/api/types';
+import { saveAs } from 'file-saver';
+
+import { webClient, getMeta, apiClient, getFile } from 'shared/rest';
+import { IDocument, Rest } from 'shared/types';
 import { TypeAggs } from 'pages/api/report-types';
-import { DependencyList, useMemo, useState } from 'react';
 
 // #region Queries
 
@@ -22,34 +23,6 @@ export function useMetadataQuery() {
     }),
   );
 }
-
-export function useFieldQuery() {
-  return useQuery(['fields'], () =>
-    webClient
-      .get<Rest.Fields>('/fields')
-      .then(R.prop('data'))
-      .then(R.tap(console.log)),
-  );
-}
-
-/**
- *
- * @returns
- * @deprecated
- */
-export function useReportTypeQuery() {
-  const res = useQuery(['report-types'], () =>
-    webClient.get<TypeAggs>('/report-types').then(R.prop('data')),
-  );
-
-  const items = res.data?.aggregations.types.buckets;
-
-  return useMemo(
-    () => items?.map(it => ({ key: it.key, count: it.doc_count })),
-    [items],
-  );
-}
-
 // #endregion
 // #region Mutations
 
@@ -60,9 +33,21 @@ export function useReportTypeQuery() {
 export function useSearch() {
   return useMutation((query: MsearchBody) => {
     return apiClient
-      .post<SearchResponse<IDocument>>('/files', query)
+      .post<{ result: { body: SearchResponse<IDocument> } }>('/files', query)
       .then(R.prop('data'))
       .then(R.tap(x => console.log({ x })));
+  });
+}
+
+export function useFileQuery(saveFile = true) {
+  return useMutation((key: string) => {
+    // return getFile(key);
+    const g = getFile(key);
+
+    return g.then(res => {
+      if (saveFile) saveAs(res.url, key);
+      return res;
+    });
   });
 }
 
