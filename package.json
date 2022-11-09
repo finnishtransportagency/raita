@@ -25,6 +25,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",
     "@types/jest": "^26.0.10",
+    "@types/mime-types": "^2.1.1",
     "@types/node": "10.17.27",
     "@types/unzipper": "^0.10.5",
     "aws-cdk": "^2.43.0",
@@ -50,6 +51,7 @@
     "aws-opensearch-connector": "^1.1.0",
     "constructs": "^10.1.106",
     "date-fns": "^2.29.3",
+    "mime-types": "^2.1.35",
     "unzipper": "^0.10.11",
     "zod": "^3.19.1"
   }
