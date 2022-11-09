@@ -1,29 +1,45 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { webClient } from 'shared/rest';
+import { webClient, getMeta, apiClient } from 'shared/rest';
 import { IDocument, Rest } from 'shared/types';
-import { prop, tap } from 'rambda';
+import * as R from 'rambda';
 import {
   MsearchBody,
   SearchResponse,
 } from '@opensearch-project/opensearch/api/types';
 import { TypeAggs } from 'pages/api/report-types';
-import { useMemo } from 'react';
+import { DependencyList, useMemo, useState } from 'react';
 
 // #region Queries
+
+export function useMetadataQuery() {
+  return useQuery(['meta'], () =>
+    getMeta().then(({ fields, reportTypes }) => {
+      return {
+        fields: fields.reduce((o, x) => R.merge(o, x), {}),
+        reportTypes,
+      };
+    }),
+  );
+}
 
 export function useFieldQuery() {
   return useQuery(['fields'], () =>
     webClient
       .get<Rest.Fields>('/fields')
-      .then(data => (console.log(data.data) as any) || data)
-      .then(prop('data')),
+      .then(R.prop('data'))
+      .then(R.tap(console.log)),
   );
 }
 
+/**
+ *
+ * @returns
+ * @deprecated
+ */
 export function useReportTypeQuery() {
   const res = useQuery(['report-types'], () =>
-    webClient.get<TypeAggs>('/report-types').then(prop('data')),
+    webClient.get<TypeAggs>('/report-types').then(R.prop('data')),
   );
 
   const items = res.data?.aggregations.types.buckets;
@@ -37,21 +53,19 @@ export function useReportTypeQuery() {
 // #endregion
 // #region Mutations
 
+/**
+ * Create a React Query mutation for performing searches on the API
+ * @returns
+ */
 export function useSearch() {
   return useMutation((query: MsearchBody) => {
-    return webClient
-      .post<SearchResponse<IDocument>>('/reports', query)
-      .then(prop('data'))
-      .then(tap(x => console.log({ x })));
+    return apiClient
+      .post<SearchResponse<IDocument>>('/files', query)
+      .then(R.prop('data'))
+      .then(R.tap(x => console.log({ x })));
   });
 }
 
 // #endregion
 
 //
-
-export function useReportState() {}
-
-//
-
-export function useMemoQuery() {}
