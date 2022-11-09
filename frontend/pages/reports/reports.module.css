@@ -18,3 +18,12 @@
   @apply border-2 border-red-500;
   @apply px-3 py-1;
 }
+
+.select {
+  @apply border-2 border-main-gray-50 rounded h-40 w-1/2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.select option {
+  @apply px-2 py-1;
+  @apply checked:bg-primary checked:text-white;
+}

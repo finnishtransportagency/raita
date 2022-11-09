@@ -22,10 +22,13 @@ export function DateRange(props: Props) {
 
   //
 
+  /**
+   * @todo Convert this into a `{ start, end }` object instead
+   */
   const rangeValues = useMemo(() => {
     const r = [
-      state.start ? formatDate(DATE_FMT, state.start) : void 0,
-      state.end ? formatDate(DATE_FMT, state.end) : void 0,
+      state.start ? formatDate(DATE_FMT, state.start) : '',
+      state.end ? formatDate(DATE_FMT, state.end) : '',
     ];
 
     return r;
@@ -56,7 +59,7 @@ export function DateRange(props: Props) {
             label={t('common:clear')}
             type={'secondary'}
             size={'sm'}
-            onClick={() => {}}
+            onClick={() => setState(assoc('start', undefined))}
           />
         </div>
 
@@ -74,7 +77,7 @@ export function DateRange(props: Props) {
             label={t('common:clear')}
             type={'secondary'}
             size={'sm'}
-            onClick={() => {}}
+            onClick={() => setState(assoc('end', undefined))}
           />
         </div>
       </div>

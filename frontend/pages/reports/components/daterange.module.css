@@ -7,6 +7,7 @@
   @apply rounded;
   @apply flex-grow;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply px-2 py-1;
 }
 
 .group {

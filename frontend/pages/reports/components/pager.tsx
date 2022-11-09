@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import css from './pager.module.css';
 
 export function Pager(props: Props) {
-  const { count, size, page } = props;
+  const { count, size, page, onGotoPage } = props;
   const currentPage = page + 1;
 
   const pages = Math.ceil(count / size);
@@ -22,11 +22,15 @@ export function Pager(props: Props) {
                 n.page === currentPage && css.pageCurrent,
               )}
             >
-              {n.page}
+              <button
+                className={clsx(css.pageButton)}
+                onClick={() => onGotoPage && onGotoPage(n.page)}
+              >
+                {n.page}
+              </button>
             </li>
           ))}
         </ul>
-        <ul></ul>
       </nav>
     </>
   );
@@ -43,4 +47,5 @@ export type Props = {
    */
   size: number;
   page: number;
+  onGotoPage?: (n: number) => void;
 };

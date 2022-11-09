@@ -3,12 +3,20 @@
 }
 
 .page {
-  @apply px-2 py-1;
-  @apply border-2 border-main-gray-10;
-  @apply w-8;
   @apply text-center;
 }
 
 .pageCurrent {
+}
+
+.pageCurrent .pageButton {
   @apply border-main-gray-50;
+}
+
+.pageButton {
+  @apply px-2 py-1;
+  @apply border-2 border-main-gray-10;
+  @apply w-8;
+
+  @apply hover:bg-main-gray-10;
 }

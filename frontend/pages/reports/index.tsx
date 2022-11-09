@@ -1,8 +1,12 @@
-import { useState, useMemo, Fragment } from 'react';
+/**
+ * @todo Handle empty search queries
+ * @todo Handle form data validation
+ */
+import { useState, useMemo, useRef, Fragment } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { assoc, isEmpty } from 'rambda';
+import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
@@ -13,7 +17,7 @@ import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { Button } from 'components';
-import { useFieldQuery, useReportTypeQuery, useSearch } from './hooks';
+import { useMetadataQuery, useReportTypeQuery, useSearch } from './hooks';
 import { DateRange, Filter, Pager } from './components';
 import Footer from './components/footer';
 
@@ -23,17 +27,23 @@ import { RANGE_DATE_FMT } from 'shared/constants';
 //
 
 const ReportsIndex: NextPage = () => {
-  const { t } = useTranslation('common');
-  const f = useFieldQuery();
+  const { t } = useTranslation(['common', 'metadata']);
+  const meta = useMetadataQuery();
+
   const reportTypes = useReportTypeQuery();
   const router = useRouter();
 
   const curPage_ = parseInt(router.query['p'] as string, 10);
   const curPage = !isNaN(curPage_) ? curPage_ : 0;
 
+  const selectRef = useRef<HTMLSelectElement>(null);
+
   const [state, setState] = useState<ReportsState>({
     filters: {},
-    dateRange: {},
+    dateRange: {
+      end: undefined,
+      start: undefined,
+    },
     reportTypes: [],
     paging: {
       size: 5,
@@ -43,38 +53,88 @@ const ReportsIndex: NextPage = () => {
 
   /**
    * @todo Extract into something more reusable
+   * @todo Handle empty queries
    */
   const query = useMemo(() => {
     const terms = Object.entries(state.filters).map(([k, v]) =>
       toSearchQueryTerm(k, v, x => `metadata.${x}`),
     );
 
-    return {
-      query: {
-        bool: {
-          must: terms,
-        },
-      },
+    const _hasReportTypes = state.reportTypes.length > 0;
+    const _hasFilters = terms.length > 0;
+
+    const _reportTypes = state.reportTypes
+      .filter(x => !!x)
+      .map(t => toSearchQueryTerm('report_type', t, x => `metadata.${x}`));
+
+    const _hasRange = R.pipe(
+      R.values,
+      R.filter(x => !!x), // That's right
+      R.length,
+    )(state.dateRange);
+
+    const _range = {
+      ...(_hasRange
+        ? {
+            range: {
+              'metadata.inspection_date': {
+                ...(state.dateRange?.start
+                  ? { gte: format(RANGE_DATE_FMT, state.dateRange.start) }
+                  : {}),
+                ...(state.dateRange?.end
+                  ? { lte: format(RANGE_DATE_FMT, state.dateRange.end) }
+                  : {}),
+              },
+            },
+          }
+        : {}),
+    };
+
+    const _filters = {
+      ...(_hasFilters || _hasRange || _hasReportTypes
+        ? {
+            bool: {
+              must: [
+                ...terms,
+                ..._reportTypes,
+                _hasRange ? _range : undefined,
+              ].filter(x => x),
+            },
+          }
+        : {}),
+    };
+
+    // Paging
+    const _page = {
       from: state.paging.page * state.paging.size,
       size: state.paging.size,
     };
-  }, [state.filters]);
+
+    const _res = {
+      query: {
+        ..._filters,
+      },
+      ..._page,
+    };
+
+    return _res;
+  }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
 
   const mutation = useSearch();
 
-  const updateFilters = (fs: ReportFilters) => setState(assoc('filters', fs));
+  const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
 
   const updateDateRange = (range: Range<Date>) => {
-    setState(assoc('dateRange', range));
+    setState(R.assoc('dateRange', range));
   };
 
   const updateReportType = () => {};
 
   //
 
-  if (f.isLoading) return <div>Loading</div>;
+  if (meta.isLoading || !meta.data) return <div>Loading</div>;
 
-  if (f.isError) return <div>Error</div>;
+  if (meta.isError) return <div>Error</div>;
 
   //
 
@@ -84,10 +144,16 @@ const ReportsIndex: NextPage = () => {
         <title>Reports</title>
       </Head>
 
-      <div className="container mx-auto px-16 py-12">
-        <header className="mb-4">
-          <h1 className="text-4xl">{t('common:reports_heading')}</h1>
-        </header>
+      <div className="bg-primary text-white">
+        <div className="container mx-auto px-16 py-6">
+          <header>
+            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
+          </header>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-16 py-6">
+        <header className="mb-4"></header>
 
         <div className="grid grid-cols-2 gap-12">
           <section className="space-y-4">
@@ -100,8 +166,9 @@ const ReportsIndex: NextPage = () => {
                 <header>{t('common:reports_metadata')}</header>
 
                 <Filter
-                  keys={Object.keys(f.data)}
-                  data={f.data}
+                  labelFn={k => `metadata:label_${k}`}
+                  keys={Object.keys(meta.data?.fields!)}
+                  data={meta.data?.fields!}
                   onUpdate={updateFilters}
                 />
               </section>
@@ -109,32 +176,48 @@ const ReportsIndex: NextPage = () => {
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
-                <DateRange
-                  range={state.dateRange}
-                  onUpdate={updateDateRange}
-                  disabled={true}
-                />
+                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
               </section>
 
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_report_types')}</header>
 
                 <select
-                  className="border-2 border-main-gray-50 rounded h-40 w-1/2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={true}
+                  className={clsx(css.select)}
                   multiple={true}
+                  ref={selectRef}
                   onChange={e =>
-                    console.log(
-                      Array.from(e.target.selectedOptions).map(x => x.value),
+                    setState(
+                      R.assoc(
+                        'reportTypes',
+                        Array.from(e.target.selectedOptions).map(
+                          R.prop('value'),
+                        ),
+                      ),
                     )
                   }
                 >
-                  {reportTypes?.map((it, ix) => (
-                    <option className="px-2" key={ix} value={it.key}>
-                      {it.key}
+                  <option value={''}>{t('common:no_selection')}</option>
+
+                  {meta.data?.reportTypes?.map((it, ix) => (
+                    <option className="px-2" key={ix} value={it.reportType}>
+                      {it.reportType} ({it.count})
                     </option>
                   ))}
                 </select>
+
+                <footer className="py-2">
+                  <Button
+                    onClick={() => {
+                      if (!selectRef.current) return;
+
+                      selectRef.current.selectedOptions;
+                    }}
+                    size={'sm'}
+                    type={'secondary'}
+                    label={t('common:select_none')}
+                  />
+                </footer>
               </section>
 
               <footer className="pt-4">
@@ -315,7 +398,7 @@ export type StaticProps = {
 
 type ReportsState = {
   filters: Record<string, string>;
-  dateRange?: Range<Date>;
+  dateRange: Partial<Range<Date>>;
   reportTypes: string[];
   paging: {
     size: number;
