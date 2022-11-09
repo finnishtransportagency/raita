@@ -1,0 +1,5 @@
+.root {
+  @apply border-2 border-main-gray-50;
+  @apply rounded;
+  @apply px-2 py-1;
+}
