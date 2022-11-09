@@ -17,6 +17,8 @@ export default function handler(
   req: NextApiRequest,
   res: NextApiResponse<any>,
 ) {
+  const q = req.body;
+
   const data = client
     .get<SearchResponse<IDocument>>(`/${cfg.openSearch.indexName}/_search`, {
       data: req.body,
