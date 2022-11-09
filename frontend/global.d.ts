@@ -1,8 +1,13 @@
 declare namespace NodeJS {
   export interface ProcessEnv {
     /**
-     * REST API endpoint base URL for use in API calls
+     * REST API base URL
      */
-    API_ENDPOINT: string;
+    NEXT_PUBLIC_API_BASEURL: string;
+
+    /**
+     * @deprecated
+     */
+    API_BASEURL: string;
   }
 }
