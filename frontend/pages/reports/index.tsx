@@ -361,10 +361,7 @@ const ReportsIndex: NextPage = () => {
                     <Pager
                       size={state.paging.size}
                       page={state.paging.page}
-                      count={
-                        1
-                        // (mutation.data?.hits.total).value
-                      }
+                      count={resultsData?.hits.total as number}
                     />
                   )}
                 </div>
