@@ -68,8 +68,10 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       return promises.length;
     });
     await Promise.all(recordResults).then(counts => {
-      counts.reduce((acc, cur) => acc + cur);
+      const count = counts.reduce((acc, cur) => acc + cur);
       // TODO: Add logging for final count of extracted files?
+      // TEMP
+      console.log(`${count} files extracted from zip archive.`);
     });
   } catch (err) {
     // TODO: Implement proper error handling to fail gracefully if any of the file extractions fails.
