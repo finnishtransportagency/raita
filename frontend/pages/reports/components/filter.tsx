@@ -15,6 +15,8 @@ import css from './filter.module.css';
 export function Filter(props: Props) {
   const { t } = useTranslation(['common', 'metadata']);
 
+  console.log('filter', { props });
+
   const [state, setState] = useState<State>({
     keys: props.keys,
     filters: {},
@@ -87,49 +89,58 @@ export function Filter(props: Props) {
       )}
 
       <ul className="space-y-3 mb-2">
-        {Object.entries(state.filters).map(([filterKey, value], ix) => (
-          <li key={ix}>
-            <article className="grid grid-cols-12 gap-3 items-center">
-              {/**
-               * @todo Extract dropdowns out into their own component
-               * @todo Streamline classnames to fit visuals
-               */}
-              <select
-                className={clsx('col-span-5', css.dropdown)}
-                value={filterKey}
-                onChange={e => renameFilter(filterKey, e.target.value)}
-              >
-                <option value={EMPTY_KEY}>---</option>
+        {Object.entries(state.filters).map(([filterKey, value], ix) => {
+          const f = props.data[filterKey] as { type: string };
+          const fieldType = props.data[filterKey] as { type: string };
 
-                {state.keys.map((key, keyIx) => (
-                  <option key={keyIx} value={key}>
-                    {t(labelFn(key))}
-                  </option>
-                ))}
-              </select>
+          return (
+            <li key={ix}>
+              <article className="grid grid-cols-12 gap-3 items-center">
+                {/**
+                 * @todo Extract dropdowns out into their own component
+                 * @todo Streamline classnames to fit visuals
+                 */}
+                <select
+                  className={clsx('col-span-5', css.dropdown)}
+                  value={filterKey}
+                  onChange={e => renameFilter(filterKey, e.target.value)}
+                >
+                  <option value={EMPTY_KEY}>---</option>
 
-              {/**
-               * @todo Extract into own component at a suitable time
-               * @todo Streamline classnames to fit visuals
-               */}
-              <input
-                className={clsx('col-span-5', css.input)}
-                placeholder={t('common:value')}
-                value={value}
-                onChange={e => setFilterValue(filterKey, e.target.value)}
-              />
+                  {state.keys.map((key, keyIx) => (
+                    <option key={keyIx} value={key}>
+                      {t(labelFn(key))}
+                    </option>
+                  ))}
+                </select>
 
-              <div className="col-span-2">
-                <Button
-                  label={t('common:delete')}
-                  type={'secondary'}
-                  size="sm"
-                  onClick={() => deleteFilter(filterKey)}
+                {/**
+                 * @todo Extract into own component at a suitable time
+                 * @todo Streamline classnames to fit visuals
+                 * @todo Support field type `bool`
+                 * @todo Support field type `long`
+                 * @todo Support field type `text`
+                 */}
+                <input
+                  className={clsx('col-span-5', css.input)}
+                  // placeholder={t('common:value')}
+                  placeholder={JSON.stringify(f)}
+                  value={value}
+                  onChange={e => setFilterValue(filterKey, e.target.value)}
                 />
-              </div>
-            </article>
-          </li>
-        ))}
+
+                <div className="col-span-2">
+                  <Button
+                    label={t('common:delete')}
+                    type={'secondary'}
+                    size="sm"
+                    onClick={() => deleteFilter(filterKey)}
+                  />
+                </div>
+              </article>
+            </li>
+          );
+        })}
       </ul>
 
       <Button
@@ -147,7 +158,7 @@ export default Filter;
 
 export type Props = {
   keys: string[];
-  data: object | Record<string, Field>;
+  data: Record<string, Field>;
   onUpdate: (fs: Record<string, string>) => void;
   labelFn?: (label: string) => string;
 };
@@ -186,6 +197,7 @@ type State = {
 };
 
 type Field =
-  | { type: 'date'; format: string }
+  | { type: 'date'; format?: string }
   | { type: 'long' }
-  | { type: 'text' };
+  | { type: 'text' }
+  | { type: 'bool' };
