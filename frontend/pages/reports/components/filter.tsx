@@ -1,16 +1,19 @@
-import { Button } from 'components';
 import { useState, useEffect, useMemo } from 'react';
-import { assoc, dissoc, isEmpty, not } from 'rambda';
+import { assoc, dissoc, isEmpty, not, identity } from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { clsx } from 'clsx';
 
+import { Button } from 'components';
 import { App } from 'shared/types';
 import { EMPTY_KEY } from 'shared/constants';
 
 import css from './filter.module.css';
 
+//
+
 export function Filter(props: Props) {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['common', 'metadata']);
 
   const [state, setState] = useState<State>({
     keys: props.keys,
@@ -22,12 +25,11 @@ export function Filter(props: Props) {
     [state.filters],
   );
 
-  console.log({ props });
-
-  /**
-   * Ensure the given `onUpdate` callback is called when filters change
-   */
+  /** Ensure the given `onUpdate` callback is called when filters change */
   const invokeUpdate = () => props.onUpdate(state.filters);
+
+  /** Use provided label transformation function if given, otherwise just use `id` */
+  const labelFn = props.labelFn || identity;
 
   const setFilterValue = (key: string, value?: string) => {
     setState(prevState => ({
@@ -93,7 +95,7 @@ export function Filter(props: Props) {
                * @todo Streamline classnames to fit visuals
                */}
               <select
-                className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
+                className={clsx('col-span-5', css.dropdown)}
                 value={filterKey}
                 onChange={e => renameFilter(filterKey, e.target.value)}
               >
@@ -101,7 +103,7 @@ export function Filter(props: Props) {
 
                 {state.keys.map((key, keyIx) => (
                   <option key={keyIx} value={key}>
-                    {key}
+                    {t(labelFn(key))}
                   </option>
                 ))}
               </select>
@@ -111,7 +113,7 @@ export function Filter(props: Props) {
                * @todo Streamline classnames to fit visuals
                */}
               <input
-                className="col-span-5 border-2 border-main-gray-50 px-2 py-1 rounded"
+                className={clsx('col-span-5', css.input)}
                 placeholder={t('common:value')}
                 value={value}
                 onChange={e => setFilterValue(filterKey, e.target.value)}
@@ -145,8 +147,9 @@ export default Filter;
 
 export type Props = {
   keys: string[];
-  data: Record<string, Field>;
+  data: object | Record<string, Field>;
   onUpdate: (fs: Record<string, string>) => void;
+  labelFn?: (label: string) => string;
 };
 
 //
