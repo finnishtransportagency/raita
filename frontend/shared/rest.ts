@@ -9,11 +9,16 @@ export const apiClient = A.create({
 
 //
 
+/**
+ * Perform a search with the given OpenSearch `query` object
+ * @param q
+ * @returns
+ */
 export const getFiles = (q: object) =>
   apiClient.post<GetFilesResult>('/files', q);
 
 export const getFile = (key: string) =>
-  apiClient.post<GetSignedUrlResult>('/meta', { key });
+  apiClient.post<GetSignedUrlResult>('/file', { key }).then(res => res.data);
 
 export const getMeta = () => {
   return apiClient.get<GetMetaResult>('/meta').then(res => res.data);
@@ -21,7 +26,9 @@ export const getMeta = () => {
 
 type GetFilesResult = {};
 
-type GetSignedUrlResult = {};
+type GetSignedUrlResult = {
+  url: string;
+};
 
 type GetMetaResult = {
   fields: MetaResultField[];
