@@ -4,7 +4,8 @@ import A from 'axios';
  * API client for use in calling the REST API endpoint
  */
 export const apiClient = A.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL,
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL || '/api',
 });
 
 //
