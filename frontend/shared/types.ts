@@ -55,9 +55,11 @@ export interface ISearchResult<T> {
 //
 
 export interface IDocument {
-  fileName: string;
-  arn: string;
-  bucket: string;
+  key: string;
+  file_name: string;
+  bucket_arn: string;
+  bucket_name: string;
+  size: number;
   metadata: IDocumentMetadata;
 }
 

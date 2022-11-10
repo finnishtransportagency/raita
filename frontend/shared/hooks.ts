@@ -31,6 +31,8 @@ export function useMetadataQuery() {
  */
 export function useSearch() {
   return useMutation((query: MsearchBody) => {
+    console.assert(query, 'Given search query is invalid; %o', { query });
+
     return apiClient
       .post<{ result: { body: SearchResponse<IDocument> } }>('/files', query)
       .then(R.prop('data'))
@@ -39,13 +41,25 @@ export function useSearch() {
 }
 
 export function useFileQuery(saveFile = true) {
-  return useMutation((key: string) => {
+  return useMutation((opts: UseFileQueryArgs) => {
+    const { key, fileName } = opts;
+    console.assert(
+      key,
+      'The given `key` fpr `useFileQuery` is invalid; %s',
+      key,
+    );
+
     return getFile(key).then(res => {
-      if (saveFile) saveAs(res.url, key);
+      if (saveFile) saveAs(res.url, fileName);
       return res;
     });
   });
 }
+
+type UseFileQueryArgs = {
+  key: string;
+  fileName?: string;
+};
 
 // #endregion
 
