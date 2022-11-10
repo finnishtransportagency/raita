@@ -2,9 +2,11 @@ import { S3Event } from 'aws-lambda';
 import { logger } from '../../../utils/logger';
 import {
   S3,
+  S3Client,
   PutObjectCommand,
   PutObjectCommandOutput,
 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import * as unzipper from 'unzipper';
 import * as mime from 'mime-types';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
@@ -44,12 +46,14 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         unzipper.Parse({ forceStream: true }),
       );
       // An array to hold promises from iterating over async iterators of zip
-      const promises: Array<PutObjectCommandOutput> = [];
+      const promises: Array<any> = [];
       for await (const entry of zip) {
         const entryName = entry.path;
         const type = entry.type;
         // Only files need to be processed as the there is no need to explicitly create folders in S3
         if (type === 'File') {
+          /****** OLD */
+
           const uploadParams = {
             Bucket: config.targetBucketName,
             Key: filepath + entryName,
@@ -59,6 +63,22 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
           };
           const command = new PutObjectCommand(uploadParams);
           promises.push(await s3.send(command));
+
+          /****** OLD END */
+
+          const parallelUploads3 = new Upload({
+            client: new S3Client({}),
+            // tags: [...], // optional tags
+            // queueSize: 4, // optional concurrency configuration
+            // leavePartsOnError: false, // optional manually handle dropped parts
+            params: uploadParams,
+          });
+
+          // parallelUploads3.on('httpUploadProgress', progress => {
+          //   console.log(progress);
+          // });
+
+          promises.push(await parallelUploads3.done());
         } else {
           entry.autodrain();
         }
