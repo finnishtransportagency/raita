@@ -116,7 +116,9 @@ const ReportsIndex: NextPage = () => {
       ..._page,
     };
 
-    return _res;
+    const __res = R.isEmpty(_res.query) ? R.omit('query', _res) : _res;
+
+    return __res;
   }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
 
   /**

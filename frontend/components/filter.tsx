@@ -14,8 +14,6 @@ import css from './filter.module.css';
 export function Filter(props: Props) {
   const { t } = useTranslation(['common', 'metadata']);
 
-  console.log('filter', { props });
-
   const [state, setState] = useState<State>({
     keys: props.keys,
     filters: {},
