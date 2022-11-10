@@ -44,7 +44,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         unzipper.Parse({ forceStream: true }),
       );
       // An array to hold promises from iterating over async iterators of zip
-      const promises: Array<Promise<PutObjectCommandOutput>> = [];
+      const promises: Array<PutObjectCommandOutput> = [];
       for await (const entry of zip) {
         const entryName = entry.path;
         const type = entry.type;
@@ -58,7 +58,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
             ContentType: mime.lookup(entryName) || undefined,
           };
           const command = new PutObjectCommand(uploadParams);
-          promises.push(s3.send(command));
+          promises.push(await s3.send(command));
         } else {
           entry.autodrain();
         }
