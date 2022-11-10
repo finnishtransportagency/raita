@@ -8,7 +8,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 import { clsx } from 'clsx';
 import { format } from 'date-fns/fp';
@@ -394,19 +393,6 @@ const ReportsIndex: NextPage = () => {
 export default ReportsIndex;
 
 //
-
-/**
- * @todo This probably will require some focus for when we run `export` on this.
- * @param param0
- * @returns
- */
-export async function getStaticProps({ locale }: StaticProps) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'])),
-    },
-  };
-}
 
 export type StaticProps = {
   locale: App.Locales;
