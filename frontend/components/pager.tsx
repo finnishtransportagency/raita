@@ -8,7 +8,7 @@ export function Pager(props: Props) {
   const currentPage = page + 1;
 
   const pages = Math.ceil(count / size);
-  const pageList = repeat(0, pages).map((_, ix) => ({ page: ix + 1 }));
+  const pageList = repeat(0, pages || 1).map((_, ix) => ({ page: ix + 1 }));
 
   return (
     <>

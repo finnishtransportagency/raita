@@ -135,7 +135,7 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
-  const resultsData = mutation.data?.result.body;
+  const resultsData = mutation.data?.result.body || {};
 
   const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
 
@@ -332,7 +332,7 @@ const ReportsIndex: NextPage = () => {
                                   ([k, v], mi) => (
                                     <Fragment key={mi}>
                                       <dt className="">{k}</dt>
-                                      <dd className="">{v}</dd>
+                                      <dd className="">{`${v}`}</dd>
                                     </Fragment>
                                   ),
                                 )}
