@@ -3,6 +3,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 
+import nextI18nConfig from '../next-i18next.config';
 import 'normalize.css';
 import '../styles/globals.css';
 
@@ -17,4 +18,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export default appWithTranslation(MyApp);
+export default appWithTranslation(MyApp, nextI18nConfig);

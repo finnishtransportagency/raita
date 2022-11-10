@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { assoc, dissoc, isEmpty, not, identity } from 'rambda';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { clsx } from 'clsx';
 
 import { Button } from 'components';
@@ -14,8 +13,6 @@ import css from './filter.module.css';
 
 export function Filter(props: Props) {
   const { t } = useTranslation(['common', 'metadata']);
-
-  console.log('filter', { props });
 
   const [state, setState] = useState<State>({
     keys: props.keys,

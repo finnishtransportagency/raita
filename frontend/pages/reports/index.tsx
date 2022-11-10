@@ -8,7 +8,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 import { clsx } from 'clsx';
 import { format } from 'date-fns/fp';
@@ -117,7 +116,9 @@ const ReportsIndex: NextPage = () => {
       ..._page,
     };
 
-    return _res;
+    const __res = R.isEmpty(_res.query) ? R.omit('query', _res) : _res;
+
+    return __res;
   }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
 
   /**
@@ -300,7 +301,7 @@ const ReportsIndex: NextPage = () => {
 
               {mutation.data &&
                 t('search_result_count', {
-                  count: (resultsData?.hits.total as SearchTotalHits).value,
+                  count: (resultsData?.hits?.total as SearchTotalHits).value,
                 })}
             </header>
 
@@ -333,7 +334,7 @@ const ReportsIndex: NextPage = () => {
                                   ([k, v], mi) => (
                                     <Fragment key={mi}>
                                       <dt className="">{k}</dt>
-                                      <dd className="">{v}</dd>
+                                      <dd className="">{`${v}`}</dd>
                                     </Fragment>
                                   ),
                                 )}
@@ -394,19 +395,6 @@ const ReportsIndex: NextPage = () => {
 export default ReportsIndex;
 
 //
-
-/**
- * @todo This probably will require some focus for when we run `export` on this.
- * @param param0
- * @returns
- */
-export async function getStaticProps({ locale }: StaticProps) {
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'])),
-    },
-  };
-}
 
 export type StaticProps = {
   locale: App.Locales;

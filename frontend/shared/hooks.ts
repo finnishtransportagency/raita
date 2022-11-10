@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { DependencyList, useMemo, useState } from 'react';
+import { DependencyList } from 'react';
 import * as R from 'rambda';
 import {
   MsearchBody,
@@ -7,9 +7,8 @@ import {
 } from '@opensearch-project/opensearch/api/types';
 import { saveAs } from 'file-saver';
 
-import { webClient, getMeta, apiClient, getFile } from 'shared/rest';
-import { IDocument, Rest } from 'shared/types';
-import { TypeAggs } from 'pages/api/report-types';
+import { getMeta, apiClient, getFile } from 'shared/rest';
+import { IDocument } from 'shared/types';
 
 // #region Queries
 
@@ -41,10 +40,7 @@ export function useSearch() {
 
 export function useFileQuery(saveFile = true) {
   return useMutation((key: string) => {
-    // return getFile(key);
-    const g = getFile(key);
-
-    return g.then(res => {
+    return getFile(key).then(res => {
       if (saveFile) saveAs(res.url, key);
       return res;
     });
@@ -64,9 +60,9 @@ export function useQueryBuilder(
   const hasDateRange = !!q.dateRange;
   const hasReportTypes = !!q.reportTypes.length;
 
-  const asd = { query: {}, from: 0, size: opts.pageSize || 5 };
+  const qʼ = { query: {}, from: 0, size: opts.pageSize || 5 };
 
-  return asd;
+  return qʼ;
 }
 
 //
