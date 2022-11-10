@@ -1,0 +1,56 @@
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { DependencyList, useMemo, useState } from 'react';
+import * as R from 'rambda';
+import {
+  MsearchBody,
+  SearchResponse,
+} from '@opensearch-project/opensearch/api/types';
+import { saveAs } from 'file-saver';
+
+import { webClient, getMeta, apiClient, getFile } from 'shared/rest';
+import { IDocument, Rest } from 'shared/types';
+import { TypeAggs } from 'pages/api/report-types';
+
+// #region Queries
+
+export function useMetadataQuery() {
+  return useQuery(['meta'], () =>
+    getMeta().then(({ fields, reportTypes }) => {
+      return {
+        fields: fields.reduce((o, x) => R.merge(o, x), {}),
+        reportTypes,
+      };
+    }),
+  );
+}
+// #endregion
+// #region Mutations
+
+/**
+ * Create a React Query mutation for performing searches on the API
+ * @returns
+ */
+export function useSearch() {
+  return useMutation((query: MsearchBody) => {
+    return apiClient
+      .post<{ result: { body: SearchResponse<IDocument> } }>('/files', query)
+      .then(R.prop('data'))
+      .then(R.tap(x => console.log({ x })));
+  });
+}
+
+export function useFileQuery(saveFile = true) {
+  return useMutation((key: string) => {
+    // return getFile(key);
+    const g = getFile(key);
+
+    return g.then(res => {
+      if (saveFile) saveAs(res.url, key);
+      return res;
+    });
+  });
+}
+
+// #endregion
+
+//

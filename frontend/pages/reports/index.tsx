@@ -1,120 +1,410 @@
-import { NextPage } from 'next';
+/**
+ * @todo Handle empty search queries
+ * @todo Handle form data validation
+ */
+import { useState, useMemo, useRef, Fragment } from 'react';
+import type { NextPage } from 'next';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import * as R from 'rambda';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
+import { clsx } from 'clsx';
+import { format } from 'date-fns/fp';
 
-import { Button, Dropdown, Input, Pager } from 'components';
+import type { App, Range, Rest } from 'shared/types';
+import { toSearchQueryTerm } from 'shared/util';
+
+import { Button } from 'components';
+import { useMetadataQuery, useSearch, useFileQuery } from './hooks';
+import { DateRange, Filter, Pager } from './components';
+import Footer from './components/footer';
+
+import css from './reports.module.css';
+import { RANGE_DATE_FMT } from 'shared/constants';
+
+//
 
 const ReportsIndex: NextPage = () => {
+  const { t } = useTranslation(['common', 'metadata']);
+  const meta = useMetadataQuery();
+
+  const router = useRouter();
+
+  const curPage_ = parseInt(router.query['p'] as string, 10);
+  const curPage = !isNaN(curPage_) ? curPage_ : 0;
+
+  const selectRef = useRef<HTMLSelectElement>(null);
+
+  const [state, setState] = useState<ReportsState>({
+    filters: {},
+    dateRange: {
+      end: undefined,
+      start: undefined,
+    },
+    reportTypes: [],
+    paging: {
+      size: 5,
+      page: curPage,
+    },
+  });
+
+  /**
+   * @todo Extract into something more reusable
+   * @todo Handle empty queries
+   */
+  const query = useMemo(() => {
+    const terms = Object.entries(state.filters).map(([k, v]) =>
+      toSearchQueryTerm(k, v, x => `metadata.${x}`),
+    );
+
+    const _hasReportTypes = state.reportTypes.length > 0;
+    const _hasFilters = terms.length > 0;
+
+    const _reportTypes = state.reportTypes
+      .filter(x => !!x)
+      .map(t => toSearchQueryTerm('report_type', t, x => `metadata.${x}`));
+
+    const _hasRange = R.pipe(
+      R.values,
+      R.filter(x => !!x), // That's right
+      R.length,
+    )(state.dateRange);
+
+    const _range = {
+      ...(_hasRange
+        ? {
+            range: {
+              'metadata.inspection_date': {
+                ...(state.dateRange?.start
+                  ? { gte: format(RANGE_DATE_FMT, state.dateRange.start) }
+                  : {}),
+                ...(state.dateRange?.end
+                  ? { lte: format(RANGE_DATE_FMT, state.dateRange.end) }
+                  : {}),
+              },
+            },
+          }
+        : {}),
+    };
+
+    const _filters = {
+      ...(_hasFilters || _hasRange || _hasReportTypes
+        ? {
+            bool: {
+              must: [
+                ...terms,
+                ..._reportTypes,
+                _hasRange ? _range : undefined,
+              ].filter(x => x),
+            },
+          }
+        : {}),
+    };
+
+    // Paging
+    const _page = {
+      from: state.paging.page * state.paging.size,
+      size: state.paging.size,
+    };
+
+    const _res = {
+      query: {
+        ..._filters,
+      },
+      ..._page,
+    };
+
+    return _res;
+  }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
+
+  const mutation = useSearch();
+  const getFileUrl = useFileQuery();
+
+  const resultsData = mutation.data?.result.body;
+
+  const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
+
+  const updateDateRange = (range: Range<Date>) => {
+    setState(R.assoc('dateRange', range));
+  };
+
+  const updateReportType = () => {};
+
+  //
+
+  if (meta.isLoading || !meta.data) return <div>Loading</div>;
+
+  if (meta.isError) return <div>Error</div>;
+
+  //
+
   return (
-    <div>
+    <div className={clsx(css.root)}>
       <Head>
         <title>Reports</title>
       </Head>
 
-      <div className="container mx-auto">
-        <header className="my-4">
-          <h1 className="text-4xl">Reports</h1>
-        </header>
+      <div className="bg-primary text-white">
+        <div className="container mx-auto px-16 py-6">
+          <header>
+            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
+          </header>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <section>
-            <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              Error report search
+      <div className="container mx-auto px-16 py-6">
+        <header className="mb-4"></header>
+
+        <div className="grid grid-cols-2 gap-12">
+          <section className="space-y-4">
+            <header className="text-3xl border-primary border-b-2 mb-4 pb-2">
+              {t('common:reports_search')}
             </header>
-            <div className="space-y-4">
-              <section>
-                <header>Metadata</header>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Dropdown label="Filter 1" items={[]} />
-                  <Dropdown label="Filter 2" items={[]} />
-                  <Dropdown label="Filter 3" items={[]} />
-                </div>
+            <div className="space-y-4 divide-y-2 divide-main-gray-10 ">
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_metadata')}</header>
+
+                <Filter
+                  labelFn={k => `metadata:label_${k}`}
+                  keys={Object.keys(meta.data?.fields!)}
+                  data={meta.data?.fields!}
+                  onUpdate={updateFilters}
+                />
               </section>
 
-              <section>
-                <header>Time span</header>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_timespan')}</header>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Input label="Date 1" type={'date'} />
-                  <Input label="Date 2" type={'date'} />
-                </div>
+                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
               </section>
 
-              <section>
-                <header>Types</header>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_report_types')}</header>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Dropdown multiple={true} label="Selection" items={[]} />
-                </div>
+                <select
+                  className={clsx(css.select)}
+                  multiple={true}
+                  ref={selectRef}
+                  onChange={e =>
+                    setState(
+                      R.assoc(
+                        'reportTypes',
+                        Array.from(e.target.selectedOptions).map(
+                          R.prop('value'),
+                        ),
+                      ),
+                    )
+                  }
+                >
+                  <option value={''}>{t('common:no_selection')}</option>
+
+                  {meta.data?.reportTypes?.map((it, ix) => (
+                    <option className="px-2" key={ix} value={it.reportType}>
+                      {it.reportType}
+                    </option>
+                  ))}
+                </select>
+
+                <footer className="py-2">
+                  <Button
+                    onClick={() => {
+                      if (!selectRef.current) return;
+
+                      selectRef.current.selectedOptions;
+                    }}
+                    size={'sm'}
+                    type={'secondary'}
+                    label={t('common:select_none')}
+                  />
+                </footer>
               </section>
 
-              <footer>
-                <Button label={'Search'} />
+              <footer className="pt-4">
+                {/* Search controls for doing the search, reset */}
+                <div className="space-x-2">
+                  <Button
+                    label={t('common:search')}
+                    onClick={() => mutation.mutate(query as any)}
+                  />
+                  <Button
+                    label={t('common:clear')}
+                    onClick={() => mutation.reset()}
+                  />
+                </div>
               </footer>
             </div>
+
+            <details>
+              <summary>{t('debug:debug')}</summary>
+              <div className="opacity-40 space-y-4 text-xs max-h-96 mt-4 overflow-auto">
+                <fieldset>
+                  <legend>{t('debug:state')}</legend>
+
+                  <pre>
+                    <code>{JSON.stringify(state, null, 2)}</code>
+                  </pre>
+                </fieldset>
+
+                <fieldset>
+                  <legend>{t('debug:search_query')}</legend>
+
+                  <div>
+                    <pre>
+                      <code>{JSON.stringify({ qʼ: query }, null, 2)}</code>
+                    </pre>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>{t('debug:response')}</legend>
+
+                  <div>
+                    <pre>
+                      <code>
+                        {JSON.stringify(
+                          {
+                            data: mutation.data,
+                          },
+                          null,
+                          2,
+                        )}
+                      </code>
+                    </pre>
+                  </div>
+                </fieldset>
+              </div>
+            </details>
           </section>
 
           <section>
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              Results
+              {!mutation.data && t('no_search_results')}
+
+              {mutation.data &&
+                t('search_result_count', {
+                  count: (resultsData?.hits.total as SearchTotalHits).value,
+                })}
             </header>
 
             <section>
-              <header>Results</header>
+              {!resultsData && <div>{t('common:no_results')}</div>}
 
-              <div>
-                <div>420 results</div>
-                <div></div>
-              </div>
+              {mutation.isSuccess && mutation.data && (
+                <div>
+                  <ul className="space-y-2 divide-y-2">
+                    {resultsData?.hits.hits.map((it, ix) => {
+                      const { _source: doc } = it;
 
-              <div className="">
-                <ul className="space-y-2 divide-y-2">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => {
+                      // Bail out if we have nothing
+                      if (!doc) return null;
+
                       return (
-                        <li key={i}>
-                          <article className="px-4 py-2">
-                            <header className="font-bold">Item title</header>
+                        <li key={`result-${ix}`}>
+                          <article className="py-2 space-y-2">
+                            <header>
+                              {doc.fileName}{' '}
+                              <span className="text-xs">
+                                Score=
+                                <span className="font-mono">{it._score}</span>
+                              </span>
+                            </header>
 
-                            <div className="text-sm">
-                              <p>Item body text</p>
+                            <div className="text-xs">
+                              <dl className="grid grid-cols-4">
+                                {Object.entries(doc.metadata).map(
+                                  ([k, v], mi) => (
+                                    <Fragment key={mi}>
+                                      <dt className="">{k}</dt>
+                                      <dd className="">{v}</dd>
+                                    </Fragment>
+                                  ),
+                                )}
+                              </dl>
                             </div>
 
                             <footer className="text-right space-x-2">
                               <Button
-                                label="Preview"
-                                size={'sm'}
-                                type={'secondary'}
+                                disabled={true}
+                                size="sm"
+                                label={t('common:preview')}
+                                onClick={() => {}}
                               />
                               <Button
-                                label="Download"
-                                size={'sm'}
-                                type={'secondary'}
+                                size="sm"
+                                label={t('common:download')}
+                                onClick={() => {
+                                  getFileUrl.mutate(doc.fileName);
+                                }}
                               />
                             </footer>
                           </article>
                         </li>
                       );
                     })}
-                </ul>
-              </div>
+                  </ul>
+                </div>
+              )}
 
-              <footer className="space-y-2 mt-2">
-                <nav>
-                  <Pager pages={[{}, {}, {}]} />
-                </nav>
+              <footer className="space-y-2 flex justify-between mt-2">
+                <Button
+                  disabled={true}
+                  label={t('common:download_all')}
+                  type="secondary"
+                  onClick={() => {}}
+                />
 
-                <Button label="Download all" type="secondary" />
+                <div>
+                  {mutation.isSuccess && (
+                    <Pager
+                      size={state.paging.size}
+                      page={state.paging.page}
+                      count={resultsData?.hits.total as number}
+                    />
+                  )}
+                </div>
               </footer>
             </section>
           </section>
         </div>
       </div>
 
-      <footer className="border-t-2 border-blue-500 mt-4 pt-4"></footer>
+      <Footer />
     </div>
   );
 };
 
 export default ReportsIndex;
+
+//
+
+/**
+ * @todo This probably will require some focus for when we run `export` on this.
+ * @param param0
+ * @returns
+ */
+export async function getStaticProps({ locale }: StaticProps) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common'])),
+    },
+  };
+}
+
+export type StaticProps = {
+  locale: App.Locales;
+};
+
+type ReportsState = {
+  filters: Record<string, string>;
+  dateRange: Partial<Range<Date>>;
+  reportTypes: string[];
+  paging: {
+    size: number;
+    page: number;
+  };
+};
+
+type ReportFilters = Record<string, string>;
