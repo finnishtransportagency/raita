@@ -6,8 +6,6 @@ import { baseURL } from 'shared/config';
  */
 export const apiClient = A.create({ baseURL: baseURL });
 
-console.log({ apiClient });
-
 //
 
 /**

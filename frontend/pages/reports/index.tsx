@@ -352,10 +352,14 @@ const ReportsIndex: NextPage = () => {
                                 size="sm"
                                 label={t('common:download')}
                                 onClick={() => {
-                                  getFileUrl.mutate({
+                                  const opts = {
                                     key: doc.key,
                                     fileName: doc.file_name,
-                                  });
+                                  };
+
+                                  console.log('getFileUrl', { opts });
+
+                                  getFileUrl.mutate(opts);
                                 }}
                               />
                             </footer>
