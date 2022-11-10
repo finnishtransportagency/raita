@@ -158,26 +158,10 @@ export default Filter;
 
 export type Props = {
   keys: string[];
-  data: Record<string, Field>;
+  data: Record<string, Field | { [k: string]: string }>;
   onUpdate: (fs: Record<string, string>) => void;
   labelFn?: (label: string) => string;
 };
-
-//
-
-/**
- * @todo Check if this needs attention, as `getStaticProps` is discarded
- *       when only doing `next export`
- */
-export async function getStaticProps(props: StaticProps) {
-  const { locale } = props;
-
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common'])),
-    },
-  };
-}
 
 //
 

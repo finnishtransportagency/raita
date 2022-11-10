@@ -54,3 +54,34 @@ export function useFileQuery(saveFile = true) {
 // #endregion
 
 //
+
+export function useQueryBuilder(
+  q: QueryBuilderArgs,
+  opts: Partial<QueryBuilderOpts> = {},
+  deps: DependencyList = [],
+) {
+  const hasTerms = !!q.terms;
+  const hasDateRange = !!q.dateRange;
+  const hasReportTypes = !!q.reportTypes.length;
+
+  const asd = { query: {}, from: 0, size: opts.pageSize || 5 };
+
+  return asd;
+}
+
+//
+
+export type QueryBuilderFilters = {};
+export type QueryBuilderPaging = { from: number; size: number };
+
+export type QueryBuilderResult = QueryBuilderFilters & QueryBuilderPaging;
+
+export type QueryBuilderOpts = {
+  pageSize: number;
+};
+
+export type QueryBuilderArgs = {
+  terms: {};
+  dateRange: {};
+  reportTypes: string[];
+};

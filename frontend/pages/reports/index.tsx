@@ -16,13 +16,13 @@ import { format } from 'date-fns/fp';
 import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
+import { RANGE_DATE_FMT } from 'shared/constants';
 import { Button } from 'components';
-import { useMetadataQuery, useSearch, useFileQuery } from './hooks';
-import { DateRange, Filter, Pager } from './components';
-import Footer from './components/footer';
+import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
+import { DateRange, Filter, Pager } from 'components';
+import Footer from 'components/footer';
 
 import css from './reports.module.css';
-import { RANGE_DATE_FMT } from 'shared/constants';
 
 //
 
@@ -48,6 +48,7 @@ const ReportsIndex: NextPage = () => {
       size: 5,
       page: curPage,
     },
+    debug: false,
   });
 
   /**
@@ -119,8 +120,21 @@ const ReportsIndex: NextPage = () => {
     return _res;
   }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
 
+  /**
+   * Mutations in React Query lingo don't mutate data per se,
+   * they are more like invokable queries; where regular queries are meant to be
+   * more automatic, mutations are used for things where we want to explicitly
+   * make a query as a result of some action, e.g. like doing a POST request.
+   */
+  // #region Mutations
+
+  // Search mutation
   const mutation = useSearch();
+
+  // S3 file URL endpoint mutation
   const getFileUrl = useFileQuery();
+
+  // #endregion
 
   const resultsData = mutation.data?.result.body;
 
@@ -163,7 +177,7 @@ const ReportsIndex: NextPage = () => {
               {t('common:reports_search')}
             </header>
 
-            <div className="space-y-4 divide-y-2 divide-main-gray-10 ">
+            <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
 
@@ -213,6 +227,7 @@ const ReportsIndex: NextPage = () => {
                     onClick={() => {
                       if (!selectRef.current) return;
 
+                      /** @todo ??? */
                       selectRef.current.selectedOptions;
                     }}
                     size={'sm'}
@@ -405,6 +420,7 @@ type ReportsState = {
     size: number;
     page: number;
   };
+  debug?: boolean;
 };
 
 type ReportFilters = Record<string, string>;
