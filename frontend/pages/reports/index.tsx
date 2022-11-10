@@ -135,7 +135,7 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
-  const resultsData = mutation.data?.result.body || {};
+  const resultsData = mutation.data?.result.body;
 
   const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
 
@@ -299,7 +299,7 @@ const ReportsIndex: NextPage = () => {
 
               {mutation.data &&
                 t('search_result_count', {
-                  count: (resultsData?.hits.total as SearchTotalHits).value,
+                  count: (resultsData?.hits?.total as SearchTotalHits).value,
                 })}
             </header>
 
