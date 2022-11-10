@@ -39,13 +39,19 @@ export function useSearch() {
 }
 
 export function useFileQuery(saveFile = true) {
-  return useMutation((key: string) => {
+  return useMutation((opts: UseFileQueryArgs) => {
+    const { key, fileName } = opts;
     return getFile(key).then(res => {
       if (saveFile) saveAs(res.url, key);
       return res;
     });
   });
 }
+
+type UseFileQueryArgs = {
+  key: string;
+  fileName?: string;
+};
 
 // #endregion
 

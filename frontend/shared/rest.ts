@@ -1,12 +1,12 @@
 import A from 'axios';
+import { baseURL } from 'shared/config';
 
 /**
  * API client for use in calling the REST API endpoint
  */
-export const apiClient = A.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL || '/api',
-});
+export const apiClient = A.create({ baseURL: baseURL });
+
+console.log({ apiClient });
 
 //
 
@@ -16,13 +16,13 @@ export const apiClient = A.create({
  * @returns
  */
 export const getFiles = (q: object) =>
-  apiClient.post<GetFilesResult>('/files', q);
+  apiClient.post<GetFilesResult>('files', q);
 
 export const getFile = (key: string) =>
-  apiClient.post<GetSignedUrlResult>('/file', { key }).then(res => res.data);
+  apiClient.post<GetSignedUrlResult>('file', { key }).then(res => res.data);
 
 export const getMeta = () => {
-  return apiClient.get<GetMetaResult>('/meta').then(res => res.data);
+  return apiClient.get<GetMetaResult>('meta').then(res => res.data);
 };
 
 type GetFilesResult = {};
@@ -48,17 +48,6 @@ type MetaResultType = { reportType: string; count: number };
  * This is only used for the backend whiel running in a dev env, e.g. locally.
  * @deprecated Use @see {@link api} instead
  */
-export const client = A.create({
-  baseURL: process.env.ES_CONNSTRING,
-});
-
-/**
- * The REST client that's used for accessing the OpenSearch endpoint.
- * Configuration for requests should be placed here.
- * @deprecated Use @see {@link api} instead
- */
-export const webClient = A.create({
-  baseURL: '/api',
-});
+export const client = A.create({ baseURL });
 
 // #endregion

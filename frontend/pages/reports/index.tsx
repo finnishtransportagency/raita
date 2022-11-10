@@ -321,7 +321,7 @@ const ReportsIndex: NextPage = () => {
                         <li key={`result-${ix}`}>
                           <article className="py-2 space-y-2">
                             <header>
-                              {doc.fileName}{' '}
+                              {doc.file_name}
                               <span className="text-xs">
                                 Score=
                                 <span className="font-mono">{it._score}</span>
@@ -352,7 +352,10 @@ const ReportsIndex: NextPage = () => {
                                 size="sm"
                                 label={t('common:download')}
                                 onClick={() => {
-                                  getFileUrl.mutate(doc.fileName);
+                                  getFileUrl.mutate({
+                                    key: doc.key,
+                                    fileName: doc.file_name,
+                                  });
                                 }}
                               />
                             </footer>
