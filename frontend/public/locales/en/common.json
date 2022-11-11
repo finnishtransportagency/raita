@@ -18,5 +18,7 @@
   "download_all": "Download all",
   "reports_timespan": "Time span",
   "reports_report_types": "Report types",
-  "filters_none_added": "No filters added."
+  "filters_none_added": "No filters added.",
+  "pager_a11y_label": "Paging navigation",
+  "pager_a11y_goto_page": "Go to page {{ page }}"
 }
