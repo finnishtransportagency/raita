@@ -40,11 +40,13 @@ export const getRaitaLambdaError = (err: unknown) => ({
  */
 export const decodeUriString = (uriString: string) => {
   try {
-    return decodeURI(uriString);
+    return decodeURIComponent(uriString);
   } catch (error) {
     return uriString;
   }
 };
+
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
 
 export const getOpenSearchLambdaConfigOrFail = () => {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
