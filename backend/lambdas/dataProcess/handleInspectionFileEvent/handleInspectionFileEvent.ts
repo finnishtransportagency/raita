@@ -17,7 +17,7 @@ import { logger } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { RaitaSourceSystem, raitaSourceSystems } from '../../../../constants';
-import { decodeUriString } from '../../utils';
+import { decodeS3EventPropertyString, decodeUriString } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -49,17 +49,10 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
       async eventRecord => {
-        // HERE flow control if multiple event types (S3, HTTP...)
-        // or files in multiple repositories
         const file = await backend.files.getFile(eventRecord);
-
-        // if (!spec.include.includeContentTypes.includes(file.contentType)) {
-        //   return null;
-        // }
-
-        const path = eventRecord.s3.object.key.split('/');
+        const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
+        const path = key.split('/');
         const rootFolder = path[0];
-
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
         if (
@@ -84,7 +77,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         });
         return {
           file_name: fileName,
-          key: eventRecord.s3.object.key,
+          key,
           bucket_arn: eventRecord.s3.bucket.arn,
           bucket_name: eventRecord.s3.bucket.name,
           size: eventRecord.s3.object.size,

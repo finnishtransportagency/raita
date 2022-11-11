@@ -46,6 +46,8 @@ export const decodeUriString = (uriString: string) => {
   }
 };
 
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+
 export const getOpenSearchLambdaConfigOrFail = () => {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
