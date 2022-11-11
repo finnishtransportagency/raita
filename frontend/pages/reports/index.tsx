@@ -12,15 +12,16 @@ import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 import { clsx } from 'clsx';
 import { format } from 'date-fns/fp';
 
+import * as cfg from 'shared/config';
 import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { RANGE_DATE_FMT } from 'shared/constants';
-import { Button } from 'components';
-import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
-import { DateRange, Filter, Pager } from 'components';
 import Footer from 'components/footer';
+import { Button } from 'components';
+import { DateRange, Filter, Pager } from 'components';
 
+import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
 
 //
@@ -44,7 +45,7 @@ const ReportsIndex: NextPage = () => {
     },
     reportTypes: [],
     paging: {
-      size: 5,
+      size: cfg.paging.pageSize,
       page: curPage,
     },
     debug: false,
@@ -146,6 +147,10 @@ const ReportsIndex: NextPage = () => {
   };
 
   const updateReportType = () => {};
+
+  //
+
+  const setPage = (n: number) => setState(R.assocPath(['paging', 'page'], n));
 
   //
 
@@ -357,8 +362,6 @@ const ReportsIndex: NextPage = () => {
                                     fileName: doc.file_name,
                                   };
 
-                                  console.log('getFileUrl', { opts });
-
                                   getFileUrl.mutate(opts);
                                 }}
                               />
@@ -385,6 +388,7 @@ const ReportsIndex: NextPage = () => {
                       size={state.paging.size}
                       page={state.paging.page}
                       count={resultsData?.hits.total as number}
+                      onGotoPage={setPage}
                     />
                   )}
                 </div>

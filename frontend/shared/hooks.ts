@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { DependencyList } from 'react';
 import * as R from 'rambda';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { DependencyList, useState } from 'react';
 import {
   MsearchBody,
   SearchResponse,
@@ -35,8 +35,7 @@ export function useSearch() {
 
     return apiClient
       .post<{ result: { body: SearchResponse<IDocument> } }>('/files', query)
-      .then(R.prop('data'))
-      .then(R.tap(x => console.log({ x })));
+      .then(R.prop('data'));
   });
 }
 
@@ -79,8 +78,6 @@ export function useQueryBuilder(
   return qʼ;
 }
 
-//
-
 export type QueryBuilderFilters = {};
 export type QueryBuilderPaging = { from: number; size: number };
 
@@ -94,4 +91,19 @@ export type QueryBuilderArgs = {
   terms: {};
   dateRange: {};
   reportTypes: string[];
+};
+
+//
+
+export function usePager(opts: UsePagerArgs) {
+  const [state, setState] = useState<UsePagerState>({ page: 0 });
+}
+
+export type UsePagerArgs = {
+  size: number;
+  offset: number;
+};
+
+export type UsePagerState = {
+  page: number;
 };
