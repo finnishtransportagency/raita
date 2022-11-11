@@ -40,7 +40,7 @@ export const getRaitaLambdaError = (err: unknown) => ({
  */
 export const decodeUriString = (uriString: string) => {
   try {
-    return decodeURI(uriString);
+    return decodeURIComponent(uriString);
   } catch (error) {
     return uriString;
   }
