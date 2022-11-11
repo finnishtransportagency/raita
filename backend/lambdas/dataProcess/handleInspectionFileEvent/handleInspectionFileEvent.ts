@@ -69,7 +69,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         // TODO: Handle tag creation based on root folder
 
         const fileName = decodeUriString(path[path.length - 1]);
-        const metadata = await parseFileMetadata({
+        const parseResults = await parseFileMetadata({
           fileName,
           path,
           file,
@@ -81,7 +81,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           bucket_arn: eventRecord.s3.bucket.arn,
           bucket_name: eventRecord.s3.bucket.name,
           size: eventRecord.s3.object.size,
-          metadata,
+          ...parseResults,
         };
       },
     );
@@ -110,7 +110,7 @@ async function parseFileMetadata({
   path: Array<string>;
   file: IFileResult;
   spec: IExtractionSpec;
-}): Promise<ParseValueResult> {
+}): Promise<{ metadata: ParseValueResult; hash: string | undefined }> {
   const fileNameData = extractFileNameData(
     fileName,
     spec.fileNameExtractionSpec,
@@ -123,15 +123,17 @@ async function parseFileMetadata({
     }) && fileBody
       ? extractFileContentData(spec, fileBody)
       : {};
-  const hashData =
+  const hash =
     shouldCalculateHash({ fileName }) && fileBody
       ? calculateHash(fileBody)
-      : {};
+      : undefined;
 
   return {
-    ...pathData,
-    ...fileContentData,
-    ...fileNameData,
-    ...hashData,
+    metadata: {
+      ...pathData,
+      ...fileContentData,
+      ...fileNameData,
+    },
+    hash,
   };
 }
