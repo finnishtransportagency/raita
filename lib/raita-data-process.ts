@@ -1,6 +1,7 @@
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -9,6 +10,10 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { EventField } from 'aws-cdk-lib/aws-events';
+import { EcsTask } from 'aws-cdk-lib/aws-events-targets';
+import { Trail } from 'aws-cdk-lib/aws-cloudtrail';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
@@ -70,6 +75,71 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
     });
+
+    // // ***************
+
+    const cluster = new ecs.Cluster(this, `cluster-${raitaStackIdentifier}`, {
+      vpc,
+    });
+    const taskDefinition = new ecs.FargateTaskDefinition(
+      this,
+      `task-${raitaStackIdentifier}-handle-zip`,
+      {
+        memoryLimitMiB: 2048,
+        cpu: 256,
+      },
+    );
+
+    const container = taskDefinition.addContainer(
+      `container-${raitaStackIdentifier}-zip-handler`,
+      {
+        image: ecs.ContainerImage.fromRegistry(
+          '592798899605.dkr.ecr.eu-west-1.amazonaws.com/raita-repository:latest',
+        ),
+        logging: new ecs.AwsLogDriver({
+          streamPrefix: 'FargateHandleZip',
+          logRetention: RetentionDays.ONE_WEEK,
+        }),
+        environment: {
+          AWS_REGION: this.region,
+        },
+      },
+    );
+
+    dataReceptionBucket.grantRead(taskDefinition.taskRole);
+    this.inspectionDataBucket.grantWrite(taskDefinition.taskRole);
+
+    Trail.onEvent(this, `s3-rule-${raitaStackIdentifier}-`, {
+      eventPattern: {
+        source: ['aws.s3'],
+        detail: {
+          eventName: ['PutObject', 'CompleteMultipartUpload'],
+        },
+      },
+      target: new EcsTask({
+        cluster,
+        taskDefinition,
+        containerOverrides: [
+          {
+            containerName: container.containerName,
+            environment: [
+              {
+                name: 'S3_BUCKET',
+                value: EventField.fromPath(
+                  '$.detail.requestParameters.bucketName',
+                ),
+              },
+              {
+                name: 'S3_KEY',
+                value: EventField.fromPath('$.detail.requestParameters.key'),
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    // // ***************
 
     // Create zip handler lambda, grant permissions and create event sources
     const handleZipFileEventFn = this.createZipFileEventHandler({
