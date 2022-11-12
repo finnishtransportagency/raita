@@ -114,7 +114,7 @@ export class DataProcessStack extends NestedStack {
       eventPattern: {
         source: ['aws.s3'],
         detail: {
-          eventName: ['ObjectCreated'],
+          eventName: ['PutObject', 'CompleteMultipartUpload'],
         },
       },
       target: new EcsTask({
