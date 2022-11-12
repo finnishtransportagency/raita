@@ -13,11 +13,13 @@ export const createRaitaBucket = ({
   name,
   raitaEnv,
   raitaStackIdentifier,
+  eventBridgeEnabled,
 }: {
   scope: Construct;
   name: string;
   raitaEnv: RaitaEnvironment;
   raitaStackIdentifier: string;
+  eventBridgeEnabled?: boolean;
 }) => {
   const removalPolicy = getRemovalPolicy(raitaEnv);
   const autoDeleteObjects = removalPolicy === RemovalPolicy.DESTROY;
@@ -30,6 +32,7 @@ export const createRaitaBucket = ({
     blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
     encryption: s3.BucketEncryption.S3_MANAGED,
+    eventBridgeEnabled,
   });
 };
 

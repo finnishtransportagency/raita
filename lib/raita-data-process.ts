@@ -74,6 +74,7 @@ export class DataProcessStack extends NestedStack {
       name: 'data-reception',
       raitaEnv,
       raitaStackIdentifier,
+      eventBridgeEnabled: true,
     });
 
     // // ***************
