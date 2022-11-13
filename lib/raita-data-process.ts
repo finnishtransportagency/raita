@@ -22,6 +22,7 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -107,12 +108,15 @@ export class DataProcessStack extends NestedStack {
       },
     );
 
+    ecr.AuthorizationToken.grantRead(taskDefinition.taskRole);
+
     dataReceptionBucket.grantRead(taskDefinition.taskRole);
     this.inspectionDataBucket.grantWrite(taskDefinition.taskRole);
 
     Trail.onEvent(this, `s3-rule-${raitaStackIdentifier}-`, {
       eventPattern: {
         source: ['aws.s3'],
+        detailType: ['AWS API Call via CloudTrail'],
         detail: {
           eventName: ['PutObject', 'CompleteMultipartUpload'],
         },

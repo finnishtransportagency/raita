@@ -15,4 +15,4 @@ WORKDIR /home/node/code
 
 COPY --from=build /builddir .
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/index.js"]
