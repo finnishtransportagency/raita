@@ -52,8 +52,6 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         const type = entry.type;
         // Only files need to be processed as the there is no need to explicitly create folders in S3
         if (type === 'File') {
-          /****** OLD */
-
           const uploadParams = {
             Bucket: config.targetBucketName,
             Key: filepath + entryName,
@@ -61,24 +59,24 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
             // TO CHECK: Setting content type explicitly may not be necessary
             ContentType: mime.lookup(entryName) || undefined,
           };
-          const command = new PutObjectCommand(uploadParams);
-          promises.push(await s3.send(command));
 
-          /****** OLD END */
+          // Implementation A using PutObjectCommand
+          // const command = new PutObjectCommand(uploadParams);
+          // promises.push(await s3.send(command));
 
-          const parallelUploads3 = new Upload({
+          // Implementation B using Upload
+
+          const upload = new Upload({
             client: new S3Client({}),
             // tags: [...], // optional tags
             // queueSize: 4, // optional concurrency configuration
             // leavePartsOnError: false, // optional manually handle dropped parts
             params: uploadParams,
           });
-
           // parallelUploads3.on('httpUploadProgress', progress => {
           //   console.log(progress);
           // });
-
-          promises.push(await parallelUploads3.done());
+          promises.push(await upload.done());
         } else {
           entry.autodrain();
         }
