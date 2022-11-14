@@ -78,7 +78,7 @@ export class DataProcessStack extends NestedStack {
       eventBridgeEnabled: true,
     });
 
-    // // ***************
+    // START TEMP ECS ***************
 
     const cluster = new ecs.Cluster(this, `cluster-${raitaStackIdentifier}`, {
       vpc,
@@ -144,7 +144,7 @@ export class DataProcessStack extends NestedStack {
       }),
     });
 
-    // // ***************
+    // END TEMP ECS ***************
 
     // Create zip handler lambda, grant permissions and create event sources
     const handleZipFileEventFn = this.createZipFileEventHandler({
