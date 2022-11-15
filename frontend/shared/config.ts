@@ -9,4 +9,6 @@ export const openSearch = {
 export const baseURL =
   process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL || '/api';
 
-console.log({ baseURL });
+export const paging = {
+  pageSize: 10,
+} as const;
