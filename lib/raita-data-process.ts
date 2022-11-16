@@ -2,7 +2,12 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
-import { Role } from 'aws-cdk-lib/aws-iam';
+import {
+  AccountPrincipal,
+  Effect,
+  PolicyStatement,
+  Role,
+} from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -25,6 +30,8 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly openSearchDomain: Domain;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
+  readonly sftpPolicyAccountId: string;
+  readonly sftpPolicyUserId: string;
 }
 
 export class DataProcessStack extends NestedStack {
@@ -41,6 +48,8 @@ export class DataProcessStack extends NestedStack {
       openSearchDomain,
       openSearchMetadataIndex,
       parserConfigurationFile,
+      sftpPolicyAccountId,
+      sftpPolicyUserId,
     } = props;
 
     this.dataProcessorLambdaServiceRole = createRaitaServiceRole({
@@ -69,6 +78,31 @@ export class DataProcessStack extends NestedStack {
       name: 'data-reception',
       raitaEnv,
       raitaStackIdentifier,
+    });
+
+    const sftpReceivePolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      principals: [new AccountPrincipal(sftpPolicyAccountId)],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:DeleteObject',
+        's3:DeleteObjectVersion',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+      ],
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/meeri/*`,
+      ],
+      conditions: {
+        StringLike: {
+          'aws:userId': `${sftpPolicyUserId}:*`,
+        },
+      },
     });
 
     // Create zip handler lambda, grant permissions and create event sources

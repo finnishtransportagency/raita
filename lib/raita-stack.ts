@@ -29,6 +29,8 @@ export class RaitaStack extends Stack {
       vpc: raitaVPC,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
+      sftpPolicyAccountId: config.sftpPolicyAccountId,
+      sftpPolicyUserId: config.sftpPolicyUserId,
     });
 
     // Create Cloudfront stack

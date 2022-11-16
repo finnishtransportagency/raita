@@ -11,6 +11,8 @@ import {
   SSM_CLOUDFRONT_CERTIFICATE_ARN,
   SSM_CLOUDFRONT_DOMAIN_NAME,
   SSM_DMZ_API_DOMAIN_NAME,
+  SFTP_POLICY_ACCOUNT_ID,
+  SFTP_POLICY_USER_ID,
 } from '../constants';
 import { Construct } from 'constructs';
 
@@ -79,6 +81,8 @@ export const getRaitaStackConfig = (scope: Construct) => ({
   ),
   cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
   dmzApiEndpoint: getSSMParameter(scope, SSM_DMZ_API_DOMAIN_NAME),
+  sftpPolicyAccountId: getSSMParameter(scope, SFTP_POLICY_ACCOUNT_ID),
+  sftpPolicyUserId: getSSMParameter(scope, SFTP_POLICY_USER_ID),
   vpc: {
     vpcId: 'vpc-02e4e06ed07180dfc',
     availabilityZones: ['eu-west-1a', 'eu-west-1b'],
