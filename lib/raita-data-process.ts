@@ -17,7 +17,10 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
-import { fileSuffixesToIncudeInMetadataParsing } from '../constants';
+import {
+  fileSuffixesToIncudeInMetadataParsing,
+  raitaSourceSystems,
+} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -89,14 +92,12 @@ export class DataProcessStack extends NestedStack {
         's3:GetObjectAcl',
         's3:PutObject',
         's3:PutObjectAcl',
-        's3:DeleteObject',
-        's3:DeleteObjectVersion',
         's3:ListBucket',
         's3:GetBucketLocation',
       ],
       resources: [
         dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/meeri/*`,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
       ],
       conditions: {
         StringLike: {
