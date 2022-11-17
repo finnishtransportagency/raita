@@ -41,6 +41,7 @@ async function start() {
       await bodyBuffer,
       { lazyEntries: true },
       (err, zipfile) => {
+        console.log('Got zip file. ');
         if (err) throw err;
         zipfile.readEntry();
         zipfile.on('entry', entry => {
