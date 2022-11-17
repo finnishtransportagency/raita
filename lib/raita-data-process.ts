@@ -120,7 +120,7 @@ export class DataProcessStack extends NestedStack {
         detail: {
           eventName: ['PutObject', 'CompleteMultipartUpload'],
           requestParameters: {
-            bucketName: [dataReceptionBucket],
+            bucketName: [dataReceptionBucket.bucketName],
           },
         },
       },
