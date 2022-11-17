@@ -18,6 +18,8 @@ export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
   'raita-cloudfront-certificate-arn';
 export const SSM_CLOUDFRONT_DOMAIN_NAME = 'raita-cloudfront-domain-name';
 export const SSM_DMZ_API_DOMAIN_NAME = 'raita-dmz-api-domain-name';
+export const SFTP_POLICY_ACCOUNT_ID = 'raita-sftp-policy-account-id';
+export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
 
 export const ENVIRONMENTS = {
   dev: 'dev',
