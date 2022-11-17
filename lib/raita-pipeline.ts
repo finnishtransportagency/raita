@@ -1,4 +1,11 @@
-import { SecretValue, Stack, StackProps, Stage, StageProps } from 'aws-cdk-lib';
+import {
+  RemovalPolicy,
+  SecretValue,
+  Stack,
+  StackProps,
+  Stage,
+  StageProps,
+} from 'aws-cdk-lib';
 import {
   CodePipeline,
   CodePipelineSource,
@@ -12,6 +19,8 @@ import {
 } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
 import { getPipelineConfig, RaitaEnvironment } from './config';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 
 /**
  * The stack that defines the application pipeline
@@ -24,11 +33,21 @@ export class RaitaPipelineStack extends Stack {
       tags: config.tags,
     });
 
+    const artifactBucket = new Bucket(this, 'pipeline-artifact-bucket', {
+      autoDeleteObjects: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    const underlyingPipeline = new Pipeline(this, 'underlyingPipeline', {
+      artifactBucket: artifactBucket,
+      pipelineName: `pl-raita-${config.stackId}`,
+    });
+
     const pipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
-        pipelineName: `pl-raita-${config.stackId}`,
+        codePipeline: underlyingPipeline,
         synth: new ShellStep('Synth', {
           input: CodePipelineSource.gitHub(
             'finnishtransportagency/raita',
