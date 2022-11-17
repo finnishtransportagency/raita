@@ -33,10 +33,14 @@ export class RaitaPipelineStack extends Stack {
       tags: config.tags,
     });
 
-    const artifactBucket = new Bucket(this, 'pipeline-artifact-bucket', {
-      autoDeleteObjects: true,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
+    const artifactBucket = new Bucket(
+      this,
+      `s3-pipeline-raita-${config.stackId}`,
+      {
+        autoDeleteObjects: true,
+        removalPolicy: RemovalPolicy.DESTROY,
+      },
+    );
 
     const underlyingPipeline = new Pipeline(this, 'underlyingPipeline', {
       artifactBucket: artifactBucket,
