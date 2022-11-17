@@ -52,4 +52,7 @@ export default class MetadataPort implements IMetadataStorageInterface {
   getReportTypes = () => {
     return this.#backend.getReportTypes();
   };
+  getFileTypes = () => {
+    return this.#backend.getFileTypes();
+  };
 }

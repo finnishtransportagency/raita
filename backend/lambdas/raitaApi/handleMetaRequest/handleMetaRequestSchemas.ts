@@ -24,7 +24,7 @@ const BucketElementSchema = z.object({
 });
 
 // NOTE: This is INCOMPLETE schema typing of report type response
-export const ReportTypesSchema = z.object({
+export const AggregationsResponseSchema = z.object({
   aggregations: z.object({
     types: z.object({
       buckets: z.array(BucketElementSchema),

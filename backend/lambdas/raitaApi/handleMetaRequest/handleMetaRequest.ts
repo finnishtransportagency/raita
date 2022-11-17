@@ -8,7 +8,7 @@ import {
 } from '../../utils';
 import {
   FieldMappingsSchema,
-  ReportTypesSchema,
+  AggregationsResponseSchema,
 } from './handleMetaRequestSchemas';
 
 /**
@@ -27,10 +27,13 @@ export async function handleMetaRequest(
       region,
       openSearchDomain,
     });
+    // TODO: Process requests parallel, not sequentially
     const rawFieldsResponse = await metadataPort.getMetadataFields();
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
     const rawReportTypesResponse = await metadataPort.getReportTypes();
     const reportTypes = parseReportTypes(rawReportTypesResponse);
+    const rawFileTypesResponse = await metadataPort.getFileTypes();
+    const fileTypes = parseFileTypes(rawFileTypesResponse);
     return {
       statusCode: 200,
       headers: {
@@ -39,6 +42,7 @@ export async function handleMetaRequest(
       body: JSON.stringify({
         fields,
         reportTypes,
+        fileTypes,
       }),
     };
   } catch (err: unknown) {
@@ -75,10 +79,22 @@ function parseReportTypes(res: any) {
       500,
     );
   }
-  return ReportTypesSchema.parse(res.body).aggregations.types.buckets.map(
-    element => ({
-      reportType: element.key,
-      count: element.doc_count,
-    }),
-  );
+  return AggregationsResponseSchema.parse(
+    res.body,
+  ).aggregations.types.buckets.map(element => ({
+    reportType: element.key,
+    count: element.doc_count,
+  }));
+}
+
+function parseFileTypes(res: any) {
+  if (!res.body) {
+    throw new RaitaLambdaError('Missing backend file types response body', 500);
+  }
+  return AggregationsResponseSchema.parse(
+    res.body,
+  ).aggregations.types.buckets.map(element => ({
+    fileType: element.key,
+    count: element.doc_count,
+  }));
 }

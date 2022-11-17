@@ -5,4 +5,5 @@ export interface IMetadataStorageInterface {
   queryOpenSearchMetadata: (query: any) => Promise<any>;
   getMetadataFields: () => Promise<any>;
   getReportTypes: () => Promise<any>;
+  getFileTypes: () => Promise<any>;
 }

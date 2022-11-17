@@ -60,7 +60,7 @@ export const extractFileNameData = (
       {},
     );
     return {
-      fileType: suffix,
+      file_type: suffix,
       ...specBasedMetadata,
     };
   } catch (error) {
