@@ -119,6 +119,9 @@ export class DataProcessStack extends NestedStack {
         detailType: ['AWS API Call via CloudTrail'],
         detail: {
           eventName: ['PutObject', 'CompleteMultipartUpload'],
+          requestParameters: {
+            bucketName: [dataReceptionBucket],
+          },
         },
       },
       target: new EcsTask({
