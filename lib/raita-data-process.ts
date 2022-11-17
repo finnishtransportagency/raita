@@ -87,8 +87,8 @@ export class DataProcessStack extends NestedStack {
       this,
       `task-${raitaStackIdentifier}-handle-zip`,
       {
-        memoryLimitMiB: 2048,
-        cpu: 256,
+        memoryLimitMiB: 61440,
+        cpu: 8192,
       },
     );
 
@@ -129,14 +129,18 @@ export class DataProcessStack extends NestedStack {
             containerName: container.containerName,
             environment: [
               {
-                name: 'S3_BUCKET',
+                name: 'S3_SOURCE_BUCKET',
                 value: EventField.fromPath(
                   '$.detail.requestParameters.bucketName',
                 ),
               },
               {
-                name: 'S3_KEY',
+                name: 'S3_SOURCE_KEY',
                 value: EventField.fromPath('$.detail.requestParameters.key'),
+              },
+              {
+                name: 'S3_TARGET_BUCKET',
+                value: this.inspectionDataBucket.bucketName,
               },
             ],
           },
