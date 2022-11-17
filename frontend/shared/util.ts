@@ -11,7 +11,7 @@ export const prefix = (p: string, x: string) => [p, x].join('');
 /**
  * Basic no-op, shorthand for getting an undefined value.
  */
-export function noop() {}
+export function noop(...args: any[]) {}
 export { noop as toUndefined };
 
 /**
