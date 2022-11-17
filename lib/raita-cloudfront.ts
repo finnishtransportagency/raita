@@ -1,4 +1,4 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Stack, StackProps, Tags } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
@@ -19,6 +19,7 @@ interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly stackId: string;
+  readonly tags: { [key: string]: string };
   readonly cloudfrontCertificateArn: string;
   readonly cloudfrontDomainName: string;
   readonly dmzApiEndpoint: string;
@@ -35,6 +36,7 @@ export class CloudfrontStack extends Stack {
       dmzApiEndpoint,
       stackId,
       raitaEnv,
+      tags,
     } = props;
 
     // Create frontend stack to hold frontend artifacts
@@ -42,6 +44,9 @@ export class CloudfrontStack extends Stack {
       raitaEnv,
       raitaStackIdentifier,
     });
+    Object.entries(tags).forEach(([key, value]) =>
+      Tags.of(frontendStack).add(key, value),
+    );
 
     // Create Cloudfront itself conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside

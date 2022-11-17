@@ -1,6 +1,6 @@
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { NestedStack, NestedStackProps, Tags } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy } from './utils';
@@ -19,6 +19,7 @@ import { DataProcessStack } from './raita-data-process';
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly tags: { [key: string]: string };
   readonly vpc: ec2.IVpc;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
@@ -35,6 +36,7 @@ export class ApplicationStack extends NestedStack {
     const {
       raitaStackIdentifier,
       raitaEnv,
+      tags,
       vpc,
       openSearchMetadataIndex,
       parserConfigurationFile,
@@ -61,9 +63,12 @@ export class ApplicationStack extends NestedStack {
       sftpPolicyAccountId: sftpPolicyAccountId,
       sftpPolicyUserId: sftpPolicyUserId,
     });
+    Object.entries(tags).forEach(([key, value]) =>
+      Tags.of(dataProcessStack).add(key, value),
+    );
 
     // Create API Gateway
-    const raitaApi = new RaitaApiStack(this, 'stack-api', {
+    const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
@@ -71,6 +76,9 @@ export class ApplicationStack extends NestedStack {
       openSearchMetadataIndex: openSearchMetadataIndex,
       vpc,
     });
+    Object.entries(tags).forEach(([key, value]) =>
+      Tags.of(raitaApiStack).add(key, value),
+    );
 
     // Grant data processor lambdas permissions to call OpenSearch endpoints
     this.createManagedPolicy({
@@ -85,7 +93,7 @@ export class ApplicationStack extends NestedStack {
     this.createManagedPolicy({
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
-      serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
+      serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
       resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
@@ -97,12 +105,12 @@ export class ApplicationStack extends NestedStack {
       'Allows parser lambda to connect to Opensearch.',
     );
     openSearchDomain.connections.allowFrom(
-      raitaApi.handleFilesRequestFn,
+      raitaApiStack.handleFilesRequestFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
     );
     openSearchDomain.connections.allowFrom(
-      raitaApi.handleMetaRequestFn,
+      raitaApiStack.handleMetaRequestFn,
       Port.allTraffic(),
       'Allows meta endpoint handler lambda to connect to Opensearch.',
     );
