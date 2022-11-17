@@ -34,7 +34,7 @@ async function start() {
     stream.once('error', reject);
   });
 
-  const results: Array<any> = [];
+  const results: Array<Promise<void>> = [];
 
   if (getObjectResult.Body) {
     yauzl.fromBuffer(
@@ -52,26 +52,36 @@ async function start() {
             zipfile.readEntry();
           } else {
             // file entry
-            zipfile.openReadStream(entry, async (err, readStream) => {
-              if (err) throw err;
-              readStream.on('end', function () {
-                zipfile.readEntry();
+
+            const prom = new Promise<void>((resolve, reject) => {
+              zipfile.openReadStream(entry, async (err, readStream) => {
+                if (err) throw err;
+                readStream.on('end', function () {
+                  resolve();
+                  zipfile.readEntry();
+                });
+                readStream.on('error', () => {
+                  reject();
+                });
+                const command = new PutObjectCommand({
+                  Bucket: targetBucket,
+                  Key: entry.fileName,
+                  Body: readStream,
+                  // TO CHECK: Setting content type explicitly may not be necessary
+                  // ContentType: mime.lookup(entryName) || undefined,
+                });
+                const data = await s3.send(command);
+                console.log('Success', data);
+                results.push(prom);
+                // readStream.pipe(somewhere);
               });
-              const command = new PutObjectCommand({
-                Bucket: targetBucket,
-                Key: entry.fileName,
-                Body: entry,
-                // TO CHECK: Setting content type explicitly may not be necessary
-                // ContentType: mime.lookup(entryName) || undefined,
-              });
-              results.push(await s3.send(command));
-              // readStream.pipe(somewhere);
             });
           }
         });
       },
     );
   }
-
+  console.log(`Before promise all.`);
+  Promise.all(results);
   console.log(`${results.length} files extracted from zip archive.`);
 }
