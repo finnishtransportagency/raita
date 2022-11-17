@@ -40,7 +40,7 @@ export class RaitaPipelineStack extends Stack {
 
     const underlyingPipeline = new Pipeline(this, 'underlyingPipeline', {
       artifactBucket: artifactBucket,
-      pipelineName: `pl-raita-${config.stackId}`,
+      pipelineName: `cpl-raita-${config.stackId}`,
     });
 
     const pipeline = new CodePipeline(
