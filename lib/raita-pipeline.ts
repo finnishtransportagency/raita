@@ -47,6 +47,13 @@ export class RaitaPipelineStack extends Stack {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
     });
+    pipeline.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['codebuild:StartBuild'],
+        resources: ['*'],
+      }),
+    );
 
     const codePipeline = new CodePipeline(
       this,
@@ -82,13 +89,6 @@ export class RaitaPipelineStack extends Stack {
           ),
         },
       },
-    );
-    pipeline.addToRolePolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['codebuild:StartBuild'],
-        resources: ['*'],
-      }),
     );
     codePipeline.addStage(
       new RaitaApplicationStage(this, `Raita`, {
