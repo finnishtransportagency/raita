@@ -22,6 +22,8 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly vpc: ec2.IVpc;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
+  readonly sftpPolicyAccountId: string;
+  readonly sftpPolicyUserId: string;
 }
 
 /**
@@ -36,6 +38,8 @@ export class ApplicationStack extends NestedStack {
       vpc,
       openSearchMetadataIndex,
       parserConfigurationFile,
+      sftpPolicyAccountId,
+      sftpPolicyUserId,
     } = props;
 
     // Create and configure OpenSearch domain
@@ -54,6 +58,8 @@ export class ApplicationStack extends NestedStack {
       openSearchDomain: openSearchDomain,
       openSearchMetadataIndex: openSearchMetadataIndex,
       parserConfigurationFile: parserConfigurationFile,
+      sftpPolicyAccountId: sftpPolicyAccountId,
+      sftpPolicyUserId: sftpPolicyUserId,
     });
 
     // Create API Gateway
