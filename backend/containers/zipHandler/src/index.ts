@@ -1,7 +1,8 @@
-import yauzl from 'yauzl';
+import * as yauzl from 'yauzl';
 
 import { PutObjectCommand, S3 } from '@aws-sdk/client-s3';
-import { Readable } from 'stream';
+import { Readable, Stream } from 'stream';
+import { streamToBuffer } from './utils';
 
 start();
 
@@ -24,62 +25,53 @@ async function start() {
     Key: key,
   });
 
-  const stream = getObjectResult.Body as Readable;
-
   // Buffer the whole file in memory (using node version < 17.5.0)
-  const bodyBuffer = new Promise<Buffer>((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', chunk => chunks.push(chunk));
-    stream.once('end', () => resolve(Buffer.concat(chunks)));
-    stream.once('error', reject);
-  });
+  const bodyBuffer = await streamToBuffer(getObjectResult.Body as Readable);
 
   const results: Array<Promise<void>> = [];
 
   if (getObjectResult.Body) {
-    yauzl.fromBuffer(
-      await bodyBuffer,
-      { lazyEntries: true },
-      (err, zipfile) => {
-        console.log('Got zip file. ');
-        if (err) throw err;
-        zipfile.readEntry();
-        zipfile.on('entry', entry => {
-          if (/\/$/.test(entry.fileName)) {
-            // Directory file names end with '/'.
-            // Note that entries for directories themselves are optional.
-            // An entry's fileName implicitly requires its parent directories to exist.
-            zipfile.readEntry();
-          } else {
-            // file entry
-
-            const prom = new Promise<void>((resolve, reject) => {
-              zipfile.openReadStream(entry, async (err, readStream) => {
-                if (err) throw err;
-                readStream.on('end', function () {
-                  resolve();
-                  zipfile.readEntry();
-                });
-                readStream.on('error', () => {
-                  reject();
-                });
-                const command = new PutObjectCommand({
-                  Bucket: targetBucket,
-                  Key: entry.fileName,
-                  Body: readStream,
-                  // TO CHECK: Setting content type explicitly may not be necessary
-                  // ContentType: mime.lookup(entryName) || undefined,
-                });
-                const data = await s3.send(command);
-                console.log('Success', data);
-                results.push(prom);
-                // readStream.pipe(somewhere);
+    yauzl.fromBuffer(bodyBuffer, { lazyEntries: true }, (err, zipfile) => {
+      console.log('Got zip file. ');
+      if (err) throw err;
+      zipfile.readEntry();
+      zipfile.on('entry', entry => {
+        if (/\/$/.test(entry.fileName)) {
+          // Directory file names end with '/'.
+          // Note that entries for directories themselves are optional.
+          // An entry's fileName implicitly requires its parent directories to exist.
+          zipfile.readEntry();
+        } else {
+          // file entry
+          const prom = new Promise<void>((resolve, reject) => {
+            zipfile.openReadStream(entry, async (err, readStream) => {
+              if (err) throw err;
+              readStream.on('end', function () {
+                resolve();
+                zipfile.readEntry();
               });
+              readStream.on('error', () => {
+                reject();
+              });
+              const command = new PutObjectCommand({
+                Bucket: targetBucket,
+                Key: entry.fileName.toString?.(),
+                Body: await streamToBuffer(readStream),
+                Metadata: {},
+                // TO CHECK: Setting content type explicitly may not be necessary
+                // ContentType: mime.lookup(entryName) || undefined,
+              });
+              const data = await s3.send(command);
+              console.log(`File name: ${entry.fileName}`);
+              console.log(
+                `File file name to string: ${entry.fileName.toString?.()}`,
+              );
+              results.push(prom);
             });
-          }
-        });
-      },
-    );
+          });
+        }
+      });
+    });
   }
   console.log(`Before promise all.`);
   Promise.all(results);
