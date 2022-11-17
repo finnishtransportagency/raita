@@ -28,6 +28,7 @@ export async function handleMetaRequest(
       openSearchDomain,
     });
     // TODO: Process requests parallel, not sequentially
+    // TODO?: Reorganize reponsibilities between lambda handler, port and adapter
     const rawFieldsResponse = await metadataPort.getMetadataFields();
     const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
     const rawReportTypesResponse = await metadataPort.getReportTypes();
