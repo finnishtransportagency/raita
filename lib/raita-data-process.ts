@@ -105,6 +105,7 @@ export class DataProcessStack extends NestedStack {
         },
       },
     });
+    dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
     // Create zip handler lambda, grant permissions and create event sources
     const handleZipFileEventFn = this.createZipFileEventHandler({
