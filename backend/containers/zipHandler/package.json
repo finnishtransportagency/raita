@@ -10,9 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^4.8.4"
+    "typescript": "^4.8.4",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {
-    "@types/node": "^18.11.9"
+    "@types/node": "^18.11.9",
+    "@types/yauzl": "^2.10.0",
+    "i": "^0.3.7",
+    "npm": "^9.1.2"
   }
 }
