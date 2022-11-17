@@ -21,6 +21,7 @@ import { RaitaStack } from './raita-stack';
 import { getPipelineConfig, RaitaEnvironment } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 /**
  * The stack that defines the application pipeline
@@ -42,16 +43,16 @@ export class RaitaPipelineStack extends Stack {
       },
     );
 
-    const underlyingPipeline = new Pipeline(this, 'underlyingPipeline', {
+    const pipeline = new Pipeline(this, 'pipeline', {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
     });
 
-    const pipeline = new CodePipeline(
+    const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
-        codePipeline: underlyingPipeline,
+        codePipeline: pipeline,
         synth: new ShellStep('Synth', {
           input: CodePipelineSource.gitHub(
             'finnishtransportagency/raita',
@@ -82,7 +83,14 @@ export class RaitaPipelineStack extends Stack {
         },
       },
     );
-    pipeline.addStage(
+    pipeline.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['codebuild:StartBuild'],
+        resources: ['*'],
+      }),
+    );
+    codePipeline.addStage(
       new RaitaApplicationStage(this, `Raita`, {
         stackId: config.stackId,
         raitaEnv: config.env,
