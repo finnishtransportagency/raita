@@ -47,6 +47,7 @@ export class RaitaPipelineStack extends Stack {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
     });
+    // Can't start build process otherwise
     pipeline.addToRolePolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
