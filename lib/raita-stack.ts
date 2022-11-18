@@ -1,5 +1,5 @@
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Stack, StackProps, Tags } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CloudfrontStack } from './raita-cloudfront';
 import { getRaitaStackConfig, RaitaEnvironment } from './config';
@@ -8,13 +8,14 @@ import { ApplicationStack } from './raita-application';
 interface RaitaStackProps extends StackProps {
   readonly raitaEnv: RaitaEnvironment;
   readonly stackId: string;
+  readonly tags: { [key: string]: string };
 }
 
 export class RaitaStack extends Stack {
   constructor(scope: Construct, id: string, props: RaitaStackProps) {
     super(scope, id, props);
     const raitaStackIdentifier = id.toLowerCase();
-    const { raitaEnv, stackId } = props;
+    const { raitaEnv, stackId, tags } = props;
     const config = getRaitaStackConfig(this);
 
     // Get existing vpc based on predetermined attributes
@@ -23,7 +24,7 @@ export class RaitaStack extends Stack {
     });
 
     // Create application resources (db, data process resources, api resources)
-    new ApplicationStack(this, 'stack-app', {
+    const applicationStack = new ApplicationStack(this, 'stack-app', {
       raitaStackIdentifier,
       raitaEnv,
       vpc: raitaVPC,
@@ -32,15 +33,22 @@ export class RaitaStack extends Stack {
       sftpPolicyAccountId: config.sftpPolicyAccountId,
       sftpPolicyUserId: config.sftpPolicyUserId,
     });
+    Object.entries(tags).forEach(([key, value]) =>
+      Tags.of(applicationStack).add(key, value),
+    );
 
     // Create Cloudfront stack
-    new CloudfrontStack(this, 'stack-cf', {
+    const cloudFrontStack = new CloudfrontStack(this, 'stack-cf', {
       raitaStackIdentifier,
       raitaEnv,
       stackId,
+      tags: tags,
       cloudfrontCertificateArn: config.cloudfrontCertificateArn,
       cloudfrontDomainName: config.cloudfrontDomainName,
       dmzApiEndpoint: config.dmzApiEndpoint,
     });
+    Object.entries(tags).forEach(([key, value]) =>
+      Tags.of(cloudFrontStack).add(key, value),
+    );
   }
 }
