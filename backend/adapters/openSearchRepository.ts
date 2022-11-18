@@ -61,7 +61,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
           types: {
             terms: {
               field: 'metadata.report_type.keyword',
-              size: 10,
             },
           },
         },
@@ -77,10 +76,14 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       body: {
         size: 0,
         aggs: {
-          types: {
+          report_types: {
+            terms: {
+              field: 'metadata.report_type.keyword',
+            },
+          },
+          file_types: {
             terms: {
               field: 'metadata.file_type.keyword',
-              size: 10,
             },
           },
         },
