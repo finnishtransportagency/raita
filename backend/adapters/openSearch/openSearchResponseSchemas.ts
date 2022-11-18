@@ -25,7 +25,6 @@ const BucketElementSchema = z.object({
 
 /**
  * NOTE: This is INCOMPLETE schema typing of report type response
- * Do not send the whole response object to frontend without filtering out unwanted information.
  *  */
 export const AggregationsResponseSchema = z.object({
   aggregations: z.object({
