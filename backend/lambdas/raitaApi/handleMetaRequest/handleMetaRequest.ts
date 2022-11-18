@@ -4,12 +4,7 @@ import { logger } from '../../../utils/logger';
 import {
   getOpenSearchLambdaConfigOrFail,
   getRaitaLambdaError,
-  RaitaLambdaError,
 } from '../../utils';
-import {
-  FieldMappingsSchema,
-  AggregationsResponseSchema,
-} from './handleMetaRequestSchemas';
 
 /**
  * Returns meta information about inspection report (meta) data stored in Raita database
@@ -27,14 +22,10 @@ export async function handleMetaRequest(
       region,
       openSearchDomain,
     });
-    // TODO: Process requests parallel, not sequentially
-    // TODO?: Reorganize reponsibilities between lambda handler, port and adapter
-    const rawFieldsResponse = await metadataPort.getMetadataFields();
-    const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
-    const rawReportTypesResponse = await metadataPort.getReportTypes();
-    const aggregations = parseAggregations(rawReportTypesResponse);
-    // const rawFileTypesResponse = await metadataPort.getFileTypes();
-    // const fileTypes = parseFileTypes(rawFileTypesResponse);
+    const [fields, aggregations] = await Promise.all([
+      metadataPort.getMetadataFields(),
+      metadataPort.getMetadataAggregations(),
+    ]);
     return {
       statusCode: 200,
       headers: {
@@ -50,58 +41,3 @@ export async function handleMetaRequest(
     return getRaitaLambdaError(err);
   }
 }
-
-function parseMetadataFields(res: any, metadataIndexName: string) {
-  if (!res.body) {
-    throw new RaitaLambdaError(
-      'Missing backend meta data fields response body',
-      500,
-    );
-  }
-  const responseData = FieldMappingsSchema.parse(res.body);
-  const metadataIndexData = responseData[metadataIndexName];
-  if (!metadataIndexData) {
-    throw new RaitaLambdaError(
-      'Response from database port does not contain data for given index.',
-      500,
-    );
-  }
-  const fields = metadataIndexData.mappings.properties.metadata.properties;
-  return Object.entries(fields).map(([key, value]) => {
-    return { [key]: { type: value.type } };
-  });
-}
-
-function parseAggregations(res: any) {
-  if (!res.body) {
-    throw new RaitaLambdaError(
-      'Missing backend report types response body',
-      500,
-    );
-  }
-  // AggregationsResponseSchema is currently incomplete description of the data in res.body
-  const aggregations = AggregationsResponseSchema.parse(res.body).aggregations;
-  // Bucket results are mapped to hide OpenSearch spesific naming from api users
-  return {
-    reportTypes: aggregations.report_types.buckets.map(element => ({
-      reportType: element.key,
-      count: element.doc_count,
-    })),
-    fileTypes: aggregations.file_types.buckets.map(element => ({
-      fileType: element.key,
-      count: element.doc_count,
-    })),
-  };
-}
-
-// function parseFileTypes(res: any) {
-//   if (!res.body) {
-//     throw new RaitaLambdaError('Missing backend file types response body', 500);
-//   }
-//   return AggregationsResponseSchema.parse(
-//     res.body,
-//   ).aggregations.types.buckets.map(element => ({
-//     fileType: element.key,
-//     count: element.doc_count,
-//   }));
-// }
