@@ -63,9 +63,9 @@ export class ApplicationStack extends NestedStack {
       sftpPolicyAccountId: sftpPolicyAccountId,
       sftpPolicyUserId: sftpPolicyUserId,
     });
-    Object.entries(tags).forEach(([key, value]) =>
-      Tags.of(dataProcessStack).add(key, value),
-    );
+    // Object.entries(tags).forEach(([key, value]) =>
+    //   Tags.of(dataProcessStack).add(key, value),
+    // );
 
     // Create API Gateway
     const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
@@ -76,9 +76,9 @@ export class ApplicationStack extends NestedStack {
       openSearchMetadataIndex: openSearchMetadataIndex,
       vpc,
     });
-    Object.entries(tags).forEach(([key, value]) =>
-      Tags.of(raitaApiStack).add(key, value),
-    );
+    // Object.entries(tags).forEach(([key, value]) =>
+    //   Tags.of(raitaApiStack).add(key, value),
+    // );
 
     // Grant data processor lambdas permissions to call OpenSearch endpoints
     this.createManagedPolicy({

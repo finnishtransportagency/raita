@@ -44,9 +44,9 @@ export class CloudfrontStack extends Stack {
       raitaEnv,
       raitaStackIdentifier,
     });
-    Object.entries(tags).forEach(([key, value]) =>
-      Tags.of(frontendStack).add(key, value),
-    );
+    // Object.entries(tags).forEach(([key, value]) =>
+    //   Tags.of(frontendStack).add(key, value),
+    // );
 
     // Create Cloudfront itself conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
