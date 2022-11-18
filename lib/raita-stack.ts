@@ -27,7 +27,6 @@ export class RaitaStack extends Stack {
     const applicationStack = new ApplicationStack(this, 'stack-app', {
       raitaStackIdentifier,
       raitaEnv,
-      tags: tags,
       vpc: raitaVPC,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
