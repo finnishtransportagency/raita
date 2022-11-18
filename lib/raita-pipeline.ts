@@ -1,4 +1,11 @@
-import { SecretValue, Stack, StackProps, Stage, StageProps } from 'aws-cdk-lib';
+import {
+  SecretValue,
+  Stack,
+  StackProps,
+  Stage,
+  StageProps,
+  Tags,
+} from 'aws-cdk-lib';
 import {
   CodePipeline,
   CodePipelineSource,
@@ -63,6 +70,7 @@ export class RaitaPipelineStack extends Stack {
       new RaitaApplicationStage(this, `Raita`, {
         stackId: config.stackId,
         raitaEnv: config.env,
+        tags: config.tags,
       }),
     );
   }
@@ -71,6 +79,7 @@ export class RaitaPipelineStack extends Stack {
 interface RaitaStageProps extends StageProps {
   readonly stackId: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly tags: { [key: string]: string };
 }
 
 class RaitaApplicationStage extends Stage {
@@ -82,7 +91,11 @@ class RaitaApplicationStage extends Stage {
       {
         raitaEnv: props.raitaEnv,
         stackId: props.stackId,
+        tags: props.tags,
       },
+    );
+    Object.entries(props.tags).forEach(([key, value]) =>
+      Tags.of(raitaStack).add(key, value),
     );
   }
 }
