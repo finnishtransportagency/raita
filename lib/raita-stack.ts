@@ -16,18 +16,28 @@ export class RaitaStack extends Stack {
     super(scope, id, props);
     const raitaStackIdentifier = id.toLowerCase();
     const { raitaEnv, stackId, tags } = props;
-    const config = getRaitaStackConfig(this);
+
+    // Get config based on Raita environment
+    const config = getRaitaStackConfig(this, raitaEnv);
 
     // Get existing vpc based on predetermined attributes
     const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'raita-vpc', {
       ...config.vpc,
     });
 
+    // Get existing security group based on predetermined attributes
+    const raitaSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
+      this,
+      'raita-security-group',
+      config.securityGroupId,
+    );
+
     // Create application resources (db, data process resources, api resources)
     const applicationStack = new ApplicationStack(this, 'stack-app', {
       raitaStackIdentifier,
       raitaEnv,
       vpc: raitaVPC,
+      securityGroup: raitaSecurityGroup,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
       sftpPolicyAccountId: config.sftpPolicyAccountId,

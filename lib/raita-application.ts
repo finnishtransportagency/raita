@@ -21,6 +21,7 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly vpc: ec2.IVpc;
+  readonly securityGroup: ec2.ISecurityGroup;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
@@ -37,6 +38,7 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier,
       raitaEnv,
       vpc,
+      securityGroup,
       openSearchMetadataIndex,
       parserConfigurationFile,
       sftpPolicyAccountId,
@@ -79,8 +81,9 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier.includes('177')
     ) {
       new BastionStack(this, 'stack-bastion', {
-        raitaEnv,
+        raitaStackIdentifier,
         vpc,
+        securityGroup,
         albDns: raitaApiStack.alb.loadBalancerDnsName,
         databaseDomainName: openSearchDomain.domainName,
       });
