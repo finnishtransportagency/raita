@@ -4,12 +4,7 @@ import { logger } from '../../../utils/logger';
 import {
   getOpenSearchLambdaConfigOrFail,
   getRaitaLambdaError,
-  RaitaLambdaError,
 } from '../../utils';
-import {
-  FieldMappingsSchema,
-  ReportTypesSchema,
-} from './handleMetaRequestSchemas';
 
 /**
  * Returns meta information about inspection report (meta) data stored in Raita database
@@ -27,10 +22,10 @@ export async function handleMetaRequest(
       region,
       openSearchDomain,
     });
-    const rawFieldsResponse = await metadataPort.getMetadataFields();
-    const fields = parseMetadataFields(rawFieldsResponse, metadataIndex);
-    const rawReportTypesResponse = await metadataPort.getReportTypes();
-    const reportTypes = parseReportTypes(rawReportTypesResponse);
+    const [fields, aggregations] = await Promise.all([
+      metadataPort.getMetadataFields(),
+      metadataPort.getMetadataAggregations(),
+    ]);
     return {
       statusCode: 200,
       headers: {
@@ -38,47 +33,11 @@ export async function handleMetaRequest(
       },
       body: JSON.stringify({
         fields,
-        reportTypes,
+        ...aggregations,
       }),
     };
   } catch (err: unknown) {
     logger.logError(err);
     return getRaitaLambdaError(err);
   }
-}
-
-function parseMetadataFields(res: any, metadataIndexName: string) {
-  if (!res.body) {
-    throw new RaitaLambdaError(
-      'Missing backend meta data fields response body',
-      500,
-    );
-  }
-  const responseData = FieldMappingsSchema.parse(res.body);
-  const metadataIndexData = responseData[metadataIndexName];
-  if (!metadataIndexData) {
-    throw new RaitaLambdaError(
-      'Response from database port does not contain data for given index.',
-      500,
-    );
-  }
-  const fields = metadataIndexData.mappings.properties.metadata.properties;
-  return Object.entries(fields).map(([key, value]) => {
-    return { [key]: { type: value.type } };
-  });
-}
-
-function parseReportTypes(res: any) {
-  if (!res.body) {
-    throw new RaitaLambdaError(
-      'Missing backend report types response body',
-      500,
-    );
-  }
-  return ReportTypesSchema.parse(res.body).aggregations.types.buckets.map(
-    element => ({
-      reportType: element.key,
-      count: element.doc_count,
-    }),
-  );
 }
