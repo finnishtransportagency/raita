@@ -3,7 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { getRemovalPolicy } from './utils';
+import { getRemovalPolicy, isDevelopmentMainStack } from './utils';
 import {
   AnyPrincipal,
   Effect,
@@ -15,6 +15,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
+import { RaitaBastionStack } from './raita-bastion';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -45,7 +46,7 @@ export class ApplicationStack extends NestedStack {
     // Create and configure OpenSearch domain
     const openSearchDomain = this.createOpenSearchDomain({
       name: 'db',
-      raitaEnv: raitaEnv,
+      raitaEnv,
       vpc,
       raitaStackIdentifier,
     });
@@ -71,6 +72,16 @@ export class ApplicationStack extends NestedStack {
       openSearchMetadataIndex: openSearchMetadataIndex,
       vpc,
     });
+
+    // Create Bastion Host for dev
+    if (isDevelopmentMainStack(raitaStackIdentifier, raitaEnv) || raitaStackIdentifier === '177') {
+      new RaitaBastionStack(this, 'stack-bastion', {
+        raitaEnv,
+        vpc,
+        albDns: raitaApiStack.alb.loadBalancerDnsName,
+        databaseDomainName: openSearchDomain.domainName,
+      });
+    }
 
     // Grant data processor lambdas permissions to call OpenSearch endpoints
     this.createManagedPolicy({
