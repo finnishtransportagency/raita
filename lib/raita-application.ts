@@ -74,7 +74,10 @@ export class ApplicationStack extends NestedStack {
     });
 
     // Create Bastion Host for dev
-    if (isDevelopmentMainStack(raitaStackIdentifier, raitaEnv) || raitaStackIdentifier === '177') {
+    if (
+      isDevelopmentMainStack(raitaStackIdentifier, raitaEnv) ||
+      raitaStackIdentifier.includes('177')
+    ) {
       new RaitaBastionStack(this, 'stack-bastion', {
         raitaEnv,
         vpc,
