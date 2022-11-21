@@ -1,4 +1,11 @@
+# dependencies
 node_modules/
+
+# logs
 *.log
+
+#cdk
 cdk.out
 
+# misc
+.env.bastion

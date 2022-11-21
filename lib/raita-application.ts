@@ -15,7 +15,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
-import { RaitaBastionStack } from './raita-bastion';
+import { BastionStack } from './raita-bastion';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -78,7 +78,7 @@ export class ApplicationStack extends NestedStack {
       isDevelopmentMainStack(raitaStackIdentifier, raitaEnv) ||
       raitaStackIdentifier.includes('177')
     ) {
-      new RaitaBastionStack(this, 'stack-bastion', {
+      new BastionStack(this, 'stack-bastion', {
         raitaEnv,
         vpc,
         albDns: raitaApiStack.alb.loadBalancerDnsName,

@@ -42,6 +42,64 @@ Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:s
 
 Reference for pipeline setup: https://docs.aws.amazon.com/cdk/v2/guide/cdk_pipeline.html
 
+### Connecting to AWS dev environment
+
+Install AWS CLI and Session Manager plugin. Example for MacOS:
+
+```
+brew install awscli
+brew install --cask session-manager-plugin
+```
+
+Copy `.env.bastion.example` as `.env.bastion` and fill the parameters. Refresh your local AWS access credentials in ~/.aws/credentials (if you haven't done so already) and run
+
+```
+./bastion-backend-pipe.sh
+```
+
+This will set up a pipe to the bastion host using AWS SSM on localhost:3001. These are then piped to the ALB. If you get "Forbidden"-error, you need to refresh your credentials in `~/.aws/credentials`. For this to keep working, `bastion-backend-pipe.sh` locally needs to be up and running.
+
+#### Connecting to Raita database
+
+Do `.env.bastion` steps above if you have not done so already. Refresh local AWS credentials and run
+
+```
+./bastion-database-pipe.sh
+```
+
+This will set up a pipe to the bastion host using AWS SSM on localhost:5433. These are then piped to the DB. For this to keep working, `bastion-database-pipe.sh` locally needs to be up and running.
+
+#### Connecting to feature ALB
+
+Go to AWS console > EC2 > Select bastion instance > Connect > Session Manager > Connect
+Run following script in the window that opens for the EC2:
+
+```
+sudo socat TCP4-LISTEN:81,reuseaddr,fork TCP:ALB_DNS:80
+```
+
+where you replace ALB_DNS with the DNS name of your ALB. You can get this from AWS console under EC2 > Load Balancers > Select your ALB > DNS name in the Description.
+
+Once you have your connection set up, locally on your computer run
+
+```
+./bastion-feat-backend-pipe.sh
+```
+
+and then you can connect to bastion host using AWS SSM on localhost:3002. These are then piped to the feature ALB. For this to keep working, both the socat on the bastion and `bastion-feat-backend-pipe.sh` locally need to be up and running.
+
+Note! If someone else is also doing this, there might be a conflict with the port listening using socat ("Address already in use"). In such case, use a different port for socat instead of 81. In this case, you also need to update the "portNumber" value in `bastion-feat-backend-pipe.sh`.
+
+#### Fixing socat problems
+
+If for some reason socat is not working for a specific piping, you can set it up again by hand. Connect to the EC2 with SSM and run following after adding values as instructed below:
+
+```
+nohup sudo socat TCP4-LISTEN:LISTEN_PORT_TO_FIX,reuseaddr,fork TCP:DNS_TO_REDIRECT:PORT_TO_PIPE &
+```
+
+where `LISTEN_PORT_TO_FIX` is the port you want to listen on (e.g. 80), `DNS_TO_REDIRECT` is where you want to redirect to and `PORT_TO_PIPE` is port in the receiving end. With ALB, port is 80 for poth and DNS is the DNS of the ALB (check AWS console). For database, port is 5432 for both and DNS can be checked from Parameter Store.
+
 ## Scripts
 
 ## Tools

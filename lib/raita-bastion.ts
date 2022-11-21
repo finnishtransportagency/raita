@@ -11,7 +11,7 @@ interface RaitaBastionStackProps extends cdk.NestedStackProps {
   readonly databaseDomainName: string;
 }
 
-export class RaitaBastionStack extends cdk.NestedStack {
+export class BastionStack extends cdk.NestedStack {
   constructor(scope: Construct, id: string, props: RaitaBastionStackProps) {
     super(scope, id, props);
     const { raitaEnv, albDns, databaseDomainName, vpc } = props;
@@ -37,9 +37,9 @@ export class RaitaBastionStack extends cdk.NestedStack {
       `nohup socat TCP4-LISTEN:9000,reuseaddr,fork TCP:${cdk.Fn.sub(
         '${databaseDomainName}',
         {
-          databaseDomainName
+          databaseDomainName,
         },
-      )}:80 &`
+      )}:80 &`,
     ];
 
     userData.addCommands(...userDataCommands);
