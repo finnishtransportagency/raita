@@ -70,6 +70,14 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
+    const handleImagesRequestFn = this.createImagesRequestHandler({
+      name: 'api-handler-images',
+      raitaStackIdentifier,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: inspectionDataBucket,
+      vpc,
+    });
+
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
@@ -90,7 +98,8 @@ export class RaitaApiStack extends NestedStack {
 
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: handleFileRequestFn, priority: 90, path: ['/api/file'] },
+      { lambda: handleFileRequestFn, priority: 80, path: ['/api/file'] },
+      { lambda: handleImagesRequestFn, priority: 90, path: ['/api/images'] },
       {
         lambda: this.handleFilesRequestFn,
         priority: 100,
@@ -141,7 +150,7 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns lambda function for generating presigned urls
+   * Creates and returns handler for generating presigned urls
    */
   private createFileRequestHandler({
     name,
@@ -178,7 +187,44 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns OpenSearchQuery handler
+   * Creates and returns handler for listing images related to a file
+   */
+  private createImagesRequestHandler({
+    name,
+    raitaStackIdentifier,
+    lambdaRole,
+    dataBucket,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    lambdaRole: Role;
+    dataBucket: Bucket;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleImagesRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleImagesRequest/handleImagesRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  /**
+   * Creates and returns handler for querying files
    */
   private createFilesRequestHandler({
     name,
@@ -218,6 +264,9 @@ export class RaitaApiStack extends NestedStack {
     });
   }
 
+  /**
+   * Creates and returns handler for meta information
+   */
   private createMetaRequestHandler({
     name,
     raitaStackIdentifier,
