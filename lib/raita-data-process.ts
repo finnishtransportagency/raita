@@ -121,6 +121,8 @@ export class DataProcessStack extends NestedStack {
           eventName: ['PutObject', 'CompleteMultipartUpload'],
           requestParameters: {
             bucketName: [dataReceptionBucket.bucketName],
+            // TODO: Find out if possible to trigger rule only for certain prefixes (Meeri, Emma, Elli)
+            // and certain suffixes (.zip)
           },
         },
       },
