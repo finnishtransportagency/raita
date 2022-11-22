@@ -13,7 +13,7 @@ start();
 
 // Expected structure for zip file path parts is designated in the PathType type
 // If the path parts are not following, processing the file will lead into data inconsistencies
-// Only p
+// Only tuple length and source system are validated
 type PathTuple = [
   system: 'Meeri' | 'Emma' | 'Elli',
   year: string,
