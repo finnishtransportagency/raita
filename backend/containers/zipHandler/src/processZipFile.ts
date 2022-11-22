@@ -35,11 +35,19 @@ const resolveEntries = async (entryPromises: Array<Promise<EntryRecord>>) => {
  * Impplemenataion based partially on
  * https://transang.me/modern-fetch-and-how-to-get-buffer-output-from-aws-sdk-v3-getobjectcommand/
  */
-export const processZipFile = (
-  bodyBuffer: Buffer,
-  targetBucket: string,
-  s3: S3,
-) =>
+export const processZipFile = ({
+  bodyBuffer,
+  targetBucket,
+  s3,
+  system,
+  campaign,
+}: {
+  bodyBuffer: Buffer;
+  targetBucket: string;
+  s3: S3;
+  system: string;
+  campaign: string;
+}) =>
   new Promise<ExtractEntriesResult>((resolve, reject) => {
     const closeProcess = (
       entryPromises: Array<Promise<EntryRecord>>,
@@ -80,7 +88,7 @@ export const processZipFile = (
               streamToBuffer(readStream).then(data => {
                 const command = new PutObjectCommand({
                   Bucket: targetBucket,
-                  Key: entry.fileName.toString?.(),
+                  Key: `${system}/${campaign}/entry.fileName.toString()`,
                   Body: data,
                   // TO CHECK: Setting content type explicitly may not be necessary
                   // ContentType: mime.lookup(entryName) || undefined,

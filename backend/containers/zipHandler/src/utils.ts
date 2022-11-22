@@ -1,4 +1,5 @@
 import { Stream } from 'stream';
+import { RaitaSourceSystem, raitaSourceSystems } from './constants';
 
 /**
  * Note: The below can be simplified on node version >= 17.5.0 (requires some work with types)
@@ -12,3 +13,17 @@ export const streamToBuffer = (stream: Stream) =>
     stream.once('end', () => resolve(Buffer.concat(chunks)));
     stream.once('error', reject);
   });
+
+/**
+ * Duplicates the method from src/lambdas/utils
+ * TODO: To be removed if container is left with dependencties to other code
+ */
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+
+/**
+ *  Duplicates the method from src/utils
+ * TODO: To be removed if container is left with dependencties to other code
+ * Returns true if parameter @s matches one of the Raita source systems
+ */
+export const isRaitaSourceSystem = (s: string) =>
+  Object.values(raitaSourceSystems).includes(s as RaitaSourceSystem);
