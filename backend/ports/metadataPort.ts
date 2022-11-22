@@ -1,7 +1,8 @@
 import { IMetadataStorageInterface } from '../types/portDataStorage';
 import { FileMetadataEntry } from '../types';
 import { RaitaOpenSearchClient } from '../clients/openSearchClient';
-import { OpenSearchRepository } from '../adapters/openSearchRepository';
+import { OpenSearchRepository } from '../adapters/openSearch/openSearchRepository';
+import { OpenSearchResponseParser } from '../adapters/openSearch/openSearchResponseParser';
 
 export type IStorageBackend = {
   backend: 'openSearch';
@@ -30,6 +31,7 @@ export default class MetadataPort implements IMetadataStorageInterface {
             region: region,
             openSearchDomain: openSearchDomain,
           }),
+          responseParser: new OpenSearchResponseParser(),
         });
       },
     };
@@ -41,9 +43,15 @@ export default class MetadataPort implements IMetadataStorageInterface {
   };
 
   // NOTE: This is OpenSearchSpecific initial implementation that is coupled with using
-  // OpenSearch as the underlying database. To replace with database agnostic methods(s).
+  // OpenSearch as the underlying database. To replace with database agnostic method(s).
   // TODO: Provide best possible types
   queryOpenSearchMetadata = (query: any) => {
     return this.#backend.queryOpenSearchMetadata(query);
+  };
+  getMetadataFields = () => {
+    return this.#backend.getMetadataFields();
+  };
+  getMetadataAggregations = () => {
+    return this.#backend.getMetadataAggregations();
   };
 }

@@ -3,7 +3,12 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
-import { Role } from 'aws-cdk-lib/aws-iam';
+import {
+  AccountPrincipal,
+  Effect,
+  PolicyStatement,
+  Role,
+} from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -17,7 +22,10 @@ import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
-import { fileSuffixesToIncudeInMetadataParsing } from '../constants';
+import {
+  fileSuffixesToIncudeInMetadataParsing,
+  raitaSourceSystems,
+} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -31,6 +39,8 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly openSearchDomain: Domain;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
+  readonly sftpPolicyAccountId: string;
+  readonly sftpPolicyUserId: string;
 }
 
 export class DataProcessStack extends NestedStack {
@@ -47,6 +57,8 @@ export class DataProcessStack extends NestedStack {
       openSearchDomain,
       openSearchMetadataIndex,
       parserConfigurationFile,
+      sftpPolicyAccountId,
+      sftpPolicyUserId,
     } = props;
 
     this.dataProcessorLambdaServiceRole = createRaitaServiceRole({
@@ -154,6 +166,29 @@ export class DataProcessStack extends NestedStack {
     });
 
     // END TEMP ECS ***************
+    const sftpReceivePolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      principals: [new AccountPrincipal(sftpPolicyAccountId)],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+      ],
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      ],
+      conditions: {
+        StringLike: {
+          'aws:userId': `${sftpPolicyUserId}:*`,
+        },
+      },
+    });
+    dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
     // Create zip handler lambda, grant permissions and create event sources
     const handleZipFileEventFn = this.createZipFileEventHandler({

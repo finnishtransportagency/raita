@@ -36,6 +36,7 @@ type ListenerTargetLambdas = {
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
+  public readonly handleMetaRequestFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -78,6 +79,15 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
+    this.handleMetaRequestFn = this.createMetaRequestHandler({
+      name: 'api-handler-meta',
+      raitaStackIdentifier,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+      openSearchMetadataIndex,
+      vpc,
+    });
+
     // Add all lambdas here to add as alb targets
     const albLambdaTargets: ListenerTargetLambdas[] = [
       { lambda: handleFileRequestFn, priority: 90, path: ['/api/file'] },
@@ -86,6 +96,7 @@ export class RaitaApiStack extends NestedStack {
         priority: 100,
         path: ['/api/files'],
       },
+      { lambda: this.handleMetaRequestFn, priority: 110, path: ['/api/meta'] },
     ];
 
     // ALB for API
@@ -193,6 +204,44 @@ export class RaitaApiStack extends NestedStack {
       entry: path.join(
         __dirname,
         `../backend/lambdas/raitaApi/handleFilesRequest/handleFilesRequest.ts`,
+      ),
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        METADATA_INDEX: openSearchMetadataIndex,
+        REGION: this.region,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  private createMetaRequestHandler({
+    name,
+    raitaStackIdentifier,
+    lambdaRole,
+    openSearchDomainEndpoint,
+    openSearchMetadataIndex,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    lambdaRole: Role;
+    openSearchDomainEndpoint: string;
+    openSearchMetadataIndex: string;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleMetaRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleMetaRequest/handleMetaRequest.ts`,
       ),
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,

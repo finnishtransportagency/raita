@@ -22,6 +22,8 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly vpc: ec2.IVpc;
   readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
+  readonly sftpPolicyAccountId: string;
+  readonly sftpPolicyUserId: string;
 }
 
 /**
@@ -36,6 +38,8 @@ export class ApplicationStack extends NestedStack {
       vpc,
       openSearchMetadataIndex,
       parserConfigurationFile,
+      sftpPolicyAccountId,
+      sftpPolicyUserId,
     } = props;
 
     // Create and configure OpenSearch domain
@@ -54,10 +58,12 @@ export class ApplicationStack extends NestedStack {
       openSearchDomain: openSearchDomain,
       openSearchMetadataIndex: openSearchMetadataIndex,
       parserConfigurationFile: parserConfigurationFile,
+      sftpPolicyAccountId: sftpPolicyAccountId,
+      sftpPolicyUserId: sftpPolicyUserId,
     });
 
     // Create API Gateway
-    const raitaApi = new RaitaApiStack(this, 'stack-api', {
+    const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
@@ -79,7 +85,7 @@ export class ApplicationStack extends NestedStack {
     this.createManagedPolicy({
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
-      serviceRoles: [raitaApi.raitaApiLambdaServiceRole],
+      serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
       resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
@@ -91,9 +97,14 @@ export class ApplicationStack extends NestedStack {
       'Allows parser lambda to connect to Opensearch.',
     );
     openSearchDomain.connections.allowFrom(
-      raitaApi.handleFilesRequestFn,
+      raitaApiStack.handleFilesRequestFn,
       Port.allTraffic(),
       'Allows parser lambda to connect to Opensearch.',
+    );
+    openSearchDomain.connections.allowFrom(
+      raitaApiStack.handleMetaRequestFn,
+      Port.allTraffic(),
+      'Allows meta endpoint handler lambda to connect to Opensearch.',
     );
   }
 

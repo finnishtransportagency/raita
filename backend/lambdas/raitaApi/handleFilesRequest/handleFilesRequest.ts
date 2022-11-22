@@ -4,7 +4,7 @@ import MetadataPort from '../../../ports/metadataPort';
 import { logger } from '../../../utils/logger';
 import { getRaitaLambdaError, RaitaLambdaError } from '../../utils';
 
-function getLambdaConfigOrFail() {
+function getOpenSearchLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
@@ -22,7 +22,8 @@ export async function handleFilesRequest(
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
-    const { openSearchDomain, region, metadataIndex } = getLambdaConfigOrFail();
+    const { openSearchDomain, region, metadataIndex } =
+      getOpenSearchLambdaConfigOrFail();
     // TODO: Add better type check (zod) if endpoint is used permanently
     const queryObject = event.body && JSON.parse(event.body);
     if (!queryObject) {
