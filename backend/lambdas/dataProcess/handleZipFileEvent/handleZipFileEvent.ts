@@ -23,6 +23,9 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = eventRecord.s3.object.key;
+      console.log(clusterArn, taskArn, containerName, targetBucketName);
+      console.log(bucket);
+      console.log(key);
       // Get filename and filepath
       // const filename = decodeURIComponent(
       //   eventRecord.s3.object.key.replace(/\+/g, ' '),
@@ -90,6 +93,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       //   })
       //   .promise();
     });
+    await Promise.all(recordResults);
   } catch (err) {
     // TODO: Implement proper error handling to fail gracefully if any of the file extractions fails.
     logger.logError(`An error occured while processing zip events: ${err}`);
