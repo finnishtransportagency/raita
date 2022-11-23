@@ -1,16 +1,6 @@
 import { S3Event } from 'aws-lambda';
 import { ECSClient, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
-
-import {
-  S3,
-  S3Client,
-  PutObjectCommand,
-  PutObjectCommandOutput,
-} from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
-import * as unzipper from 'unzipper';
-import * as mime from 'mime-types';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 
 function getLambdaConfigOrFail() {
@@ -19,7 +9,7 @@ function getLambdaConfigOrFail() {
     clusterArn: getEnv('ECS_CLUSTER_ARN'),
     taskArn: getEnv('ECS_TASK_ARN'),
     containerName: getEnv('CONTAINER_NAME'),
-    targetBucket: getEnv('TARGET_BUCKET_NAME'),
+    targetBucketName: getEnv('TARGET_BUCKET_NAME'),
   };
 }
 
@@ -29,7 +19,7 @@ function getLambdaConfigOrFail() {
 export async function handleZipFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
-      const { clusterArn, taskArn, containerName, targetBucket } =
+      const { clusterArn, taskArn, containerName, targetBucketName } =
         getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = eventRecord.s3.object.key;
@@ -51,7 +41,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
               environment: [
                 {
                   name: 'S3_SOURCE_BUCKET',
-                  value: bucket.arn,
+                  value: bucket.name,
                 },
                 {
                   name: 'S3_SOURCE_KEY',
@@ -59,7 +49,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
                 },
                 {
                   name: 'S3_TARGET_BUCKET',
-                  value: targetBucket,
+                  value: targetBucketName,
                 },
               ],
             },
@@ -67,7 +57,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         },
       });
       const response = await client.send(command);
-
+      console.log(response);
       // await ecs
       //   .runTask({
       //     cluster: process.env.ECS_CLUSTER_ARN,

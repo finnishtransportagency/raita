@@ -197,9 +197,13 @@ export class DataProcessStack extends NestedStack {
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
+      cluster,
+      task: taskDefinition,
+      container,
     });
     this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
     dataReceptionBucket.grantRead(handleZipFileEventFn);
+    ecr.AuthorizationToken.grantRead(this.dataProcessorLambdaServiceRole);
 
     const fileSuffixes = ['zip']; // Hard coded in initial setup
     fileSuffixes.forEach(suffix => {
