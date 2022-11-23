@@ -31,6 +31,8 @@ import {
   createRaitaServiceRole,
 } from './raitaResourceCreators';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import { CPUArchitecture } from '@aws-sdk/client-ecs';
+import { OperatingSystemFamily } from 'aws-cdk-lib/aws-ecs';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -102,6 +104,10 @@ export class DataProcessStack extends NestedStack {
         memoryLimitMiB: 61440,
         cpu: 8192,
         ephemeralStorageGiB: 100,
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.X86_64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
       },
     );
 

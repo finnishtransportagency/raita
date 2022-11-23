@@ -77,7 +77,7 @@ async function start() {
       console.log('write stream failed,');
       throw err;
     });
-    writeStream.on('end', () => {
+    writeStream.on('finish', () => {
       console.log('data written succesfully to disk.');
       processZipFile({
         filePath: ZIP_FILE_PATH,
