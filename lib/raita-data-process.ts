@@ -104,6 +104,25 @@ export class DataProcessStack extends NestedStack {
       },
     );
 
+    // Repository for storing docker images
+    // const ecsRepo = new ecr.Repository(this, 'repository-raita', {
+    //   repositoryName: `raita-repository`,
+    //   lifecycleRules: [{ maxImageCount: 5 }], // no need to store lots of old images
+    // });
+    // const container = taskDefinition.addContainer(
+    //   `container-${raitaStackIdentifier}-zip-handler`,
+    //   {
+    //     image: ecs.ContainerImage.fromEcrRepository(ecsRepo, 'latest'),
+    //     logging: new ecs.AwsLogDriver({
+    //       streamPrefix: 'FargateHandleZip',
+    //       logRetention: RetentionDays.ONE_WEEK,
+    //     }),
+    //     environment: {
+    //       AWS_REGION: this.region,
+    //     },
+    //   },
+    // );
+
     const container = taskDefinition.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
@@ -318,7 +337,7 @@ export class DataProcessStack extends NestedStack {
         ECS_TASK_ARN: task.taskDefinitionArn,
         CONTAINER_NAME: container.containerName,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
-        SUBNET_IDS: vpc.privateSubnets.join(','),
+        SUBNET_IDS: vpc.privateSubnets.map(sn => sn.subnetId).join(','),
       },
       role: lambdaRole,
       vpc,
