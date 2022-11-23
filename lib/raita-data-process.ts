@@ -125,45 +125,45 @@ export class DataProcessStack extends NestedStack {
     dataReceptionBucket.grantRead(taskDefinition.taskRole);
     this.inspectionDataBucket.grantWrite(taskDefinition.taskRole);
 
-    Trail.onEvent(this, `s3-rule-${raitaStackIdentifier}-`, {
-      eventPattern: {
-        source: ['aws.s3'],
-        detailType: ['AWS API Call via CloudTrail'],
-        detail: {
-          eventName: ['PutObject', 'CompleteMultipartUpload'],
-          requestParameters: {
-            bucketName: [dataReceptionBucket.bucketName],
-            // TODO: Find out if possible to trigger rule only for certain prefixes (Meeri, Emma, Elli)
-            // and certain suffixes (.zip)
-          },
-        },
-      },
-      target: new EcsTask({
-        cluster,
-        taskDefinition,
-        containerOverrides: [
-          {
-            containerName: container.containerName,
-            environment: [
-              {
-                name: 'S3_SOURCE_BUCKET',
-                value: EventField.fromPath(
-                  '$.detail.requestParameters.bucketName',
-                ),
-              },
-              {
-                name: 'S3_SOURCE_KEY',
-                value: EventField.fromPath('$.detail.requestParameters.key'),
-              },
-              {
-                name: 'S3_TARGET_BUCKET',
-                value: this.inspectionDataBucket.bucketName,
-              },
-            ],
-          },
-        ],
-      }),
-    });
+    // Trail.onEvent(this, `s3-rule-${raitaStackIdentifier}-`, {
+    //   eventPattern: {
+    //     source: ['aws.s3'],
+    //     detailType: ['AWS API Call via CloudTrail'],
+    //     detail: {
+    //       eventName: ['PutObject', 'CompleteMultipartUpload'],
+    //       requestParameters: {
+    //         bucketName: [dataReceptionBucket.bucketName],
+    //         // TODO: Find out if possible to trigger rule only for certain prefixes (Meeri, Emma, Elli)
+    //         // and certain suffixes (.zip)
+    //       },
+    //     },
+    //   },
+    //   target: new EcsTask({
+    //     cluster,
+    //     taskDefinition,
+    //     containerOverrides: [
+    //       {
+    //         containerName: container.containerName,
+    //         environment: [
+    //           {
+    //             name: 'S3_SOURCE_BUCKET',
+    //             value: EventField.fromPath(
+    //               '$.detail.requestParameters.bucketName',
+    //             ),
+    //           },
+    //           {
+    //             name: 'S3_SOURCE_KEY',
+    //             value: EventField.fromPath('$.detail.requestParameters.key'),
+    //           },
+    //           {
+    //             name: 'S3_TARGET_BUCKET',
+    //             value: this.inspectionDataBucket.bucketName,
+    //           },
+    //         ],
+    //       },
+    //     ],
+    //   }),
+    // });
 
     // END TEMP ECS ***************
     const sftpReceivePolicy = new PolicyStatement({
@@ -200,6 +200,7 @@ export class DataProcessStack extends NestedStack {
     });
     this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
     dataReceptionBucket.grantRead(handleZipFileEventFn);
+
     const fileSuffixes = ['zip']; // Hard coded in initial setup
     fileSuffixes.forEach(suffix => {
       handleZipFileEventFn.addEventSource(
@@ -262,12 +263,18 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    cluster,
+    task,
+    container,
   }: {
     name: string;
     targetBucket: s3.Bucket;
     lambdaRole: Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    cluster: cdk.aws_ecs.Cluster;
+    task: cdk.aws_ecs.FargateTaskDefinition;
+    container: cdk.aws_ecs.ContainerDefinition;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -280,6 +287,9 @@ export class DataProcessStack extends NestedStack {
         `../backend/lambdas/dataProcess/handleZipFileEvent/handleZipFileEvent.ts`,
       ),
       environment: {
+        ECS_CLUSTER_ARN: cluster.clusterArn,
+        ECS_TASK_ARN: task.taskDefinitionArn,
+        CONTAINER_NAME: container.containerName,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
       },
       role: lambdaRole,

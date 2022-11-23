@@ -1,5 +1,7 @@
 import { S3Event } from 'aws-lambda';
+import { ECSClient, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
+
 import {
   S3,
   S3Client,
@@ -14,84 +16,89 @@ import { getGetEnvWithPreassignedContext } from '../../../../utils';
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
-    targetBucketName: getEnv('TARGET_BUCKET_NAME'),
+    clusterArn: getEnv('ECS_CLUSTER_ARN'),
+    taskArn: getEnv('ECS_TASK_ARN'),
+    containerName: getEnv('CONTAINER_NAME'),
+    targetBucket: getEnv('TARGET_BUCKET_NAME'),
   };
 }
 
 /**
- * NOTE: This zip handler implementation uses zip streaming approach offered by unzipper library.
- * However, is zip streaming is inherently UNRELIABLE as it relies on non-spec conformant expectations about the zip file.
- * See e.g.: https://github.com/thejoshwolfe/yauzl#no-streaming-unzip-api for issue description.
- *
- * Function implemetation is based on
- * https://gist.github.com/nerychucuy/5cf0e169d330d8fbba85529d14907d31
- * https://github.com/ZJONSSON/node-unzipper/issues/236
  *
  */
 export async function handleZipFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
-      const config = getLambdaConfigOrFail();
+      const { clusterArn, taskArn, containerName, targetBucket } =
+        getLambdaConfigOrFail();
+      const bucket = eventRecord.s3.bucket;
+      const key = eventRecord.s3.object.key;
       // Get filename and filepath
-      const filename = decodeURIComponent(
-        eventRecord.s3.object.key.replace(/\+/g, ' '),
-      );
-      const filepath = filename.substring(0, filename.lastIndexOf('/') + 1);
-      const s3 = new S3({});
-      const getObjectResult = await s3.getObject({
-        Bucket: eventRecord.s3.bucket.name,
-        Key: eventRecord.s3.object.key,
+      // const filename = decodeURIComponent(
+      //   eventRecord.s3.object.key.replace(/\+/g, ' '),
+      // );
+      // const filepath = filename.substring(0, filename.lastIndexOf('/') + 1);
+
+      // Invoke ECS task
+      const client = new ECSClient({});
+      const command = new RunTaskCommand({
+        cluster: clusterArn,
+        taskDefinition: taskArn,
+        overrides: {
+          containerOverrides: [
+            {
+              name: containerName,
+              environment: [
+                {
+                  name: 'S3_SOURCE_BUCKET',
+                  value: bucket.arn,
+                },
+                {
+                  name: 'S3_SOURCE_KEY',
+                  value: key,
+                },
+                {
+                  name: 'S3_TARGET_BUCKET',
+                  value: targetBucket,
+                },
+              ],
+            },
+          ],
+        },
       });
-      const zip = getObjectResult.Body.pipe(
-        unzipper.Parse({ forceStream: true }),
-      );
-      // An array to hold promises from iterating over async iterators of zip
-      const promises: Array<any> = [];
-      for await (const entry of zip) {
-        const entryName = entry.path;
-        const type = entry.type;
-        // Only files need to be processed as the there is no need to explicitly create folders in S3
-        if (type === 'File') {
-          /****** OLD */
+      const response = await client.send(command);
 
-          const uploadParams = {
-            Bucket: config.targetBucketName,
-            Key: filepath + entryName,
-            Body: entry,
-            // TO CHECK: Setting content type explicitly may not be necessary
-            ContentType: mime.lookup(entryName) || undefined,
-          };
-          const command = new PutObjectCommand(uploadParams);
-          promises.push(await s3.send(command));
-
-          /****** OLD END */
-
-          const parallelUploads3 = new Upload({
-            client: new S3Client({}),
-            // tags: [...], // optional tags
-            // queueSize: 4, // optional concurrency configuration
-            // leavePartsOnError: false, // optional manually handle dropped parts
-            params: uploadParams,
-          });
-
-          // parallelUploads3.on('httpUploadProgress', progress => {
-          //   console.log(progress);
-          // });
-
-          promises.push(await parallelUploads3.done());
-        } else {
-          entry.autodrain();
-        }
-      }
-      // Returns number of promises for accounting simplicity, if flatMap/flat available just return promises and flat arrays
-      await Promise.all(promises);
-      return promises.length;
-    });
-    await Promise.all(recordResults).then(counts => {
-      const count = counts.reduce((acc, cur) => acc + cur);
-      // TODO: Add logging for final count of extracted files?
-      // TEMP
-      console.log(`${count} files extracted from zip archive.`);
+      // await ecs
+      //   .runTask({
+      //     cluster: process.env.ECS_CLUSTER_ARN,
+      //     taskDefinition: process.env.ECS_TASK_ARN,
+      //     networkConfiguration: {
+      //       awsvpcConfiguration: {
+      //         subnets: process.env.SUBNET_IDS.split(','),
+      //         assignPublicIp: 'DISABLED',
+      //       },
+      //     },
+      //     overrides: {
+      //       // can override the cpu and memory here if required.
+      //       // cpu: "",
+      //       // memory: "",
+      //       containerOverrides: [
+      //         {
+      //           name: process.env.ECS_CONTAINER_NAME,
+      //           // task runtime variables
+      //           environment: [
+      //             {
+      //               name: 'EXAMPLE_DYNAMIC_VARIABLE',
+      //               value: 'test',
+      //             },
+      //           ],
+      //         },
+      //       ],
+      //     },
+      //     count: 1,
+      //     launchType: 'FARGATE',
+      //   })
+      //   .promise();
     });
   } catch (err) {
     // TODO: Implement proper error handling to fail gracefully if any of the file extractions fails.
