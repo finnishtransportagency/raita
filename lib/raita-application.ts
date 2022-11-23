@@ -135,6 +135,7 @@ export class ApplicationStack extends NestedStack {
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_0,
+      enableVersionUpgrade: true,
       removalPolicy: getRemovalPolicy(raitaEnv),
       ebs: {
         volumeSize: 10,
