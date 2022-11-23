@@ -205,6 +205,28 @@ export class DataProcessStack extends NestedStack {
     dataReceptionBucket.grantRead(handleZipFileEventFn);
     ecr.AuthorizationToken.grantRead(this.dataProcessorLambdaServiceRole);
 
+    this.dataProcessorLambdaServiceRole.addToPolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: [taskDefinition.taskDefinitionArn],
+        actions: ['ecs:RunTask'],
+      }),
+    );
+    this.dataProcessorLambdaServiceRole.addToPolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: ['*'],
+        actions: ['iam:PassRole'],
+      }),
+    );
+    this.dataProcessorLambdaServiceRole.addToPolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: [cluster.clusterArn],
+        actions: ['ecs:DescribeTasks'],
+      }),
+    );
+
     const fileSuffixes = ['zip']; // Hard coded in initial setup
     fileSuffixes.forEach(suffix => {
       handleZipFileEventFn.addEventSource(
