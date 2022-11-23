@@ -1,5 +1,5 @@
 import { S3Event } from 'aws-lambda';
-import { ECSClient, RunTaskCommand } from '@aws-sdk/client-ecs';
+import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 
@@ -44,6 +44,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       const command = new RunTaskCommand({
         cluster: clusterArn,
         taskDefinition: taskArn,
+        launchType: LaunchType.FARGATE,
         networkConfiguration: {
           awsvpcConfiguration: {
             subnets: subnetIds,
