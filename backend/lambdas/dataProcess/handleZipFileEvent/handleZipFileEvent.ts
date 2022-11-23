@@ -2,6 +2,7 @@ import { S3Event } from 'aws-lambda';
 import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { decodeS3EventPropertyString } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -28,11 +29,12 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
         subnetIds,
       } = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
-      const key = eventRecord.s3.object.key;
+      const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
       console.log(clusterArn, taskArn, containerName, targetBucketName);
       console.log(subnetIds);
       console.log(bucket);
       console.log(key);
+
       // Get filename and filepath
       // const filename = decodeURIComponent(
       //   eventRecord.s3.object.key.replace(/\+/g, ' '),
