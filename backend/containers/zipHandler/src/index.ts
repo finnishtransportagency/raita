@@ -8,6 +8,7 @@ import {
 import { getConfig } from './config';
 import { processZipFile } from './processZipFile';
 import { ZIP_SUFFIX } from './constants';
+import * as fs from 'fs';
 
 start();
 
@@ -52,26 +53,69 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
+
+    console.log('got object result');
+
     // Buffer the whole file in memory
-    const bodyBuffer = await streamToBuffer(getObjectResult.Body as Readable);
-    const { entries, streamError } = await processZipFile({
-      bodyBuffer,
-      targetBucket,
-      s3,
-      system,
-      campaign,
+    // const bodyBuffer = await streamToBuffer(getObjectResult.Body as Readable);
+
+    try {
+      const dir = fs.readdirSync('/');
+      console.log('managed to read the root');
+      console.log(dir);
+      fs.writeFileSync('./test.txt', 'this is some text');
+      console.log('managed to write a file');
+    } catch (error) {
+      console.log(error);
+    }
+
+    const ZIP_FILE_PATH = './file.zip';
+    const writeStream = fs.createWriteStream(ZIP_FILE_PATH);
+    const readableBody = getObjectResult.Body as Readable;
+
+    writeStream.on('error', (err: unknown) => {
+      console.log('write stream failed,');
+      throw err;
     });
-    // Temporary logging
-    console.log(`${entries.success.length} files extracted from zip archive.
+    writeStream.on('end', () => {
+      console.log('data written succesfully to disk.');
+      processZipFile({
+        filePath: ZIP_FILE_PATH,
+        targetBucket,
+        s3,
+        system,
+        campaign,
+      })
+        .then(data => {
+          const { entries, streamError } = data;
+          console.log(`${
+            entries.success.length
+          } files extracted from zip archive.
         ${entries.failure.length} files failed in the process.
         Total compressed size of extracted files ${entries.success.reduce(
           (acc, cur) => acc + cur.compressedSize,
           0,
         )}
         `);
-    if (streamError) {
-      console.log('Zip extraction failed due to zip error', streamError);
-    }
+          if (streamError) {
+            console.log('Zip extraction failed due to zip error', streamError);
+          }
+        })
+        .catch(err => {
+          throw err;
+        });
+    });
+
+    readableBody.pipe(writeStream);
+
+    // const { entries, streamError } = await processZipFile({
+    //   bodyBuffer,
+    //   targetBucket,
+    //   s3,
+    //   system,
+    //   campaign,
+    // });
+    // // Temporary logging
   } catch (error) {
     // TODO: Add Proper error handling
     console.log(error);

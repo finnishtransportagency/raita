@@ -36,13 +36,13 @@ const resolveEntries = async (entryPromises: Array<Promise<EntryRecord>>) => {
  * https://transang.me/modern-fetch-and-how-to-get-buffer-output-from-aws-sdk-v3-getobjectcommand/
  */
 export const processZipFile = ({
-  bodyBuffer,
+  filePath,
   targetBucket,
   s3,
   system,
   campaign,
 }: {
-  bodyBuffer: Buffer;
+  filePath: string;
   targetBucket: string;
   s3: S3;
   system: string;
@@ -57,7 +57,7 @@ export const processZipFile = ({
         .then(entries => resolve({ entries, streamError }))
         .catch(err => reject(err));
 
-    yauzl.fromBuffer(bodyBuffer, { lazyEntries: true }, (err, zipfile) => {
+    yauzl.open(filePath, { lazyEntries: true }, (err, zipfile) => {
       const entryPromises: Array<Promise<EntryRecord>> = [];
       if (err) {
         reject(err);

@@ -101,6 +101,7 @@ export class DataProcessStack extends NestedStack {
       {
         memoryLimitMiB: 61440,
         cpu: 8192,
+        ephemeralStorageGiB: 100,
       },
     );
 
