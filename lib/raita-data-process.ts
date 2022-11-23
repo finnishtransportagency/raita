@@ -205,6 +205,7 @@ export class DataProcessStack extends NestedStack {
     dataReceptionBucket.grantRead(handleZipFileEventFn);
     ecr.AuthorizationToken.grantRead(this.dataProcessorLambdaServiceRole);
 
+    // TODO: Validate if all the permissions are necessary
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
