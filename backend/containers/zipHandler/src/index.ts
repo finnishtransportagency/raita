@@ -41,7 +41,7 @@ async function start() {
     if (suffix !== ZIP_SUFFIX) {
       throw new Error('Non zip file detected (based on file suffix).');
     }
-    if (isPathTuple(path)) {
+    if (!isPathTuple(path)) {
       throw new Error(
         'Zip file path does not meet expected stucture: System / Year / Campaign / Date / File name where System is one of the following: Meeri, Emma, Elli',
       );

@@ -88,7 +88,7 @@ export const processZipFile = ({
               streamToBuffer(readStream).then(data => {
                 const command = new PutObjectCommand({
                   Bucket: targetBucket,
-                  Key: `${system}/${campaign}/entry.fileName.toString()`,
+                  Key: `${system}/${campaign}/${entry.fileName.toString()}`,
                   Body: data,
                   // TO CHECK: Setting content type explicitly may not be necessary
                   // ContentType: mime.lookup(entryName) || undefined,
