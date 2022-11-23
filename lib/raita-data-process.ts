@@ -318,6 +318,7 @@ export class DataProcessStack extends NestedStack {
         ECS_TASK_ARN: task.taskDefinitionArn,
         CONTAINER_NAME: container.containerName,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
+        SUBNET_IDS: vpc.privateSubnets.join(','),
       },
       role: lambdaRole,
       vpc,

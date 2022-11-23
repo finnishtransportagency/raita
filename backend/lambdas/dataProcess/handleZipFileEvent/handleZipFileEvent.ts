@@ -10,20 +10,27 @@ function getLambdaConfigOrFail() {
     taskArn: getEnv('ECS_TASK_ARN'),
     containerName: getEnv('CONTAINER_NAME'),
     targetBucketName: getEnv('TARGET_BUCKET_NAME'),
+    subnetIds: getEnv('SUBNET_IDS').split(','),
   };
 }
 
 /**
- *
+ * Build on example from https://www.gravitywell.co.uk/insights/using-ecs-tasks-on-aws-fargate-to-replace-lambda-functions/
  */
 export async function handleZipFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
-      const { clusterArn, taskArn, containerName, targetBucketName } =
-        getLambdaConfigOrFail();
+      const {
+        clusterArn,
+        taskArn,
+        containerName,
+        targetBucketName,
+        subnetIds,
+      } = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = eventRecord.s3.object.key;
       console.log(clusterArn, taskArn, containerName, targetBucketName);
+      console.log(subnetIds);
       console.log(bucket);
       console.log(key);
       // Get filename and filepath
@@ -37,6 +44,12 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       const command = new RunTaskCommand({
         cluster: clusterArn,
         taskDefinition: taskArn,
+        networkConfiguration: {
+          awsvpcConfiguration: {
+            subnets: subnetIds,
+            assignPublicIp: 'DISABLED',
+          },
+        },
         overrides: {
           containerOverrides: [
             {
