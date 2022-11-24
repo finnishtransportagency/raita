@@ -2,6 +2,7 @@ import * as yauzl from 'yauzl';
 import { PutObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { streamToBuffer } from './utils';
 import { Upload } from '@aws-sdk/lib-storage';
+import { PassThrough } from 'stream';
 
 interface EntryRecord {
   status: 'success' | 'failure';
@@ -73,6 +74,7 @@ export const processZipFile = ({
       // Prosessing of each entry adds a promise into the entryPromises array
       const entries: Array<Promise<EntryRecord>> = [];
       let debug_uploaded = 0;
+      let debug_entryReads = 0;
 
       if (err) {
         console.log('zip file open error.');
@@ -94,6 +96,11 @@ export const processZipFile = ({
           // Entry is a file
           const key = `${system}/${campaign}/${entry.fileName.toString()}`;
           zipfile.openReadStream(entry, (err, readStream) => {
+            console.log(
+              `Entry for read action: ${debug_entryReads}, ${key
+                .split('/')
+                .slice(-1)}`,
+            );
             // Returns a promise which resolves when file is uploaded to S3 (or upload fails)
             const entryPromise = new Promise<EntryRecord>(resolveEntry => {
               if (err) {
@@ -104,11 +111,48 @@ export const processZipFile = ({
                 console.log('error in the stream');
                 closeProcess(entries, err);
               });
-              readStream.on('end', () => {
+              readStream.once('end', () => {
+                debug_entryReads++;
+                console.log(`times read entry initiated ${debug_entryReads}`);
                 zipfile.readEntry();
               });
 
-              temp_Upload();
+              // temp_Upload();
+
+              const { writeStream, promise } = temp_streamToS3();
+              readStream.pipe(writeStream);
+              promise
+                .then(() => {
+                  debug_uploaded++;
+                  // console.log(
+                  //   `Uploaded: ${debug_uploaded}, ${key.split('/').slice(-1)}`,
+                  // );
+                  resolveEntry({ ...entry, status: 'success' });
+                })
+                .catch(err => {
+                  console.log('Entry write to S3 failed.');
+                  resolveEntry({
+                    ...entry,
+                    status: 'failure',
+                    failureCause: 's3PutObjectFailure',
+                  });
+                });
+
+              function temp_streamToS3() {
+                const passThrough = new PassThrough();
+                const upload = new Upload({
+                  client: s3,
+                  params: {
+                    Bucket: targetBucket,
+                    Key: key,
+                    Body: readStream,
+                  },
+                });
+                return {
+                  writeStream: passThrough,
+                  promise: upload.done(),
+                };
+              }
 
               // Temporary test functions with unruly external dependencies
               function temp_Upload() {
@@ -193,6 +237,8 @@ export const processZipFile = ({
           });
         }
       });
+      debug_entryReads++;
+      console.log(`times read entry initiated ${debug_entryReads}`);
       zipfile.readEntry();
     });
   });
