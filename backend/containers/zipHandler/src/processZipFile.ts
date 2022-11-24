@@ -1,7 +1,6 @@
 import * as yauzl from 'yauzl';
 import { PutObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { streamToBuffer } from './utils';
-import stream from 'stream';
 import { Upload } from '@aws-sdk/lib-storage';
 
 interface EntryRecord {
@@ -18,8 +17,14 @@ interface ExtractEntriesResult {
   streamError?: Error;
 }
 
-const resolveEntries = async (entryPromises: Array<Promise<EntryRecord>>) => {
-  const data = await Promise.all(entryPromises);
+/**
+ * Resolves all entries and returns entries organised into
+ * success and failure arrays
+ */
+const resolveEntries = async (entries: Array<Promise<EntryRecord>>) => {
+  console.log('resolving entries');
+  const data = await Promise.all(entries);
+  console.log('all entries resolved.');
   return data.reduce(
     (acc, cur) => {
       acc[cur.status].push(cur);
@@ -51,6 +56,9 @@ export const processZipFile = ({
   campaign: string;
 }) =>
   new Promise<ExtractEntriesResult>((resolve, reject) => {
+    // The promise is resolved by calling the
+    // closeProsess either when file reaches end or
+    // if an error occurs
     const closeProcess = (
       entryPromises: Array<Promise<EntryRecord>>,
       streamError?: Error,
@@ -62,7 +70,10 @@ export const processZipFile = ({
     };
 
     yauzl.open(filePath, { lazyEntries: true }, (err, zipfile) => {
-      const entryPromises: Array<Promise<EntryRecord>> = [];
+      // Prosessing of each entry adds a promise into the entryPromises array
+      const entries: Array<Promise<EntryRecord>> = [];
+      let debug_uploaded = 0;
+
       if (err) {
         console.log('zip file open error.');
         reject(err);
@@ -72,113 +83,113 @@ export const processZipFile = ({
       // file results all entries by resolving entry promises
       zipfile.on('end', () => {
         console.log('zip file end');
-        closeProcess(entryPromises);
+        closeProcess(entries);
       });
+      // Handler to run for eacn entry in the file
       zipfile.on('entry', entry => {
         if (/\/$/.test(entry.fileName)) {
-          // entry is directory
+          // Entry is directory, can be ignored
           zipfile.readEntry();
         } else {
-          // entry is a file
-          zipfile.openReadStream(entry, async (err, readStream) => {
+          // Entry is a file
+          const key = `${system}/${campaign}/${entry.fileName.toString()}`;
+          zipfile.openReadStream(entry, (err, readStream) => {
+            // Returns a promise which resolves when file is uploaded to S3 (or upload fails)
             const entryPromise = new Promise<EntryRecord>(resolveEntry => {
               if (err) {
                 console.log('error opening read stream');
-                closeProcess(entryPromises, err);
+                closeProcess(entries, err);
               }
               readStream.on('error', err => {
                 console.log('error in the stream');
-                closeProcess(entryPromises, err);
+                closeProcess(entries, err);
               });
               readStream.on('end', () => {
-                console.log('entry end');
                 zipfile.readEntry();
               });
 
-              const upload = new Upload({
-                client: new S3({}),
-                params: {
-                  Bucket: targetBucket,
-                  Key: `${system}/${campaign}/${entry.fileName.toString()}`,
-                  Body: readStream,
-                },
-              });
+              temp_Upload();
 
-              upload
-                .done()
-                .then(() => {
-                  console.log('Entry write to S3 succeeded.');
-                  resolveEntry({ ...entry, status: 'success' });
-                })
-                .catch(err => {
-                  console.log('Entry write to S3 failed.');
-                  resolveEntry({
-                    ...entry,
-                    status: 'failure',
-                    failureCause: 's3PutObjectFailure',
-                  });
+              // Temporary test functions with unruly external dependencies
+              function temp_Upload() {
+                const upload = new Upload({
+                  client: s3,
+                  params: {
+                    Bucket: targetBucket,
+                    Key: key,
+                    Body: readStream,
+                  },
                 });
+                upload
+                  .done()
+                  .then(() => {
+                    debug_uploaded++;
+                    console.log(`Uploaded: ${debug_uploaded}`);
+                    resolveEntry({ ...entry, status: 'success' });
+                  })
+                  .catch(err => {
+                    console.log('Entry write to S3 failed.');
+                    resolveEntry({
+                      ...entry,
+                      status: 'failure',
+                      failureCause: 's3PutObjectFailure',
+                    });
+                  });
+              }
 
               // https://docs.aws.amazon.com/AmazonS3/latest/userguide/example_s3_PutObject_section.html
-              // const command1 = new PutObjectCommand({
-              //   Bucket: targetBucket,
-              //   Key: `${system}/${campaign}/${entry.fileName.toString()}`,
-              //   Body: readStream,
-              //   // TO CHECK: Setting content type explicitly may not be necessary
-              //   // ContentType: mime.lookup(entryName) || undefined,
-              // });
-              // s3.send(command1)
-              //   .then(() => {
-              //     console.log('Entry write to S3 succeeded.');
-              //     resolveEntry({ ...entry, status: 'success' });
-              //   })
-              //   .catch(err => {
-              //     console.log('Entry write to S3 failed.');
-              //     resolveEntry({
-              //       ...entry,
-              //       status: 'failure',
-              //       failureCause: 's3PutObjectFailure',
-              //     });
-              //   })
-              //   .catch(() => {
-              //     console.log('Stream failed.');
-              //     resolveEntry({
-              //       ...entry,
-              //       status: 'failure',
-              //       failureCause: 'streamFailure',
-              //     });
-              //   });
+              function temp_PutObjectCommand() {
+                const command = new PutObjectCommand({
+                  Bucket: targetBucket,
+                  Key: key,
+                  Body: readStream,
+                });
+                s3.send(command)
+                  .then(() => {
+                    console.log('Entry write to S3 succeeded.');
+                    resolveEntry({ ...entry, status: 'success' });
+                  })
+                  .catch(err => {
+                    console.log('Entry write to S3 failed.');
+                    resolveEntry({
+                      ...entry,
+                      status: 'failure',
+                      failureCause: 's3PutObjectFailure',
+                    });
+                  });
+              }
 
               // Buffering approach, fails for large files not fitting into Buffer
-              // streamToBuffer(readStream).then(data => {
-              //   const command = new PutObjectCommand({
-              //     Bucket: targetBucket,
-              //     Key: `${system}/${campaign}/${entry.fileName.toString()}`,
-              //     Body: data,
-              //     // TO CHECK: Setting content type explicitly may not be necessary
-              //     // ContentType: mime.lookup(entryName) || undefined,
-              //   });
-              //   s3.send(command)
-              //     .then(() => {
-              //       resolveEntry({ ...entry, status: 'success' });
-              //     })
-              //     .catch(err => {
-              //       resolveEntry({
-              //         ...entry,
-              //         status: 'failure',
-              //         failureCause: 's3PutObjectFailure',
-              //       });
-              //     })
-              //     .catch(() => {
-              //       resolveEntry({
-              //         ...entry,
-              //         status: 'failure',
-              //         failureCause: 'streamFailure',
-              //       });
-              //     });
-              // });
+              const temp_Buffered = () => {
+                streamToBuffer(readStream).then(data => {
+                  const command = new PutObjectCommand({
+                    Bucket: targetBucket,
+                    Key: key,
+                    Body: data,
+                  });
+                  s3.send(command)
+                    .then(() => {
+                      resolveEntry({ ...entry, status: 'success' });
+                    })
+                    .catch(err => {
+                      resolveEntry({
+                        ...entry,
+                        status: 'failure',
+                        failureCause: 's3PutObjectFailure',
+                      });
+                    })
+                    .catch(() => {
+                      resolveEntry({
+                        ...entry,
+                        status: 'failure',
+                        failureCause: 'streamFailure',
+                      });
+                    });
+                });
+              };
             });
-            entryPromises.push(entryPromise);
+            // Add promise to array to
+            entries.push(entryPromise);
           });
         }
       });
