@@ -54,20 +54,24 @@ export const processZipFile = ({
     const closeProcess = (
       entryPromises: Array<Promise<EntryRecord>>,
       streamError?: Error,
-    ) =>
+    ) => {
+      console.log('closing the process');
       resolveEntries(entryPromises)
         .then(entries => resolve({ entries, streamError }))
         .catch(err => reject(err));
+    };
 
     yauzl.open(filePath, { lazyEntries: true }, (err, zipfile) => {
       const entryPromises: Array<Promise<EntryRecord>> = [];
       if (err) {
+        console.log('zip file open error.');
         reject(err);
       }
       // Handler to run when zipfile is processed
       // Resolves the main zip file promise with payload of
       // file results all entries by resolving entry promises
       zipfile.on('end', () => {
+        console.log('zip file end');
         closeProcess(entryPromises);
       });
       zipfile.on('entry', entry => {
@@ -79,30 +83,17 @@ export const processZipFile = ({
           zipfile.openReadStream(entry, async (err, readStream) => {
             const entryPromise = new Promise<EntryRecord>(resolveEntry => {
               if (err) {
+                console.log('error opening read stream');
                 closeProcess(entryPromises, err);
               }
               readStream.on('error', err => {
+                console.log('error in the stream');
                 closeProcess(entryPromises, err);
               });
               readStream.on('end', () => {
+                console.log('entry end');
                 zipfile.readEntry();
               });
-
-              // function upload(s3: S3) {
-              //   let pass = new stream.PassThrough();
-              //   let params = {
-              //     Bucket: targetBucket,
-              //     Key: `${system}/${campaign}/${entry.fileName.toString()}`,
-              //     Body: pass,
-              //   };
-
-              //   s3.upload(params, function (error, data) {
-              //     console.error(error);
-              //     console.info(data);
-              //   });
-
-              //   return pass;
-              // }
 
               const upload = new Upload({
                 client: new S3({}),

@@ -76,6 +76,7 @@ async function start() {
         campaign,
       })
         .then(data => {
+          console.log('conrolled end.');
           const { entries, streamError } = data;
           console.log(`${
             entries.success.length
@@ -91,6 +92,7 @@ async function start() {
           }
         })
         .catch(err => {
+          console.log('controlled error.');
           throw err;
         });
     });
