@@ -1,6 +1,8 @@
 import * as yauzl from 'yauzl';
 import { PutObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { streamToBuffer } from './utils';
+import stream from 'stream';
+import { Upload } from '@aws-sdk/lib-storage';
 
 interface EntryRecord {
   status: 'success' | 'failure';
@@ -85,33 +87,105 @@ export const processZipFile = ({
               readStream.on('end', () => {
                 zipfile.readEntry();
               });
-              streamToBuffer(readStream).then(data => {
-                const command = new PutObjectCommand({
+
+              // function upload(s3: S3) {
+              //   let pass = new stream.PassThrough();
+              //   let params = {
+              //     Bucket: targetBucket,
+              //     Key: `${system}/${campaign}/${entry.fileName.toString()}`,
+              //     Body: pass,
+              //   };
+
+              //   s3.upload(params, function (error, data) {
+              //     console.error(error);
+              //     console.info(data);
+              //   });
+
+              //   return pass;
+              // }
+
+              const upload = new Upload({
+                client: new S3({}),
+                params: {
                   Bucket: targetBucket,
                   Key: `${system}/${campaign}/${entry.fileName.toString()}`,
-                  Body: data,
-                  // TO CHECK: Setting content type explicitly may not be necessary
-                  // ContentType: mime.lookup(entryName) || undefined,
-                });
-                s3.send(command)
-                  .then(() => {
-                    resolveEntry({ ...entry, status: 'success' });
-                  })
-                  .catch(err => {
-                    resolveEntry({
-                      ...entry,
-                      status: 'failure',
-                      failureCause: 's3PutObjectFailure',
-                    });
-                  })
-                  .catch(() => {
-                    resolveEntry({
-                      ...entry,
-                      status: 'failure',
-                      failureCause: 'streamFailure',
-                    });
-                  });
+                  Body: readStream,
+                },
               });
+
+              upload
+                .done()
+                .then(() => {
+                  console.log('Entry write to S3 succeeded.');
+                  resolveEntry({ ...entry, status: 'success' });
+                })
+                .catch(err => {
+                  console.log('Entry write to S3 failed.');
+                  resolveEntry({
+                    ...entry,
+                    status: 'failure',
+                    failureCause: 's3PutObjectFailure',
+                  });
+                });
+
+              // https://docs.aws.amazon.com/AmazonS3/latest/userguide/example_s3_PutObject_section.html
+              // const command1 = new PutObjectCommand({
+              //   Bucket: targetBucket,
+              //   Key: `${system}/${campaign}/${entry.fileName.toString()}`,
+              //   Body: readStream,
+              //   // TO CHECK: Setting content type explicitly may not be necessary
+              //   // ContentType: mime.lookup(entryName) || undefined,
+              // });
+              // s3.send(command1)
+              //   .then(() => {
+              //     console.log('Entry write to S3 succeeded.');
+              //     resolveEntry({ ...entry, status: 'success' });
+              //   })
+              //   .catch(err => {
+              //     console.log('Entry write to S3 failed.');
+              //     resolveEntry({
+              //       ...entry,
+              //       status: 'failure',
+              //       failureCause: 's3PutObjectFailure',
+              //     });
+              //   })
+              //   .catch(() => {
+              //     console.log('Stream failed.');
+              //     resolveEntry({
+              //       ...entry,
+              //       status: 'failure',
+              //       failureCause: 'streamFailure',
+              //     });
+              //   });
+
+              // Buffering approach, fails for large files not fitting into Buffer
+              // streamToBuffer(readStream).then(data => {
+              //   const command = new PutObjectCommand({
+              //     Bucket: targetBucket,
+              //     Key: `${system}/${campaign}/${entry.fileName.toString()}`,
+              //     Body: data,
+              //     // TO CHECK: Setting content type explicitly may not be necessary
+              //     // ContentType: mime.lookup(entryName) || undefined,
+              //   });
+              //   s3.send(command)
+              //     .then(() => {
+              //       resolveEntry({ ...entry, status: 'success' });
+              //     })
+              //     .catch(err => {
+              //       resolveEntry({
+              //         ...entry,
+              //         status: 'failure',
+              //         failureCause: 's3PutObjectFailure',
+              //       });
+              //     })
+              //     .catch(() => {
+              //       resolveEntry({
+              //         ...entry,
+              //         status: 'failure',
+              //         failureCause: 'streamFailure',
+              //       });
+              //     });
+              // });
             });
             entryPromises.push(entryPromise);
           });

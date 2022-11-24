@@ -36,7 +36,6 @@ async function start() {
   );
   try {
     const path = decodeS3EventPropertyString(key).split('/');
-    console.log(path);
     const fileName = path[path.length - 1];
     const [_baseName, suffix] = fileName.split('.');
     if (suffix !== ZIP_SUFFIX) {
@@ -44,7 +43,9 @@ async function start() {
     }
     if (!isPathTuple(path)) {
       throw new Error(
-        'Zip file path does not meet expected stucture: System / Year / Campaign / Date / File name where System is one of the following: Meeri, Emma, Elli',
+        'Zip file path does not meet expected stucture: \
+        System / Year / Campaign / Date / File name \
+        where System is one of the following: Meeri, Emma, Elli',
       );
     }
     const [system, _year, campaign] = path;
@@ -54,31 +55,19 @@ async function start() {
       Key: key,
     });
 
-    console.log('got object result');
-
     // Buffer the whole file in memory
     // const bodyBuffer = await streamToBuffer(getObjectResult.Body as Readable);
-
-    try {
-      const dir = fs.readdirSync('/');
-      console.log('managed to read the root');
-      console.log(dir);
-      fs.writeFileSync('./test.txt', 'this is some text');
-      console.log('managed to write a file');
-    } catch (error) {
-      console.log(error);
-    }
 
     const ZIP_FILE_PATH = './file.zip';
     const writeStream = fs.createWriteStream(ZIP_FILE_PATH);
     const readableBody = getObjectResult.Body as Readable;
 
     writeStream.on('error', (err: unknown) => {
-      console.log('write stream failed,');
+      console.log('Write stream failed.');
       throw err;
     });
     writeStream.on('finish', () => {
-      console.log('data written succesfully to disk.');
+      console.log('File written to disk.');
       processZipFile({
         filePath: ZIP_FILE_PATH,
         targetBucket,
