@@ -134,7 +134,7 @@ export class ApplicationStack extends NestedStack {
     // TODO: Identify parameters to move to environment (and move)
     return new opensearch.Domain(this, domainName, {
       domainName,
-      version: opensearch.EngineVersion.OPENSEARCH_1_0,
+      version: opensearch.EngineVersion.OPENSEARCH_1_3,
       enableVersionUpgrade: true,
       removalPolicy: getRemovalPolicy(raitaEnv),
       ebs: {
