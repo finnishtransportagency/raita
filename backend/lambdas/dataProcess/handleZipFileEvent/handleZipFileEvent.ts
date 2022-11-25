@@ -1,8 +1,10 @@
 import { S3Event } from 'aws-lambda';
 import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
-import { getGetEnvWithPreassignedContext } from '../../../../utils';
-import { decodeS3EventPropertyString } from '../../utils';
+import {
+  decodeS3EventPropertyString,
+  getGetEnvWithPreassignedContext,
+} from '../../../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
