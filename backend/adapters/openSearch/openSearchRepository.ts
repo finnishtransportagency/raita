@@ -72,6 +72,21 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
               field: 'metadata.file_type.keyword',
             },
           },
+          systems: {
+            terms: {
+              field: 'metadata.system.keyword',
+            },
+          },
+          track_numbers: {
+            terms: {
+              field: 'metadata.track_number.keyword',
+            },
+          },
+          track_parts: {
+            terms: {
+              field: 'metadata.track_part.keyword',
+            },
+          },
         },
       },
     });
