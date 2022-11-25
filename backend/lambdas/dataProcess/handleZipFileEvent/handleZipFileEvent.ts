@@ -1,10 +1,8 @@
 import { S3Event } from 'aws-lambda';
 import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { logger } from '../../../utils/logger';
-import {
-  decodeS3EventPropertyString,
-  getGetEnvWithPreassignedContext,
-} from '../../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { decodeS3EventPropertyString } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -32,17 +30,6 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       } = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
-      console.log(clusterArn, taskArn, containerName, targetBucketName);
-      console.log(subnetIds);
-      console.log(bucket);
-      console.log(key);
-
-      // Get filename and filepath
-      // const filename = decodeURIComponent(
-      //   eventRecord.s3.object.key.replace(/\+/g, ' '),
-      // );
-      // const filepath = filename.substring(0, filename.lastIndexOf('/') + 1);
-
       // Invoke ECS task
       const client = new ECSClient({});
       const command = new RunTaskCommand({
@@ -77,43 +64,11 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
           ],
         },
       });
-      const response = await client.send(command);
-      console.log(response);
-      // await ecs
-      //   .runTask({
-      //     cluster: process.env.ECS_CLUSTER_ARN,
-      //     taskDefinition: process.env.ECS_TASK_ARN,
-      //     networkConfiguration: {
-      //       awsvpcConfiguration: {
-      //         subnets: process.env.SUBNET_IDS.split(','),
-      //         assignPublicIp: 'DISABLED',
-      //       },
-      //     },
-      //     overrides: {
-      //       // can override the cpu and memory here if required.
-      //       // cpu: "",
-      //       // memory: "",
-      //       containerOverrides: [
-      //         {
-      //           name: process.env.ECS_CONTAINER_NAME,
-      //           // task runtime variables
-      //           environment: [
-      //             {
-      //               name: 'EXAMPLE_DYNAMIC_VARIABLE',
-      //               value: 'test',
-      //             },
-      //           ],
-      //         },
-      //       ],
-      //     },
-      //     count: 1,
-      //     launchType: 'FARGATE',
-      //   })
-      //   .promise();
+      await client.send(command);
     });
     await Promise.all(recordResults);
   } catch (err) {
-    // TODO: Implement proper error handling to fail gracefully if any of the file extractions fails.
+    // TODO: Temporary logging
     logger.logError(`An error occured while processing zip events: ${err}`);
   }
 }

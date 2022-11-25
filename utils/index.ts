@@ -37,5 +37,3 @@ export const getGetEnvWithPreassignedContext =
 export function isRaitaSourceSystem(arg: string): arg is RaitaSourceSystem {
   return Object.values(raitaSourceSystems).includes(arg as RaitaSourceSystem);
 }
-
-export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');

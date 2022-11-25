@@ -54,3 +54,5 @@ export const getOpenSearchLambdaConfigOrFail = () => {
     metadataIndex: getEnv('METADATA_INDEX'),
   };
 };
+
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');

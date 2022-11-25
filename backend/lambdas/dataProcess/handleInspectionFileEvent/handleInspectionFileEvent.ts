@@ -16,11 +16,10 @@ import {
 import { logger } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
 import {
-  decodeS3EventPropertyString,
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import { decodeUriString } from '../../utils';
+import { decodeS3EventPropertyString, decodeUriString } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
