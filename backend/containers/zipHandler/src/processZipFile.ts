@@ -145,7 +145,7 @@ export const processZipFile = ({
                   params: {
                     Bucket: targetBucket,
                     Key: key,
-                    Body: readStream,
+                    Body: passThrough,
                   },
                 });
                 return {
