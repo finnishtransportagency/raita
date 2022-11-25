@@ -2,25 +2,18 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
-import {
-  AccountPrincipal,
-  Effect,
-  PolicyStatement,
-  Role,
-} from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { EventField } from 'aws-cdk-lib/aws-events';
-import { EcsTask } from 'aws-cdk-lib/aws-events-targets';
-import { Trail } from 'aws-cdk-lib/aws-cloudtrail';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
-import { Construct } from 'constructs';
 import * as path from 'path';
+import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import {
   fileSuffixesToIncudeInMetadataParsing,
@@ -30,9 +23,6 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
-import { CPUArchitecture } from '@aws-sdk/client-ecs';
-import { OperatingSystemFamily } from 'aws-cdk-lib/aws-ecs';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -46,7 +36,7 @@ interface DataProcessStackProps extends NestedStackProps {
 }
 
 export class DataProcessStack extends NestedStack {
-  public readonly dataProcessorLambdaServiceRole: Role;
+  public readonly dataProcessorLambdaServiceRole: iam.Role;
   public readonly inspectionDataBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
 
@@ -92,164 +82,64 @@ export class DataProcessStack extends NestedStack {
       eventBridgeEnabled: true,
     });
 
-    // START TEMP ECS ***************
-
-    const cluster = new ecs.Cluster(this, `cluster-${raitaStackIdentifier}`, {
-      vpc,
-    });
-    const taskDefinition = new ecs.FargateTaskDefinition(
-      this,
-      `task-${raitaStackIdentifier}-handle-zip`,
-      {
-        memoryLimitMiB: 61440,
-        cpu: 8192,
-        ephemeralStorageGiB: 100,
-        runtimePlatform: {
-          cpuArchitecture: ecs.CpuArchitecture.X86_64,
-          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
-        },
-      },
-    );
-
-    // Repository for storing docker images
-    // const ecsRepo = new ecr.Repository(this, 'repository-raita', {
-    //   repositoryName: `raita-repository`,
-    //   lifecycleRules: [{ maxImageCount: 5 }], // no need to store lots of old images
-    // });
-    // const container = taskDefinition.addContainer(
-    //   `container-${raitaStackIdentifier}-zip-handler`,
-    //   {
-    //     image: ecs.ContainerImage.fromEcrRepository(ecsRepo, 'latest'),
-    //     logging: new ecs.AwsLogDriver({
-    //       streamPrefix: 'FargateHandleZip',
-    //       logRetention: RetentionDays.ONE_WEEK,
-    //     }),
-    //     environment: {
-    //       AWS_REGION: this.region,
-    //     },
-    //   },
-    // );
-
-    const container = taskDefinition.addContainer(
-      `container-${raitaStackIdentifier}-zip-handler`,
-      {
-        image: ecs.ContainerImage.fromRegistry(
-          '592798899605.dkr.ecr.eu-west-1.amazonaws.com/raita-repository:latest',
-        ),
-        logging: new ecs.AwsLogDriver({
-          streamPrefix: 'FargateHandleZip',
-          logRetention: RetentionDays.ONE_WEEK,
-        }),
-        environment: {
-          AWS_REGION: this.region,
-        },
-      },
-    );
-
-    ecr.AuthorizationToken.grantRead(taskDefinition.taskRole);
-
-    dataReceptionBucket.grantRead(taskDefinition.taskRole);
-    this.inspectionDataBucket.grantWrite(taskDefinition.taskRole);
-
-    // Trail.onEvent(this, `s3-rule-${raitaStackIdentifier}-`, {
-    //   eventPattern: {
-    //     source: ['aws.s3'],
-    //     detailType: ['AWS API Call via CloudTrail'],
-    //     detail: {
-    //       eventName: ['PutObject', 'CompleteMultipartUpload'],
-    //       requestParameters: {
-    //         bucketName: [dataReceptionBucket.bucketName],
-    //         // TODO: Find out if possible to trigger rule only for certain prefixes (Meeri, Emma, Elli)
-    //         // and certain suffixes (.zip)
-    //       },
-    //     },
-    //   },
-    //   target: new EcsTask({
-    //     cluster,
-    //     taskDefinition,
-    //     containerOverrides: [
-    //       {
-    //         containerName: container.containerName,
-    //         environment: [
-    //           {
-    //             name: 'S3_SOURCE_BUCKET',
-    //             value: EventField.fromPath(
-    //               '$.detail.requestParameters.bucketName',
-    //             ),
-    //           },
-    //           {
-    //             name: 'S3_SOURCE_KEY',
-    //             value: EventField.fromPath('$.detail.requestParameters.key'),
-    //           },
-    //           {
-    //             name: 'S3_TARGET_BUCKET',
-    //             value: this.inspectionDataBucket.bucketName,
-    //           },
-    //         ],
-    //       },
-    //     ],
-    //   }),
-    // });
-
-    // END TEMP ECS ***************
-    const sftpReceivePolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
-      principals: [new AccountPrincipal(sftpPolicyAccountId)],
-      actions: [
-        's3:GetObject',
-        's3:GetObjectVersion',
-        's3:GetObjectAcl',
-        's3:PutObject',
-        's3:PutObjectAcl',
-        's3:ListBucket',
-        's3:GetBucketLocation',
-      ],
-      resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      ],
-      conditions: {
-        StringLike: {
-          'aws:userId': `${sftpPolicyUserId}:*`,
-        },
-      },
+    // Grant sftpUser access to data reception bucket
+    const sftpReceivePolicy = this.createSftpReceivePolicy({
+      sftpPolicyAccountId,
+      sftpPolicyUserId,
+      dataReceptionBucket,
     });
     dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
-    // Create zip handler lambda, grant permissions and create event sources
+    // Create ECS cluster resources for zip extraction task
+    const { ecsCluster, handleZipTask, handleZipContainer } =
+      this.createZipHandlerECSResources({
+        raitaStackIdentifier,
+        vpc,
+      });
+
+    // TODO: Remove line commented out line in cleanup
+    // ecr.AuthorizationToken.grantRead(handleZipTask.taskRole);
+
+    dataReceptionBucket.grantRead(handleZipTask.taskRole);
+    this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
+
+    // Create zip handler lambda and grant permissions
     const handleZipFileEventFn = this.createZipFileEventHandler({
       name: 'dp-handler-zip-file',
       targetBucket: this.inspectionDataBucket,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
-      cluster,
-      task: taskDefinition,
-      container,
+      cluster: ecsCluster,
+      task: handleZipTask,
+      container: handleZipContainer,
     });
     this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
     dataReceptionBucket.grantRead(handleZipFileEventFn);
+
+    // TODO: This Grant does not work
     ecr.AuthorizationToken.grantRead(this.dataProcessorLambdaServiceRole);
 
-    // TODO: Validate if all the permissions are necessary
     this.dataProcessorLambdaServiceRole.addToPolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        resources: [taskDefinition.taskDefinitionArn],
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [handleZipTask.taskDefinitionArn],
         actions: ['ecs:RunTask'],
       }),
     );
+    // TODO: Validate if this permission is necessary
     this.dataProcessorLambdaServiceRole.addToPolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
         resources: ['*'],
         actions: ['iam:PassRole'],
       }),
     );
+    // TODO: Validate if this permission is necessary
     this.dataProcessorLambdaServiceRole.addToPolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        resources: [cluster.clusterArn],
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [ecsCluster.clusterArn],
         actions: ['ecs:DescribeTasks'],
       }),
     );
@@ -322,7 +212,7 @@ export class DataProcessStack extends NestedStack {
   }: {
     name: string;
     targetBucket: s3.Bucket;
-    lambdaRole: Role;
+    lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
     cluster: cdk.aws_ecs.Cluster;
@@ -372,7 +262,7 @@ export class DataProcessStack extends NestedStack {
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
     configurationFile: string;
-    lambdaRole: Role;
+    lambdaRole: iam.Role;
     openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
     vpc: IVpc;
@@ -400,5 +290,89 @@ export class DataProcessStack extends NestedStack {
         subnets: vpc.privateSubnets,
       },
     });
+  }
+
+  /**
+   * Creates a policy permitting sftpUser access to data reception bucket
+   */
+  private createSftpReceivePolicy({
+    sftpPolicyAccountId,
+    dataReceptionBucket,
+    sftpPolicyUserId,
+  }: {
+    sftpPolicyAccountId: string;
+    sftpPolicyUserId: string;
+    dataReceptionBucket: Bucket;
+  }) {
+    return new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      principals: [new iam.AccountPrincipal(sftpPolicyAccountId)],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+      ],
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      ],
+      conditions: {
+        StringLike: {
+          'aws:userId': `${sftpPolicyUserId}:*`,
+        },
+      },
+    });
+  }
+
+  private createZipHandlerECSResources({
+    raitaStackIdentifier,
+    vpc,
+  }: {
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+  }) {
+    const ecsCluster = new ecs.Cluster(
+      this,
+      `cluster-${raitaStackIdentifier}`,
+      {
+        vpc,
+      },
+    );
+    const handleZipTask = new ecs.FargateTaskDefinition(
+      this,
+      `task-${raitaStackIdentifier}-handle-zip`,
+      {
+        memoryLimitMiB: 61440,
+        cpu: 8192,
+        ephemeralStorageGiB: 100,
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.X86_64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
+      },
+    );
+    // Repository for storing docker images
+    const ecsRepo = new ecr.Repository(this, 'repository-raita', {
+      repositoryName: `repository-${raitaStackIdentifier}-zip-handler`,
+      lifecycleRules: [{ maxImageCount: 3 }],
+    });
+    const handleZipContainer = handleZipTask.addContainer(
+      `container-${raitaStackIdentifier}-zip-handler`,
+      {
+        image: ecs.ContainerImage.fromEcrRepository(ecsRepo, 'latest'),
+        logging: new ecs.AwsLogDriver({
+          streamPrefix: 'FargateHandleZip',
+          logRetention: RetentionDays.ONE_WEEK,
+        }),
+        environment: {
+          AWS_REGION: this.region,
+        },
+      },
+    );
+    return { ecsCluster, handleZipTask, handleZipContainer };
   }
 }
