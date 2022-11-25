@@ -1,18 +1,58 @@
-import { Stream } from 'stream';
-import { RaitaSourceSystem, raitaSourceSystems } from './constants';
+import { S3 } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
+import { PassThrough } from 'stream';
+import mime from 'mime-types';
+import { EntryRecord, ExtractEntriesResult } from './types';
+
+export const getKeyConstituents = (key: string) => {
+  const path = key.split('/');
+  const fileName = path[path.length - 1];
+  const [fileBaseName, fileSuffix] = fileName.split('.');
+  return { path, fileName, fileBaseName, fileSuffix };
+};
+/**
+ * Resolves all entries and returns entries organised into
+ * success and failure arrays
+ */
+export const resolveEntries = async (entries: Array<Promise<EntryRecord>>) => {
+  const data = await Promise.all(entries);
+  return data.reduce(
+    (acc, cur) => {
+      acc[cur.status].push(cur);
+      return acc;
+    },
+    { success: [], failure: [] } as ExtractEntriesResult['entries'],
+  );
+};
 
 /**
- * Note: The below can be simplified on node version >= 17.5.0 (requires some work with types)
- * https://stackoverflow.com/questions/68332633/aws-s3-node-js-sdk-notimplemented-error-with-multer/68835964#68835964
- * https://transang.me/modern-fetch-and-how-to-get-buffer-output-from-aws-sdk-v3-getobjectcommand/
+ * Determines the mime type based on file suffix.
  */
-export const streamToBuffer = (stream: Stream) =>
-  new Promise<Buffer>((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    stream.on('data', chunk => chunks.push(chunk));
-    stream.once('end', () => resolve(Buffer.concat(chunks)));
-    stream.once('error', reject);
+export const uploadToS3 = ({
+  targetBucket,
+  key,
+  s3,
+}: {
+  targetBucket: string;
+  key: string;
+  s3: S3;
+}) => {
+  const { fileName } = getKeyConstituents(key);
+  const passThrough = new PassThrough();
+  const upload = new Upload({
+    client: s3,
+    params: {
+      Bucket: targetBucket,
+      Key: key,
+      Body: passThrough,
+      ContentType: mime.lookup(fileName) || undefined,
+    },
   });
+  return {
+    writeStream: passThrough,
+    uploadPromise: upload.done(),
+  };
+};
 
 /**
  * Duplicates the method from src/lambdas/utils
@@ -20,10 +60,33 @@ export const streamToBuffer = (stream: Stream) =>
  */
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
 
-/**
- *  Duplicates the method from src/utils
- * TODO: To be removed if container is left with dependencties to other code
- * Returns true if parameter @s matches one of the Raita source systems
- */
-export const isRaitaSourceSystem = (s: string) =>
-  Object.values(raitaSourceSystems).includes(s as RaitaSourceSystem);
+const compressedSize = (entries: ExtractEntriesResult['entries']) =>
+  entries.success.reduce((acc, cur) => acc + cur.compressedSize, 0);
+
+export const logMessages = {
+  resultMessage: (entries: ExtractEntriesResult['entries']) => `${
+    entries.success.length
+  } files succesfully extracted from zip,
+  ${
+    entries.failure.length
+  } files failed in the process. Total compressed size of extracted files ${compressedSize(
+    entries,
+  )}`,
+  streamErrorMessage: (streamError: unknown) =>
+    `ERROR: Zip extraction did not succeed until end, extraction failed due to zip error: ${streamError}`,
+};
+
+export class RaitaZipError extends Error {
+  static raitaZipErrorMessages = {
+    incorrectSuffix: 'Non zip file detected (based on file suffix).',
+    incorrectPath:
+      'Zip file path does not meet expected stucture: \
+    System / Year / Campaign / Date / File name \
+    where System is one of the following: Meeri, Emma, Elli',
+  } as const;
+
+  constructor(zipError: keyof typeof RaitaZipError['raitaZipErrorMessages']) {
+    const message = RaitaZipError.raitaZipErrorMessages[zipError];
+    super(message);
+  }
+}

@@ -1,52 +1,33 @@
 import { S3 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
-import {
-  decodeS3EventPropertyString,
-  isRaitaSourceSystem,
-  streamToBuffer,
-} from './utils';
 import { getConfig } from './config';
 import { processZipFile } from './processZipFile';
 import { ZIP_SUFFIX } from './constants';
 import * as fs from 'fs';
+import { isPathTuple } from './types';
+import {
+  decodeS3EventPropertyString,
+  getKeyConstituents,
+  logMessages,
+  RaitaZipError,
+} from './utils';
 
 start();
 
-// Expected structure for zip file path parts is designated in the PathType type
-// If the path parts are not following, processing the file will lead into data inconsistencies
-// Only tuple length and source system are validated
-type PathTuple = [
-  system: 'Meeri' | 'Emma' | 'Elli',
-  year: string,
-  campaign: string,
-  date: string,
-  fileName: string,
-];
-
-function isPathTuple(arg: Array<string>): arg is PathTuple {
-  const [system] = arg;
-  return arg.length === 5 && !!system && isRaitaSourceSystem(system);
-}
-
 async function start() {
   const { bucket, key, targetBucket } = getConfig();
-  // Temporary logging
-  console.log(
-    `Zip extraction from bucket: ${bucket} to ${targetBucket} started for ${key}`,
-  );
+  const startMessage = `Zip extraction from bucket: ${bucket} to ${targetBucket} started for ${key}`;
+  // TODO: Temporary logging
+  console.log(startMessage);
   try {
-    const path = decodeS3EventPropertyString(key).split('/');
-    const fileName = path[path.length - 1];
-    const [_baseName, suffix] = fileName.split('.');
-    if (suffix !== ZIP_SUFFIX) {
-      throw new Error('Non zip file detected (based on file suffix).');
+    const { path, fileSuffix } = getKeyConstituents(
+      decodeS3EventPropertyString(key),
+    );
+    if (fileSuffix !== ZIP_SUFFIX) {
+      throw new RaitaZipError('incorrectSuffix');
     }
     if (!isPathTuple(path)) {
-      throw new Error(
-        'Zip file path does not meet expected stucture: \
-        System / Year / Campaign / Date / File name \
-        where System is one of the following: Meeri, Emma, Elli',
-      );
+      throw new RaitaZipError('incorrectPath');
     }
     const [system, _year, campaign] = path;
     const s3 = new S3({});
@@ -54,20 +35,13 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
-
-    // Buffer the whole file in memory
-    // const bodyBuffer = await streamToBuffer(getObjectResult.Body as Readable);
-
-    const ZIP_FILE_PATH = './file.zip';
+    const readStream = getObjectResult.Body as Readable;
+    const ZIP_FILE_PATH = '/tmp/file.zip';
     const writeStream = fs.createWriteStream(ZIP_FILE_PATH);
-    const readableBody = getObjectResult.Body as Readable;
-
     writeStream.on('error', (err: unknown) => {
-      console.log('Write stream failed.');
       throw err;
     });
     writeStream.on('finish', () => {
-      console.log('File written to disk.');
       processZipFile({
         filePath: ZIP_FILE_PATH,
         targetBucket,
@@ -76,39 +50,24 @@ async function start() {
         campaign,
       })
         .then(data => {
-          console.log('conrolled end.');
           const { entries, streamError } = data;
-          console.log(`${
-            entries.success.length
-          } files extracted from zip archive.
-        ${entries.failure.length} files failed in the process.
-        Total compressed size of extracted files ${entries.success.reduce(
-          (acc, cur) => acc + cur.compressedSize,
-          0,
-        )}
-        `);
+          // TODO: Temporary logging
+          console.log(logMessages['resultMessage'](entries));
           if (streamError) {
-            console.log('Zip extraction failed due to zip error', streamError);
+            // The process succeeded possibly partially. Currently only logs error, does not throw.
+            // TODO: Temporary logging
+            console.log(logMessages['streamErrorMessage'](streamError));
           }
         })
         .catch(err => {
-          console.log('controlled error.');
+          // Catches zip opening errors
           throw err;
         });
     });
-
-    readableBody.pipe(writeStream);
-
-    // const { entries, streamError } = await processZipFile({
-    //   bodyBuffer,
-    //   targetBucket,
-    //   s3,
-    //   system,
-    //   campaign,
-    // });
-    // // Temporary logging
-  } catch (error) {
-    // TODO: Add Proper error handling
-    console.log(error);
+    readStream.pipe(writeStream);
+  } catch (err) {
+    // TODO: Temporary logging
+    console.log(err);
+    // TODO: Possible recovery actions apart from logging
   }
 }

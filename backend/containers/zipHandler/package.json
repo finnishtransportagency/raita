@@ -12,10 +12,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.212.0",
     "@aws-sdk/lib-storage": "^3.216.0",
+    "mime-types": "^2.1.35",
     "typescript": "^4.8.4",
     "yauzl": "^2.10.0"
   },
   "devDependencies": {
+    "@types/mime-types": "^2.1.1",
     "@types/node": "^18.11.9",
     "@types/yauzl": "^2.10.0",
     "i": "^0.3.7",
