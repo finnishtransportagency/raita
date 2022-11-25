@@ -20,10 +20,7 @@ export const FieldExtractionSpecObject = z.object({
   parseAs: parseOptions,
 });
 
-// const FieldExtractionSpec = z.union([FieldExtractionSpecObject, z.string()]);
-
 // Note: Update ExtractionSpec to use ExtractionItem when there is more than one
-// const ExtractionItem = z.union([ColonSeparatedKeyValuePairDefinition]);
 export const ExtractionSpec = z.object({
   fileNameExtractionSpec: z.object({
     csv: z.record(z.string(), FieldExtractionSpecObject),

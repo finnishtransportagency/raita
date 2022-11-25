@@ -1,9 +1,9 @@
-export const ZIP_SUFFIX = 'zip';
-
 /**
- * The below duplicates the definition from src/constants
- * TODO: To be removed if container is left with dependencties to other code
+ * Constants below are duplicates from the main code base
  */
+export const ZIP_SUFFIX = 'zip';
+export type RaitaSourceSystem =
+  typeof raitaSourceSystems[keyof typeof raitaSourceSystems];
 export const raitaSourceSystems = {
   Meeri: 'Meeri',
   Emma: 'Emma',

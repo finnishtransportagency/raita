@@ -1,16 +1,16 @@
+import * as fs from 'fs';
 import { S3 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { getConfig } from './config';
 import { processZipFile } from './processZipFile';
-import { ZIP_SUFFIX } from './constants';
-import * as fs from 'fs';
-import { isPathTuple } from './types';
 import {
   decodeS3EventPropertyString,
   getKeyConstituents,
   logMessages,
   RaitaZipError,
 } from './utils';
+import { isZipPath } from './types';
+import { ZIP_SUFFIX } from './constants';
 
 start();
 
@@ -26,7 +26,7 @@ async function start() {
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
-    if (!isPathTuple(path)) {
+    if (!isZipPath(path)) {
       throw new RaitaZipError('incorrectPath');
     }
     const [system, _year, campaign] = path;

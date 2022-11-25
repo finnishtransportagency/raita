@@ -18,6 +18,7 @@ import { RaitaEnvironment } from './config';
 import {
   fileSuffixesToIncudeInMetadataParsing,
   raitaSourceSystems,
+  ZIP_SUFFIX,
 } from '../constants';
 import {
   createRaitaBucket,
@@ -118,7 +119,11 @@ export class DataProcessStack extends NestedStack {
     dataReceptionBucket.grantRead(handleZipFileEventFn);
 
     // TODO: This Grant does not work
-    ecr.AuthorizationToken.grantRead(this.dataProcessorLambdaServiceRole);
+    if (handleZipTask.executionRole) {
+      ecr.AuthorizationToken.grantRead(handleZipTask.executionRole);
+    }
+
+    handleZipTask.executionRole;
 
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
@@ -144,8 +149,8 @@ export class DataProcessStack extends NestedStack {
       }),
     );
 
-    const fileSuffixes = ['zip']; // Hard coded in initial setup
-    fileSuffixes.forEach(suffix => {
+    const zipFileHandlerSourceSuffixes = [ZIP_SUFFIX];
+    zipFileHandlerSourceSuffixes.forEach(suffix => {
       handleZipFileEventFn.addEventSource(
         new S3EventSource(dataReceptionBucket, {
           events: [s3.EventType.OBJECT_CREATED],

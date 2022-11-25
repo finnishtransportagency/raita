@@ -1,11 +1,14 @@
 # dependencies
 node_modules/
 
+# build
+backend/containers/*/dist/
+
 # logs
 *.log
 
-#cdk
+# dk
 cdk.out
 
-# misc
+# env
 .env.bastion

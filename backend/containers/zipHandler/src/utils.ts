@@ -3,6 +3,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { PassThrough } from 'stream';
 import mime from 'mime-types';
 import { EntryRecord, ExtractEntriesResult } from './types';
+import { RaitaSourceSystem, raitaSourceSystems } from './constants';
 
 export const getKeyConstituents = (key: string) => {
   const path = key.split('/');
@@ -54,24 +55,16 @@ export const uploadToS3 = ({
   };
 };
 
-/**
- * Duplicates the method from src/lambdas/utils
- * TODO: To be removed if container is left with dependencties to other code
- */
-export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
-
 const compressedSize = (entries: ExtractEntriesResult['entries']) =>
   entries.success.reduce((acc, cur) => acc + cur.compressedSize, 0);
 
 export const logMessages = {
-  resultMessage: (entries: ExtractEntriesResult['entries']) => `${
-    entries.success.length
-  } files succesfully extracted from zip,
-  ${
-    entries.failure.length
-  } files failed in the process. Total compressed size of extracted files ${compressedSize(
-    entries,
-  )}`,
+  resultMessage: (entries: ExtractEntriesResult['entries']) =>
+    `${entries.success.length} files succesfully extracted from zip, ${
+      entries.failure.length
+    } files failed in the process. Total compressed size of extracted files ${compressedSize(
+      entries,
+    )}.`,
   streamErrorMessage: (streamError: unknown) =>
     `ERROR: Zip extraction did not succeed until end, extraction failed due to zip error: ${streamError}`,
 };
@@ -89,4 +82,12 @@ export class RaitaZipError extends Error {
     const message = RaitaZipError.raitaZipErrorMessages[zipError];
     super(message);
   }
+}
+
+/**
+ * Functions below are duplicates from the main code base
+ */
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+export function isRaitaSourceSystem(arg: string): arg is RaitaSourceSystem {
+  return Object.values(raitaSourceSystems).includes(arg as RaitaSourceSystem);
 }
