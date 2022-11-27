@@ -345,9 +345,9 @@ export class DataProcessStack extends NestedStack {
     // to ECR, otherwise role does not receive the necessary rights
     const zipTaskExecutionRole = createRaitaServiceRole({
       scope: this,
-      name: 'RaitaZipTaskExecurionRole',
+      name: 'RaitaZipTaskExecutionRole',
       servicePrincipal: 'ecs.amazonaws.com',
-      policyName: 'service-role/AmazonEC2ContainerRegistryReadOnly',
+      policyName: 'AmazonEC2ContainerRegistryReadOnly',
       raitaStackIdentifier,
     });
     ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
