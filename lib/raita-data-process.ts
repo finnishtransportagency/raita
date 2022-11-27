@@ -343,14 +343,14 @@ export class DataProcessStack extends NestedStack {
 
     // Explicitly create the zipHandler execution role and grant permissions
     // to ECR, otherwise role does not receive the necessary rights
-    // const zipTaskExecutionRole = createRaitaServiceRole({
-    //   scope: this,
-    //   name: 'RaitaZipTaskExecutionRole',
-    //   servicePrincipal: 'ecs.amazonaws.com',
-    //   policyName: 'AmazonEC2ContainerRegistryReadOnly',
-    //   raitaStackIdentifier,
-    // });
-    // ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
+    const zipTaskExecutionRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaZipTaskExecutionRole',
+      servicePrincipal: 'ecs.amazonaws.com',
+      policyName: 'AmazonEC2ContainerRegistryReadOnly',
+      raitaStackIdentifier,
+    });
+    ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
 
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
@@ -359,7 +359,7 @@ export class DataProcessStack extends NestedStack {
         memoryLimitMiB: 61440,
         cpu: 8192,
         ephemeralStorageGiB: 100,
-        // executionRole: zipTaskExecutionRole,
+        executionRole: zipTaskExecutionRole,
         runtimePlatform: {
           cpuArchitecture: ecs.CpuArchitecture.X86_64,
           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
