@@ -1,4 +1,7 @@
-import { getGetEnvWithPreassignedContext } from '../../utils';
+import {
+  getGetEnvWithPreassignedContext,
+  isRaitaSourceSystem,
+} from '../../utils';
 
 /**
  * Error class for Raita API lambdas
@@ -67,3 +70,26 @@ export const getOpenSearchLambdaConfigOrFail = () => {
 };
 
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+
+export const getKeyConstituents = (key: string) => {
+  const path = key.split('/');
+  const fileName = path[path.length - 1];
+  const [fileBaseName, fileSuffix] = fileName.split('.');
+  return { path, fileName, fileBaseName, fileSuffix };
+};
+
+// Expected structure for zip file path parts is designated in the PathType type
+// If the path parts are not following, processing the file will lead into data inconsistencies
+// Only tuple length and source system are validated
+export type ZipPath = [
+  system: 'Meeri' | 'Emma' | 'Elli',
+  year: string,
+  campaign: string,
+  date: string,
+  fileName: string,
+];
+
+export function isZipPath(arg: Array<string>): arg is ZipPath {
+  const [system] = arg;
+  return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+}

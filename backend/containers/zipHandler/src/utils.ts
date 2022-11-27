@@ -5,12 +5,21 @@ import mime from 'mime-types';
 import { EntryRecord, ExtractEntriesResult } from './types';
 import { RaitaSourceSystem, raitaSourceSystems } from './constants';
 
+// Duplicates BEGIN: Functions duplicating logic from main code base
 export const getKeyConstituents = (key: string) => {
   const path = key.split('/');
   const fileName = path[path.length - 1];
   const [fileBaseName, fileSuffix] = fileName.split('.');
   return { path, fileName, fileBaseName, fileSuffix };
 };
+
+export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+
+export function isRaitaSourceSystem(arg: string): arg is RaitaSourceSystem {
+  return Object.values(raitaSourceSystems).includes(arg as RaitaSourceSystem);
+}
+// Duplicates END
+
 /**
  * Resolves all entries and returns entries organised into
  * success and failure arrays
@@ -87,7 +96,3 @@ export class RaitaZipError extends Error {
 /**
  * Functions below are duplicates from the main code base
  */
-export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
-export function isRaitaSourceSystem(arg: string): arg is RaitaSourceSystem {
-  return Object.values(raitaSourceSystems).includes(arg as RaitaSourceSystem);
-}

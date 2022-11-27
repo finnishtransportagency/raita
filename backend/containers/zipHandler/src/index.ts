@@ -20,12 +20,12 @@ async function start() {
   // TODO: Temporary logging
   console.log(startMessage);
   try {
-    const { path, fileSuffix } = getKeyConstituents(
-      decodeS3EventPropertyString(key),
-    );
+    const zipKey = decodeS3EventPropertyString(key);
+    const { path, fileSuffix } = getKeyConstituents(zipKey);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
+    // Note: Adherence to zip path type is also checked in lambda
     if (!isZipPath(path)) {
       throw new RaitaZipError('incorrectPath');
     }
@@ -46,8 +46,7 @@ async function start() {
         filePath: ZIP_FILE_PATH,
         targetBucket,
         s3,
-        system,
-        campaign,
+        path,
       })
         .then(data => {
           const { entries, streamError } = data;
