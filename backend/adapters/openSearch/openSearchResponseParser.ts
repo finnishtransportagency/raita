@@ -28,17 +28,17 @@ export class OpenSearchResponseParser {
       systems: this.transformAggregationsResult(
         aggregations,
         'systems',
-        'system',
+        'value',
       ),
       trackNumbers: this.transformAggregationsResult(
         aggregations,
-        'report_types',
-        'reportType',
+        'track_numbers',
+        'value',
       ),
       trackParts: this.transformAggregationsResult(
         aggregations,
         'track_parts',
-        'trackPart',
+        'value',
       ),
     };
   };
