@@ -118,13 +118,6 @@ export class DataProcessStack extends NestedStack {
     this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
     dataReceptionBucket.grantRead(handleZipFileEventFn);
 
-    // TODO: This Grant does not work
-    if (handleZipTask.executionRole) {
-      ecr.AuthorizationToken.grantRead(handleZipTask.executionRole);
-    }
-
-    handleZipTask.executionRole;
-
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -347,6 +340,18 @@ export class DataProcessStack extends NestedStack {
         vpc,
       },
     );
+
+    // Explicitly create the zipHandler execution role and grant permissions
+    // to ECR, otherwise role does not receive the necessary rights
+    const zipTaskExecutionRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaZipTaskExecurionRole',
+      servicePrincipal: 'ecs.amazonaws.com',
+      policyName: 'service-role/AmazonEC2ContainerRegistryReadOnly',
+      raitaStackIdentifier,
+    });
+    ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
+
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
       `task-${raitaStackIdentifier}-handle-zip`,
@@ -354,6 +359,7 @@ export class DataProcessStack extends NestedStack {
         memoryLimitMiB: 61440,
         cpu: 8192,
         ephemeralStorageGiB: 100,
+        executionRole: zipTaskExecutionRole,
         runtimePlatform: {
           cpuArchitecture: ecs.CpuArchitecture.X86_64,
           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
