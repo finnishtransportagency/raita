@@ -2,7 +2,11 @@ import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { ListObjectsCommand, S3Client } from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
 import { logger } from '../../../utils/logger';
-import { decodeS3EventPropertyString, getRaitaLambdaError } from '../../utils';
+import {
+  decodeS3EventPropertyString,
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
+} from '../../utils';
 
 function getLambdaConfigOrFail() {
   return {
@@ -11,8 +15,7 @@ function getLambdaConfigOrFail() {
 }
 
 /**
- * DRAFT IMPLEMENTATION
- * Returns a list of related images for a given S3 key
+ * Returns a list of related images for a given S3 key.
  */
 export async function handleImagesRequest(
   event: ALBEvent,
@@ -29,31 +32,20 @@ export async function handleImagesRequest(
     const filePath = decodeS3EventPropertyString(key).split('/');
     const folderPath = filePath.slice(0, -1);
     const imagesFolderKey = folderPath.concat('jpg').join('/');
-
     const command = new ListObjectsCommand({
       Bucket: dataBucket,
       Prefix: imagesFolderKey,
     });
-
     const s3Client = new S3Client({});
-    const images = await s3Client.send(command);
-    console.log(images);
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(
-        {
-          images,
-        },
-        null,
-        2,
-      ),
-    };
+    const s3ImagesList = await s3Client.send(command);
+    const images =
+      s3ImagesList.Contents?.map(image => ({
+        key: image.Key,
+        size: image.Size,
+      })) ?? [];
+    return getRaitaSuccessResponse({ images });
   } catch (err: unknown) {
     logger.logError(err);
-    return getRaitaLambdaError(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }

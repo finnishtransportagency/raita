@@ -27,12 +27,23 @@ export const getClientErrorMessage = (err: unknown) =>
 /**
  * Returns error response object for Raita API requests
  */
-export const getRaitaLambdaError = (err: unknown) => ({
+export const getRaitaLambdaErrorResponse = (err: unknown) => ({
   statusCode: (err instanceof RaitaLambdaError && err.statusCode) || 500,
   headers: {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({ message: getClientErrorMessage(err) }, null, 2),
+});
+
+/**
+ * Returns success response object for Raita API requests
+ */
+export const getRaitaSuccessResponse = (body: Record<string, any>) => ({
+  statusCode: 200,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(body),
 });
 
 /**

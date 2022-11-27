@@ -1,11 +1,10 @@
-import { LogGroupTargetInput } from 'aws-cdk-lib/aws-events-targets';
-import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { getEnvOrFail } from '../../../../utils';
 import { logger } from '../../../utils/logger';
 import {
-  getClientErrorMessage,
-  getRaitaLambdaError,
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
   RaitaLambdaError,
 } from '../../utils';
 
@@ -16,11 +15,11 @@ function getLambdaConfigOrFail() {
 }
 
 /**
- * DRAFT IMPLEMENTATION
- * Generates a pre-signed url for a file in S3 bucket. Currently takes input in the POST request body.
+ * Generates a pre-signed url for a file in S3 bucket.
+ * Receives parameters in POST request body.
  */
 export async function handleFileRequest(
-  event: APIGatewayEvent,
+  event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
@@ -39,33 +38,18 @@ export async function handleFileRequest(
         Key: key,
       })
       .promise();
-
     if (!exists) {
       throw new RaitaLambdaError('Invalid input', 400);
     }
-
     // Create pre-signed url
     const url = s3.getSignedUrl('getObject', {
       Bucket: dataBucket,
       Key: key,
       Expires: 30,
     });
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(
-        {
-          url,
-        },
-        null,
-        2,
-      ),
-    };
+    return getRaitaSuccessResponse({ url });
   } catch (err: unknown) {
     logger.logError(err);
-    return getRaitaLambdaError(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }

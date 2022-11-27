@@ -1,16 +1,17 @@
-import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import MetadataPort from '../../../ports/metadataPort';
 import { logger } from '../../../utils/logger';
 import {
   getOpenSearchLambdaConfigOrFail,
-  getRaitaLambdaError,
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
 } from '../../utils';
 
 /**
  * Returns meta information about inspection report (meta) data stored in Raita database
  */
 export async function handleMetaRequest(
-  event: APIGatewayEvent,
+  _event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
@@ -26,18 +27,12 @@ export async function handleMetaRequest(
       metadataPort.getMetadataFields(),
       metadataPort.getMetadataAggregations(),
     ]);
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fields,
-        ...aggregations,
-      }),
-    };
+    return getRaitaSuccessResponse({
+      fields,
+      ...aggregations,
+    });
   } catch (err: unknown) {
     logger.logError(err);
-    return getRaitaLambdaError(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }
