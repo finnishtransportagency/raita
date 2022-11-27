@@ -49,8 +49,8 @@ export class BastionStack extends cdk.NestedStack {
     const userDataCommands = [
       'sudo yum update -y',
       'sudo yum install socat -y',
-      `nohup socat TCP4-LISTEN:80,reuseaddr,fork TCP:${albDns}:80 &`,
-      `nohup socat TCP4-LISTEN:8000,reuseaddr,fork TCP:${cdk.Fn.sub(
+      `nohup socat TCP4-LISTEN:3001,reuseaddr,fork TCP:${albDns}:80 &`,
+      `nohup socat TCP4-LISTEN:3002,reuseaddr,fork TCP:${cdk.Fn.sub(
         '${databaseDomainName}',
         {
           databaseDomainName,
