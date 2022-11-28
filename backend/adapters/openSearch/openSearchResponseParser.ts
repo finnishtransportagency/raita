@@ -19,27 +19,27 @@ export class OpenSearchResponseParser {
         aggregations,
         'report_types',
         'reportType',
-      ),
+      ) as Array<{ reportType: string; count: 1 }>,
       fileTypes: this.transformAggregationsResult(
         aggregations,
         'file_types',
         'fileType',
-      ),
+      ) as Array<{ fileType: string; count: 1 }>,
       systems: this.transformAggregationsResult(
         aggregations,
         'systems',
         'value',
-      ),
+      ) as Array<{ value: string; count: 1 }>,
       trackNumbers: this.transformAggregationsResult(
         aggregations,
         'track_numbers',
         'value',
-      ),
+      ) as Array<{ value: string; count: 1 }>,
       trackParts: this.transformAggregationsResult(
         aggregations,
         'track_parts',
         'value',
-      ),
+      ) as Array<{ value: string; count: 1 }>,
     };
   };
 

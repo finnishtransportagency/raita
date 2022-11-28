@@ -7,8 +7,8 @@ export interface IMetadataStorageInterface {
   getMetadataAggregations: () => Promise<{
     reportTypes: Array<{ reportType: string; count: number }>;
     fileTypes: Array<{ fileType: string; count: number }>;
-    system: Array<{ fileType: string; count: number }>;
-    trackNumber: Array<{ fileType: string; count: number }>;
-    trackPart: Array<{ fileType: string; count: number }>;
+    systems: Array<{ value: string; count: number }>;
+    trackNumbers: Array<{ value: string; count: number }>;
+    trackParts: Array<{ value: string; count: number }>;
   }>;
 }
