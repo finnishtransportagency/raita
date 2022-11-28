@@ -79,7 +79,7 @@ const launchECSZipTask = async ({
 /**
  * Build on example from https://www.gravitywell.co.uk/insights/using-ecs-tasks-on-aws-fargate-to-replace-lambda-functions/
  */
-export async function handleZipFileEvent(event: S3Event): Promise<void> {
+export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
       const config = getLambdaConfigOrFail();

@@ -105,8 +105,8 @@ export class DataProcessStack extends NestedStack {
     this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
 
     // Create zip handler lambda and grant permissions
-    const handleZipFileEventFn = this.createZipFileEventHandler({
-      name: 'dp-handler-zip-file',
+    const handleReceptionFileEventFn = this.createReceptionFileEventHandler({
+      name: 'dp-handler-reception-file',
       targetBucket: this.inspectionDataBucket,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
@@ -115,8 +115,8 @@ export class DataProcessStack extends NestedStack {
       task: handleZipTask,
       container: handleZipContainer,
     });
-    this.inspectionDataBucket.grantWrite(handleZipFileEventFn);
-    dataReceptionBucket.grantRead(handleZipFileEventFn);
+    this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
+    dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
@@ -142,19 +142,12 @@ export class DataProcessStack extends NestedStack {
       }),
     );
 
-    const zipFileHandlerSourceSuffixes = [ZIP_SUFFIX];
-    zipFileHandlerSourceSuffixes.forEach(suffix => {
-      handleZipFileEventFn.addEventSource(
-        new S3EventSource(dataReceptionBucket, {
-          events: [s3.EventType.OBJECT_CREATED],
-          filters: [
-            {
-              suffix,
-            },
-          ],
-        }),
-      );
-    });
+    //
+    handleReceptionFileEventFn.addEventSource(
+      new S3EventSource(dataReceptionBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
+    );
 
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
@@ -198,7 +191,7 @@ export class DataProcessStack extends NestedStack {
    * Creates the parser lambda and add S3 buckets as event sources,
    * granting lambda read access to these buckets
    */
-  private createZipFileEventHandler({
+  private createReceptionFileEventHandler({
     name,
     targetBucket,
     lambdaRole,
@@ -222,10 +215,10 @@ export class DataProcessStack extends NestedStack {
       memorySize: 8192,
       timeout: Duration.seconds(900),
       runtime: Runtime.NODEJS_16_X,
-      handler: 'handleZipFileEvent',
+      handler: 'handleReceptionFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/dataProcess/handleZipFileEvent/handleZipFileEvent.ts`,
+        `../backend/lambdas/dataProcess/handleReceptionFileEvent/handleReceptionFileEvent.ts`,
       ),
       environment: {
         ECS_CLUSTER_ARN: cluster.clusterArn,
@@ -350,42 +343,15 @@ export class DataProcessStack extends NestedStack {
       policyName: 'AmazonEC2ContainerRegistryReadOnly',
       raitaStackIdentifier,
     });
+    // TODO: Check if this grant can now be safely removed
     ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
-
-    // TEST
-
-    // this.dataProcessorLambdaServiceRole.addToPolicy(
-    //   new iam.PolicyStatement({
-    //     effect: iam.Effect.ALLOW,
-    //     resources: [handleZipTask.taskDefinitionArn],
-    //     actions: ['ecs:RunTask'],
-    //   }),
-    // );
-    // // TODO: Validate if this permission is necessary
-    // this.dataProcessorLambdaServiceRole.addToPolicy(
-    //   new iam.PolicyStatement({
-    //     effect: iam.Effect.ALLOW,
-    //     resources: ['*'],
-    //     actions: ['iam:PassRole'],
-    //   }),
-    // );
-    // // TODO: Validate if this permission is necessary
-    // this.dataProcessorLambdaServiceRole.addToPolicy(
-    //   new iam.PolicyStatement({
-    //     effect: iam.Effect.ALLOW,
-    //     resources: [ecsCluster.clusterArn],
-    //     actions: ['ecs:DescribeTasks'],
-    //   }),
-    // );
-
-    // TEST
 
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
       `task-${raitaStackIdentifier}-handle-zip`,
       {
-        memoryLimitMiB: 61440,
-        cpu: 8192,
+        memoryLimitMiB: 30720,
+        cpu: 4096,
         ephemeralStorageGiB: 100,
         executionRole: zipTaskExecutionRole,
         runtimePlatform: {
