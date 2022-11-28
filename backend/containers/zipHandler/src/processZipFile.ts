@@ -53,9 +53,10 @@ export const processZipFile = ({
           zipfile.readEntry();
         } else {
           // Entry is a file
-          // key determines the path where file is stored in target bucket
+          // Generate key by joining the path of the zip file to the path of the file inside zip
+          // Key determines the path where file is stored in target bucket
           const key = `${path
-            .slice(-1)
+            .slice(0, -1)
             .join('/')}/${entry.fileName.toString()}`;
           zipfile.openReadStream(entry, (err, readStream) => {
             // Returns a promise for entry which resolves when file is uploaded to S3 (or upload fails)
