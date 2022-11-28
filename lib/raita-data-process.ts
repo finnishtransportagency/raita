@@ -18,7 +18,6 @@ import { RaitaEnvironment } from './config';
 import {
   fileSuffixesToIncudeInMetadataParsing,
   raitaSourceSystems,
-  ZIP_SUFFIX,
 } from '../constants';
 import {
   createRaitaBucket,
@@ -97,9 +96,6 @@ export class DataProcessStack extends NestedStack {
         raitaStackIdentifier,
         vpc,
       });
-
-    // TODO: Remove line commented out line in cleanup
-    // ecr.AuthorizationToken.grantRead(handleZipTask.taskRole);
 
     dataReceptionBucket.grantRead(handleZipTask.taskRole);
     this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
