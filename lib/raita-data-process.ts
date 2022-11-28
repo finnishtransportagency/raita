@@ -340,7 +340,7 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
     });
     // TODO: Check if this grant can now be safely removed
-    ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
+    // ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
 
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
