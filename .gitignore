@@ -7,7 +7,7 @@ backend/containers/*/dist/
 # logs
 *.log
 
-# dk
+# cdk
 cdk.out
 
 # env

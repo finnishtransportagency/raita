@@ -1,5 +1,5 @@
 import { S3Event } from 'aws-lambda';
-import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
+import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { logger } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
@@ -9,7 +9,7 @@ import {
   RaitaLambdaError,
 } from '../../utils';
 import { ZIP_SUFFIX } from '../../../../constants';
-import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { launchECSZipTask } from './utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -22,63 +22,6 @@ function getLambdaConfigOrFail() {
   };
 }
 
-const launchECSZipTask = async ({
-  clusterArn,
-  taskArn,
-  containerName,
-  targetBucketName,
-  subnetIds,
-  key,
-  sourceBucketName,
-}: {
-  clusterArn: string;
-  taskArn: string;
-  containerName: string;
-  targetBucketName: string;
-  subnetIds: Array<string>;
-  key: string;
-  sourceBucketName: string;
-}) => {
-  // Invoke ECS task
-  const client = new ECSClient({});
-  const command = new RunTaskCommand({
-    cluster: clusterArn,
-    taskDefinition: taskArn,
-    launchType: LaunchType.FARGATE,
-    networkConfiguration: {
-      awsvpcConfiguration: {
-        subnets: subnetIds,
-        assignPublicIp: 'DISABLED',
-      },
-    },
-    overrides: {
-      containerOverrides: [
-        {
-          name: containerName,
-          environment: [
-            {
-              name: 'S3_SOURCE_BUCKET',
-              value: sourceBucketName,
-            },
-            {
-              name: 'S3_SOURCE_KEY',
-              value: key,
-            },
-            {
-              name: 'S3_TARGET_BUCKET',
-              value: targetBucketName,
-            },
-          ],
-        },
-      ],
-    },
-  });
-  await client.send(command);
-};
-
-/**
- * Build on example from https://www.gravitywell.co.uk/insights/using-ecs-tasks-on-aws-fargate-to-replace-lambda-functions/
- */
 export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
