@@ -346,11 +346,39 @@ export class DataProcessStack extends NestedStack {
     const zipTaskExecutionRole = createRaitaServiceRole({
       scope: this,
       name: 'RaitaZipTaskExecutionRole',
-      servicePrincipal: 'ecs.amazonaws.com',
+      servicePrincipal: 'ecs-tasks.amazonaws.com',
       policyName: 'AmazonEC2ContainerRegistryReadOnly',
       raitaStackIdentifier,
     });
     ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
+
+    // TEST
+
+    // this.dataProcessorLambdaServiceRole.addToPolicy(
+    //   new iam.PolicyStatement({
+    //     effect: iam.Effect.ALLOW,
+    //     resources: [handleZipTask.taskDefinitionArn],
+    //     actions: ['ecs:RunTask'],
+    //   }),
+    // );
+    // // TODO: Validate if this permission is necessary
+    // this.dataProcessorLambdaServiceRole.addToPolicy(
+    //   new iam.PolicyStatement({
+    //     effect: iam.Effect.ALLOW,
+    //     resources: ['*'],
+    //     actions: ['iam:PassRole'],
+    //   }),
+    // );
+    // // TODO: Validate if this permission is necessary
+    // this.dataProcessorLambdaServiceRole.addToPolicy(
+    //   new iam.PolicyStatement({
+    //     effect: iam.Effect.ALLOW,
+    //     resources: [ecsCluster.clusterArn],
+    //     actions: ['ecs:DescribeTasks'],
+    //   }),
+    // );
+
+    // TEST
 
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,

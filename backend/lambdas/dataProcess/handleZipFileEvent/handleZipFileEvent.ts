@@ -87,7 +87,7 @@ export async function handleZipFileEvent(event: S3Event): Promise<void> {
       const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
       const { path, fileSuffix } = getKeyConstituents(key);
       if (!isZipPath(path)) {
-        throw new RaitaLambdaError('Unexpected file path', 400);
+        throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
       }
       if (fileSuffix === ZIP_SUFFIX) {
         // Launch zip extraction for zip file
