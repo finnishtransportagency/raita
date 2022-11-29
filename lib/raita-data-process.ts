@@ -365,7 +365,7 @@ export class DataProcessStack extends NestedStack {
         image: ecs.ContainerImage.fromEcrRepository(ecsRepo, 'latest'),
         logging: new ecs.AwsLogDriver({
           streamPrefix: 'FargateHandleZip',
-          logRetention: RetentionDays.ONE_WEEK,
+          logRetention: RetentionDays.SIX_MONTHS,
         }),
         environment: {
           AWS_REGION: this.region,
