@@ -122,23 +122,15 @@ export class DataProcessStack extends NestedStack {
       }),
     );
     // TODO: Validate if this permission is necessary
-    this.dataProcessorLambdaServiceRole.addToPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        resources: ['*'],
-        actions: ['iam:PassRole'],
-      }),
-    );
-    // TODO: Validate if this permission is necessary
     // this.dataProcessorLambdaServiceRole.addToPolicy(
     //   new iam.PolicyStatement({
     //     effect: iam.Effect.ALLOW,
-    //     resources: [ecsCluster.clusterArn],
-    //     actions: ['ecs:DescribeTasks'],
+    //     resources: ['*'],
+    //     actions: ['iam:PassRole'],
     //   }),
     // );
 
-    //
+    // Handler is run for all the files types
     handleReceptionFileEventFn.addEventSource(
       new S3EventSource(dataReceptionBucket, {
         events: [s3.EventType.OBJECT_CREATED],
@@ -339,8 +331,6 @@ export class DataProcessStack extends NestedStack {
       policyName: 'AmazonEC2ContainerRegistryReadOnly',
       raitaStackIdentifier,
     });
-    // TODO: Check if this grant can now be safely removed
-    // ecr.AuthorizationToken.grantRead(zipTaskExecutionRole);
 
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
