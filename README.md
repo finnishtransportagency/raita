@@ -65,7 +65,7 @@ Copy `.env.bastion.example` as `.env.bastion` and fill the parameters. Refresh y
 
 This will set up a pipe to the bastion host using AWS SSM on localhost:3001. These are then piped to the Raita-API ALB. If you get "Forbidden"-error, you need to refresh your credentials in `~/.aws/credentials`. For this to keep working, `bastion-backend-pipe.sh` locally needs to be up and running.
 
-#### Connecting to feature stack Raita-api
+### Connecting to feature stack Raita-api
 
 Go to AWS console > EC2 > Select bastion instance > Connect > Session Manager > Connect
 Run following script in the window that opens for the EC2:

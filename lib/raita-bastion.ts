@@ -3,7 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
-interface RaitaBastionStackProps extends cdk.NestedStackProps {
+interface BastionStackProps extends cdk.NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly vpc: ec2.IVpc;
   readonly securityGroup: ec2.ISecurityGroup;
@@ -12,7 +12,7 @@ interface RaitaBastionStackProps extends cdk.NestedStackProps {
 }
 
 export class BastionStack extends cdk.NestedStack {
-  constructor(scope: Construct, id: string, props: RaitaBastionStackProps) {
+  constructor(scope: Construct, id: string, props: BastionStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
