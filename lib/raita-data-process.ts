@@ -130,13 +130,13 @@ export class DataProcessStack extends NestedStack {
       }),
     );
     // TODO: Validate if this permission is necessary
-    this.dataProcessorLambdaServiceRole.addToPolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        resources: [ecsCluster.clusterArn],
-        actions: ['ecs:DescribeTasks'],
-      }),
-    );
+    // this.dataProcessorLambdaServiceRole.addToPolicy(
+    //   new iam.PolicyStatement({
+    //     effect: iam.Effect.ALLOW,
+    //     resources: [ecsCluster.clusterArn],
+    //     actions: ['ecs:DescribeTasks'],
+    //   }),
+    // );
 
     //
     handleReceptionFileEventFn.addEventSource(
