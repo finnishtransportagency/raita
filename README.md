@@ -94,7 +94,7 @@ If for some reason socat is not working for a specific piping, you can set it up
 nohup sudo socat TCP4-LISTEN:LISTEN_PORT_TO_FIX,reuseaddr,fork TCP:DNS_TO_REDIRECT:PORT_TO_PIPE &
 ```
 
-where `LISTEN_PORT_TO_FIX` is the port you want to listen on (e.g. 80), `DNS_TO_REDIRECT` is where you want to redirect to and `PORT_TO_PIPE` is port in the receiving end. With ALB, the port that ALB listens to is port 80 and DNS is the DNS of the ALB (check AWS console).
+where `LISTEN_PORT_TO_FIX` is the port you want to listen on (e.g. 3004), `DNS_TO_REDIRECT` is where you want to redirect to and `PORT_TO_PIPE` is port in the receiving end. With ALB, the port that ALB listens to is port 80 and DNS is the DNS of the ALB (check AWS console).
 
 ## Scripts
 
