@@ -37,6 +37,7 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
+  public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -100,7 +101,7 @@ export class RaitaApiStack extends NestedStack {
     ];
 
     // ALB for API
-    this.createlAlb({
+    this.alb = this.createlAlb({
       raitaStackIdentifier: raitaStackIdentifier,
       name: 'raita-api',
       vpc,
@@ -138,6 +139,7 @@ export class RaitaApiStack extends NestedStack {
         conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
       }),
     );
+    return alb;
   }
 
   /**
