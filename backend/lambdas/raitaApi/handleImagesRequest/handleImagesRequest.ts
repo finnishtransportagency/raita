@@ -1,11 +1,11 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
+import { ListObjectsCommand, S3Client } from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
 import { logger } from '../../../utils/logger';
 import {
+  decodeS3EventPropertyString,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
-  RaitaLambdaError,
 } from '../../utils';
 
 function getLambdaConfigOrFail() {
@@ -15,15 +15,13 @@ function getLambdaConfigOrFail() {
 }
 
 /**
- * Generates a pre-signed url for a file in S3 bucket.
- * Receives parameters in POST request body.
+ * Returns a list of related images for a given S3 key.
  */
-export async function handleFileRequest(
+export async function handleImagesRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
-  const s3 = new S3();
   try {
     const { dataBucket } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
@@ -31,23 +29,21 @@ export async function handleFileRequest(
       throw new Error('Key not specified');
     }
     const { key } = requestBody;
-    // Check if file exists
-    const exists = await s3
-      .headObject({
-        Bucket: dataBucket,
-        Key: key,
-      })
-      .promise();
-    if (!exists) {
-      throw new RaitaLambdaError('Invalid input', 400);
-    }
-    // Create pre-signed url
-    const url = s3.getSignedUrl('getObject', {
+    const filePath = decodeS3EventPropertyString(key).split('/');
+    const folderPath = filePath.slice(0, -1);
+    const imagesFolderKey = folderPath.concat('jpg').join('/');
+    const command = new ListObjectsCommand({
       Bucket: dataBucket,
-      Key: key,
-      Expires: 30,
+      Prefix: imagesFolderKey,
     });
-    return getRaitaSuccessResponse({ url });
+    const s3Client = new S3Client({});
+    const s3ImagesList = await s3Client.send(command);
+    const images =
+      s3ImagesList.Contents?.map(image => ({
+        key: image.Key,
+        size: image.Size,
+      })) ?? [];
+    return getRaitaSuccessResponse({ images });
   } catch (err: unknown) {
     logger.logError(err);
     return getRaitaLambdaErrorResponse(err);

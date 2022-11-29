@@ -17,7 +17,8 @@
     "s3:ls": "aws s3 ls $RAITA_DATA_S3",
     "s3:put:file:meeri": "aws s3 cp $RAITA_TEST_DATA_ROOT/single-files/$npm_config_file s3://$RAITA_DATA_S3/Meeri",
     "s3:put:local:folder:meeri": "aws s3 cp --recursive --exclude \"**.DS_Store\" $RAITA_TEST_DATA_ROOT/folders/$npm_config_folder s3://$RAITA_DATA_S3/Meeri",
-    "s3:put:cloud:folder:meeri": "aws s3 cp --recursive  s3://$RAITA_TEST_DATA_BUCKET/$npm_config_folder s3://$RAITA_DATA_S3/Meeri",
+    "s3:put:cloud:folder:meeri": "aws s3 cp --recursive  s3://$RAITA_TEST_DATA_BUCKET/$npm_config_folder/ s3://$RAITA_DATA_S3/Meeri",
+    "s3:put:cloud:file:to-reception": "aws s3 cp s3://$RAITA_TEST_DATA_BUCKET/$npm_config_folder/$npm_config_file s3://$RAITA_RECEPTION_S3/Meeri/2022/TestKamppis/20220202/$npm_config_file",
     "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
     "pipeline:deploy": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk --app \"ts-node bin/raita-pipeline\" deploy stack-pipeline-raita-$npm_config_stackid",
     "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk synth"
@@ -25,7 +26,9 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",
     "@types/jest": "^26.0.10",
+    "@types/mime-types": "^2.1.1",
     "@types/node": "10.17.27",
+    "@types/unzipper": "^0.10.5",
     "aws-cdk": "^2.43.0",
     "cross-env": "^7.0.3",
     "esbuild": "^0.15.10",
@@ -40,14 +43,18 @@
   "dependencies": {
     "@aws-cdk/aws-elasticsearch": "^1.173.0",
     "@aws-cdk/custom-resources": "^1.173.0",
+    "@aws-sdk/client-ecs": "^3.216.0",
     "@aws-sdk/client-opensearch": "^3.171.0",
+    "@aws-sdk/client-s3": "^3.215.0",
     "@aws-sdk/credential-provider-node": "^3.171.0",
+    "@aws-sdk/lib-storage": "^3.207.0",
     "@opensearch-project/opensearch": "^2.0.0",
     "aws-cdk-lib": "^2.45.0",
     "aws-lambda": "^1.0.7",
     "aws-opensearch-connector": "^1.1.0",
     "constructs": "^10.1.106",
     "date-fns": "^2.29.3",
+    "unzipper": "^0.10.11",
     "zod": "^3.19.1"
   }
 }

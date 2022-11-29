@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": false,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "target": "es2015",
+    "lib": ["es2020", "dom"],
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strict": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.d.ts", "src/**/*.ts"]
+}

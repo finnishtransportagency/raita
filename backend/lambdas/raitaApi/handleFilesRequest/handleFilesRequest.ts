@@ -1,8 +1,12 @@
-import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import MetadataPort from '../../../ports/metadataPort';
 import { logger } from '../../../utils/logger';
-import { getRaitaLambdaError, RaitaLambdaError } from '../../utils';
+import {
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
+  RaitaLambdaError,
+} from '../../utils';
 
 function getOpenSearchLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -14,11 +18,11 @@ function getOpenSearchLambdaConfigOrFail() {
 }
 
 /**
- * DRAFT IMPLEMENTATION
- * Returns OpenSearch data based on request query. Currently takes input in the POST request body.
+ * Returns OpenSearch data based on request query.
+ * Receives parameters in POST request body.
  */
 export async function handleFilesRequest(
-  event: APIGatewayEvent,
+  event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
@@ -42,21 +46,9 @@ export async function handleFilesRequest(
       openSearchDomain,
     });
     const result = await metadata.queryOpenSearchMetadata(queryObject);
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(
-        {
-          result,
-        },
-        null,
-        2,
-      ),
-    };
+    return getRaitaSuccessResponse({ result });
   } catch (err: unknown) {
     logger.logError(err);
-    return getRaitaLambdaError(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }

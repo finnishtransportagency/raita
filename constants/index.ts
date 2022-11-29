@@ -13,6 +13,8 @@ export const raitaSourceSystems = {
   Elli: 'Elli',
 } as const;
 
+export const ZIP_SUFFIX = 'zip';
+
 export const RAITA_PARSING_EXCEPTION = '[RAITA PARSING EXCEPTION]';
 export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
   'raita-cloudfront-certificate-arn';

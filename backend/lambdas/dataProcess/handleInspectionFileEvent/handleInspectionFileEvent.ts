@@ -15,8 +15,10 @@ import {
 } from './contentDataParser';
 import { logger } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
-import { getGetEnvWithPreassignedContext } from '../../../../utils';
-import { RaitaSourceSystem, raitaSourceSystems } from '../../../../constants';
+import {
+  getGetEnvWithPreassignedContext,
+  isRaitaSourceSystem,
+} from '../../../../utils';
 import { decodeS3EventPropertyString, decodeUriString } from '../../utils';
 
 function getLambdaConfigOrFail() {
@@ -55,11 +57,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         const rootFolder = path[0];
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
-        if (
-          !Object.values(raitaSourceSystems).includes(
-            rootFolder as RaitaSourceSystem,
-          )
-        ) {
+        if (!isRaitaSourceSystem(rootFolder)) {
           logger.logError(
             `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
           );

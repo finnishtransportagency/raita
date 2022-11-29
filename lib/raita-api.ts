@@ -28,6 +28,7 @@ type ListenerTargetLambdas = {
   /** Must be a unique integer for each. Lowest number is prioritized */
   priority: number;
   path: [string];
+  targetName: string;
 };
 
 /**
@@ -71,6 +72,14 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
+    const handleImagesRequestFn = this.createImagesRequestHandler({
+      name: 'api-handler-images',
+      raitaStackIdentifier,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: inspectionDataBucket,
+      vpc,
+    });
+
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
@@ -89,15 +98,36 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    // Add all lambdas here to add as alb targets
+    /**
+     * Add all lambdas to alb targets
+     * 200-series if for lambdas accessing S3 information and
+     * 300-series is for database access lambdas
+     */
     const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: handleFileRequestFn, priority: 90, path: ['/api/file'] },
+      {
+        lambda: handleFileRequestFn,
+        priority: 200,
+        path: ['/api/file'],
+        targetName: 'file',
+      },
+      {
+        lambda: handleImagesRequestFn,
+        priority: 210,
+        path: ['/api/images'],
+        targetName: 'images',
+      },
       {
         lambda: this.handleFilesRequestFn,
-        priority: 100,
+        priority: 300,
         path: ['/api/files'],
+        targetName: 'files',
       },
-      { lambda: this.handleMetaRequestFn, priority: 110, path: ['/api/meta'] },
+      {
+        lambda: this.handleMetaRequestFn,
+        priority: 310,
+        path: ['/api/meta'],
+        targetName: 'meta',
+      },
     ];
 
     // ALB for API
@@ -132,8 +162,8 @@ export class RaitaApiStack extends NestedStack {
       port: 80,
       defaultAction: elbv2.ListenerAction.fixedResponse(404),
     });
-    const targets = listenerTargets.map((target, index) =>
-      listener.addTargets(`target-${index}`, {
+    const targets = listenerTargets.map(target =>
+      listener.addTargets(`target-${target.targetName}`, {
         targets: [new LambdaTarget(target.lambda)],
         priority: target.priority,
         conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
@@ -143,7 +173,7 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns lambda function for generating presigned urls
+   * Creates and returns handler for generating presigned urls
    */
   private createFileRequestHandler({
     name,
@@ -180,7 +210,44 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns OpenSearchQuery handler
+   * Creates and returns handler for listing images related to a file
+   */
+  private createImagesRequestHandler({
+    name,
+    raitaStackIdentifier,
+    lambdaRole,
+    dataBucket,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    lambdaRole: Role;
+    dataBucket: Bucket;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleImagesRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleImagesRequest/handleImagesRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  /**
+   * Creates and returns handler for querying files
    */
   private createFilesRequestHandler({
     name,
@@ -220,6 +287,9 @@ export class RaitaApiStack extends NestedStack {
     });
   }
 
+  /**
+   * Creates and returns handler for meta information
+   */
   private createMetaRequestHandler({
     name,
     raitaStackIdentifier,
