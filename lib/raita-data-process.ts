@@ -130,7 +130,10 @@ export class DataProcessStack extends NestedStack {
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        resources: [handleZipTask.executionRole.roleArn],
+        resources: [
+          handleZipTask.executionRole.roleArn,
+          handleZipTask.taskRole.roleArn,
+        ],
         actions: ['iam:PassRole'],
       }),
     );
