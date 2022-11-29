@@ -1,5 +1,6 @@
 import {
   AggregationsResponseSchema,
+  AggregationsResponseSchemaType,
   FieldMappingsSchema,
 } from './openSearchResponseSchemas';
 
@@ -14,14 +15,31 @@ export class OpenSearchResponseParser {
     ).aggregations;
     // Bucket results are mapped to hide OpenSearch spesific naming from api users
     return {
-      reportTypes: aggregations.report_types.buckets.map(element => ({
-        reportType: element.key,
-        count: element.doc_count,
-      })),
-      fileTypes: aggregations.file_types.buckets.map(element => ({
-        fileType: element.key,
-        count: element.doc_count,
-      })),
+      reportTypes: this.transformAggregationsResult(
+        aggregations,
+        'report_types',
+        'reportType',
+      ) as Array<{ reportType: string; count: 1 }>,
+      fileTypes: this.transformAggregationsResult(
+        aggregations,
+        'file_types',
+        'fileType',
+      ) as Array<{ fileType: string; count: 1 }>,
+      systems: this.transformAggregationsResult(
+        aggregations,
+        'systems',
+        'value',
+      ) as Array<{ value: string; count: 1 }>,
+      trackNumbers: this.transformAggregationsResult(
+        aggregations,
+        'track_numbers',
+        'value',
+      ) as Array<{ value: string; count: 1 }>,
+      trackParts: this.transformAggregationsResult(
+        aggregations,
+        'track_parts',
+        'value',
+      ) as Array<{ value: string; count: 1 }>,
     };
   };
 
@@ -41,4 +59,14 @@ export class OpenSearchResponseParser {
       return { [key]: { type: value.type } };
     });
   };
+
+  private transformAggregationsResult = <T extends string>(
+    aggregations: AggregationsResponseSchemaType['aggregations'],
+    osResponseKey: keyof AggregationsResponseSchemaType['aggregations'],
+    outputKey: T,
+  ) =>
+    aggregations[osResponseKey].buckets.map(element => ({
+      [outputKey]: element.key,
+      count: element.doc_count,
+    }));
 }
