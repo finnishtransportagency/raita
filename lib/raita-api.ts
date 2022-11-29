@@ -28,6 +28,7 @@ type ListenerTargetLambdas = {
   /** Must be a unique integer for each. Lowest number is prioritized */
   priority: number;
   path: [string];
+  targetName: string;
 };
 
 /**
@@ -96,16 +97,36 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    // Add all lambdas here to add as alb targets
+    /**
+     * Add all lambdas to alb targets
+     * 200-series if for lambdas accessing S3 information and
+     * 300-series is for database access lambdas
+     */
     const albLambdaTargets: ListenerTargetLambdas[] = [
-      { lambda: handleFileRequestFn, priority: 80, path: ['/api/file'] },
-      { lambda: handleImagesRequestFn, priority: 90, path: ['/api/images'] },
+      {
+        lambda: handleFileRequestFn,
+        priority: 200,
+        path: ['/api/file'],
+        targetName: 'file',
+      },
+      {
+        lambda: handleImagesRequestFn,
+        priority: 210,
+        path: ['/api/images'],
+        targetName: 'images',
+      },
       {
         lambda: this.handleFilesRequestFn,
-        priority: 100,
+        priority: 300,
         path: ['/api/files'],
+        targetName: 'files',
       },
-      { lambda: this.handleMetaRequestFn, priority: 110, path: ['/api/meta'] },
+      {
+        lambda: this.handleMetaRequestFn,
+        priority: 310,
+        path: ['/api/meta'],
+        targetName: 'meta',
+      },
     ];
 
     // ALB for API
@@ -140,8 +161,8 @@ export class RaitaApiStack extends NestedStack {
       port: 80,
       defaultAction: elbv2.ListenerAction.fixedResponse(404),
     });
-    const targets = listenerTargets.map((target, index) =>
-      listener.addTargets(`target-${index}`, {
+    const targets = listenerTargets.map(target =>
+      listener.addTargets(`target-${target.targetName}`, {
         targets: [new LambdaTarget(target.lambda)],
         priority: target.priority,
         conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],

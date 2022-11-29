@@ -121,8 +121,8 @@ export class DataProcessStack extends NestedStack {
         actions: ['ecs:RunTask'],
       }),
     );
-    // Dataprocessor lambda role needs PassRole permissions to zip task
-    // execution role to pass it on to ECS in lambda execution.
+    // Dataprocessor lambda role needs PassRole permissions to both a) zip task
+    // execution role and b) zip task role to pass them on to ECS in lambda execution.
     // The execution role is created in conjuction with other ECS resources
     if (!handleZipTask.executionRole) {
       throw new Error('Task handleZipTask does not have execution role.');
