@@ -41,9 +41,13 @@ export class BastionStack extends cdk.NestedStack {
     });
   }
 
+  /**
+   * Creates user data for bastion host.
+   * Requires databaseDomainEndpoint parameter, which is currently unused, in preparation
+   * for setting a pipe directly to the database (to be added later).
+   */
   private createBastionUserData({
     albDns,
-    databaseDomainEndpoint,
   }: {
     albDns: string;
     databaseDomainEndpoint: string;
@@ -53,12 +57,6 @@ export class BastionStack extends cdk.NestedStack {
       'sudo yum update -y',
       'sudo yum install socat -y',
       `nohup socat TCP4-LISTEN:3001,reuseaddr,fork TCP:${albDns}:80 &`,
-      `nohup socat TCP4-LISTEN:3002,reuseaddr,fork TCP:${cdk.Fn.sub(
-        '${databaseDomainEndpoint}',
-        {
-          databaseDomainEndpoint,
-        },
-      )}:80 &`,
     ];
     userData.addCommands(...userDataCommands);
     return userData;
