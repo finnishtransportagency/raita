@@ -121,14 +121,19 @@ export class DataProcessStack extends NestedStack {
         actions: ['ecs:RunTask'],
       }),
     );
-    // TODO: Validate if this permission is necessary
-    // this.dataProcessorLambdaServiceRole.addToPolicy(
-    //   new iam.PolicyStatement({
-    //     effect: iam.Effect.ALLOW,
-    //     resources: ['*'],
-    //     actions: ['iam:PassRole'],
-    //   }),
-    // );
+    // Dataprocessor lambda role needs PassRole permissions to zip task
+    // execution role to pass it on to ECS in lambda execution.
+    // The execution role is created in conjuction with other ECS resources
+    if (!handleZipTask.executionRole) {
+      throw new Error('Task handleZipTask does not have execution role.');
+    }
+    this.dataProcessorLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        resources: [handleZipTask.executionRole.roleArn],
+        actions: ['iam:PassRole'],
+      }),
+    );
 
     // Handler is run for all the files types
     handleReceptionFileEventFn.addEventSource(
