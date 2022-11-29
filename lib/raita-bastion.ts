@@ -8,7 +8,7 @@ interface RaitaBastionStackProps extends cdk.NestedStackProps {
   readonly vpc: ec2.IVpc;
   readonly securityGroup: ec2.ISecurityGroup;
   readonly albDns: string;
-  readonly databaseDomainName: string;
+  readonly databaseDomainEndpoint: string;
 }
 
 export class BastionStack extends cdk.NestedStack {
@@ -19,7 +19,7 @@ export class BastionStack extends cdk.NestedStack {
       vpc,
       securityGroup,
       albDns,
-      databaseDomainName,
+      databaseDomainEndpoint,
     } = props;
     const bastionRole = new Role(this, 'RaitaEc2BastionRole', {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
@@ -27,7 +27,10 @@ export class BastionStack extends cdk.NestedStack {
         ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
       ],
     });
-    const userData = this.createBastionUserData({ albDns, databaseDomainName });
+    const userData = this.createBastionUserData({
+      albDns,
+      databaseDomainEndpoint,
+    });
     this.createBastionHost({
       name: 'bastion',
       userData,
@@ -40,10 +43,10 @@ export class BastionStack extends cdk.NestedStack {
 
   private createBastionUserData({
     albDns,
-    databaseDomainName,
+    databaseDomainEndpoint,
   }: {
     albDns: string;
-    databaseDomainName: string;
+    databaseDomainEndpoint: string;
   }) {
     const userData = ec2.UserData.forLinux();
     const userDataCommands = [
@@ -51,9 +54,9 @@ export class BastionStack extends cdk.NestedStack {
       'sudo yum install socat -y',
       `nohup socat TCP4-LISTEN:3001,reuseaddr,fork TCP:${albDns}:80 &`,
       `nohup socat TCP4-LISTEN:3002,reuseaddr,fork TCP:${cdk.Fn.sub(
-        '${databaseDomainName}',
+        '${databaseDomainEndpoint}',
         {
-          databaseDomainName,
+          databaseDomainEndpoint,
         },
       )}:80 &`,
     ];

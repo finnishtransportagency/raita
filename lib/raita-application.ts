@@ -85,7 +85,7 @@ export class ApplicationStack extends NestedStack {
         vpc,
         securityGroup,
         albDns: raitaApiStack.alb.loadBalancerDnsName,
-        databaseDomainName: openSearchDomain.domainName,
+        databaseDomainEndpoint: openSearchDomain.domainEndpoint,
       });
     }
 
