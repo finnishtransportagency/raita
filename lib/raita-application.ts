@@ -19,6 +19,7 @@ import { BastionStack } from './raita-bastion';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
+  readonly stackId: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly vpc: ec2.IVpc;
   readonly securityGroup: ec2.ISecurityGroup;
@@ -36,6 +37,7 @@ export class ApplicationStack extends NestedStack {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
+      stackId,
       raitaEnv,
       vpc,
       securityGroup,
@@ -76,7 +78,7 @@ export class ApplicationStack extends NestedStack {
     });
 
     // Create Bastion Host for dev
-    if (isDevelopmentMainStack(raitaStackIdentifier, raitaEnv)) {
+    if (isDevelopmentMainStack(stackId, raitaEnv)) {
       new BastionStack(this, 'stack-bastion', {
         raitaStackIdentifier,
         vpc,
