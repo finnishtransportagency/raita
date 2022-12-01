@@ -2,7 +2,7 @@ import { S3 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { PassThrough } from 'stream';
 import mime from 'mime-types';
-import { EntryRecord, ExtractEntriesResult } from './types';
+import { EntryRecord, ExtractEntriesResult, ZipFileData } from './types';
 import {
   RAITA_DATA_VIDEO_FOLDERS,
   RAITA_DATA_VIDEO_SUFFIXES,
@@ -48,10 +48,12 @@ export const uploadToS3 = ({
   targetBucket,
   key,
   s3,
+  zipFileData,
 }: {
   targetBucket: string;
   key: string;
   s3: S3;
+  zipFileData: ZipFileData;
 }) => {
   const { fileName } = getKeyConstituents(key);
   const passThrough = new PassThrough();
@@ -62,6 +64,7 @@ export const uploadToS3 = ({
       Key: key,
       Body: passThrough,
       ContentType: mime.lookup(fileName) || undefined,
+      Tagging: `ZipTimeStamp=${zipFileData.timeStamp},ZipTimeStampType=${zipFileData.timeStampType},ZipFileName=${zipFileData.fileName}`,
     },
   });
   return {

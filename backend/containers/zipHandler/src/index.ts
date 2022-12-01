@@ -9,7 +9,7 @@ import {
   logMessages,
   RaitaZipError,
 } from './utils';
-import { isZipPath } from './types';
+import { isZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
 
 start();
@@ -21,7 +21,8 @@ async function start() {
   console.log(startMessage);
   try {
     const zipKey = decodeS3EventPropertyString(key);
-    const { path, keyWithoutSuffix, fileSuffix } = getKeyConstituents(zipKey);
+    const { path, keyWithoutSuffix, fileSuffix, fileBaseName } =
+      getKeyConstituents(zipKey);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -34,18 +35,35 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
+
+    // Timestamp is needed to tie the extracted files and meta data entries into the zip
+    // file they were extracted from. The LastModified here should always equal to the moment
+    // when zip was uploaded to the S3 bucket. As a backup, a secondary processing date is provided.
+    const zipFileData: ZipFileData = getObjectResult.LastModified
+      ? {
+          timeStamp: getObjectResult.LastModified.toISOString(),
+          timeStampType: 'zipLastModified',
+          fileName: fileBaseName,
+        }
+      : {
+          timeStamp: new Date().toISOString(),
+          timeStampType: 'zipProcessed',
+          fileName: fileBaseName,
+        };
+
     const readStream = getObjectResult.Body as Readable;
-    const ZIP_FILE_PATH = '/tmp/file.zip';
-    const writeStream = fs.createWriteStream(ZIP_FILE_PATH);
+    const ZIP_FILE_ON_DISK_PATH = '/tmp/file.zip';
+    const writeStream = fs.createWriteStream(ZIP_FILE_ON_DISK_PATH);
     writeStream.on('error', (err: unknown) => {
       throw err;
     });
     writeStream.on('finish', () => {
       processZipFile({
-        filePath: ZIP_FILE_PATH,
+        filePath: ZIP_FILE_ON_DISK_PATH,
         targetBucket,
         s3,
         s3KeyPrefix: keyWithoutSuffix,
+        zipFileData,
       })
         .then(data => {
           const { entries, streamError } = data;

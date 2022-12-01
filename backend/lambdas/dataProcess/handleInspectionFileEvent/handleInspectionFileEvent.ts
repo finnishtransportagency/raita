@@ -63,9 +63,6 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           );
           return null;
         }
-
-        // TODO: Handle tag creation based on root folder
-
         const fileName = decodeUriString(path[path.length - 1]);
         const parseResults = await parseFileMetadata({
           fileName,
@@ -80,6 +77,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           bucket_name: eventRecord.s3.bucket.name,
           size: eventRecord.s3.object.size,
           ...parseResults,
+          tags: file.tags,
         };
       },
     );

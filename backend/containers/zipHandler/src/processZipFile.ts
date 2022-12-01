@@ -1,7 +1,7 @@
 import * as yauzl from 'yauzl';
 import { S3 } from '@aws-sdk/client-s3';
 import { isRaitaVideoFile, resolveEntries, uploadToS3 } from './utils';
-import { EntryRecord, ExtractEntriesResult } from './types';
+import { EntryRecord, ExtractEntriesResult, ZipFileData } from './types';
 
 /**
  * If there is a possibility that even single file has been succesfully uploaded
@@ -13,11 +13,13 @@ export const processZipFile = ({
   targetBucket,
   s3,
   s3KeyPrefix,
+  zipFileData,
 }: {
   filePath: string;
   targetBucket: string;
   s3: S3;
   s3KeyPrefix: string;
+  zipFileData: ZipFileData;
 }) =>
   new Promise<ExtractEntriesResult>((resolve, reject) => {
     // The promise is resolved by calling the
@@ -78,6 +80,7 @@ export const processZipFile = ({
                   targetBucket,
                   key,
                   s3,
+                  zipFileData,
                 });
                 readStream.pipe(writeStream);
                 uploadPromise
