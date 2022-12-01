@@ -3,7 +3,12 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { PassThrough } from 'stream';
 import mime from 'mime-types';
 import { EntryRecord, ExtractEntriesResult } from './types';
-import { RaitaSourceSystem, raitaSourceSystems } from './constants';
+import {
+  RAITA_DATA_VIDEO_FOLDERS,
+  RAITA_DATA_VIDEO_SUFFIXES,
+  RaitaSourceSystem,
+  raitaSourceSystems,
+} from './constants';
 
 // Duplicates BEGIN: Functions duplicating logic from main code base
 export const getKeyConstituents = (key: string) => {
@@ -68,6 +73,17 @@ export const uploadToS3 = ({
 const compressedSize = (entries: ExtractEntriesResult['entries']) =>
   entries.success.reduce((acc, cur) => acc + cur.compressedSize, 0);
 
+/**
+ * Return true is the file is detected as video file
+ */
+export const isRaitaVideoFile = (fileName: string) => {
+  const { path, fileSuffix } = getKeyConstituents(fileName);
+  return (
+    RAITA_DATA_VIDEO_SUFFIXES.some(suffix => suffix === fileSuffix) ||
+    RAITA_DATA_VIDEO_FOLDERS.some(folder => path.includes(folder))
+  );
+};
+
 export const logMessages = {
   resultMessage: (entries: ExtractEntriesResult['entries']) =>
     `${entries.success.length} files succesfully extracted from zip, ${
@@ -93,7 +109,3 @@ export class RaitaZipError extends Error {
     super(message);
   }
 }
-
-/**
- * Functions below are duplicates from the main code base
- */

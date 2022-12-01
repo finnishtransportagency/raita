@@ -1,6 +1,6 @@
 import * as yauzl from 'yauzl';
 import { S3 } from '@aws-sdk/client-s3';
-import { resolveEntries, uploadToS3 } from './utils';
+import { isRaitaVideoFile, resolveEntries, uploadToS3 } from './utils';
 import { EntryRecord, ExtractEntriesResult } from './types';
 
 /**
@@ -53,47 +53,53 @@ export const processZipFile = ({
           zipfile.readEntry();
         } else {
           // Entry is a file
-          // Generate key by joining the prefix to the path of the file inside zip
-          // Key determines the path where file is stored in target bucket
-          const key = `${s3KeyPrefix}/${entry.fileName.toString()}`;
-          zipfile.openReadStream(entry, (err, readStream) => {
-            // Returns a promise for entry which resolves when file is uploaded to S3 (or upload fails)
-            const entryResult = new Promise<EntryRecord>(resolveEntry => {
-              if (err) {
-                closeProcess(entries, err);
-              }
-              readStream.on('error', err => {
-                closeProcess(entries, err);
-              });
-              readStream.once('end', () => {
-                zipfile.readEntry();
-              });
-              // Get write stream and a promise which resolves as streaming the data to S3 is complete
-              const { writeStream, uploadPromise } = uploadToS3({
-                targetBucket,
-                key,
-                s3,
-              });
-              readStream.pipe(writeStream);
-              uploadPromise
-                .then(() => {
-                  // Upload succeeded, resolve with success
-                  resolveEntry({ ...entry, status: 'success' });
-                })
-                .catch((err: unknown) => {
-                  // Upload failed, resolve with error
-                  resolveEntry({
-                    ...entry,
-                    status: 'failure',
-                    failureCause: `Upload to S3 failed: ${
-                      err instanceof Error ? err.message : err
-                    }`,
-                  });
+          // Inspect the enty file name to detect video files: video files are not extracted from the zip
+          if (isRaitaVideoFile(entry.fileName)) {
+            // Ignore the current video file entry and read next
+            zipfile.readEntry();
+          } else {
+            // Generate key by joining the prefix to the path of the file inside zip
+            // Key determines the path where file is stored in target bucket
+            const key = `${s3KeyPrefix}/${entry.fileName.toString()}`;
+            zipfile.openReadStream(entry, (err, readStream) => {
+              // Returns a promise for entry which resolves when file is uploaded to S3 (or upload fails)
+              const entryResult = new Promise<EntryRecord>(resolveEntry => {
+                if (err) {
+                  closeProcess(entries, err);
+                }
+                readStream.on('error', err => {
+                  closeProcess(entries, err);
                 });
+                readStream.once('end', () => {
+                  zipfile.readEntry();
+                });
+                // Get write stream and a promise which resolves as streaming the data to S3 is complete
+                const { writeStream, uploadPromise } = uploadToS3({
+                  targetBucket,
+                  key,
+                  s3,
+                });
+                readStream.pipe(writeStream);
+                uploadPromise
+                  .then(() => {
+                    // Upload succeeded, resolve with success
+                    resolveEntry({ ...entry, status: 'success' });
+                  })
+                  .catch((err: unknown) => {
+                    // Upload failed, resolve with error
+                    resolveEntry({
+                      ...entry,
+                      status: 'failure',
+                      failureCause: `Upload to S3 failed: ${
+                        err instanceof Error ? err.message : err
+                      }`,
+                    });
+                  });
+              });
+              // Add promise to array of entries
+              entries.push(entryResult);
             });
-            // Add promise to array of entries
-            entries.push(entryResult);
-          });
+          }
         }
       });
       zipfile.readEntry();
