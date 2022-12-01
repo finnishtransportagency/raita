@@ -1,4 +1,9 @@
 import {
+  ExcelSuffix,
+  fileSuffixesToIncudeInMetadataParsing,
+  KnownSuffix,
+} from '../../constants';
+import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../utils';
@@ -89,7 +94,22 @@ export type ZipPath = [
   fileName: string,
 ];
 
+// Type guards
+
 export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+}
+
+export function isKnownSuffix(arg: string): arg is KnownSuffix {
+  return Object.keys(fileSuffixesToIncudeInMetadataParsing).some(
+    suffix => suffix === arg,
+  );
+}
+
+export function isExcelSuffix(arg: string): arg is ExcelSuffix {
+  return (
+    fileSuffixesToIncudeInMetadataParsing.XLSX_FILE === arg ||
+    fileSuffixesToIncudeInMetadataParsing.XLS_FILE === arg
+  );
 }

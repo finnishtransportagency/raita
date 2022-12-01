@@ -1,8 +1,20 @@
+export type KnownSuffix =
+  typeof fileSuffixesToIncudeInMetadataParsing[keyof typeof fileSuffixesToIncudeInMetadataParsing];
+
+export type ExcelSuffix =
+  | typeof fileSuffixesToIncudeInMetadataParsing['XLSX_FILE']
+  | typeof fileSuffixesToIncudeInMetadataParsing['XLS_FILE'];
+
 export const fileSuffixesToIncudeInMetadataParsing = {
   TXT_FILE: 'txt',
   PDF_FILE: 'pdf',
   CSV_FILE: 'csv',
+  XLSX_FILE: 'xlsx',
+  XLS_FILE: 'xls',
 } as const;
+
+export const ZIP_SUFFIX = 'zip';
+export const EMPTY_FILE_INDICATOR = 'EMPTY';
 
 export type RaitaSourceSystem =
   typeof raitaSourceSystems[keyof typeof raitaSourceSystems];
@@ -12,8 +24,6 @@ export const raitaSourceSystems = {
   Emma: 'Emma',
   Elli: 'Elli',
 } as const;
-
-export const ZIP_SUFFIX = 'zip';
 
 export const RAITA_PARSING_EXCEPTION = '[RAITA PARSING EXCEPTION]';
 export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
