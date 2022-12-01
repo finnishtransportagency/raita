@@ -21,7 +21,7 @@ async function start() {
   console.log(startMessage);
   try {
     const zipKey = decodeS3EventPropertyString(key);
-    const { path, fileSuffix } = getKeyConstituents(zipKey);
+    const { path, keyWithoutSuffix, fileSuffix } = getKeyConstituents(zipKey);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -29,7 +29,6 @@ async function start() {
     if (!isZipPath(path)) {
       throw new RaitaZipError('incorrectPath');
     }
-    const [system, _year, campaign] = path;
     const s3 = new S3({});
     const getObjectResult = await s3.getObject({
       Bucket: bucket,
@@ -46,7 +45,7 @@ async function start() {
         filePath: ZIP_FILE_PATH,
         targetBucket,
         s3,
-        path,
+        s3KeyPrefix: keyWithoutSuffix,
       })
         .then(data => {
           const { entries, streamError } = data;

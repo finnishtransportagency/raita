@@ -1,7 +1,7 @@
 import * as yauzl from 'yauzl';
 import { S3 } from '@aws-sdk/client-s3';
 import { resolveEntries, uploadToS3 } from './utils';
-import { EntryRecord, ExtractEntriesResult, ZipPath } from './types';
+import { EntryRecord, ExtractEntriesResult } from './types';
 
 /**
  * If there is a possibility that even single file has been succesfully uploaded
@@ -12,12 +12,12 @@ export const processZipFile = ({
   filePath,
   targetBucket,
   s3,
-  path,
+  s3KeyPrefix,
 }: {
   filePath: string;
   targetBucket: string;
   s3: S3;
-  path: ZipPath;
+  s3KeyPrefix: string;
 }) =>
   new Promise<ExtractEntriesResult>((resolve, reject) => {
     // The promise is resolved by calling the
@@ -53,11 +53,9 @@ export const processZipFile = ({
           zipfile.readEntry();
         } else {
           // Entry is a file
-          // Generate key by joining the path of the zip file to the path of the file inside zip
+          // Generate key by joining the prefix to the path of the file inside zip
           // Key determines the path where file is stored in target bucket
-          const key = `${path
-            .slice(0, -1)
-            .join('/')}/${entry.fileName.toString()}`;
+          const key = `${s3KeyPrefix}/${entry.fileName.toString()}`;
           zipfile.openReadStream(entry, (err, readStream) => {
             // Returns a promise for entry which resolves when file is uploaded to S3 (or upload fails)
             const entryResult = new Promise<EntryRecord>(resolveEntry => {

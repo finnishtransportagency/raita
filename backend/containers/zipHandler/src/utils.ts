@@ -10,7 +10,8 @@ export const getKeyConstituents = (key: string) => {
   const path = key.split('/');
   const fileName = path[path.length - 1];
   const [fileBaseName, fileSuffix] = fileName.split('.');
-  return { path, fileName, fileBaseName, fileSuffix };
+  const [keyWithoutSuffix] = key.split('.');
+  return { path, fileName, fileBaseName, fileSuffix, keyWithoutSuffix };
 };
 
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
