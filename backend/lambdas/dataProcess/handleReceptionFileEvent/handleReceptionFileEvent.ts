@@ -43,8 +43,8 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
         // Copy the file to target S3 bucket if not zip file
         const command = new CopyObjectCommand({
           Key: key,
-          Bucket: bucket.name,
-          CopySource: key,
+          Bucket: config.targetBucketName,
+          CopySource: `${bucket.name}/${key}`,
         });
         const s3Client = new S3Client({});
         return s3Client.send(command);
