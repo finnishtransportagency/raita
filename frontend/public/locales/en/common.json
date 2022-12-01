@@ -13,6 +13,7 @@
   "no_selection": "-- EMPTY --",
   "clear": "Clear",
   "add_filter": "Add filter",
+  "remove_filter": "Remove filter",
   "preview": "Preview",
   "download": "Download",
   "download_all": "Download all",
@@ -20,5 +21,8 @@
   "reports_report_types": "Report types",
   "filters_none_added": "No filters added.",
   "pager_a11y_label": "Paging navigation",
-  "pager_a11y_goto_page": "Go to page {{ page }}"
+  "pager_a11y_goto_page": "Go to page {{ page }}",
+  "relation_eq": "EQ",
+  "relation_lte": "LTE",
+  "relation_gte": "GTE"
 }
