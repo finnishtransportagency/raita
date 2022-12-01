@@ -8,6 +8,7 @@ import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncudeInMetadataParsing } from '../../../../constants';
 import { RaitaParseError } from '../../utils';
 import { createHash } from 'crypto';
+import { log } from '../../../utils/logger';
 /**
  * Resolves whether content data parsing is needed for the file
  */
@@ -47,6 +48,7 @@ const extractValue = (
     }
     return null;
   } catch (err) {
+    log.error(err);
     throw new RaitaParseError(
       `Parsing failed for the term: ${propertyKey}: ${
         err instanceof Error ? err.message : err
@@ -72,6 +74,7 @@ export const extractFileContentData = (
  * Returns hex encoded hash for given file input
  */
 export const calculateHash = (fileBody: string): string => {
+  log.debug(`Calculating hash for ${fileBody}`);
   const hash = createHash('sha256');
   return hash.update(fileBody).digest('hex');
 };

@@ -13,6 +13,7 @@ import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaServiceRole } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -206,6 +207,7 @@ export class RaitaApiStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -243,6 +245,7 @@ export class RaitaApiStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -284,6 +287,7 @@ export class RaitaApiStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -325,6 +329,7 @@ export class RaitaApiStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 }

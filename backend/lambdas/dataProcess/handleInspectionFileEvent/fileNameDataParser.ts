@@ -1,5 +1,5 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
-import { logger } from '../../../utils/logger';
+import { log, logParsingException } from '../../../utils/logger';
 import { RaitaParseError } from '../../utils';
 import { parsePrimitive } from './parsePrimitives';
 
@@ -66,11 +66,12 @@ export const extractFileNameData = (
   } catch (error) {
     // Currently just log file name parsing errors.
     if (error instanceof RaitaParseError) {
-      logger.logParsingException(
+      logParsingException.warn(
         `${error.message}. File name extraction skipped.`,
       );
       return {};
     }
+    log.error(error);
     throw error;
   }
 };

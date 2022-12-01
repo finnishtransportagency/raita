@@ -1,5 +1,5 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
-import { logger } from '../../../utils/logger';
+import { logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
 /**
@@ -11,7 +11,7 @@ export const extractPathData = (
 ) => {
   const expectedPathLength = Object.keys(folderLabels).length;
   if (path.length !== expectedPathLength) {
-    logger.logParsingException(
+    logParsingException.warn(
       `Unexpected folder path length for path ${path}. Folder path analysis not carried out`,
     );
     return {};

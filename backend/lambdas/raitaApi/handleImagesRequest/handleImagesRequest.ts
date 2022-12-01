@@ -1,12 +1,13 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { ListObjectsCommand, S3Client } from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
 import {
   decodeS3EventPropertyString,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
+import { getUser, validateReadUser } from '../../../utils/userService';
 
 function getLambdaConfigOrFail() {
   return {
@@ -23,12 +24,15 @@ export async function handleImagesRequest(
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
   try {
+    const user = await getUser(event);
+    await validateReadUser(user);
     const { dataBucket } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
     if (!requestBody?.key) {
       throw new Error('Key not specified');
     }
     const { key } = requestBody;
+    log.info(user, `Getting related images for ${key}`);
     const filePath = decodeS3EventPropertyString(key).split('/');
     const folderPath = filePath.slice(0, -1);
     const imagesFolderKey = folderPath.concat('jpg').join('/');
@@ -45,7 +49,7 @@ export async function handleImagesRequest(
       })) ?? [];
     return getRaitaSuccessResponse({ images });
   } catch (err: unknown) {
-    logger.logError(err);
+    log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }
 }
