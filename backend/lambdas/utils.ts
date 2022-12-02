@@ -102,7 +102,7 @@ export function isZipPath(arg: Array<string>): arg is ZipPath {
 }
 
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
-  return Object.keys(fileSuffixesToIncudeInMetadataParsing).some(
+  return Object.values(fileSuffixesToIncudeInMetadataParsing).some(
     suffix => suffix === arg,
   );
 }
