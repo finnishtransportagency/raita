@@ -18,6 +18,7 @@ import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly stackId: string;
   readonly jwtTokenIssuer: string;
   readonly inspectionDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
@@ -47,6 +48,7 @@ export class RaitaApiStack extends NestedStack {
     const {
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       openSearchMetadataIndex,
       vpc,
@@ -72,6 +74,7 @@ export class RaitaApiStack extends NestedStack {
       name: 'api-handler-file',
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       dataBucket: inspectionDataBucket,
@@ -82,6 +85,7 @@ export class RaitaApiStack extends NestedStack {
       name: 'api-handler-images',
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       dataBucket: inspectionDataBucket,
@@ -92,6 +96,7 @@ export class RaitaApiStack extends NestedStack {
       name: 'api-handler-files',
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
@@ -103,6 +108,7 @@ export class RaitaApiStack extends NestedStack {
       name: 'api-handler-meta',
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
@@ -191,6 +197,7 @@ export class RaitaApiStack extends NestedStack {
     name,
     raitaStackIdentifier,
     raitaEnv,
+    stackId,
     jwtTokenIssuer,
     dataBucket,
     lambdaRole,
@@ -199,6 +206,7 @@ export class RaitaApiStack extends NestedStack {
     name: string;
     raitaStackIdentifier: string;
     raitaEnv: string;
+    stackId: string;
     jwtTokenIssuer: string;
     dataBucket: Bucket;
     lambdaRole: Role;
@@ -217,7 +225,7 @@ export class RaitaApiStack extends NestedStack {
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: raitaStackIdentifier,
+        STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
@@ -236,6 +244,7 @@ export class RaitaApiStack extends NestedStack {
     name,
     raitaStackIdentifier,
     raitaEnv,
+    stackId,
     jwtTokenIssuer,
     lambdaRole,
     dataBucket,
@@ -244,6 +253,7 @@ export class RaitaApiStack extends NestedStack {
     name: string;
     raitaStackIdentifier: string;
     raitaEnv: string;
+    stackId: string;
     jwtTokenIssuer: string;
     lambdaRole: Role;
     dataBucket: Bucket;
@@ -262,7 +272,7 @@ export class RaitaApiStack extends NestedStack {
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: raitaStackIdentifier,
+        STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
@@ -281,6 +291,7 @@ export class RaitaApiStack extends NestedStack {
     name,
     raitaStackIdentifier,
     raitaEnv,
+    stackId,
     jwtTokenIssuer,
     lambdaRole,
     openSearchDomainEndpoint,
@@ -290,6 +301,7 @@ export class RaitaApiStack extends NestedStack {
     name: string;
     raitaStackIdentifier: string;
     raitaEnv: string;
+    stackId: string;
     jwtTokenIssuer: string;
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
@@ -311,7 +323,7 @@ export class RaitaApiStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: raitaStackIdentifier,
+        STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
@@ -330,6 +342,7 @@ export class RaitaApiStack extends NestedStack {
     name,
     raitaStackIdentifier,
     raitaEnv,
+    stackId,
     jwtTokenIssuer,
     lambdaRole,
     openSearchDomainEndpoint,
@@ -339,6 +352,7 @@ export class RaitaApiStack extends NestedStack {
     name: string;
     raitaStackIdentifier: string;
     raitaEnv: string;
+    stackId: string;
     jwtTokenIssuer: string;
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
@@ -360,7 +374,7 @@ export class RaitaApiStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: raitaStackIdentifier,
+        STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,

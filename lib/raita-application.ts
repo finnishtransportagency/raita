@@ -74,6 +74,7 @@ export class ApplicationStack extends NestedStack {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
+      stackId,
       jwtTokenIssuer,
       raitaStackIdentifier: raitaStackIdentifier,
       openSearchMetadataIndex: openSearchMetadataIndex,
