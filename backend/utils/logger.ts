@@ -1,39 +1,39 @@
-import { S3EventRecord } from 'aws-lambda/trigger/s3';
-import { ZodError } from 'zod';
-import { RAITA_PARSING_EXCEPTION } from '../../constants';
-import { RaitaParseError } from '../lambdas/utils';
+import pino from 'pino';
 
-class Logger {
-  logError = (data: unknown) => {
-    if (data instanceof RaitaParseError) {
-      this.logParsingException(data.message);
-      return;
-    }
-    const message =
-      (typeof data === 'string' && data) ||
-      (data instanceof Error && data.message) ||
-      (data instanceof ZodError && data.message) ||
-      JSON.stringify(data);
-    try {
-      console.error(message);
-    } catch (error) {
-      console.error(
-        `Logger failed to log a given message: ${
-          error instanceof Error && error.message
-        }`,
-      );
-    }
-  };
+const level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';
 
-  logParsingException = (msg: string) =>
-    this.logError(`${RAITA_PARSING_EXCEPTION}: ${msg}`);
+const XRAY_ENV_NAME = '_X_AMZN_TRACE_ID';
+const TRACE_ID_REGEX = /^Root=(.+);Parent=(.+);/;
+export const getCorrelationId = () => {
+  const tracingInfo = process.env[XRAY_ENV_NAME] || '';
+  const matches = tracingInfo.match(TRACE_ID_REGEX) || ['', '', ''];
+  const correlationId = matches[1];
+  if (correlationId) {
+    return correlationId;
+  }
+};
 
-  logS3EventRecord = (eventRecord: S3EventRecord) => {
-    this.logError(`File arn: ${eventRecord.s3.bucket.arn}`);
-    this.logError(`File object key: ${eventRecord.s3.object.key}`);
-    this.logError(`File bucket: ${eventRecord.s3.bucket.name}`);
-    this.logError(`File path: ${eventRecord.s3.object.key.split('/')}`);
-  };
+function getLogger(tag: string) {
+  return pino({
+    level,
+    // Remove unused default fields
+    base: undefined,
+    mixin: () => {
+      return {
+        correlationId: getCorrelationId(),
+        tag,
+      };
+    },
+    // Log level as text instead of number
+    formatters: {
+      level(label: string) {
+        return { level: label };
+      },
+    },
+    // Unix time to ISO time
+    timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
+  });
 }
 
-export const logger = new Logger();
+export const log = getLogger('RAITA_BACKEND');
+export const logParsingException = getLogger('RAITA_PARSING_EXCEPTION');
