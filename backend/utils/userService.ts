@@ -73,6 +73,10 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
 const isReadUser = (user: RaitaUser) => user.roles?.includes(STATIC_ROLES.read);
 
 export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
+  if (!STACK_ID || !ENVIRONMENT) {
+    log.error('STACK_ID or ENVIRONMENT missing!');
+    throw new RaitaLambdaError('Error', 500);
+  }
   if (!isPermanentStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
     return getMockUser();
   }

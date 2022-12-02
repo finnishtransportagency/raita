@@ -22,6 +22,7 @@ export const SSM_CLOUDFRONT_DOMAIN_NAME = 'raita-cloudfront-domain-name';
 export const SSM_DMZ_API_DOMAIN_NAME = 'raita-dmz-api-domain-name';
 export const SFTP_POLICY_ACCOUNT_ID = 'raita-sftp-policy-account-id';
 export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
+export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
 
 export const ENVIRONMENTS = {
   dev: 'dev',
