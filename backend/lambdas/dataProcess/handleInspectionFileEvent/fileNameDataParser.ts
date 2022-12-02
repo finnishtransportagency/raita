@@ -5,7 +5,7 @@ import {
   ParseValueResult,
 } from '../../../types';
 import { logger } from '../../../utils/logger';
-import { isExcelSuffix, isKnownSuffix, RaitaParseError } from '../../utils';
+import { isExcelSuffix, isKnownSuffix, KeyData, RaitaParseError } from '../../utils';
 import { parsePrimitive } from './parsePrimitives';
 
 const parseFileNameParts = (
@@ -66,28 +66,27 @@ const parseGenericFileNameData = (
 };
 
 export const extractFileNameData = (
-  fileName: string,
+  keyData: KeyData,
   fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
 ) => {
   try {
-    const fileNameParts = fileName.split('.');
-    if (fileNameParts.length !== 2) {
+    const {fileName, fileBaseName, fileSuffix} = keyData
+    if (!fileBaseName || !fileSuffix) {
       throw new RaitaParseError(`Unexpected file name structure: ${fileName}`);
     }
-    const [baseName, suffix] = fileNameParts;
-    if (!isKnownSuffix(suffix)) {
+    if (!isKnownSuffix(fileSuffix)) {
       throw new RaitaParseError(`Unexpected suffix in file name: ${fileName}`);
     }
     // File name segments are separated by underscore
-    const fileBaseNameParts = baseName.split('_');
+    const fileBaseNameParts = fileBaseName.split('_');
     // Get labels based on the file suffix from extractionSpec
-    const labels = fileNamePartLabels[suffix];
+    const labels = fileNamePartLabels[fileSuffix];
     // Excel file name parsing is special case, some name segments need to be ignored
-    const specBasedMetadata = isExcelSuffix(suffix)
+    const specBasedMetadata = isExcelSuffix(fileSuffix)
       ? parseExcelFileNameData(labels, fileBaseNameParts)
       : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
     return {
-      file_type: suffix,
+      file_type: fileSuffix,
       ...specBasedMetadata,
     };
   } catch (error) {

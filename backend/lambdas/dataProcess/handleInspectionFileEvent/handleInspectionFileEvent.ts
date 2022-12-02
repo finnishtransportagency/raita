@@ -19,7 +19,7 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import { decodeS3EventPropertyString, decodeUriString } from '../../utils';
+import { decodeS3EventPropertyString, getKeyData, KeyData } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -53,25 +53,22 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
       async eventRecord => {
         const file = await backend.files.getFile(eventRecord);
         const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
-        const path = key.split('/');
-        const rootFolder = path[0];
+        const keyData = getKeyData(key);
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
-        if (!isRaitaSourceSystem(rootFolder)) {
+        if (!isRaitaSourceSystem(keyData.rootFolder)) {
           logger.logError(
             `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
           );
           return null;
         }
-        const fileName = decodeUriString(path[path.length - 1]);
         const parseResults = await parseFileMetadata({
-          fileName,
-          path,
+          keyData,
           file,
           spec,
         });
         return {
-          file_name: fileName,
+          file_name: keyData.fileName,
           key,
           bucket_arn: eventRecord.s3.bucket.arn,
           bucket_name: eventRecord.s3.bucket.name,
@@ -97,30 +94,26 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
 }
 
 async function parseFileMetadata({
-  fileName,
-  path,
+  keyData,
   file,
   spec,
 }: {
-  fileName: string;
-  path: Array<string>;
+  keyData: KeyData;
   file: IFileResult;
   spec: IExtractionSpec;
 }): Promise<{ metadata: ParseValueResult; hash: string | undefined }> {
   const fileNameData = extractFileNameData(
-    fileName,
+    keyData,
     spec.fileNameExtractionSpec,
   );
-  const pathData = extractPathData(path, spec.folderTreeExtractionSpec);
+  const pathData = extractPathData(keyData, spec.folderTreeExtractionSpec);
   const fileBody = file.fileBody?.toString();
   const fileContentData =
-    shouldParseContent({
-      fileName,
-    }) && fileBody
+    shouldParseContent(keyData.fileSuffix) && fileBody
       ? extractFileContentData(spec, fileBody)
       : {};
   const hash =
-    shouldCalculateHash({ fileName }) && fileBody
+    shouldCalculateHash(keyData.fileSuffix) && fileBody
       ? calculateHash(fileBody)
       : undefined;
 
