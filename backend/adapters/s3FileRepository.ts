@@ -1,6 +1,5 @@
 import { S3EventRecord } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { string } from 'zod';
 import { IFileResult } from '../types';
 import { IFileInterface } from '../types/portFile';
 
