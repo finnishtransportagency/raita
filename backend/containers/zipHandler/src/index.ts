@@ -5,7 +5,7 @@ import { getConfig } from './config';
 import { processZipFile } from './processZipFile';
 import {
   decodeS3EventPropertyString,
-  getKeyConstituents,
+  getKeyData,
   logMessages,
   RaitaZipError,
 } from './utils';
@@ -23,7 +23,7 @@ async function start() {
   try {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileBaseName } =
-      getKeyConstituents(zipKey);
+      getKeyData(zipKey);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }

@@ -11,12 +11,34 @@ import {
 } from './constants';
 
 // Duplicates BEGIN: Functions duplicating logic from main code base
-export const getKeyConstituents = (key: string) => {
+const decodeUriString = (uriString: string) => {
+  try {
+    return decodeURIComponent(uriString);
+  } catch (error) {
+    return uriString;
+  }
+};
+
+export const getKeyData = (key: string) => {
   const path = key.split('/');
-  const fileName = path[path.length - 1];
-  const [fileBaseName, fileSuffix] = fileName.split('.');
-  const [keyWithoutSuffix] = key.split('.');
-  return { path, fileName, fileBaseName, fileSuffix, keyWithoutSuffix };
+  const rootFolder = path[0];
+  const fileName = decodeUriString(path[path.length - 1]);
+  const lastDotInFileName = fileName.lastIndexOf('.');
+  const fileBaseName =
+    lastDotInFileName >= 0 ? fileName.slice(0, lastDotInFileName) : fileName;
+  const fileSuffix =
+    lastDotInFileName >= 0 && fileName.length - 1 > lastDotInFileName
+      ? fileName.slice(lastDotInFileName + 1)
+      : '';
+  const keyWithoutSuffix = key.slice(0, -fileSuffix.length);
+  return {
+    path,
+    rootFolder,
+    fileName,
+    fileBaseName,
+    fileSuffix,
+    keyWithoutSuffix,
+  };
 };
 
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
@@ -55,7 +77,7 @@ export const uploadToS3 = ({
   s3: S3;
   zipFileData: ZipFileData;
 }) => {
-  const { fileName } = getKeyConstituents(key);
+  const { fileName } = getKeyData(key);
   const passThrough = new PassThrough();
   const upload = new Upload({
     client: s3,
@@ -80,7 +102,7 @@ const compressedSize = (entries: ExtractEntriesResult['entries']) =>
  * Return true is the file is detected as video file
  */
 export const isRaitaVideoFile = (fileName: string) => {
-  const { path, fileSuffix } = getKeyConstituents(fileName);
+  const { path, fileSuffix } = getKeyData(fileName);
   return (
     RAITA_DATA_VIDEO_SUFFIXES.some(suffix => suffix === fileSuffix) ||
     RAITA_DATA_VIDEO_FOLDERS.some(folder => path.includes(folder))

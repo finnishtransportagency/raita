@@ -76,16 +76,27 @@ export const getOpenSearchLambdaConfigOrFail = () => {
 
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
 
-
-export type KeyData = ReturnType<typeof getKeyData>
+export type KeyData = ReturnType<typeof getKeyData>;
 export const getKeyData = (key: string) => {
   const path = key.split('/');
   const rootFolder = path[0];
   const fileName = decodeUriString(path[path.length - 1]);
-  const lastDot = fileName.lastIndexOf('.');
-  const fileBaseName = fileName.slice(0, lastDot);
-  const fileSuffix = lastDot >= 0 && fileName.length - 1 > lastDot ? fileName.slice(lastDot + 1): '';
-  return { path, rootFolder, fileName, fileBaseName, fileSuffix };
+  const lastDotInFileName = fileName.lastIndexOf('.');
+  const fileBaseName =
+    lastDotInFileName >= 0 ? fileName.slice(0, lastDotInFileName) : fileName;
+  const fileSuffix =
+    lastDotInFileName >= 0 && fileName.length - 1 > lastDotInFileName
+      ? fileName.slice(lastDotInFileName + 1)
+      : '';
+  const keyWithoutSuffix = key.slice(0, -fileSuffix.length);
+  return {
+    path,
+    rootFolder,
+    fileName,
+    fileBaseName,
+    fileSuffix,
+    keyWithoutSuffix,
+  };
 };
 
 // Expected structure for zip file path parts is designated in the PathType type
