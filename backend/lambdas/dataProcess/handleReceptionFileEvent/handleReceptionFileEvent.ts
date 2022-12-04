@@ -4,7 +4,7 @@ import { logger } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
   decodeS3EventPropertyString,
-  getKeyConstituents,
+  getKeyData,
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
@@ -28,7 +28,7 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
       const config = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
-      const { path, fileSuffix } = getKeyConstituents(key);
+      const { path, fileSuffix } = getKeyData(key);
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
       }
