@@ -13,7 +13,7 @@ import {
   shouldCalculateHash,
   shouldParseContent,
 } from './contentDataParser';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
 import {
   getGetEnvWithPreassignedContext,
@@ -57,7 +57,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
         if (!isRaitaSourceSystem(keyData.rootFolder)) {
-          logger.logError(
+          log.warn(
             `Ignoring file ${eventRecord.s3.object.key} outside Raita source system folders.`,
           );
           return null;
@@ -89,7 +89,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
     await backend.metadataStorage.saveFileMetadata(entries);
   } catch (err) {
     // TODO: Figure out proper error handling.
-    logger.logError(`An error occured while processing events: ${err}`);
+    log.error(`An error occured while processing events: ${err}`);
   }
 }
 

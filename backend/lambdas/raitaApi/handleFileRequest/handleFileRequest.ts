@@ -1,7 +1,8 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { getEnvOrFail } from '../../../../utils';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
+import { getUser, validateReadUser } from '../../../utils/userService';
 import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
@@ -25,12 +26,15 @@ export async function handleFileRequest(
   const { body } = event;
   const s3 = new S3();
   try {
+    const user = await getUser(event);
+    await validateReadUser(user);
     const { dataBucket } = getLambdaConfigOrFail();
     const requestBody = body && JSON.parse(body);
     if (!requestBody?.key) {
       throw new Error('Key not specified');
     }
     const { key } = requestBody;
+    log.info(user, `Generating pre-signed url for ${key}`);
     // Check if file exists
     const exists = await s3
       .headObject({
@@ -49,7 +53,7 @@ export async function handleFileRequest(
     });
     return getRaitaSuccessResponse({ url });
   } catch (err: unknown) {
-    logger.logError(err);
+    log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }
 }

@@ -4,8 +4,13 @@ import {
   IExtractionSpecLabels,
   ParseValueResult,
 } from '../../../types';
-import { logger } from '../../../utils/logger';
-import { isExcelSuffix, isKnownSuffix, KeyData, RaitaParseError } from '../../utils';
+import {
+  isExcelSuffix,
+  isKnownSuffix,
+  KeyData,
+  RaitaParseError,
+} from '../../utils';
+import { log, logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
 const parseFileNameParts = (
@@ -70,7 +75,7 @@ export const extractFileNameData = (
   fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
 ) => {
   try {
-    const {fileName, fileBaseName, fileSuffix} = keyData
+    const { fileName, fileBaseName, fileSuffix } = keyData;
     if (!fileBaseName || !fileSuffix) {
       throw new RaitaParseError(`Unexpected file name structure: ${fileName}`);
     }
@@ -92,11 +97,12 @@ export const extractFileNameData = (
   } catch (error) {
     // Currently just log file name parsing errors.
     if (error instanceof RaitaParseError) {
-      logger.logParsingException(
+      logParsingException.warn(
         `${error.message}. File name extraction skipped.`,
       );
       return {};
     }
+    log.error(error);
     throw error;
   }
 };

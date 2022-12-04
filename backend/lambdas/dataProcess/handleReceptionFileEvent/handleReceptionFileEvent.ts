@@ -1,6 +1,6 @@
 import { S3Event } from 'aws-lambda';
 import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
   decodeS3EventPropertyString,
@@ -52,7 +52,6 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
     });
     await Promise.all(recordResults);
   } catch (err) {
-    // TODO: Temporary logging
-    logger.logError(`An error occured while processing zip events: ${err}`);
+    log.error(`An error occured while processing zip events: ${err}`);
   }
 }

@@ -1,6 +1,7 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import MetadataPort from '../../../ports/metadataPort';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
+import { getUser, validateReadUser } from '../../../utils/userService';
 import {
   getOpenSearchLambdaConfigOrFail,
   getRaitaLambdaErrorResponse,
@@ -11,10 +12,13 @@ import {
  * Returns meta information about inspection report (meta) data stored in Raita database
  */
 export async function handleMetaRequest(
-  _event: ALBEvent,
+  event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
+    const user = await getUser(event);
+    await validateReadUser(user);
+    log.info(user, 'Return meta information');
     const { openSearchDomain, region, metadataIndex } =
       getOpenSearchLambdaConfigOrFail();
     const metadataPort = new MetadataPort({
@@ -32,7 +36,7 @@ export async function handleMetaRequest(
       ...aggregations,
     });
   } catch (err: unknown) {
-    logger.logError(err);
+    log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }
 }

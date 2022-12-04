@@ -1,6 +1,6 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
-import { logger } from '../../../utils/logger';
 import { isExcelSuffix, KeyData } from '../../utils';
+import { logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
 /**
@@ -20,7 +20,7 @@ export const extractPathData = (
     ? 5
     : Object.keys(folderLabels).length;
   if (path.length !== expectedPathLength) {
-    logger.logParsingException(
+    logParsingException.warn(
       `Unexpected folder path length ${path.length} for path ${path}, expected ${expectedPathLength}. Folder path analysis not carried out`,
     );
     return {};

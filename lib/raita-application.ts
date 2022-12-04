@@ -21,6 +21,7 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly stackId: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly jwtTokenIssuer: string;
   readonly vpc: ec2.IVpc;
   readonly securityGroup: ec2.ISecurityGroup;
   readonly openSearchMetadataIndex: string;
@@ -39,6 +40,7 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier,
       stackId,
       raitaEnv,
+      jwtTokenIssuer,
       vpc,
       securityGroup,
       openSearchMetadataIndex,
@@ -72,6 +74,8 @@ export class ApplicationStack extends NestedStack {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       raitaStackIdentifier: raitaStackIdentifier,
       openSearchMetadataIndex: openSearchMetadataIndex,
       vpc,
