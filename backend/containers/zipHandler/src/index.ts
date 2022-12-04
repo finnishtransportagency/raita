@@ -11,6 +11,7 @@ import {
 } from './utils';
 import { isZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
+import { log } from './logger';
 
 start();
 
@@ -18,7 +19,7 @@ async function start() {
   const { bucket, key, targetBucket } = getConfig();
   const startMessage = `Zip extraction from bucket: ${bucket} to ${targetBucket} started for ${key}`;
   // TODO: Temporary logging
-  console.log(startMessage);
+  log.debug(startMessage);
   try {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileBaseName } =
@@ -68,11 +69,11 @@ async function start() {
         .then(data => {
           const { entries, streamError } = data;
           // TODO: Temporary logging
-          console.log(logMessages['resultMessage'](entries));
+          log.debug(logMessages['resultMessage'](entries));
           if (streamError) {
             // The process succeeded possibly partially. Currently only logs error, does not throw.
             // TODO: Temporary logging
-            console.log(logMessages['streamErrorMessage'](streamError));
+            log.error(logMessages['streamErrorMessage'](streamError));
           }
         })
         .catch(err => {
@@ -83,7 +84,7 @@ async function start() {
     readStream.pipe(writeStream);
   } catch (err) {
     // TODO: Temporary logging
-    console.log(err);
+    log.error(err);
     // TODO: Possible recovery actions apart from logging
   }
 }
