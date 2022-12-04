@@ -37,7 +37,7 @@ export const resolveEntries = async (entries: Array<Promise<EntryRecord>>) => {
       acc[cur.status].push(cur);
       return acc;
     },
-    { success: [], failure: [] } as ExtractEntriesResult['entries'],
+    { success: [], error: [] } as ExtractEntriesResult['entries'],
   );
 };
 
@@ -64,7 +64,7 @@ export const uploadToS3 = ({
       Key: key,
       Body: passThrough,
       ContentType: mime.lookup(fileName) || undefined,
-      Tagging: `ZipTimeStamp=${zipFileData.timeStamp},ZipTimeStampType=${zipFileData.timeStampType},ZipFileName=${zipFileData.fileName}`,
+      Tagging: `ZipTimeStamp=${zipFileData.timeStamp}&ZipTimeStampType=${zipFileData.timeStampType}&ZipFileName=${zipFileData.fileName}`,
     },
   });
   return {
@@ -89,11 +89,13 @@ export const isRaitaVideoFile = (fileName: string) => {
 
 export const logMessages = {
   resultMessage: (entries: ExtractEntriesResult['entries']) =>
-    `${entries.success.length} files succesfully extracted from zip, ${
-      entries.failure.length
-    } files failed in the process. Total compressed size of extracted files ${compressedSize(
+    `${
+      entries.success.length
+    } files succesfully extracted from zip. Total compressed size of extracted files ${compressedSize(
       entries,
-    )}.`,
+    )}. ${entries.error.length} files failed in the process ${entries.error
+      .map(entry => `${entry.fileName}: ${entry.errorDescription}`)
+      .join(', ')} `,
   streamErrorMessage: (streamError: unknown) =>
     `ERROR: Zip extraction did not succeed until end, extraction failed due to zip error: ${streamError}`,
 };

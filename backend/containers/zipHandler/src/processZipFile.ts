@@ -92,8 +92,9 @@ export const processZipFile = ({
                     // Upload failed, resolve with error
                     resolveEntry({
                       ...entry,
-                      status: 'failure',
-                      failureCause: `Upload to S3 failed: ${
+                      fileName: entry.fileName.toString(),
+                      status: 'error',
+                      errorDescription: `Upload to S3 failed: ${
                         err instanceof Error ? err.message : err
                       }`,
                     });
