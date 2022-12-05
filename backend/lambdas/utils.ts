@@ -88,7 +88,9 @@ export const getKeyData = (key: string) => {
     lastDotInFileName >= 0 && fileName.length - 1 > lastDotInFileName
       ? fileName.slice(lastDotInFileName + 1)
       : '';
-  const keyWithoutSuffix = key.slice(0, -fileSuffix.length);
+  const keyWithoutSuffix = fileSuffix
+    ? key.slice(0, -(fileSuffix.length + 1))
+    : key;
   return {
     path,
     rootFolder,
