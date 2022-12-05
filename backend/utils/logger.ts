@@ -1,5 +1,8 @@
 import pino from 'pino';
 
+// Logger implemetation here is duplicated by a copy under backend/containers/zipHandler.
+// Update both implementations if changes are needed.
+
 const level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';
 
 const XRAY_ENV_NAME = '_X_AMZN_TRACE_ID';
