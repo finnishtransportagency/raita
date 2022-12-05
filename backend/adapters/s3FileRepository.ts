@@ -15,15 +15,27 @@ export class S3FileRepository implements IFileInterface {
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
     );
-    const file = await this.#s3
+    const filePromise = this.#s3
       .getObject({
         Bucket: bucket,
         Key: key,
       })
       .promise();
+    const tagsPromise = this.#s3
+      .getObjectTagging({
+        Bucket: bucket,
+        Key: key,
+      })
+      .promise();
+    const [file, tagSet] = await Promise.all([filePromise, tagsPromise]);
+    const tags = tagSet.TagSet.reduce((acc, cur) => {
+      acc[cur.Key] = cur.Value;
+      return acc;
+    }, {} as Record<string, string>);
     return {
       fileBody: file.Body?.toString(),
       contentType: file.ContentType,
+      tags,
     };
   };
 }

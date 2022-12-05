@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
@@ -7,18 +8,12 @@ import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncudeInMetadataParsing } from '../../../../constants';
 import { RaitaParseError } from '../../utils';
-import { createHash } from 'crypto';
 import { log } from '../../../utils/logger';
 /**
  * Resolves whether content data parsing is needed for the file
  */
-export const shouldParseContent = ({ fileName }: { fileName: string }) => {
-  const suffix = fileName.substring(
-    fileName.lastIndexOf('.') + 1,
-    fileName.length,
-  );
-  return suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
-};
+export const shouldParseContent = (suffix: string) =>
+  suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
 
 /**
  * Resolves whether hash should be calculated for the file contents

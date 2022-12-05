@@ -1,6 +1,6 @@
 import pino from 'pino';
 
-// Logger implemetation here is duplicated by a copy under backend/containers/zipHandler.
+// Logger implementation here is a duplicate of the logger in main code base
 // Update both implementations if changes are needed.
 
 const level = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info';

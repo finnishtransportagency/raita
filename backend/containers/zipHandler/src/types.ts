@@ -13,6 +13,12 @@ export type ZipPath = [
   fileName: string,
 ];
 
+export interface ZipFileData {
+  timeStamp: string;
+  timeStampType: string;
+  fileName: string;
+}
+
 export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
@@ -21,8 +27,9 @@ export function isZipPath(arg: Array<string>): arg is ZipPath {
 // END duplicates
 
 export interface EntryRecord {
-  status: 'success' | 'failure';
-  failureDescription: string;
+  fileName: string;
+  status: 'success' | 'error';
+  errorDescription: string;
   compressedSize: number;
   uncompressedSize: number;
 }
@@ -30,7 +37,7 @@ export interface EntryRecord {
 export interface ExtractEntriesResult {
   entries: {
     success: Array<EntryRecord>;
-    failure: Array<EntryRecord>;
+    error: Array<EntryRecord>;
   };
   streamError?: Error;
 }

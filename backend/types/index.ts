@@ -18,4 +18,5 @@ export interface FileMetadataEntry {
 export interface IFileResult {
   fileBody: string | undefined;
   contentType: string | undefined;
+  tags: Record<string, string>;
 }
