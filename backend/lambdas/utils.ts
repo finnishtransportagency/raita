@@ -1,4 +1,9 @@
 import {
+  ExcelSuffix,
+  fileSuffixesToIncudeInMetadataParsing,
+  KnownSuffix,
+} from '../../constants';
+import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../utils';
@@ -71,11 +76,29 @@ export const getOpenSearchLambdaConfigOrFail = () => {
 
 export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
 
-export const getKeyConstituents = (key: string) => {
+export type KeyData = ReturnType<typeof getKeyData>;
+export const getKeyData = (key: string) => {
   const path = key.split('/');
-  const fileName = path[path.length - 1];
-  const [fileBaseName, fileSuffix] = fileName.split('.');
-  return { path, fileName, fileBaseName, fileSuffix };
+  const rootFolder = path[0];
+  const fileName = decodeUriString(path[path.length - 1]);
+  const lastDotInFileName = fileName.lastIndexOf('.');
+  const fileBaseName =
+    lastDotInFileName >= 0 ? fileName.slice(0, lastDotInFileName) : fileName;
+  const fileSuffix =
+    lastDotInFileName >= 0 && fileName.length - 1 > lastDotInFileName
+      ? fileName.slice(lastDotInFileName + 1)
+      : '';
+  const keyWithoutSuffix = fileSuffix
+    ? key.slice(0, -(fileSuffix.length + 1))
+    : key;
+  return {
+    path,
+    rootFolder,
+    fileName,
+    fileBaseName,
+    fileSuffix,
+    keyWithoutSuffix,
+  };
 };
 
 // Expected structure for zip file path parts is designated in the PathType type
@@ -89,7 +112,22 @@ export type ZipPath = [
   fileName: string,
 ];
 
+// Type guards
+
 export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+}
+
+export function isKnownSuffix(arg: string): arg is KnownSuffix {
+  return Object.values(fileSuffixesToIncudeInMetadataParsing).some(
+    suffix => suffix === arg,
+  );
+}
+
+export function isExcelSuffix(arg: string): arg is ExcelSuffix {
+  return (
+    fileSuffixesToIncudeInMetadataParsing.XLSX_FILE === arg ||
+    fileSuffixesToIncudeInMetadataParsing.XLS_FILE === arg
+  );
 }
