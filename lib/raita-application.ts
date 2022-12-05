@@ -1,18 +1,20 @@
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { RaitaEnvironment } from './config';
-import { getRemovalPolicy, isDevelopmentMainStack } from './utils';
 import {
   AnyPrincipal,
   Effect,
   PolicyStatement,
   Role,
 } from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
 import { Port } from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
-
+import {
+  getEnvDependentOsConfiguration,
+  isDevelopmentMainStack,
+} from './utils';
+import { RaitaEnvironment } from './config';
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
@@ -151,35 +153,17 @@ export class ApplicationStack extends NestedStack {
       ':domain/' +
       domainName +
       '/*';
-    // TODO: Identify parameters to move to environment (and move)
+
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_3,
       enableVersionUpgrade: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      ebs: {
-        volumeSize: 10,
-        volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
-      },
-      capacity: {
-        dataNodes: 1,
-        dataNodeInstanceType: 't3.small.search',
-      },
       nodeToNodeEncryption: true,
+      enforceHttps: true,
+      vpc,
       encryptionAtRest: {
         enabled: true,
       },
-      enforceHttps: true,
-      // must be enabled if VPC contains multiple private subnets.
-      // zoneAwareness: {
-      //   enabled: true,
-      // },
-      vpc,
-      vpcSubnets: [
-        {
-          subnets: vpc.privateSubnets.slice(0, 1),
-        },
-      ],
       accessPolicies: [
         new PolicyStatement({
           effect: Effect.ALLOW,
@@ -188,6 +172,7 @@ export class ApplicationStack extends NestedStack {
           resources: [domainArn],
         }),
       ],
+      ...getEnvDependentOsConfiguration(raitaEnv, vpc.privateSubnets),
     });
   }
 
