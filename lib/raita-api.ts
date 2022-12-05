@@ -24,6 +24,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
+  readonly cloudfrontDomainName: string;
 }
 
 type ListenerTargetLambdas = {
@@ -54,6 +55,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
       inspectionDataBucket,
       openSearchDomain,
+      cloudfrontDomainName,
     } = props;
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
@@ -113,6 +115,17 @@ export class RaitaApiStack extends NestedStack {
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
+      vpc,
+    });
+
+    const handleReturnLogin = this.createReturnLoginHandler({
+      name: 'api-handler-return-login',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      cloudfrontDomainName,
+      lambdaRole: this.raitaApiLambdaServiceRole,
       vpc,
     });
 
@@ -376,6 +389,49 @@ export class RaitaApiStack extends NestedStack {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+  private createReturnLoginHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    cloudfrontDomainName,
+    lambdaRole,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    cloudfrontDomainName: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleReturnLogin/handleReturnLogin.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        CLOUDFRONT_DOMAIN_NAME: cloudfrontDomainName,
       },
       role: lambdaRole,
       vpc,
