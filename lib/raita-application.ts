@@ -165,14 +165,14 @@ export class ApplicationStack extends NestedStack {
     raitaStackIdentifier: string;
   }) {
     const domainName = `${name}-${raitaStackIdentifier}`;
-    const domainArn =
-      'arn:aws:es:' +
-      this.region +
-      ':' +
-      this.account +
-      ':domain/' +
-      domainName +
-      '/*';
+    // const domainArn =
+    //   'arn:aws:es:' +
+    //   this.region +
+    //   ':' +
+    //   this.account +
+    //   ':domain/' +
+    //   domainName +
+    //   '/*';
     // TODO: Identify parameters to move to environment (and move)
     return new opensearch.Domain(this, domainName, {
       domainName,
