@@ -159,6 +159,12 @@ export class RaitaApiStack extends NestedStack {
         path: ['/api/meta'],
         targetName: 'meta',
       },
+      {
+        lambda: handleReturnLogin,
+        priority: 400,
+        path: ['/api/return-login'],
+        targetName: 'return-login',
+      },
     ];
 
     // ALB for API
