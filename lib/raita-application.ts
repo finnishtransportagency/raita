@@ -88,7 +88,7 @@ export class ApplicationStack extends NestedStack {
       /**
        * Create a policy granting bastion host (role) the permissions
        * to make calls to OpenSearch endpoints
-       * NOTE 1:See Jira issue 231.
+       * NOTE 1: See Jira issue 231.
        */
       this.createManagedPolicy({
         name: 'BastionOpenSearchHttpPolicy',
