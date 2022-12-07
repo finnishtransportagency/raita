@@ -44,6 +44,7 @@ export class RaitaStack extends Stack {
       parserConfigurationFile: config.parserConfigurationFile,
       sftpPolicyAccountId: config.sftpPolicyAccountId,
       sftpPolicyUserId: config.sftpPolicyUserId,
+      cloudfrontDomainName: config.cloudfrontDomainName,
     });
     Object.entries(tags).forEach(([key, value]) =>
       Tags.of(applicationStack).add(key, value),

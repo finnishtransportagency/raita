@@ -28,6 +28,7 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
+  readonly cloudfrontDomainName: string;
 }
 
 /**
@@ -47,6 +48,7 @@ export class ApplicationStack extends NestedStack {
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
+      cloudfrontDomainName,
     } = props;
 
     // Create and configure OpenSearch domain
@@ -78,6 +80,7 @@ export class ApplicationStack extends NestedStack {
       jwtTokenIssuer,
       raitaStackIdentifier: raitaStackIdentifier,
       openSearchMetadataIndex: openSearchMetadataIndex,
+      cloudfrontDomainName: cloudfrontDomainName,
       vpc,
     });
 
