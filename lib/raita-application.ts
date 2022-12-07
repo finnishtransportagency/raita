@@ -1,18 +1,12 @@
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { Role } from 'aws-cdk-lib/aws-iam';
+import { Port } from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getRemovalPolicy, isDevelopmentMainStack } from './utils';
-import {
-  AnyPrincipal,
-  Effect,
-  PolicyStatement,
-  Role,
-} from 'aws-cdk-lib/aws-iam';
-import { Port } from 'aws-cdk-lib/aws-ec2';
-import * as iam from 'aws-cdk-lib/aws-iam';
-
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
@@ -165,15 +159,6 @@ export class ApplicationStack extends NestedStack {
     raitaStackIdentifier: string;
   }) {
     const domainName = `${name}-${raitaStackIdentifier}`;
-    // const domainArn =
-    //   'arn:aws:es:' +
-    //   this.region +
-    //   ':' +
-    //   this.account +
-    //   ':domain/' +
-    //   domainName +
-    //   '/*';
-    // TODO: Identify parameters to move to environment (and move)
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_3,
@@ -202,14 +187,6 @@ export class ApplicationStack extends NestedStack {
           subnets: vpc.privateSubnets.slice(0, 1),
         },
       ],
-      // accessPolicies: [
-      //   new PolicyStatement({
-      //     effect: Effect.ALLOW,
-      //     actions: ['es:ESHttp*'],
-      //     principals: [new AnyPrincipal()],
-      //     resources: [domainArn],
-      //   }),
-      // ],
     });
   }
 
