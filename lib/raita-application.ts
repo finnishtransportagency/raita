@@ -86,8 +86,12 @@ export class ApplicationStack extends NestedStack {
       });
 
       /**
-       * Creating this policy would grant bastion host (role) the permissions
+       * Create a policy granting bastion host (role) the permissions
        * to make calls to OpenSearch endpoints
+       * NOTE 1: Bastion host seems to have permissions to call OpenSearch
+       * endpoints event without this policy, see Jira RAITA-231. In ideal case
+       * bastion host would not have nay permissions to call OpenSearch, it would
+       * only pipe through connections to the database.
        */
       this.createManagedPolicy({
         name: 'BastionOpenSearchHttpPolicy',
