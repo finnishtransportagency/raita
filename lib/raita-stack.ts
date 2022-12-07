@@ -39,7 +39,7 @@ export class RaitaStack extends Stack {
       stackId,
       jwtTokenIssuer: config.jwtTokenIssuer,
       vpc: raitaVPC,
-      securityGroup: raitaSecurityGroup,
+      raitaSecurityGroup,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
       sftpPolicyAccountId: config.sftpPolicyAccountId,
