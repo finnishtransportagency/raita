@@ -1,4 +1,4 @@
-import { raitaSourceSystems } from '../constants';
+import { raitaSourceSystems, SSM_JWT_TOKEN_ISSUER } from '../constants';
 import { getEnvOrFail } from '../utils';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 // import { Construct } from '@aws-cdk/core';
@@ -110,7 +110,7 @@ export const getRaitaStackConfig = (
   raitaEnv: RaitaEnvironment,
 ) => ({
   parserConfigurationFile: 'extractionSpec.json',
-  openSearchMetadataIndex: 'metadata-index',
+  openSearchMetadataIndex: 'metadata',
   raitaSourceSystems: Object.values(raitaSourceSystems),
   cloudfrontCertificateArn: getSSMParameter(
     scope,
@@ -120,5 +120,6 @@ export const getRaitaStackConfig = (
   dmzApiEndpoint: getSSMParameter(scope, SSM_DMZ_API_DOMAIN_NAME),
   sftpPolicyAccountId: getSSMParameter(scope, SFTP_POLICY_ACCOUNT_ID),
   sftpPolicyUserId: getSSMParameter(scope, SFTP_POLICY_USER_ID),
+  jwtTokenIssuer: getSSMParameter(scope, SSM_JWT_TOKEN_ISSUER),
   ...getAccountVpcResourceConfig(raitaEnv),
 });

@@ -1,4 +1,5 @@
 import parse from 'date-fns/parse';
+import { log } from '../../../utils/logger';
 
 export const parsePrimitive = (
   key: string,
@@ -24,6 +25,7 @@ export const parsePrimitive = (
   try {
     return { key, value: parsers[target](data) };
   } catch (error) {
+    log.error(error);
     return { key: `nonparsed_${key}`, value: data };
   }
 };

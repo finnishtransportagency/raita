@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
@@ -7,17 +8,12 @@ import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncudeInMetadataParsing } from '../../../../constants';
 import { RaitaParseError } from '../../utils';
-import { createHash } from 'crypto';
+import { log } from '../../../utils/logger';
 /**
  * Resolves whether content data parsing is needed for the file
  */
-export const shouldParseContent = ({ fileName }: { fileName: string }) => {
-  const suffix = fileName.substring(
-    fileName.lastIndexOf('.') + 1,
-    fileName.length,
-  );
-  return suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
-};
+export const shouldParseContent = (suffix: string) =>
+  suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
 
 /**
  * Resolves whether hash should be calculated for the file contents
@@ -47,6 +43,7 @@ const extractValue = (
     }
     return null;
   } catch (err) {
+    log.error(err);
     throw new RaitaParseError(
       `Parsing failed for the term: ${propertyKey}: ${
         err instanceof Error ? err.message : err
@@ -72,6 +69,7 @@ export const extractFileContentData = (
  * Returns hex encoded hash for given file input
  */
 export const calculateHash = (fileBody: string): string => {
+  log.debug(`Calculating hash for ${fileBody}`);
   const hash = createHash('sha256');
   return hash.update(fileBody).digest('hex');
 };

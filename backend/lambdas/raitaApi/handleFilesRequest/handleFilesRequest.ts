@@ -1,7 +1,8 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import MetadataPort from '../../../ports/metadataPort';
-import { logger } from '../../../utils/logger';
+import { log } from '../../../utils/logger';
+import { getUser, validateReadUser } from '../../../utils/userService';
 import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
@@ -26,6 +27,8 @@ export async function handleFilesRequest(
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
+    const user = await getUser(event);
+    await validateReadUser(user);
     const { openSearchDomain, region, metadataIndex } =
       getOpenSearchLambdaConfigOrFail();
     // TODO: Add better type check (zod) if endpoint is used permanently
@@ -39,6 +42,7 @@ export async function handleFilesRequest(
         400,
       );
     }
+    log.info(user, `Querying for ${queryObject.query}`);
     const metadata = new MetadataPort({
       backend: 'openSearch',
       metadataIndex,
@@ -48,7 +52,7 @@ export async function handleFilesRequest(
     const result = await metadata.queryOpenSearchMetadata(queryObject);
     return getRaitaSuccessResponse({ result });
   } catch (err: unknown) {
-    logger.logError(err);
+    log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }
 }

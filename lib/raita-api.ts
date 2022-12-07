@@ -13,10 +13,13 @@ import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaServiceRole } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly stackId: string;
+  readonly jwtTokenIssuer: string;
   readonly inspectionDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
@@ -44,6 +47,9 @@ export class RaitaApiStack extends NestedStack {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       openSearchMetadataIndex,
       vpc,
       inspectionDataBucket,
@@ -67,6 +73,9 @@ export class RaitaApiStack extends NestedStack {
     const handleFileRequestFn = this.createFileRequestHandler({
       name: 'api-handler-file',
       raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       dataBucket: inspectionDataBucket,
       vpc,
@@ -75,6 +84,9 @@ export class RaitaApiStack extends NestedStack {
     const handleImagesRequestFn = this.createImagesRequestHandler({
       name: 'api-handler-images',
       raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       dataBucket: inspectionDataBucket,
       vpc,
@@ -83,6 +95,9 @@ export class RaitaApiStack extends NestedStack {
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
@@ -92,6 +107,9 @@ export class RaitaApiStack extends NestedStack {
     this.handleMetaRequestFn = this.createMetaRequestHandler({
       name: 'api-handler-meta',
       raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       openSearchMetadataIndex,
@@ -178,12 +196,18 @@ export class RaitaApiStack extends NestedStack {
   private createFileRequestHandler({
     name,
     raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
     dataBucket,
     lambdaRole,
     vpc,
   }: {
     name: string;
     raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
     dataBucket: Bucket;
     lambdaRole: Role;
     vpc: ec2.IVpc;
@@ -200,12 +224,16 @@ export class RaitaApiStack extends NestedStack {
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
       vpc,
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -215,12 +243,18 @@ export class RaitaApiStack extends NestedStack {
   private createImagesRequestHandler({
     name,
     raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
     lambdaRole,
     dataBucket,
     vpc,
   }: {
     name: string;
     raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
     lambdaRole: Role;
     dataBucket: Bucket;
     vpc: ec2.IVpc;
@@ -237,12 +271,16 @@ export class RaitaApiStack extends NestedStack {
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
       vpc,
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -252,6 +290,9 @@ export class RaitaApiStack extends NestedStack {
   private createFilesRequestHandler({
     name,
     raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
     lambdaRole,
     openSearchDomainEndpoint,
     openSearchMetadataIndex,
@@ -259,6 +300,9 @@ export class RaitaApiStack extends NestedStack {
   }: {
     name: string;
     raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
     openSearchMetadataIndex: string;
@@ -278,12 +322,16 @@ export class RaitaApiStack extends NestedStack {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
       vpc,
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 
@@ -293,6 +341,9 @@ export class RaitaApiStack extends NestedStack {
   private createMetaRequestHandler({
     name,
     raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
     lambdaRole,
     openSearchDomainEndpoint,
     openSearchMetadataIndex,
@@ -300,6 +351,9 @@ export class RaitaApiStack extends NestedStack {
   }: {
     name: string;
     raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
     lambdaRole: Role;
     openSearchDomainEndpoint: string;
     openSearchMetadataIndex: string;
@@ -319,12 +373,16 @@ export class RaitaApiStack extends NestedStack {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
       },
       role: lambdaRole,
       vpc,
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      logRetention: RetentionDays.SIX_MONTHS,
     });
   }
 }

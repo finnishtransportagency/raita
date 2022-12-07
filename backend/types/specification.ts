@@ -26,9 +26,13 @@ export const ExtractionSpec = z.object({
     csv: z.record(z.string(), FieldExtractionSpecObject),
     txt: z.record(z.string(), FieldExtractionSpecObject),
     pdf: z.record(z.string(), FieldExtractionSpecObject),
+    xlsx: z.record(z.string(), FieldExtractionSpecObject),
+    xls: z.record(z.string(), FieldExtractionSpecObject),
   }),
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
 });
 
 export type IExtractionSpec = z.infer<typeof ExtractionSpec>;
+export type IExtractionSpecLabels =
+  IExtractionSpec['fileNameExtractionSpec'][keyof IExtractionSpec['fileNameExtractionSpec']];
