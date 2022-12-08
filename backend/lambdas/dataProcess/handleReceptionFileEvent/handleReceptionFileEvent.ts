@@ -41,7 +41,7 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
           sourceBucketName: bucket.name,
         });
       } else if (isExcelSuffix(fileSuffix)) {
-        // Copy the file to target S3 bucket if is an Excel file
+        // Copy the file to target S3 bucket if it is an Excel file
         const command = new CopyObjectCommand({
           Key: key,
           Bucket: config.targetBucketName,
