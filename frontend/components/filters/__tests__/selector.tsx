@@ -18,7 +18,7 @@ it('has a minimal working example', () => {
 
   const fn = jest.fn();
 
-  const { container, getByText } = render(
+  render(
     <Selector
       fields={{
         foo: { type: 'text' },
@@ -48,27 +48,15 @@ it('allows to add a filter', async () => {
 
   expect(filterCount).toBe(0);
 
-  // expect(await findAllByRole('combobox')).toHaveLength(filterCount);
-
   fireEvent.click(getByLabelText('common:add_filter'));
 
   expect(await findAllByRole('combobox')).toHaveLength(filterCount + 1);
-
-  // const combo1 = await findAllByRole('combobox');
-  // const x = combo1[filterCount - 1];
-  // fireEvent.change(x, { target: { value: '123' } });
-
-  // fireEvent.click(getAllByLabelText('common:remove_filter')[0]);
-
-  // expect(await findAllByRole('combobox')).toHaveLength(filterCount);
-
-  // expect(fn).toHaveBeenCalled();
 });
 
 it('allows to update a filter', async () => {
   const fn = jest.fn();
 
-  const { container, debug, getByRole } = render(
+  const { getByRole } = render(
     <Selector
       fields={{ foo: { type: 'text' } }}
       filters={[{ field: 'foo', value: 'bar' }]}
@@ -85,7 +73,7 @@ it('allows to update a filter', async () => {
 it('allows to remove a filter', async () => {
   const fn = jest.fn();
 
-  const { container, getByRole } = render(
+  const { getByRole } = render(
     <Selector
       fields={{ foo: { type: 'text' } }}
       filters={[{ field: 'foo', value: 'bar' }]}
@@ -101,16 +89,3 @@ it('allows to remove a filter', async () => {
   // After removing it, ensure it's actually removed
   expect(fn).toHaveBeenLastCalledWith([]);
 });
-
-// it('herpy derps', () => {
-//   const fn = jest.fn();
-
-//   const { debug } = render(
-//     <Selector
-//       fields={{ asd: { type: 'text' } }}
-//       onChange={fs => {
-//         // console.log({ fs });
-//       }}
-//     />,
-//   );
-// });
