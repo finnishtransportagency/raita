@@ -5,18 +5,9 @@ import { Entry, FieldTypeT } from './selector';
 
 import css from './filter-control.module.css';
 
-const FilterControl = (props: {
-  type: FieldTypeT;
-  entry: Entry;
-  index: number;
-  onUpdate: (
-    ix: number,
-    field: string,
-    value: string | boolean | undefined,
-    rel?: string,
-  ) => void;
-}) => {
+const FilterControl = (props: Props) => {
   const { t } = useTranslation(['common', 'metadata']);
+
   switch (props.type) {
     case 'bool':
     case 'boolean':
@@ -92,3 +83,17 @@ const FilterControl = (props: {
 };
 
 export default FilterControl;
+
+//
+
+export type Props = {
+  type: FieldTypeT;
+  entry: Entry;
+  index: number;
+  onUpdate: (
+    ix: number,
+    field: string,
+    value?: string | boolean,
+    rel?: string,
+  ) => void;
+};
