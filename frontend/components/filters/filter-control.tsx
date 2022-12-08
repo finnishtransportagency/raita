@@ -3,6 +3,8 @@ import { useTranslation } from 'next-i18next';
 
 import { Entry, FieldTypeT } from './selector';
 
+import css from './filter-control.module.css';
+
 const FilterControl = (props: {
   type: FieldTypeT;
   entry: Entry;
@@ -19,7 +21,7 @@ const FilterControl = (props: {
     case 'bool':
     case 'boolean':
       return (
-        <label className={clsx('input', 'input--bool')}>
+        <label className={clsx(css.root, 'input', 'input--bool')}>
           <input
             type="checkbox"
             checked={props.entry.value as boolean}
@@ -34,7 +36,7 @@ const FilterControl = (props: {
     case 'date':
       return (
         <input
-          className={clsx('input', 'input--date', 'w-full')}
+          className={clsx(css.root, 'input', 'input--date', 'w-full')}
           type="date"
           defaultValue={props.entry.value as string}
           onChange={e =>
@@ -47,7 +49,7 @@ const FilterControl = (props: {
       return (
         <>
           <select
-            className={clsx('input')}
+            className={clsx(css.root, 'input')}
             value={props.entry.rel || 'eq'}
             onChange={e =>
               props.onUpdate(
@@ -64,7 +66,7 @@ const FilterControl = (props: {
           </select>
 
           <input
-            className={clsx('input', 'input--long', 'flex-grow')}
+            className={clsx(css.root, 'input', 'input--long', 'flex-grow')}
             type={'number'}
             defaultValue={props.entry.value as string}
             onChange={e =>
@@ -76,7 +78,7 @@ const FilterControl = (props: {
     case 'text':
       return (
         <input
-          className={clsx('input', 'input--text', 'w-full')}
+          className={clsx(css.root, 'input', 'input--text', 'w-full')}
           type="text"
           defaultValue={props.entry.value as string}
           onChange={e =>

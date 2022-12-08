@@ -1,0 +1,26 @@
+/* Component "root" */
+.root {
+  /* @apply border-2 border-red-500; */
+}
+
+/* Filters */
+
+.filter {
+  @apply border border-blue-500;
+  @apply grid grid-cols-12 gap-2;
+}
+
+.filterKey {
+  @apply col-span-5;
+}
+
+.filterValue {
+  @apply col-span-5;
+  @apply flex;
+}
+
+.filterRemove {
+  @apply col-span-2;
+}
+
+/**/
