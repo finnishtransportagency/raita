@@ -20,5 +20,9 @@
   "label_track_id": "Track ID",
   "label_track_number": "Track number",
   "label_track_part": "Track part",
-  "label_year": "Year"
+  "label_year": "Year",
+  "label_campaign": "Campaign",
+  "label_zip_reception__year": "ZIP Year",
+  "label_zip_reception__date": "ZIP Date",
+  "label_file_type": "File type"
 }
