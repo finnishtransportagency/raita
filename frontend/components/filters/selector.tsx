@@ -37,12 +37,12 @@ export default function Selector(props: Props) {
     );
 
   /** @todo Clarify/cleanup */
-  const updateFilter = (i: number, k?: string, v?: any, r?: any) => {
+  const updateFilter = (i: number, field?: string, value?: any, rel?: any) => {
     setState(s => {
       const _field = [
-        { field: k },
-        v ? { value: v } : {},
-        r ? { rel: r } : {},
+        { field },
+        value ? { value } : {},
+        rel ? { rel } : {},
       ].reduce((o, a) => Object.assign({}, o, a), {});
 
       return R.assoc(
