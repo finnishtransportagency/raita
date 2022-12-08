@@ -12,6 +12,8 @@ interface BastionStackProps extends cdk.NestedStackProps {
 }
 
 export class BastionStack extends cdk.NestedStack {
+  readonly bastionRole: Role;
+
   constructor(scope: Construct, id: string, props: BastionStackProps) {
     super(scope, id, props);
     const {
@@ -21,7 +23,8 @@ export class BastionStack extends cdk.NestedStack {
       albDns,
       databaseDomainEndpoint,
     } = props;
-    const bastionRole = new Role(this, 'RaitaEc2BastionRole', {
+
+    this.bastionRole = new Role(this, 'RaitaEc2BastionRole', {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
@@ -34,7 +37,7 @@ export class BastionStack extends cdk.NestedStack {
     this.createBastionHost({
       name: 'bastion',
       userData,
-      role: bastionRole,
+      role: this.bastionRole,
       vpc,
       securityGroup,
       raitaStackIdentifier,
