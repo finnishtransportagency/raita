@@ -5,6 +5,7 @@ import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
   decodeS3EventPropertyString,
   getKeyData,
+  isExcelSuffix,
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
@@ -39,8 +40,8 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
           key,
           sourceBucketName: bucket.name,
         });
-      } else {
-        // Copy the file to target S3 bucket if not zip file
+      } else if (isExcelSuffix(fileSuffix)) {
+        // Copy the file to target S3 bucket if is an Excel file
         const command = new CopyObjectCommand({
           Key: key,
           Bucket: config.targetBucketName,
