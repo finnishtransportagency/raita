@@ -30,7 +30,7 @@ export function makeQuery(fs: Entry[]) {
    */
   const ranges = makeRangeQuery(byType.range || []);
 
-  const match = makeMatchQuery(byType.match || [], k => `metadata.${k}`);
+  const match = makeMatchQuery(byType.match || [], { keyFn: prefixMeta });
 
   const q = [
     { range: ranges },
@@ -49,9 +49,11 @@ export {};
 //
 
 /**
- * @todo
+ * @param x
+ * @param opts
+ * @returns
  */
-export function makePagedQuery() {
+export function makePagedQuery(x: any, opts: MakeQueryOpts) {
   return { from: 0, to: 0 };
 }
 
@@ -59,10 +61,12 @@ export function makePagedQuery() {
  * Turn a list of `Entry` objects into an OpenSearch `match` query object.
  *
  * @param fs
- * @param keyFn
+ * @param opts
  * @returns
  */
-export function makeMatchQuery(fs: Entry[], keyFn = (a: string) => a) {
+export function makeMatchQuery(fs: Entry[], opts: MakeQueryOpts) {
+  const { keyFn } = opts;
+
   const qs = fs.map(entry => ({
     [keyFn(entry.field)]: entry.value,
   }));
@@ -74,9 +78,10 @@ export function makeMatchQuery(fs: Entry[], keyFn = (a: string) => a) {
  * Not yet implemented
  *
  * @param fs
+ * @param opts
  * @returns
  */
-export function makeRangeQuery(fs: Entry[]) {
+export function makeRangeQuery(fs: Entry[], opts: MakeQueryOpts) {
   const byField = R.groupBy(R.prop('field'), fs);
 
   const kvps = Object.entries(byField);
@@ -95,6 +100,10 @@ export function makeRangeQuery(fs: Entry[]) {
 }
 
 //
+
+type MakeQueryOpts = {
+  keyFn: (key: string) => string;
+};
 
 type RangeT = {};
 
