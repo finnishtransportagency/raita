@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 
 import { EMPTY_KEY } from 'shared/constants';
+import css from './selector.module.css';
+import FilterControl from './filter-control';
+
+//
 
 export default function Selector(props: Props) {
   const { t } = useTranslation(['common', 'metadata']);
@@ -69,7 +73,7 @@ export default function Selector(props: Props) {
   //
 
   return (
-    <div>
+    <div className={clsx(css.root)}>
       <fieldset className="border-2 border-red-500">
         <legend className="px-2 py-1 ml-2">Filters</legend>
 
@@ -77,75 +81,10 @@ export default function Selector(props: Props) {
           {filterList.map((f, ix) => {
             const ff = state.fields[f.field];
 
-            const FilterControl = () => {
-              switch (ff.type) {
-                case 'bool':
-                case 'boolean':
-                  return (
-                    <label className={clsx('input', 'input--bool')}>
-                      <input
-                        type="checkbox"
-                        onChange={e =>
-                          updateFilter(ix, f.field, e.target.checked)
-                        }
-                      />
-
-                      {f.field}
-                    </label>
-                  );
-                case 'date':
-                  return (
-                    <input
-                      className={clsx('input', 'input--date', 'w-full')}
-                      type="date"
-                      defaultValue={f.value as string}
-                      onChange={e => updateFilter(ix, f.field, e.target.value)}
-                    />
-                  );
-                case 'long':
-                case 'float':
-                  return (
-                    <>
-                      <select
-                        className={clsx('input')}
-                        value={f.rel || 'eq'}
-                        onChange={e =>
-                          updateFilter(ix, f.field, undefined, e.target.value)
-                        }
-                      >
-                        <option value="eq">{t('common:relation_eq')}</option>
-                        <option value="gte">{t('common:relation_gte')}</option>
-                        <option value="lte">{t('common:relation_lte')}</option>
-                      </select>
-
-                      <input
-                        className={clsx('input', 'input--long')}
-                        type={'number'}
-                        defaultValue={f.value as string}
-                        onChange={e =>
-                          updateFilter(ix, f.field, e.target.value)
-                        }
-                      />
-                    </>
-                  );
-                case 'text':
-                  return (
-                    <input
-                      className={clsx('input', 'input--text', 'w-full')}
-                      type="text"
-                      defaultValue={f.value as string}
-                      onChange={e => updateFilter(ix, f.field, e.target.value)}
-                    />
-                  );
-                default:
-                  return <div>default</div>;
-              }
-            };
-
             return (
               <li key={ix} className="border-2 px-2 py-1">
-                <div className="grid grid-cols-12 gap-2">
-                  <div className="col-span-5">
+                <div className={clsx(css.filter)}>
+                  <div className={clsx(css.filterKey)}>
                     <select
                       aria-label={f.field}
                       className={clsx('input')}
@@ -159,16 +98,26 @@ export default function Selector(props: Props) {
                       </option>
 
                       {fieldList.map(([k, v]) => (
-                        <option key={k} aria-label={k}>
-                          {k}
+                        <option key={k} value={k} aria-label={k}>
+                          {t(`common:label_${k}`)}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="col-span-5">{!!ff && <FilterControl />}</div>
+                  <div className={clsx(css.filterValue)}>
+                    {!!ff && (
+                      <FilterControl
+                        key={f.field}
+                        type={ff.type}
+                        entry={f}
+                        index={ix}
+                        onUpdate={updateFilter}
+                      />
+                    )}
+                  </div>
 
-                  <div className="col-span-2 border-2 border-red-500">
+                  <div className={clsx(css.filterRemove)}>
                     <button
                       aria-label={t('common:remove_filter')}
                       className="input w-full"
