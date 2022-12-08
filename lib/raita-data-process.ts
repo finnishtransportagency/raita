@@ -66,20 +66,20 @@ export class DataProcessStack extends NestedStack {
       scope: this,
       name: 'inspection-data',
       raitaEnv,
-      raitaStackIdentifier: raitaStackIdentifier,
+      raitaStackIdentifier,
     });
     const configurationBucket = createRaitaBucket({
       scope: this,
       name: 'parser-configuration',
       raitaEnv,
-      raitaStackIdentifier: raitaStackIdentifier,
+      raitaStackIdentifier,
     });
     const dataReceptionBucket = createRaitaBucket({
       scope: this,
       name: 'data-reception',
       raitaEnv,
       raitaStackIdentifier,
-      eventBridgeEnabled: true,
+      versioned: true,
     });
 
     // Grant sftpUser access to data reception bucket
@@ -302,6 +302,7 @@ export class DataProcessStack extends NestedStack {
         's3:PutObjectAcl',
         's3:ListBucket',
         's3:GetBucketLocation',
+        's3:DeleteObject',
       ],
       resources: [
         dataReceptionBucket.bucketArn,
