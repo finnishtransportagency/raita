@@ -6,12 +6,22 @@
 /* Filters */
 
 .filter {
-  @apply border border-blue-500;
+  /* @apply border border-blue-500; */
   @apply grid grid-cols-12 gap-2;
+  @apply my-2;
+}
+
+.filterFooter {
+  @apply mt-4 mb-4;
 }
 
 .filterKey {
   @apply col-span-5;
+}
+
+.filterKeySelect {
+  @apply border-2 border-gray-500 rounded;
+  @apply px-2 py-1;
 }
 
 .filterValue {

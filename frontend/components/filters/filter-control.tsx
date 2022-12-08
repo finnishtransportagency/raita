@@ -16,7 +16,7 @@ const FilterControl = (props: {
     rel?: string,
   ) => void;
 }) => {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['common', 'metadata']);
   switch (props.type) {
     case 'bool':
     case 'boolean':

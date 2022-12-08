@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 
+import { Button } from 'components';
 import { EMPTY_KEY } from 'shared/constants';
 import css from './selector.module.css';
 import FilterControl from './filter-control';
@@ -74,20 +75,19 @@ export default function Selector(props: Props) {
 
   return (
     <div className={clsx(css.root)}>
-      <fieldset className="border-2 border-red-500">
-        <legend className="px-2 py-1 ml-2">Filters</legend>
-
+      {/* Filter component */}
+      <fieldset>
         <ul className="divide-y-2">
           {filterList.map((f, ix) => {
             const ff = state.fields[f.field];
 
             return (
-              <li key={ix} className="border-2 px-2 py-1">
+              <li key={ix}>
                 <div className={clsx(css.filter)}>
                   <div className={clsx(css.filterKey)}>
                     <select
                       aria-label={f.field}
-                      className={clsx('input')}
+                      className={clsx('input', css.filterKeySelect)}
                       value={f.field}
                       onChange={e => {
                         updateFilter(ix, e.target.value, '');
@@ -118,13 +118,12 @@ export default function Selector(props: Props) {
                   </div>
 
                   <div className={clsx(css.filterRemove)}>
-                    <button
-                      aria-label={t('common:remove_filter')}
-                      className="input w-full"
+                    <Button
+                      label={t('common:remove_filter')}
                       onClick={() => removeFilter(ix)}
-                    >
-                      {t('common:remove_filter')}
-                    </button>
+                      size={'sm'}
+                      type={'secondary'}
+                    />
                   </div>
                 </div>
               </li>
@@ -132,18 +131,16 @@ export default function Selector(props: Props) {
           })}
         </ul>
 
-        <footer className="px-2 py-1 border-t-2">
-          <button
-            className={clsx('input')}
+        <footer className={clsx(css.filterFooter)}>
+          <Button
+            label={t('common:add_filter')}
             onClick={() => addFilter()}
-            aria-label={t('common:add_filter')}
-          >
-            {t('common:add_filter')}
-          </button>
+            size={'sm'}
+          />
         </footer>
       </fieldset>
 
-      <div className="grid grid-cols-2 text-xs">
+      <div className="grid grid-cols-2 text-xs hidden">
         <pre>
           <code>{JSON.stringify(state.filters, null, 2)}</code>
         </pre>
