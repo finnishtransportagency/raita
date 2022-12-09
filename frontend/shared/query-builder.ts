@@ -22,10 +22,13 @@ const log = (x: any) =>
  *   this function.
  *
  * @param fs
+ * @param opts
  * @returns
  */
 export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
   const queryType = opts?.queryType || 'and';
+  const pageOpts = opts?.paging;
+  const keyFn = opts?.keyFn || prefixMeta;
 
   const queryTypeMap = {
     and: 'must',
@@ -34,11 +37,9 @@ export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
 
   const byType = R.groupBy(R.prop('type'), fs) as Record<EntryType, Entry[]>;
 
-  type MatchObj = { [key: string]: string | boolean | undefined };
-
-  const ranges = makeRangeQuery(byType.range || [], { keyFn: prefixMeta });
-  const match = makeMatchQuery(byType.match || [], { keyFn: prefixMeta });
-  const paging = {};
+  const ranges = makeRangeQuery(byType.range || [], { keyFn });
+  const match = makeMatchQuery(byType.match || [], { keyFn });
+  const paging = pageOpts ? makePagedQuery(pageOpts) : {};
 
   // This is the part that goes into the bool query (no paging here!)
   const qs = [
@@ -47,6 +48,7 @@ export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
   ];
 
   const qʼ = {
+    ...paging,
     query: {
       bool: {
         [queryTypeMap[queryType]]: qs,
@@ -64,8 +66,11 @@ export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
  * @param opts
  * @returns
  */
-export function makePagedQuery(x?: any, opts?: MakeQueryOpts) {
-  return { from: 0, to: 0 };
+export function makePagedQuery(paging: PagingOpts, opts?: MakeQueryOpts) {
+  const from = paging.size * (paging.curPage - 1);
+  const size = paging.size;
+
+  return { from, size };
 }
 
 /**
@@ -108,14 +113,19 @@ export function makeRangeQuery(fs: Entry[], opts?: Partial<MakeQueryOpts>) {
   const result = qq.map(p => ({ [keyFn(p[0])]: p[1] }));
 
   return result;
-
-  // return qq.map(p => ({ [keyFn(p[0])]: p[1] }));
 }
 
 //
 
+type PagingOpts = {
+  curPage: number;
+  size: number;
+};
+
 type QueryOpts = {
   queryType: 'and' | 'or';
+  paging: PagingOpts;
+  keyFn: (key: string) => string;
 };
 
 //
