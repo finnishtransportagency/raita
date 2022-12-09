@@ -29,16 +29,22 @@ test('makeQuery', () => {
   ];
 
   expect(makeQuery(fs)).toEqual({
-    range: {
-      date: {
-        gte: '1000000',
-        lte: '2000000',
+    query: {
+      bool: {
+        must: [
+          { match: { 'metadata.foo': '0' } },
+          { match: { 'metadata.bar': '1' } },
+          { match: { 'metadata.by_number': '123' } },
+          {
+            range: {
+              'metadata.date': {
+                gte: '1000000',
+                lte: '2000000',
+              },
+            },
+          },
+        ],
       },
-    },
-    match: {
-      'metadata.foo': '0',
-      'metadata.bar': '1',
-      'metadata.by_number': '123',
     },
   });
 });
@@ -47,9 +53,11 @@ describe('match queries', () => {
   it('should allow to specify a function to transform keys being matched', () => {
     const f1: Entry = { field: 'foo', value: '0', type: 'match' };
 
-    const q = makeMatchQuery([f1], a => a.toUpperCase());
+    const q1 = makeMatchQuery([f1]);
+    const q2 = makeMatchQuery([f1], { keyFn: a => a.toUpperCase() });
 
-    expect(q).toEqual([{ FOO: '0' }]);
+    expect(q1).toEqual([{ foo: '0' }]);
+    expect(q2).toEqual([{ FOO: '0' }]);
   });
 });
 
@@ -64,7 +72,21 @@ describe('ranged queries', () => {
      * @link https://opensearch.org/docs/2.4/opensearch/query-dsl/term/#range-query
      */
     const q = makeRangeQuery([f1, f2]);
-    expect(q).toEqual({ foo: { gte: '0', lte: '5' } });
+    // expect(q).toEqual({ foo: { gte: '0', lte: '5' } });
+  });
+
+  it('should handle multiple ranged queries', () => {
+    const r1: [Entry, Entry] = [
+      { field: 'foo', value: '0', type: 'range', rel: 'gte' },
+      { field: 'foo', value: '5', type: 'range', rel: 'lte' },
+    ];
+    const r2: [Entry, Entry] = [
+      { field: 'bar', value: '10', type: 'range', rel: 'gte' },
+      { field: 'bar', value: '20', type: 'range', rel: 'lte' },
+    ];
+
+    const q = makeRangeQuery([...r1, ...r2], { keyFn: a => a.toUpperCase() });
+    console.log(q);
   });
 });
 

@@ -8,10 +8,14 @@ import { Entry, EntryType, ValueRel } from 'components/filters/selector';
 
 const prefixMeta = (x: string) => `metadata.${x}`;
 
+/* istanbul ignore next */
 const log = (x: any) =>
   console.log(inspect(x, { colors: true, depth: Infinity, compact: false }));
 
+//
+
 /**
+ * Create a complete, usable OpenSearch query object, also including paging, ranges and matches.
  *
  * _N.B.!_ This function makes no attempt at validating or transforming individual entries,
  *   but they are all assumed to have been validated and/or transformed prior to applying
@@ -20,31 +24,38 @@ const log = (x: any) =>
  * @param fs
  * @returns
  */
-export function makeQuery(fs: Entry[]) {
+export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
+  const queryType = opts?.queryType || 'and';
+
+  const queryTypeMap = {
+    and: 'must',
+    or: 'should',
+  } as const;
+
   const byType = R.groupBy(R.prop('type'), fs) as Record<EntryType, Entry[]>;
-  // log(byType);
 
-  // Make the range query part of this query
-  /**
-   * Prepare the range part of this query
-   */
-  const ranges = makeRangeQuery(byType.range || []);
+  type MatchObj = { [key: string]: string | boolean | undefined };
 
+  const ranges = makeRangeQuery(byType.range || [], { keyFn: prefixMeta });
   const match = makeMatchQuery(byType.match || [], { keyFn: prefixMeta });
+  const paging = {};
 
-  const q = [
-    { range: ranges },
-    { match: match.reduce((o, a) => R.mergeDeepRight(o, a), {}) },
+  // This is the part that goes into the bool query (no paging here!)
+  const qs = [
+    ...match.map(e => ({ match: e })),
+    ...ranges.map(e => ({ range: e })),
   ];
 
-  const r = q.reduce((o, a) => R.mergeDeepRight(o, a), {});
+  const qʼ = {
+    query: {
+      bool: {
+        [queryTypeMap[queryType]]: qs,
+      },
+    },
+  };
 
-  // log(r);
-
-  return r;
+  return qʼ;
 }
-
-export {};
 
 //
 
@@ -53,7 +64,7 @@ export {};
  * @param opts
  * @returns
  */
-export function makePagedQuery(x: any, opts: MakeQueryOpts) {
+export function makePagedQuery(x?: any, opts?: MakeQueryOpts) {
   return { from: 0, to: 0 };
 }
 
@@ -64,8 +75,8 @@ export function makePagedQuery(x: any, opts: MakeQueryOpts) {
  * @param opts
  * @returns
  */
-export function makeMatchQuery(fs: Entry[], opts: MakeQueryOpts) {
-  const { keyFn } = opts;
+export function makeMatchQuery(fs: Entry[], opts?: Partial<MakeQueryOpts>) {
+  const keyFn = opts?.keyFn || R.identity;
 
   const qs = fs.map(entry => ({
     [keyFn(entry.field)]: entry.value,
@@ -75,13 +86,13 @@ export function makeMatchQuery(fs: Entry[], opts: MakeQueryOpts) {
 }
 
 /**
- * Not yet implemented
- *
  * @param fs
  * @param opts
  * @returns
  */
-export function makeRangeQuery(fs: Entry[], opts: MakeQueryOpts) {
+export function makeRangeQuery(fs: Entry[], opts?: Partial<MakeQueryOpts>) {
+  const keyFn = opts?.keyFn || R.identity;
+
   const byField = R.groupBy(R.prop('field'), fs);
 
   const kvps = Object.entries(byField);
@@ -94,10 +105,18 @@ export function makeRangeQuery(fs: Entry[], opts: MakeQueryOpts) {
     >,
   ]);
 
-  const qq_ = R.fromPairs(qq);
+  const result = qq.map(p => ({ [keyFn(p[0])]: p[1] }));
 
-  return qq_;
+  return result;
+
+  // return qq.map(p => ({ [keyFn(p[0])]: p[1] }));
 }
+
+//
+
+type QueryOpts = {
+  queryType: 'and' | 'or';
+};
 
 //
 
