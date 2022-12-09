@@ -194,8 +194,7 @@ const ReportsIndex: NextPage = () => {
                     { field: 'source_system', value: 'PI' },
                   ]}
                   onChange={e => {
-                    // Store filter changes from here to build a workable search query
-                    console.log('FilterSelector:onUpdate', e);
+                    // Functionality will be implemented along with query building
                   }}
                   fields={meta.data?.fields!}
                 />
