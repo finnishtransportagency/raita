@@ -31,18 +31,30 @@ export default function Selector(props: Props) {
     setState(s =>
       R.assoc(
         'filters',
-        R.append({ field: EMPTY_KEY, value: '' }, s.filters),
+        R.append({ field: EMPTY_KEY, value: '', type: 'match' }, s.filters),
         s,
       ),
     );
 
   /** @todo Clarify/cleanup */
-  const updateFilter = (i: number, field?: string, value?: any, rel?: any) => {
+  const updateFilter = (
+    i: number,
+    field?: string,
+    value?: any,
+    rel?: any,
+    type?: EntryType,
+  ) => {
+    // console.log('updateFilter', { i, field, value, rel, type });
+    // console.log('  - field: %o', state.fields[field!]);
+
     setState(s => {
+      const queryType = !!rel && rel !== 'eq' ? type : 'match';
+
       const _field = [
         { field },
         value ? { value } : {},
         rel ? { rel } : {},
+        { type: queryType },
       ].reduce((o, a) => Object.assign({}, o, a), {});
 
       return R.assoc(
@@ -52,6 +64,8 @@ export default function Selector(props: Props) {
       );
     });
   };
+
+  const updateF = (i: number, entry: Entry) => {};
 
   const removeFilter = (i: number) => {
     setState(s =>
@@ -90,7 +104,7 @@ export default function Selector(props: Props) {
                       className={clsx('input', css.filterKeySelect)}
                       value={f.field}
                       onChange={e => {
-                        updateFilter(ix, e.target.value, '');
+                        updateFilter(ix, e.target.value, '', f.rel, f.type);
                       }}
                     >
                       <option value={EMPTY_KEY} aria-label={EMPTY_KEY}>
@@ -181,7 +195,10 @@ export type Entry = {
    * against, usually used for numbers (EQ, GTE, LTE, etc)
    */
   rel?: ValueRel;
+  type: EntryType;
 };
+
+export type EntryType = 'match' | 'range';
 
 export type ValueRel = 'eq' | 'gte' | 'lte';
 
