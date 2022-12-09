@@ -24,6 +24,7 @@ import FilterSelector from 'components/filters';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import { Entry, FieldDict } from 'components/filters/selector';
 
 //
 
@@ -196,7 +197,7 @@ const ReportsIndex: NextPage = () => {
                   onChange={e => {
                     // Functionality will be implemented along with query building
                   }}
-                  fields={meta.data?.fields!}
+                  fields={meta.data?.fields! as unknown as FieldDict}
                 />
               </section>
 
