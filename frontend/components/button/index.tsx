@@ -3,14 +3,6 @@ import { SyntheticEvent } from 'react';
 
 import css from './button.module.css';
 
-const style = {
-  base: ['px-4', 'py-2', 'bg-primary', 'text-white', 'rounded-full'].join(' '),
-  primary: ['text-white', 'bg-blue-500'].join(' '),
-  secondary: ['border', 'border-gray-400'].join(' '),
-  sm: ['text-xs'].join(' '),
-  md: [].join(' '),
-};
-
 const Button = ({
   label,
   type = 'primary',
@@ -20,6 +12,7 @@ const Button = ({
 }: Props) => {
   return (
     <button
+      aria-label={label}
       onClick={onClick}
       disabled={disabled}
       className={clsx(

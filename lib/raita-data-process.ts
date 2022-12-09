@@ -359,6 +359,7 @@ export class DataProcessStack extends NestedStack {
     const ecsRepo = new ecr.Repository(this, 'repository-raita', {
       repositoryName: `repository-${raitaStackIdentifier}-zip-handler`,
       lifecycleRules: [{ maxImageCount: 3 }],
+      imageScanOnPush: true,
     });
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,

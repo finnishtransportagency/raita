@@ -1,0 +1,4 @@
+.root {
+  /* @apply border border-dashed border-red-500; */
+  @apply border-2 border-gray-500 rounded px-2;
+}

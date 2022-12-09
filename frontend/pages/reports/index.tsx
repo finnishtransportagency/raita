@@ -17,9 +17,10 @@ import type { App, Range, Rest } from 'shared/types';
 import { toSearchQueryTerm } from 'shared/util';
 
 import { RANGE_DATE_FMT } from 'shared/constants';
-import Footer from 'components/footer';
 import { Button } from 'components';
-import { DateRange, Filter, Pager } from 'components';
+import { DateRange, Pager } from 'components';
+import Footer from 'components/footer';
+import FilterSelector from 'components/filters';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
@@ -163,7 +164,7 @@ const ReportsIndex: NextPage = () => {
   return (
     <div className={clsx(css.root)}>
       <Head>
-        <title>Reports</title>
+        <title>{t('common:reports_head_title')}</title>
       </Head>
 
       <div className="bg-primary text-white">
@@ -187,18 +188,28 @@ const ReportsIndex: NextPage = () => {
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
 
-                <Filter
-                  labelFn={k => `metadata:label_${k}`}
-                  keys={Object.keys(meta.data?.fields!)}
-                  data={meta.data?.fields!}
-                  onUpdate={updateFilters}
+                <FilterSelector
+                  filters={[
+                    { field: 'km_start', value: '123', rel: 'gte' },
+                    { field: 'source_system', value: 'PI' },
+                  ]}
+                  onChange={e => {
+                    // Functionality will be implemented along with query building
+                  }}
+                  fields={meta.data?.fields!}
                 />
               </section>
 
+              {/* Search date range */}
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
                 <DateRange range={state.dateRange} onUpdate={updateDateRange} />
+              </section>
+
+              {/* Search file types */}
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_file_types')}</header>
               </section>
 
               <section className={clsx(css.subSection)}>
@@ -241,6 +252,10 @@ const ReportsIndex: NextPage = () => {
                     label={t('common:select_none')}
                   />
                 </footer>
+              </section>
+
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_track_parts')}</header>
               </section>
 
               <footer className="pt-4">
