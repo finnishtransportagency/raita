@@ -1,8 +1,13 @@
-import { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import MetadataPort from '../../../ports/metadataPort';
-import { logger } from '../../../utils/logger';
-import { getRaitaLambdaError, RaitaLambdaError } from '../../utils';
+import { log } from '../../../utils/logger';
+import { getUser, validateReadUser } from '../../../utils/userService';
+import {
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
+  RaitaLambdaError,
+} from '../../utils';
 
 function getOpenSearchLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -14,14 +19,16 @@ function getOpenSearchLambdaConfigOrFail() {
 }
 
 /**
- * DRAFT IMPLEMENTATION
- * Returns OpenSearch data based on request query. Currently takes input in the POST request body.
+ * Returns OpenSearch data based on request query.
+ * Receives parameters in POST request body.
  */
 export async function handleFilesRequest(
-  event: APIGatewayEvent,
+  event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   try {
+    const user = await getUser(event);
+    await validateReadUser(user);
     const { openSearchDomain, region, metadataIndex } =
       getOpenSearchLambdaConfigOrFail();
     // TODO: Add better type check (zod) if endpoint is used permanently
@@ -35,6 +42,7 @@ export async function handleFilesRequest(
         400,
       );
     }
+    log.info(user, `Querying for ${queryObject.query}`);
     const metadata = new MetadataPort({
       backend: 'openSearch',
       metadataIndex,
@@ -42,21 +50,9 @@ export async function handleFilesRequest(
       openSearchDomain,
     });
     const result = await metadata.queryOpenSearchMetadata(queryObject);
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(
-        {
-          result,
-        },
-        null,
-        2,
-      ),
-    };
+    return getRaitaSuccessResponse({ result });
   } catch (err: unknown) {
-    logger.logError(err);
-    return getRaitaLambdaError(err);
+    log.error(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }

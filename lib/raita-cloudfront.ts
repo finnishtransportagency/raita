@@ -14,6 +14,7 @@ import {
   OriginRequestPolicy,
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
+import * as path from 'path';
 
 interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
@@ -67,15 +68,34 @@ export class CloudfrontStack extends Stack {
       new cloudfront.Distribution(this, `cloudfront`, {
         domainNames: [cloudfrontDomainName],
         certificate,
-        defaultRootObject: 'index.html',
+        defaultRootObject: 'reports.html',
         comment: `cloudfront for ${raitaStackIdentifier}`,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         defaultBehavior: {
           origin: new origins.S3Origin(frontendStack.frontendBucket, {
             originAccessIdentity: cloudfrontOAI,
           }),
+          functionAssociations: [
+            {
+              function: new cloudfront.Function(
+                this,
+                'FrontendRedirectCFFunction',
+                {
+                  code: cloudfront.FunctionCode.fromFile({
+                    filePath: path.join(
+                      __dirname,
+                      '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
+                    ),
+                  }),
+                },
+              ),
+              eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            },
+          ],
+          allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
         },
         additionalBehaviors: {
           '/api*': apiProxyBehavior,

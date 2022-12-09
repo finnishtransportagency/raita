@@ -1,4 +1,4 @@
-import { raitaSourceSystems } from '../constants';
+import { raitaSourceSystems, SSM_JWT_TOKEN_ISSUER } from '../constants';
 import { getEnvOrFail } from '../utils';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 // import { Construct } from '@aws-cdk/core';
@@ -11,6 +11,8 @@ import {
   SSM_CLOUDFRONT_CERTIFICATE_ARN,
   SSM_CLOUDFRONT_DOMAIN_NAME,
   SSM_DMZ_API_DOMAIN_NAME,
+  SFTP_POLICY_ACCOUNT_ID,
+  SFTP_POLICY_USER_ID,
 } from '../constants';
 import { Construct } from 'constructs';
 
@@ -66,12 +68,49 @@ export const getPipelineConfig = () => {
   );
 };
 
+interface AccountVpcResources {
+  vpc: {
+    readonly vpcId: string;
+    readonly availabilityZones: Array<string>;
+    readonly privateSubnetIds: Array<string>;
+  };
+  securityGroupId: string;
+}
+
+const getAccountVpcResourceConfig = (
+  raitaEnv: RaitaEnvironment,
+): AccountVpcResources => {
+  const vpcIds: Record<RaitaEnvironment, AccountVpcResources> = {
+    dev: {
+      vpc: {
+        vpcId: 'vpc-02e4e06ed07180dfc',
+        availabilityZones: ['eu-west-1a', 'eu-west-1b'],
+        privateSubnetIds: [
+          'subnet-030193d252c16075a',
+          'subnet-0bcfa0aec6736ca62',
+        ],
+      },
+      securityGroupId: 'sg-018e06b4bde756171',
+    } as AccountVpcResources,
+    prod: {
+      vpc: {
+        vpcId: 'TO_ADD',
+        availabilityZones: ['TO_ADD1', 'TO_ADD2'],
+        privateSubnetIds: ['TO_ADD1', 'TO_ADD2'],
+      },
+      securityGroupId: 'TO_ADD',
+    } as AccountVpcResources,
+  } as const;
+  return vpcIds[raitaEnv];
+};
+
 // RaitaStack specific configuration
-// These values are used solely by metadata parser
-// Pending possible move to SSM Parameter Store (after discussion)
-export const getRaitaStackConfig = (scope: Construct) => ({
+export const getRaitaStackConfig = (
+  scope: Construct,
+  raitaEnv: RaitaEnvironment,
+) => ({
   parserConfigurationFile: 'extractionSpec.json',
-  openSearchMetadataIndex: 'metadata-index',
+  openSearchMetadataIndex: 'metadata',
   raitaSourceSystems: Object.values(raitaSourceSystems),
   cloudfrontCertificateArn: getSSMParameter(
     scope,
@@ -79,9 +118,8 @@ export const getRaitaStackConfig = (scope: Construct) => ({
   ),
   cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
   dmzApiEndpoint: getSSMParameter(scope, SSM_DMZ_API_DOMAIN_NAME),
-  vpc: {
-    vpcId: 'vpc-02e4e06ed07180dfc',
-    availabilityZones: ['eu-west-1a', 'eu-west-1b'],
-    privateSubnetIds: ['subnet-030193d252c16075a', 'subnet-0bcfa0aec6736ca62'],
-  },
+  sftpPolicyAccountId: getSSMParameter(scope, SFTP_POLICY_ACCOUNT_ID),
+  sftpPolicyUserId: getSSMParameter(scope, SFTP_POLICY_USER_ID),
+  jwtTokenIssuer: getSSMParameter(scope, SSM_JWT_TOKEN_ISSUER),
+  ...getAccountVpcResourceConfig(raitaEnv),
 });

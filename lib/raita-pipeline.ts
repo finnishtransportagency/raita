@@ -1,4 +1,12 @@
-import { SecretValue, Stack, StackProps, Stage, StageProps } from 'aws-cdk-lib';
+import {
+  RemovalPolicy,
+  SecretValue,
+  Stack,
+  StackProps,
+  Stage,
+  StageProps,
+  Tags,
+} from 'aws-cdk-lib';
 import {
   CodePipeline,
   CodePipelineSource,
@@ -12,6 +20,9 @@ import {
 } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
 import { getPipelineConfig, RaitaEnvironment } from './config';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 /**
  * The stack that defines the application pipeline
@@ -24,11 +35,33 @@ export class RaitaPipelineStack extends Stack {
       tags: config.tags,
     });
 
-    const pipeline = new CodePipeline(
+    const artifactBucket = new Bucket(
+      this,
+      `s3-pipeline-raita-${config.stackId}`,
+      {
+        autoDeleteObjects: true,
+        removalPolicy: RemovalPolicy.DESTROY,
+      },
+    );
+
+    const pipeline = new Pipeline(this, 'pipeline', {
+      artifactBucket: artifactBucket,
+      pipelineName: `cpl-raita-${config.stackId}`,
+    });
+    // Can't start build process otherwise
+    pipeline.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['codebuild:StartBuild'],
+        resources: ['*'],
+      }),
+    );
+
+    const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
-        pipelineName: `pl-raita-${config.stackId}`,
+        codePipeline: pipeline,
         synth: new ShellStep('Synth', {
           input: CodePipelineSource.gitHub(
             'finnishtransportagency/raita',
@@ -59,10 +92,11 @@ export class RaitaPipelineStack extends Stack {
         },
       },
     );
-    pipeline.addStage(
+    codePipeline.addStage(
       new RaitaApplicationStage(this, `Raita`, {
         stackId: config.stackId,
         raitaEnv: config.env,
+        tags: config.tags,
       }),
     );
   }
@@ -71,6 +105,7 @@ export class RaitaPipelineStack extends Stack {
 interface RaitaStageProps extends StageProps {
   readonly stackId: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly tags: { [key: string]: string };
 }
 
 class RaitaApplicationStage extends Stage {
@@ -82,7 +117,11 @@ class RaitaApplicationStage extends Stage {
       {
         raitaEnv: props.raitaEnv,
         stackId: props.stackId,
+        tags: props.tags,
       },
+    );
+    Object.entries(props.tags).forEach(([key, value]) =>
+      Tags.of(raitaStack).add(key, value),
     );
   }
 }

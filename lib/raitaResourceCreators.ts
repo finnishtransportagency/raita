@@ -13,11 +13,13 @@ export const createRaitaBucket = ({
   name,
   raitaEnv,
   raitaStackIdentifier,
+  versioned = false,
 }: {
   scope: Construct;
   name: string;
   raitaEnv: RaitaEnvironment;
   raitaStackIdentifier: string;
+  versioned?: boolean;
 }) => {
   const removalPolicy = getRemovalPolicy(raitaEnv);
   const autoDeleteObjects = removalPolicy === RemovalPolicy.DESTROY;
@@ -25,7 +27,7 @@ export const createRaitaBucket = ({
     bucketName: `s3-${raitaStackIdentifier}-${name}`,
     removalPolicy,
     autoDeleteObjects,
-    versioned: false,
+    versioned,
     accessControl: s3.BucketAccessControl.PRIVATE,
     blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
     objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
