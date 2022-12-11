@@ -23,12 +23,27 @@ const log = (x: any) =>
  *
  * @param fs
  * @param opts
+ * @param extraQueries
  * @returns
  */
-export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
+export function makeQuery(
+  fs: Entry[],
+  opts?: Partial<QueryOpts>,
+  /**
+   * Crutch for allowing to unsafely poke filters that are included into the query.
+   * Currently used for creating "subqueries", such that we can do an AND query,
+   * that includes one or more filters that works as an OR query (example: report types)
+   *
+   * This can also be used in cases where other single-select fields should be turned
+   * into multiple-choice fields, such that the query matches any one of the selections
+   * instead of trying to AND them all (which wouldn't return anything).
+   */
+  extraQueries?: any[],
+) {
   const queryType = opts?.queryType || 'and';
   const pageOpts = opts?.paging;
   const keyFn = opts?.keyFn || prefixMeta;
+  const matchAllOnEmpty = opts?.matchAllOnEmpty || true;
 
   const queryTypeMap = {
     and: 'must',
@@ -47,13 +62,21 @@ export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
     ...ranges.map(e => ({ range: e })),
   ];
 
+  const emptyQuery = qs.length === 0 && !extraQueries;
+
+  const qbody = emptyQuery
+    ? { match_all: {} }
+    : {
+        bool: {
+          [queryTypeMap[queryType]]: qs.concat(
+            extraQueries ? extraQueries : [],
+          ),
+        },
+      };
+
   const qʼ = {
     ...paging,
-    query: {
-      bool: {
-        [queryTypeMap[queryType]]: qs,
-      },
-    },
+    query: qbody,
   };
 
   return qʼ;
@@ -62,7 +85,10 @@ export function makeQuery(fs: Entry[], opts?: Partial<QueryOpts>) {
 //
 
 /**
- * @param x
+ * Takes a 1-based page number and page size, and returns a paging object containing
+ * the proper offset to be used in an OpenSearch query.
+ *
+ * @param paging
  * @param opts
  * @returns
  */
@@ -125,6 +151,8 @@ type PagingOpts = {
 type QueryOpts = {
   queryType: 'and' | 'or';
   paging: PagingOpts;
+  /** @deprecated */
+  matchAllOnEmpty: boolean;
   keyFn: (key: string) => string;
 };
 

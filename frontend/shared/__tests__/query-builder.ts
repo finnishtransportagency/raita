@@ -18,6 +18,14 @@ const arb = {
 };
 
 describe('make queries', () => {
+  it.only('creates a match_all query when no filters present', () => {
+    const fs1: Entry[] = [];
+
+    expect(makeQuery(fs1, { matchAllOnEmpty: true })).toEqual({
+      query: { match_all: {} },
+    });
+  });
+
   test('makeQuery', () => {
     const fs: Entry[] = [
       { field: 'foo', value: '0', type: 'match' },
