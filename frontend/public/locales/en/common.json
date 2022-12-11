@@ -24,9 +24,10 @@
   "filters_none_added": "No filters added.",
   "pager_a11y_label": "Paging navigation",
   "pager_a11y_goto_page": "Go to page {{ page }}",
-  "relation_eq": "EQ",
-  "relation_lt": "LT",
-  "relation_lte": "LTE",
-  "relation_gt": "GT",
-  "relation_gte": "GTE"
+  "relation_eq": "=",
+  "relation_lt": "<",
+  "relation_lte": "<=",
+  "relation_gt": ">",
+  "relation_gte": ">=",
+  "no_choice": "No choice"
 }
