@@ -5,7 +5,11 @@ import { RaitaEnvironment } from '../../lib/config';
 import { log } from './logger';
 import { getSSMParameter } from './ssm';
 import { RaitaLambdaError } from '../lambdas/utils';
-import { REQUEST_HEADER_API_KEY, SSM_API_KEY } from '../../constants';
+import {
+  RAITA_APIKEY_USER_UID,
+  REQUEST_HEADER_API_KEY,
+  SSM_API_KEY,
+} from '../../constants';
 
 const ISSUER = process.env.JWT_TOKEN_ISSUER;
 const STACK_ID = process.env.STACK_ID || '';
@@ -51,14 +55,14 @@ const handleApiKeyRequest = async (
     encrypted: true,
   });
   if (!ssmApiKey) {
-    log.error('ApiKey missing');
+    log.error('Api key missing');
     throw new RaitaLambdaError('Error', 500);
   }
   if (ssmApiKey !== requestApiKey) {
     throw new RaitaLambdaError('Forbidden', 403);
   }
   return {
-    uid: 'raita-api-key-user',
+    uid: RAITA_APIKEY_USER_UID,
     roles: [STATIC_ROLES.read],
   };
 };
