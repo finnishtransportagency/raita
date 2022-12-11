@@ -165,3 +165,34 @@ type MakeQueryOpts = {
 type RangeT = {};
 
 type QueryType = 'match' | 'match_all';
+
+//
+
+export function makeFromMulti(
+  keys: string[],
+  field: string,
+  opts?: Partial<MakeQueryOpts>,
+) {
+  const keys_ = keys.filter(x => !R.isEmpty(x));
+
+  // If we have no keys, just bail
+  if (!keys_.length) return {};
+
+  const keyFn = opts?.keyFn || prefixMeta;
+
+  // Turn the keys into filter objects that we'll use to create the OR query
+  const filters = keys.map(
+    k => ({ field, type: 'match', rel: 'eq', value: k } as Entry),
+  );
+
+  // Create the query which can then be used whereever
+  const query = {
+    bool: {
+      should: makeMatchQuery(filters, { keyFn }).map(match => ({ match })),
+    },
+  };
+
+  return query;
+}
+
+//
