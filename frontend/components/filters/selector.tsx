@@ -200,7 +200,7 @@ export type Entry = {
 
 export type EntryType = 'match' | 'range';
 
-export type ValueRel = 'eq' | 'gte' | 'lte';
+export type ValueRel = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
 
 export type FieldDict = Record<string, FieldType>;
 
