@@ -34,7 +34,7 @@ const FilterControl = (props: Props) => {
             props.onUpdate(
               props.index,
               props.entry.field,
-              e.target.value,
+              new Date(e.target.value),
               'eq',
               'match',
             )
@@ -123,7 +123,7 @@ export type Props = {
   onUpdate: (
     ix: number,
     field: string,
-    value?: string | boolean,
+    value?: string | boolean | Date,
     rel?: string,
     entryType?: EntryType,
   ) => void;
