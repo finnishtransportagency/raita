@@ -14,12 +14,25 @@ import { IDocument } from 'shared/types';
 
 export function useMetadataQuery() {
   return useQuery(['meta'], () =>
-    getMeta().then(({ fields, reportTypes }) => {
-      return {
-        fields: fields.reduce((o, x) => R.merge(o, x), {}),
+    getMeta().then(
+      ({
+        trackNumbers,
+        trackParts,
+        systems,
+        fileTypes,
+        fields,
         reportTypes,
-      };
-    }),
+      }) => {
+        return {
+          fields: fields.reduce((o, x) => R.merge(o, x), {}),
+          reportTypes,
+          trackNumbers,
+          trackParts,
+          systems,
+          fileTypes,
+        };
+      },
+    ),
   );
 }
 // #endregion

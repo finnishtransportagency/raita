@@ -30,12 +30,12 @@ type GetSignedUrlResult = {
 };
 
 type GetMetaResult = {
-  fields: MetaResultField[];
+  fileTypes: { fileType: string; count: number }[];
+  systems: { value: string; count: number }[];
+  trackNumbers: any[];
+  trackParts: { value: string; count: number }[];
+  fields: any[];
   reportTypes: MetaResultType[];
-};
-
-type MetaResultField<T extends string | number | symbol = string> = {
-  [K in T]: { type: string };
 };
 
 type MetaResultType = { reportType: string; count: number };

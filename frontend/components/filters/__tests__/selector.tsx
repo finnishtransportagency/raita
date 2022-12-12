@@ -59,15 +59,19 @@ it('allows to update a filter', async () => {
   const { getByRole } = render(
     <Selector
       fields={{ foo: { type: 'text' } }}
-      filters={[{ field: 'foo', value: 'bar' }]}
+      filters={[{ field: 'foo', value: 'bar', rel: 'eq', type: 'match' }]}
       onChange={fn}
     />,
   );
 
   fireEvent.change(getByRole('textbox'), { target: { value: 'foo' } });
 
-  expect(fn.mock.calls[0][0]).toEqual([{ field: 'foo', value: 'bar' }]);
-  expect(fn.mock.calls[1][0]).toEqual([{ field: 'foo', value: 'foo' }]);
+  expect(fn.mock.calls[0][0]).toEqual([
+    { field: 'foo', value: 'bar', rel: 'eq', type: 'match' },
+  ]);
+  expect(fn.mock.calls[1][0]).toEqual([
+    { field: 'foo', value: 'foo', type: 'match', rel: 'eq' },
+  ]);
 });
 
 it('allows to remove a filter', async () => {
@@ -76,13 +80,15 @@ it('allows to remove a filter', async () => {
   const { getByRole } = render(
     <Selector
       fields={{ foo: { type: 'text' } }}
-      filters={[{ field: 'foo', value: 'bar' }]}
+      filters={[{ field: 'foo', value: 'bar', rel: 'eq', type: 'match' }]}
       onChange={fn}
     />,
   );
 
   // Ensure the initial state contains a filter
-  expect(fn).toHaveBeenLastCalledWith([{ field: 'foo', value: 'bar' }]);
+  expect(fn).toHaveBeenLastCalledWith([
+    { field: 'foo', value: 'bar', rel: 'eq', type: 'match' },
+  ]);
 
   fireEvent.click(getByRole('button', { name: 'common:remove_filter' }));
 

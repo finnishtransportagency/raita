@@ -16,6 +16,12 @@ export const fileSuffixesToIncudeInMetadataParsing = {
 export const ZIP_SUFFIX = 'zip';
 export const EMPTY_FILE_INDICATOR = 'EMPTY';
 
+// Constant that is meant to be temporary to address Excel-parsing.
+// See Jira 242.
+// Identifier here is lowercased though it is expected that incoming
+// data has the words capitalized. Comparisons must lowercase the data.
+export const SUBMISSION_REPORT_INDICATOR = 'submission report';
+
 export type RaitaSourceSystem =
   typeof raitaSourceSystems[keyof typeof raitaSourceSystems];
 
