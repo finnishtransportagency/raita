@@ -116,9 +116,9 @@ export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
     log.error('STACK_ID or ENVIRONMENT missing!');
     throw new RaitaLambdaError('Error', 500);
   }
-  if (!isPermanentStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
-    return getMockUser();
-  }
+  // if (!isPermanentStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
+  //   return getMockUser();
+  // }
   return parseUserFromEvent(event);
 };
 
