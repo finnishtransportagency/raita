@@ -62,7 +62,7 @@ export function makeQuery(
     ...ranges.map(e => ({ range: e })),
   ];
 
-  const emptyQuery = qs.length === 0 && !extraQueries;
+  const emptyQuery = qs.length === 0 && extraQueries?.length === 0;
 
   const qbody = emptyQuery
     ? { match_all: {} }

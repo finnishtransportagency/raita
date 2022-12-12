@@ -1,3 +1,5 @@
+import * as R from 'rambda';
+
 export function fst<T1, T2>([a, b]: [T1, T2]) {
   return a;
 }
@@ -34,3 +36,6 @@ export const toSearchQueryTerm = (
     [keyFn ? keyFn(key) : key]: value,
   },
 });
+
+export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
+  Array.from(fs, R.prop('value'));

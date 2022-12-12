@@ -14,7 +14,7 @@ import { format } from 'date-fns/fp';
 
 import * as cfg from 'shared/config';
 import type { App, Range, Rest } from 'shared/types';
-import { toSearchQueryTerm } from 'shared/util';
+import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
 import { RANGE_DATE_FMT } from 'shared/constants';
@@ -225,9 +225,7 @@ const ReportsIndex: NextPage = () => {
                       R.assocPath(
                         ['subQueries', 'fileTypes'],
                         makeFromMulti(
-                          Array.from(e.target.selectedOptions).map(
-                            x => x.value,
-                          ),
+                          takeOptionValues(e.target.selectedOptions),
                           'file_type',
                         ),
                       ),
@@ -249,9 +247,7 @@ const ReportsIndex: NextPage = () => {
                       R.assocPath(
                         ['subQueries', 'reportTypes'],
                         makeFromMulti(
-                          Array.from(e.target.selectedOptions).map(
-                            x => x.value,
-                          ),
+                          takeOptionValues(e.target.selectedOptions),
                           'report_type',
                         ),
                       ),
@@ -273,9 +269,7 @@ const ReportsIndex: NextPage = () => {
                       R.assocPath(
                         ['subQueries', 'trackParts'],
                         makeFromMulti(
-                          Array.from(e.target.selectedOptions).map(
-                            x => x.value,
-                          ),
+                          takeOptionValues(e.target.selectedOptions),
                           'track_part',
                         ),
                       ),
@@ -297,9 +291,7 @@ const ReportsIndex: NextPage = () => {
                       R.assocPath(
                         ['subQueries', 'systems'],
                         makeFromMulti(
-                          Array.from(e.target.selectedOptions).map(
-                            x => x.value,
-                          ),
+                          takeOptionValues(e.target.selectedOptions),
                           'system',
                         ),
                       ),
