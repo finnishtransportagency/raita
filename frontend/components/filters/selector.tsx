@@ -156,16 +156,6 @@ export default function Selector(props: Props) {
           />
         </footer>
       </fieldset>
-
-      <div className="grid grid-cols-2 text-xs hidden">
-        <pre>
-          <code>{JSON.stringify(state.filters, null, 2)}</code>
-        </pre>
-
-        <pre>
-          <code>{JSON.stringify(state.filters, null, 2)}</code>
-        </pre>
-      </div>
     </div>
   );
 }
