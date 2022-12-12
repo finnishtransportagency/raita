@@ -77,6 +77,9 @@ type TypeAggs<T = any> = SearchResponse<T> & {
   };
 };
 
+/**
+ * DEV ENV DUMMY
+ */
 const raw = {
   fields: [
     {
