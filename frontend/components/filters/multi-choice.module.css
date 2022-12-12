@@ -1,0 +1,13 @@
+/* .root {
+  @apply border-2 border-red-500;
+} */
+
+.select {
+  @apply border-2 border-gray-500;
+  @apply rounded;
+  @apply w-full;
+}
+
+.select option {
+  @apply px-2 py-1;
+}

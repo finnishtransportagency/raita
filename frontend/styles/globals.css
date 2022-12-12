@@ -22,3 +22,23 @@ a {
 * {
   box-sizing: border-box;
 }
+
+/**/
+
+.input {
+  @apply border-2 border-red-500 w-full;
+}
+
+.input--long {
+  @apply border-green-500;
+}
+
+.input--placeholder {
+  @apply border-dashed;
+}
+
+/* Special case; here the selected element is a label, that contains the checkbox */
+.input--bool,
+.input--boolean {
+  @apply border-blue-500;
+}

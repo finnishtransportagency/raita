@@ -31,27 +31,44 @@ export default function Selector(props: Props) {
     setState(s =>
       R.assoc(
         'filters',
-        R.append({ field: EMPTY_KEY, value: '' }, s.filters),
+        R.append({ field: EMPTY_KEY, value: '', type: 'match' }, s.filters),
         s,
       ),
     );
 
-  /** @todo Clarify/cleanup */
-  const updateFilter = (i: number, field?: string, value?: any, rel?: any) => {
+  /**
+   * @todo Clarify/cleanup
+   */
+  const updateFilter = (
+    index: number,
+    field?: string,
+    value?: any,
+    rel?: any,
+    type?: EntryType,
+  ) => {
     setState(s => {
+      const queryType = !!rel && rel !== 'eq' ? type : 'match';
+
+      /**
+       * This mess right here is for creating an object with keys not being in the object if
+       * they aren't defined.
+       */
       const _field = [
         { field },
         value ? { value } : {},
         rel ? { rel } : {},
+        { type: queryType },
       ].reduce((o, a) => Object.assign({}, o, a), {});
 
       return R.assoc(
         'filters',
-        R.adjust<Entry>(i, x => Object.assign({}, x, _field), s.filters),
+        R.adjust<Entry>(index, x => Object.assign({}, x, _field), s.filters),
         s,
       );
     });
   };
+
+  const updateF = (i: number, entry: Entry) => {};
 
   const removeFilter = (i: number) => {
     setState(s =>
@@ -90,7 +107,7 @@ export default function Selector(props: Props) {
                       className={clsx('input', css.filterKeySelect)}
                       value={f.field}
                       onChange={e => {
-                        updateFilter(ix, e.target.value, '');
+                        updateFilter(ix, e.target.value, '', f.rel, f.type);
                       }}
                     >
                       <option value={EMPTY_KEY} aria-label={EMPTY_KEY}>
@@ -139,16 +156,6 @@ export default function Selector(props: Props) {
           />
         </footer>
       </fieldset>
-
-      <div className="grid grid-cols-2 text-xs hidden">
-        <pre>
-          <code>{JSON.stringify(state.filters, null, 2)}</code>
-        </pre>
-
-        <pre>
-          <code>{JSON.stringify(state.filters, null, 2)}</code>
-        </pre>
-      </div>
     </div>
   );
 }
@@ -181,9 +188,12 @@ export type Entry = {
    * against, usually used for numbers (EQ, GTE, LTE, etc)
    */
   rel?: ValueRel;
+  type: EntryType;
 };
 
-export type ValueRel = 'eq' | 'gte' | 'lte';
+export type EntryType = 'match' | 'range';
+
+export type ValueRel = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
 
 export type FieldDict = Record<string, FieldType>;
 
