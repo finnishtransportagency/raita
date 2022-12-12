@@ -22,8 +22,7 @@ async function start() {
   log.debug(startMessage);
   try {
     const zipKey = decodeS3EventPropertyString(key);
-    const { path, keyWithoutSuffix, fileSuffix, fileBaseName } =
-      getKeyData(zipKey);
+    const { path, keyWithoutSuffix, fileSuffix, fileName } = getKeyData(zipKey);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -44,12 +43,12 @@ async function start() {
       ? {
           timeStamp: getObjectResult.LastModified.toISOString(),
           timeStampType: 'zipLastModified',
-          fileName: fileBaseName,
+          fileName,
         }
       : {
           timeStamp: new Date().toISOString(),
           timeStampType: 'zipProcessed',
-          fileName: fileBaseName,
+          fileName,
         };
 
     const readStream = getObjectResult.Body as Readable;

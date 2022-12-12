@@ -1,5 +1,5 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
-import { isExcelSuffix, KeyData } from '../../utils';
+import { isSubmissionReport, KeyData } from '../../utils';
 import { logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
@@ -10,13 +10,13 @@ export const extractPathData = (
   keyData: KeyData,
   folderLabels: IExtractionSpec['folderTreeExtractionSpec'],
 ) => {
-  const { path, fileSuffix } = keyData;
-  // Excel files are located higher in the hierarchy than other files which always are at the lowest level,
-  // as quick and dirty solution expectedPathLength for excel files is hard coded to 5 which corresponds to their location.
+  const { path, fileSuffix, fileBaseName } = keyData;
+  // Submission Report Excel files are located higher in the hierarchy than other files which always are at the lowest level,
+  // as quick and dirty solution expectedPathLength for these Excel files is hard coded to 5 which corresponds to their location.
   // This is a rough implementation which can be replaced with more sofisticated one as the needs for
   // path data parsing come more clear (is is enough to configure this based on file suffix or if more detailed configration is needed),
-  // more robust solution should be built on modifying the structure in extractionSpec parsing instructions
-  const expectedPathLength = isExcelSuffix(fileSuffix)
+  // more robust solution should be built on modifying the structure in extractionSpec parsing instructions. See Jira 242.
+  const expectedPathLength = isSubmissionReport({ fileBaseName, fileSuffix })
     ? 5
     : Object.keys(folderLabels).length;
   if (path.length !== expectedPathLength) {
