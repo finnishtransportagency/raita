@@ -35,7 +35,7 @@ export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
 export const SSM_API_KEY = 'raita-api-key';
 
-export const REQUEST_HEADER_API_KEY = 'X-API-Key';
+export const REQUEST_HEADER_API_KEY = 'x-api-key';
 export const RAITA_APIKEY_USER_UID = 'raita-api-key-user';
 
 export const ENVIRONMENTS = {
