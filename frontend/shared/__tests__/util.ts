@@ -1,6 +1,6 @@
 import * as F from 'fast-check';
 
-import { fst, snd, prefix, toSearchQueryTerm } from 'shared/util';
+import { fst, snd, prefix, toSearchQueryTerm, toUndefined } from 'shared/util';
 
 const strOpts: F.StringSharedConstraints = {
   minLength: 1,
@@ -28,6 +28,14 @@ describe('Util', () => {
   test('prefix', () => {
     F.assert(
       F.property(str1(), str1(), (a, b) => prefix(a, b) === [a, b].join('')),
+    );
+  });
+
+  test('toUndefined', () => {
+    F.assert(
+      F.property(str1(), x => {
+        expect(toUndefined(x)).toBeUndefined();
+      }),
     );
   });
 

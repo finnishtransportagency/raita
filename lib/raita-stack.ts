@@ -39,11 +39,12 @@ export class RaitaStack extends Stack {
       stackId,
       jwtTokenIssuer: config.jwtTokenIssuer,
       vpc: raitaVPC,
-      securityGroup: raitaSecurityGroup,
+      raitaSecurityGroup,
       openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
       sftpPolicyAccountId: config.sftpPolicyAccountId,
       sftpPolicyUserId: config.sftpPolicyUserId,
+      cloudfrontDomainName: config.cloudfrontDomainName,
     });
     Object.entries(tags).forEach(([key, value]) =>
       Tags.of(applicationStack).add(key, value),

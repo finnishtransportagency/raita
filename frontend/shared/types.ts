@@ -1,5 +1,8 @@
 import { SearchResponse } from '@opensearch-project/opensearch/api/types';
 
+/**
+ * @deprecated
+ */
 export namespace Common {
   export type Input = {
     label?: string;
@@ -21,6 +24,18 @@ export type Range<T> = {
 export namespace App {
   export type Locales = 'en' | 'fi';
 }
+
+export enum FieldType {
+  TEXT = 'text',
+  LONG = 'long',
+  FLOAT = 'float',
+  DATE = 'date',
+  BOOLEAN = 'boolean',
+}
+
+export type GenericField<T> = { type: T };
+
+export type Field = GenericField<FieldType>;
 
 export namespace Rest {
   export type FieldType = 'text' | 'long' | 'date' | 'float';
