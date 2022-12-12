@@ -36,20 +36,23 @@ export default function Selector(props: Props) {
       ),
     );
 
-  /** @todo Clarify/cleanup */
+  /**
+   * @todo Clarify/cleanup
+   */
   const updateFilter = (
-    i: number,
+    index: number,
     field?: string,
     value?: any,
     rel?: any,
     type?: EntryType,
   ) => {
-    // console.log('updateFilter', { i, field, value, rel, type });
-    // console.log('  - field: %o', state.fields[field!]);
-
     setState(s => {
       const queryType = !!rel && rel !== 'eq' ? type : 'match';
 
+      /**
+       * This mess right here is for creating an object with keys not being in the object if
+       * they aren't defined.
+       */
       const _field = [
         { field },
         value ? { value } : {},
@@ -59,7 +62,7 @@ export default function Selector(props: Props) {
 
       return R.assoc(
         'filters',
-        R.adjust<Entry>(i, x => Object.assign({}, x, _field), s.filters),
+        R.adjust<Entry>(index, x => Object.assign({}, x, _field), s.filters),
         s,
       );
     });
