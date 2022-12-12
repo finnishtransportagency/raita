@@ -127,7 +127,7 @@ const ReportsIndex: NextPage = () => {
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
       ),
-    [newFilters, reportTypeFilter, state.subQueries],
+    [newFilters, reportTypeFilter, state.subQueries, curPage],
   );
 
   /**
