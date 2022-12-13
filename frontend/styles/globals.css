@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-text-primary: #242222;
+  --color-text-secondary: #333333;
+  --color-text-link: #0064af;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/**/
+
+.input {
+  @apply border-2 border-red-500 w-full;
+}
+
+.input--long {
+  @apply border-green-500;
+}
+
+.input--placeholder {
+  @apply border-dashed;
+}
+
+/* Special case; here the selected element is a label, that contains the checkbox */
+.input--bool,
+.input--boolean {
+  @apply border-blue-500;
+}

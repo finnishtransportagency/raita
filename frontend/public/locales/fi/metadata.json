@@ -1,0 +1,21 @@
+{
+    "label_system": "Järjestelmä",
+    "label_track_number": "Ratanumero",
+    "label_track_part": "Raportointiosuus",
+    "label_track_id": "Raide",
+    "label_report_type": "Raporttityyppi",
+    "label_file_type": "Tiedostotyyppi",
+    "label_source_system": "Tarkastusvaunu",
+    "label_year": "Vuosi",
+    "label_nonparsed_inspection_datetime": "Tarkastusajon tunniste",
+    "label_report_category": "Raportin kategoria",
+    "label_management_area": "Isännöintialue",
+    "label_measurement_start_location": "Aloitus, liikennepaikka",
+    "label_measurement_end_location": "Lopetus, liikennepaikka",
+    "label_measurement_direction": "Tarkastussuunta",
+    "label_temperature": "Lämpötila",
+    "label_inspection_datetime": "Tarkastusajankohta",
+    "label_inspection_date": "Päivämäärä",
+    "label_km_start": "Aloitus, ratakilometri",
+    "label_km_end": "Lopetus, ratakilometri"
+}

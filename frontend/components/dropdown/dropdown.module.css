@@ -1,0 +1,4 @@
+.root {
+  @apply border-2 border-gray-500;
+  @apply rounded;
+}

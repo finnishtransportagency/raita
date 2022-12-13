@@ -1,0 +1,16 @@
+.root {
+  @apply mb-4;
+}
+
+.dropdown {
+  @apply px-2 py-1;
+  @apply border-2 border-main-gray-50 rounded;
+}
+
+.dropdown option {
+  @apply px-2 py-1;
+}
+
+.input {
+  @apply border-2 border-main-gray-50 px-2 py-1 rounded;
+}
