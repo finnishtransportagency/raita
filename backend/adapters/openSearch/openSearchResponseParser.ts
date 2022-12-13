@@ -1,7 +1,9 @@
+import { SearchHit } from '@opensearch-project/opensearch/api/types';
 import {
   AggregationsResponseSchema,
   AggregationsResponseSchemaType,
   FieldMappingsSchema,
+  IMetadataDocument,
   MetadataSearchResponseSchema,
 } from './openSearchResponseSchemas';
 
@@ -66,12 +68,22 @@ export class OpenSearchResponseParser {
       throw new Error('Missing search response body');
     }
     const responseData = MetadataSearchResponseSchema.parse(res.body);
+    const total = responseData.hits.total;
     return {
-      total: responseData.total,
-      hits: responseData.hits.map(hit => {
-        const { _score: score, _source: source, ..._rest } = hit;
-        return { score, source };
-      }),
+      total: typeof total === 'number' ? total : total.value,
+      hits: responseData.hits.hits
+        .filter(
+          (
+            hit,
+          ): hit is SearchHit<IMetadataDocument> & {
+            _source: IMetadataDocument;
+          } => Boolean(hit._source),
+        )
+        .map(hit => {
+          const { _score: score, _source } = hit;
+          const { key, file_name, size, metadata } = _source;
+          return { score, source: { key, file_name, size, metadata } };
+        }),
     };
   };
 
