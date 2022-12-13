@@ -403,7 +403,9 @@ const ReportsIndex: NextPage = () => {
                     <Pager
                       size={state.paging.size}
                       page={state.paging.page}
-                      // TODO: Temporary solution, update to handle missing resultsData closer to source?
+                      // TODO: Temporary solution to default to 0.
+                      // Update to handle missing resultsData closer to source or
+                      // Pager to accept undefined count?
                       count={resultsData?.total || 0}
                       onGotoPage={setPage}
                     />
