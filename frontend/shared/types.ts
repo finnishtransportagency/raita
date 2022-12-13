@@ -1,5 +1,3 @@
-// import { SearchResponse } from '@opensearch-project/opensearch/api/types';
-
 /**
  * @deprecated
  */
