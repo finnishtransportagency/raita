@@ -6,10 +6,7 @@ import { Port } from 'aws-cdk-lib/aws-ec2';
 import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import {
-  getEnvDependentOsConfiguration,
-  isDevelopmentMainStack,
-} from './utils';
+import { getEnvDependentOsConfiguration, isPermanentStack } from './utils';
 
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
@@ -82,8 +79,8 @@ export class ApplicationStack extends NestedStack {
       vpc,
     });
 
-    // Create Bastion Host for dev
-    if (isDevelopmentMainStack(stackId, raitaEnv)) {
+    // Create Bastion Host for dev (main branch/stack) and production
+    if (isPermanentStack(stackId, raitaEnv)) {
       const bastionStack = new BastionStack(this, 'stack-bastion', {
         raitaStackIdentifier,
         vpc,
