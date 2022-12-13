@@ -2,6 +2,7 @@ import {
   AggregationsResponseSchema,
   AggregationsResponseSchemaType,
   FieldMappingsSchema,
+  MetadataSearchResponseSchema,
 } from './openSearchResponseSchemas';
 
 export class OpenSearchResponseParser {
@@ -58,6 +59,20 @@ export class OpenSearchResponseParser {
     return Object.entries(fields).map(([key, value]) => {
       return { [key]: { type: value.type } };
     });
+  };
+
+  parseSearchResponse = (res: any) => {
+    if (!res.body) {
+      throw new Error('Missing search response body');
+    }
+    const responseData = MetadataSearchResponseSchema.parse(res.body);
+    return {
+      total: responseData.total,
+      hits: responseData.hits.map(hit => {
+        const { _score: score, _source: source, ..._rest } = hit;
+        return { score, source };
+      }),
+    };
   };
 
   private transformAggregationsResult = <T extends string>(

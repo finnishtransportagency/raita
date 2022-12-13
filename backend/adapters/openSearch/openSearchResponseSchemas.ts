@@ -49,3 +49,31 @@ export const AggregationsResponseSchema = z.object({
 export type AggregationsResponseSchemaType = z.infer<
   typeof AggregationsResponseSchema
 >;
+
+const MetadataDocument = z.object({
+  key: z.string(),
+  file_name: z.string(),
+  bucket_arn: z.string(),
+  bucket_name: z.string(),
+  size: z.number(),
+  metadata: z.record(z.string(), z.any()),
+});
+
+/**
+ * Note: Incomplete schema description
+ */
+const MetadataSearchResult = z.object({
+  _score: z.number(),
+  _source: MetadataDocument,
+});
+
+/**
+ * Note: Incomplete schema description
+ */
+export const MetadataSearchResponseSchema = z.object({
+  hits: z.array(MetadataSearchResult),
+  total: z.object({
+    value: z.number(),
+    relation: z.string(),
+  }),
+});

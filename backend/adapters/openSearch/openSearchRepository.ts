@@ -44,7 +44,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       index: this.#dataIndex,
       body: query,
     });
-    return response;
+    return this.#responseParser.parseSearchResponse(response);
   };
 
   getMetadataFields = async () => {
