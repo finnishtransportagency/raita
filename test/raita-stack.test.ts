@@ -1,12 +1,12 @@
 import { Template } from 'aws-cdk-lib/assertions';
-import * as cdk from 'aws-cdk-lib';
 import { RaitaStack } from '../lib/raita-stack';
+import { RaitaStackTestProps, testStack } from './testUtils';
 
-test('Raita stack has identity pool', () => {
-  const stack = new cdk.Stack();
-  // WHEN
-  new RaitaStack(stack, 'MyTestConstruct');
-  // THEN
+/**
+ * A rudimentary test to serve as an example for adding tests
+ */
+test('Raita stack has a child stack', () => {
+  const stack = new RaitaStack(testStack, 'raita-stack', RaitaStackTestProps);
   const template = Template.fromStack(stack);
-  template.resourceCountIs('AWS::Cognito::IdentityPool', 1);
+  template.resourceCountIs('AWS::CloudFormation::Stack', 1);
 });
