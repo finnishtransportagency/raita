@@ -2,7 +2,18 @@ import { FileMetadataEntry } from '.';
 
 export interface IMetadataStorageInterface {
   saveFileMetadata: (data: Array<FileMetadataEntry>) => Promise<void>;
-  queryOpenSearchMetadata: (query: any) => Promise<any>;
+  queryOpenSearchMetadata: (query: any) => Promise<{
+    total: number;
+    hits: Array<{
+      score: number | undefined;
+      source: {
+        key: string;
+        file_name: string;
+        size: number;
+        metadata: Record<string, any>;
+      };
+    }>;
+  }>;
   getMetadataFields: () => Promise<Array<Record<string, { type: string }>>>;
   getMetadataAggregations: () => Promise<{
     reportTypes: Array<{ reportType: string; count: number }>;
