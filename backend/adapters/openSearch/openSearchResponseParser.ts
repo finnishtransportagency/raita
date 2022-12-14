@@ -1,7 +1,10 @@
+import { SearchHit } from '@opensearch-project/opensearch/api/types';
 import {
   AggregationsResponseSchema,
   AggregationsResponseSchemaType,
   FieldMappingsSchema,
+  IMetadataDocument,
+  MetadataSearchResponseSchema,
 } from './openSearchResponseSchemas';
 
 export class OpenSearchResponseParser {
@@ -58,6 +61,30 @@ export class OpenSearchResponseParser {
     return Object.entries(fields).map(([key, value]) => {
       return { [key]: { type: value.type } };
     });
+  };
+
+  parseSearchResponse = (res: any) => {
+    if (!res.body) {
+      throw new Error('Missing search response body');
+    }
+    const responseData = MetadataSearchResponseSchema.parse(res.body);
+    const total = responseData.hits.total;
+    return {
+      total: typeof total === 'number' ? total : total.value,
+      hits: responseData.hits.hits
+        .filter(
+          (
+            hit,
+          ): hit is SearchHit<IMetadataDocument> & {
+            _source: IMetadataDocument;
+          } => Boolean(hit._source),
+        )
+        .map(hit => {
+          const { _score: score, _source } = hit;
+          const { key, file_name, size, metadata } = _source;
+          return { score, source: { key, file_name, size, metadata } };
+        }),
+    };
   };
 
   private transformAggregationsResult = <T extends string>(
