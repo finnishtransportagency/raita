@@ -1,14 +1,11 @@
 import * as R from 'rambda';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { DependencyList, useState } from 'react';
-import {
-  MsearchBody,
-  // SearchResponse,
-} from '@opensearch-project/opensearch/api/types';
+import { MsearchBody } from '@opensearch-project/opensearch/api/types';
 import { saveAs } from 'file-saver';
 
 import { getMeta, apiClient, getFile } from 'shared/rest';
-import { IDocument, SearchResponse } from 'shared/types';
+import { SearchResponse } from 'shared/types';
 
 // #region Queries
 
