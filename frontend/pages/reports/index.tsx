@@ -146,7 +146,7 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
-  const resultsData = mutation.data?.result.body;
+  const resultsData = mutation.data;
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
