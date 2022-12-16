@@ -16,10 +16,10 @@ Run ` npm i`
 
 ### Pipeline
 
-Bootstrap CDK for the AWS account, if that has not been done yet: `ENVIRONMENT=dev BRANCH=main cdk bootstrap`. ENVIRONMENT and BRANCH don't really matter here, but the stack requires you to set them.
+Bootstrap CDK for the AWS account, if that has not been done yet: `ENVIRONMENT=dev BRANCH=main STACK_ID=main cdk bootstrap`. ENVIRONMENT and BRANCH don't really matter here, but the stack requires you to set them.
 
 In the pipeline deployment **AWS account** and **region** are set based on the AWS profile used to deploy the
-pipeline - either use your cli default profile or specify the profile with --profile flag when deploying the pipeline.
+pipeline - either use your cli default profile or specify the profile with --profile flag when deploying the pipeline. Remember to update ~/.aws/config before running bootstrap so that it'll use the right region.
 
 There are three variables that determine how the pipeline and the application itself are deployed to the AWS Account. These variables are listed below in format [ENVIRONMENT VARIABLE] --> [deduced stack variable]
 
@@ -39,6 +39,8 @@ The script will deploy CodePipeline, which will automatically set up the environ
 Note! `pipeline:synth` script is used by the pipeline in the build step: If you update the `pipeline:synth` script name, you need to have the old script available for at least one commit in the followed branch or you have to rerun the deployment script by hand.
 
 Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:status, repo_deployment` is required to be in place in AWS Secrets Manager. Refer to `.lib/raita-pipeline.ts` for authenticationToken name to be set. Set the token as plaintext value.
+
+Note! If deployment fails to Internal Failure, check that you have GitHub token in _Secrets Manager_!
 
 Reference for pipeline setup: https://docs.aws.amazon.com/cdk/v2/guide/cdk_pipeline.html
 
