@@ -3,7 +3,7 @@ import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { log } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
-  decodeS3EventPropertyString,
+  getDecodedS3ObjectKey,
   getKeyData,
   isExcelSuffix,
   isZipPath,
@@ -28,7 +28,7 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
     const recordResults = event.Records.map(async eventRecord => {
       const config = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
-      const key = decodeS3EventPropertyString(eventRecord.s3.object.key);
+      const key = getDecodedS3ObjectKey(eventRecord);
       const { path, fileSuffix } = getKeyData(key);
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
