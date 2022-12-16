@@ -16,6 +16,12 @@ export const fileSuffixesToIncudeInMetadataParsing = {
 export const ZIP_SUFFIX = 'zip';
 export const EMPTY_FILE_INDICATOR = 'EMPTY';
 
+// Constant that is meant to be temporary to address Excel-parsing.
+// See Jira 242.
+// Identifier here is lowercased though it is expected that incoming
+// data has the words capitalized. Comparisons must lowercase the data.
+export const SUBMISSION_REPORT_INDICATOR = 'submission report';
+
 export type RaitaSourceSystem =
   typeof raitaSourceSystems[keyof typeof raitaSourceSystems];
 
@@ -33,6 +39,10 @@ export const SSM_DMZ_API_DOMAIN_NAME = 'raita-dmz-api-domain-name';
 export const SFTP_POLICY_ACCOUNT_ID = 'raita-sftp-policy-account-id';
 export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
+export const SSM_API_KEY = 'raita-api-key';
+
+export const REQUEST_HEADER_API_KEY = 'x-api-key';
+export const RAITA_APIKEY_USER_UID = 'raita-api-key-user';
 
 export const ENVIRONMENTS = {
   dev: 'dev',

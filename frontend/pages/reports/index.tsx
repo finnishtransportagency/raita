@@ -14,15 +14,19 @@ import { format } from 'date-fns/fp';
 
 import * as cfg from 'shared/config';
 import type { App, Range, Rest } from 'shared/types';
-import { toSearchQueryTerm } from 'shared/util';
+import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
+import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
 import { RANGE_DATE_FMT } from 'shared/constants';
+import { Button, Dropdown } from 'components';
+import { DateRange, Pager } from 'components';
 import Footer from 'components/footer';
-import { Button } from 'components';
-import { DateRange, Filter, Pager } from 'components';
+import FilterSelector from 'components/filters';
+import { Entry } from 'components/filters/selector';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import MultiChoice from 'components/filters/multi-choice';
 
 //
 
@@ -33,12 +37,22 @@ const ReportsIndex: NextPage = () => {
   const router = useRouter();
 
   const curPage_ = parseInt(router.query['p'] as string, 10);
-  const curPage = !isNaN(curPage_) ? curPage_ : 0;
+  const curPage = !isNaN(curPage_) ? curPage_ : 1;
 
   const selectRef = useRef<HTMLSelectElement>(null);
 
   const [state, setState] = useState<ReportsState>({
     filters: {},
+    filter: [],
+    special: {
+      dateRange: { start: undefined, end: undefined },
+      fileType: undefined,
+      reportTypes: [],
+    },
+    subQueries: {
+      reportTypes: {},
+      fileTypes: {},
+    },
     dateRange: {
       end: undefined,
       start: undefined,
@@ -51,76 +65,70 @@ const ReportsIndex: NextPage = () => {
     debug: false,
   });
 
+  // #region Special extra filters
+
+  const hasFileTypeFilter = !!state.special.fileType;
+  const hasRangeFilter =
+    !!state.special.dateRange?.start || !!state.special.dateRange?.end;
+
+  const fileTypeFilter: Entry = {
+    field: 'file_type',
+    type: 'match',
+    rel: 'eq',
+    value: state.special.fileType,
+  };
+
+  const dateRangeFilter = [
+    state?.special?.dateRange?.start
+      ? {
+          field: 'inspection_datetime',
+          type: 'range',
+          rel: 'gte',
+          value: state?.special?.dateRange?.start?.toISOString(),
+        }
+      : {},
+    state?.special?.dateRange?.end
+      ? {
+          field: 'inspection_datetime',
+          type: 'range',
+          rel: 'lte',
+          value: state?.special?.dateRange?.end?.toISOString(),
+        }
+      : {},
+  ]
+    .filter(R.complement(R.isEmpty))
+    .filter(x => !!x) as Entry[]; // <- because we like to roll like that
+
+  const reportTypeFilter = {
+    bool: {
+      should: state.special.reportTypes?.map(t => ({
+        match: {
+          [`metadata.report_type`]: t,
+        },
+      })),
+    },
+  };
+
+  // #endregion
+
+  const newFilters = [...state.filter, hasFileTypeFilter && fileTypeFilter]
+    .concat(hasRangeFilter ? dateRangeFilter : [])
+    .filter(R.identity) as Entry[];
+
   /**
-   * @todo Extract into something more reusable
-   * @todo Handle empty queries
+   * Use query builder to get an OpenSearch query based on the filters
    */
-  const query = useMemo(() => {
-    const terms = Object.entries(state.filters).map(([k, v]) =>
-      toSearchQueryTerm(k, v, x => `metadata.${x}`),
-    );
-
-    const _hasReportTypes = state.reportTypes.length > 0;
-    const _hasFilters = terms.length > 0;
-
-    const _reportTypes = state.reportTypes
-      .filter(x => !!x)
-      .map(t => toSearchQueryTerm('report_type', t, x => `metadata.${x}`));
-
-    const _hasRange = R.pipe(
-      R.values,
-      R.filter(x => !!x), // That's right
-      R.length,
-    )(state.dateRange);
-
-    const _range = {
-      ...(_hasRange
-        ? {
-            range: {
-              'metadata.inspection_date': {
-                ...(state.dateRange?.start
-                  ? { gte: format(RANGE_DATE_FMT, state.dateRange.start) }
-                  : {}),
-                ...(state.dateRange?.end
-                  ? { lte: format(RANGE_DATE_FMT, state.dateRange.end) }
-                  : {}),
-              },
-            },
-          }
-        : {}),
-    };
-
-    const _filters = {
-      ...(_hasFilters || _hasRange || _hasReportTypes
-        ? {
-            bool: {
-              must: [
-                ...terms,
-                ..._reportTypes,
-                _hasRange ? _range : undefined,
-              ].filter(x => x),
-            },
-          }
-        : {}),
-    };
-
-    // Paging
-    const _page = {
-      from: state.paging.page * state.paging.size,
-      size: state.paging.size,
-    };
-
-    const _res = {
-      query: {
-        ..._filters,
-      },
-      ..._page,
-    };
-
-    const __res = R.isEmpty(_res.query) ? R.omit('query', _res) : _res;
-
-    return __res;
-  }, [state.filters, state.paging, state.dateRange, state.reportTypes]);
+  const query = useMemo(
+    () =>
+      makeQuery(
+        newFilters,
+        {
+          paging: { curPage, size: cfg.paging.pageSize },
+        },
+        Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
+      ),
+    [newFilters, reportTypeFilter, state.subQueries, curPage],
+  );
 
   /**
    * Mutations in React Query lingo don't mutate data per se,
@@ -138,15 +146,15 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
-  const resultsData = mutation.data?.result.body;
-
-  const updateFilters = (fs: ReportFilters) => setState(R.assoc('filters', fs));
+  const resultsData = mutation.data;
 
   const updateDateRange = (range: Range<Date>) => {
-    setState(R.assoc('dateRange', range));
+    setState(R.assocPath(['special', 'dateRange'], range));
   };
 
   const updateReportType = () => {};
+
+  const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
   //
 
@@ -163,13 +171,15 @@ const ReportsIndex: NextPage = () => {
   return (
     <div className={clsx(css.root)}>
       <Head>
-        <title>Reports</title>
+        <title>{t('common:reports_head_title')}</title>
       </Head>
 
       <div className="bg-primary text-white">
         <div className="container mx-auto px-16 py-6">
           <header>
-            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
+            <h1 className="text-4xl">
+              {t('common:reports_heading')} Page: {curPage}
+            </h1>
           </header>
         </div>
       </div>
@@ -187,60 +197,107 @@ const ReportsIndex: NextPage = () => {
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
 
-                <Filter
-                  labelFn={k => `metadata:label_${k}`}
-                  keys={Object.keys(meta.data?.fields!)}
-                  data={meta.data?.fields!}
-                  onUpdate={updateFilters}
+                <FilterSelector
+                  filters={[]}
+                  onChange={updateFilterList}
+                  fields={meta.data?.fields!}
                 />
               </section>
 
+              {/* Search date range */}
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
                 <DateRange range={state.dateRange} onUpdate={updateDateRange} />
               </section>
 
+              {/* Search file types */}
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_file_types')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.fileTypes || []).map(x => ({
+                    key: x.fileType,
+                    value: x.fileType,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'fileTypes'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'file_type',
+                        ),
+                      ),
+                    );
+                  }}
+                />
+              </section>
+
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_report_types')}</header>
 
-                <select
-                  className={clsx(css.select)}
-                  multiple={true}
-                  ref={selectRef}
-                  onChange={e =>
+                <MultiChoice
+                  items={(meta.data?.reportTypes || []).map(it => ({
+                    key: it.reportType,
+                    value: it.reportType,
+                  }))}
+                  onChange={e => {
                     setState(
-                      R.assoc(
-                        'reportTypes',
-                        Array.from(e.target.selectedOptions).map(
-                          R.prop('value'),
+                      R.assocPath(
+                        ['subQueries', 'reportTypes'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'report_type',
                         ),
                       ),
-                    )
-                  }
-                >
-                  <option value={''}>{t('common:no_selection')}</option>
+                    );
+                  }}
+                />
+              </section>
 
-                  {meta.data?.reportTypes?.map((it, ix) => (
-                    <option className="px-2" key={ix} value={it.reportType}>
-                      {it.reportType}
-                    </option>
-                  ))}
-                </select>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_track_parts')}</header>
 
-                <footer className="py-2">
-                  <Button
-                    onClick={() => {
-                      if (!selectRef.current) return;
+                <MultiChoice
+                  items={(meta.data?.trackParts || []).map(it => ({
+                    key: it.value,
+                    value: it.value,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'trackParts'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'track_part',
+                        ),
+                      ),
+                    );
+                  }}
+                />
+              </section>
 
-                      /** @todo ??? */
-                      selectRef.current.selectedOptions;
-                    }}
-                    size={'sm'}
-                    type={'secondary'}
-                    label={t('common:select_none')}
-                  />
-                </footer>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_systems')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.systems || []).map(x => ({
+                    key: x.value,
+                    value: x.value,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'systems'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'system',
+                        ),
+                      ),
+                    );
+                  }}
+                />
               </section>
 
               <footer className="pt-4">
@@ -257,47 +314,6 @@ const ReportsIndex: NextPage = () => {
                 </div>
               </footer>
             </div>
-
-            <details>
-              <summary>{t('debug:debug')}</summary>
-              <div className="opacity-40 space-y-4 text-xs max-h-96 mt-4 overflow-auto">
-                <fieldset>
-                  <legend>{t('debug:state')}</legend>
-
-                  <pre>
-                    <code>{JSON.stringify(state, null, 2)}</code>
-                  </pre>
-                </fieldset>
-
-                <fieldset>
-                  <legend>{t('debug:search_query')}</legend>
-
-                  <div>
-                    <pre>
-                      <code>{JSON.stringify({ qʼ: query }, null, 2)}</code>
-                    </pre>
-                  </div>
-                </fieldset>
-
-                <fieldset>
-                  <legend>{t('debug:response')}</legend>
-
-                  <div>
-                    <pre>
-                      <code>
-                        {JSON.stringify(
-                          {
-                            data: mutation.data,
-                          },
-                          null,
-                          2,
-                        )}
-                      </code>
-                    </pre>
-                  </div>
-                </fieldset>
-              </div>
-            </details>
           </section>
 
           <section>
@@ -306,7 +322,7 @@ const ReportsIndex: NextPage = () => {
 
               {mutation.data &&
                 t('search_result_count', {
-                  count: (resultsData?.hits?.total as SearchTotalHits).value,
+                  count: resultsData?.total,
                 })}
             </header>
 
@@ -316,8 +332,8 @@ const ReportsIndex: NextPage = () => {
               {mutation.isSuccess && mutation.data && (
                 <div>
                   <ul className="space-y-2 divide-y-2">
-                    {resultsData?.hits.hits.map((it, ix) => {
-                      const { _source: doc } = it;
+                    {resultsData?.hits.map((it, ix) => {
+                      const { source: doc } = it;
 
                       // Bail out if we have nothing
                       if (!doc) return null;
@@ -329,7 +345,7 @@ const ReportsIndex: NextPage = () => {
                               {doc.file_name}
                               <span className="text-xs">
                                 Score=
-                                <span className="font-mono">{it._score}</span>
+                                <span className="font-mono">{it.score}</span>
                               </span>
                             </header>
 
@@ -387,7 +403,10 @@ const ReportsIndex: NextPage = () => {
                     <Pager
                       size={state.paging.size}
                       page={state.paging.page}
-                      count={resultsData?.hits.total as number}
+                      // TODO: Temporary solution to default to 0.
+                      // Update to handle missing resultsData closer to source or
+                      // Pager to accept undefined count?
+                      count={resultsData?.total || 0}
                       onGotoPage={setPage}
                     />
                   )}
@@ -396,6 +415,31 @@ const ReportsIndex: NextPage = () => {
             </section>
           </section>
         </div>
+      </div>
+
+      <div className="container mx-auto px-16 pb-4">
+        <details>
+          <summary>{t('debug:debug')}</summary>
+          <div className="opacity-40 space-y-4 text-xs mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <fieldset>
+                <legend>{t('debug:state')}</legend>
+
+                <pre className="max-h-96 overflow-auto">
+                  <code>{JSON.stringify(state, null, 2)}</code>
+                </pre>
+              </fieldset>
+
+              <fieldset>
+                <legend>query</legend>
+
+                <pre className="max-h-96 overflow-auto">
+                  <code>{JSON.stringify(query, null, 2)}</code>
+                </pre>
+              </fieldset>
+            </div>
+          </div>
+        </details>
       </div>
 
       <Footer />
@@ -413,6 +457,16 @@ export type StaticProps = {
 
 type ReportsState = {
   filters: Record<string, string>;
+  filter: Entry[];
+  special: {
+    dateRange?: Partial<Range<Date>>;
+    fileType?: 'csv' | 'pdf' | 'txt' | 'xlsx';
+    reportTypes?: string[];
+  };
+  subQueries: {
+    reportTypes: object;
+    fileTypes: object;
+  };
   dateRange: Partial<Range<Date>>;
   reportTypes: string[];
   paging: {

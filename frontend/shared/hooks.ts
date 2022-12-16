@@ -1,25 +1,35 @@
 import * as R from 'rambda';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { DependencyList, useState } from 'react';
-import {
-  MsearchBody,
-  SearchResponse,
-} from '@opensearch-project/opensearch/api/types';
+import { MsearchBody } from '@opensearch-project/opensearch/api/types';
 import { saveAs } from 'file-saver';
 
 import { getMeta, apiClient, getFile } from 'shared/rest';
-import { IDocument } from 'shared/types';
+import { SearchResponse } from 'shared/types';
 
 // #region Queries
 
 export function useMetadataQuery() {
   return useQuery(['meta'], () =>
-    getMeta().then(({ fields, reportTypes }) => {
-      return {
-        fields: fields.reduce((o, x) => R.merge(o, x), {}),
+    getMeta().then(
+      ({
+        trackNumbers,
+        trackParts,
+        systems,
+        fileTypes,
+        fields,
         reportTypes,
-      };
-    }),
+      }) => {
+        return {
+          fields: fields.reduce((o, x) => R.merge(o, x), {}),
+          reportTypes,
+          trackNumbers,
+          trackParts,
+          systems,
+          fileTypes,
+        };
+      },
+    ),
   );
 }
 // #endregion
@@ -32,10 +42,7 @@ export function useMetadataQuery() {
 export function useSearch() {
   return useMutation((query: MsearchBody) => {
     console.assert(query, 'Given search query is invalid; %o', { query });
-
-    return apiClient
-      .post<{ result: { body: SearchResponse<IDocument> } }>('/files', query)
-      .then(R.prop('data'));
+    return apiClient.post<SearchResponse>('/files', query).then(R.prop('data'));
   });
 }
 

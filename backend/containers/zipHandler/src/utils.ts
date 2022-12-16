@@ -87,7 +87,7 @@ export const uploadToS3 = ({
       Bucket: targetBucket,
       Key: key,
       Body: passThrough,
-      ContentType: mime.lookup(fileName) || undefined,
+      ContentType: mime.contentType(fileName) || undefined,
       Tagging: `ZipTimeStamp=${zipFileData.timeStamp}&ZipTimeStampType=${zipFileData.timeStampType}&ZipFileName=${zipFileData.fileName}`,
     },
   });

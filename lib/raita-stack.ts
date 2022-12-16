@@ -20,7 +20,7 @@ export class RaitaStack extends Stack {
     // Get config based on Raita environment
     const config = getRaitaStackConfig(this, raitaEnv);
 
-    // Get existing vpc based on predetermined attributes
+    // Get existing VPC based on predetermined attributes
     const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'raita-vpc', {
       ...config.vpc,
     });

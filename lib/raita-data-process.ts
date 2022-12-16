@@ -23,6 +23,7 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
+import { getRemovalPolicy } from './utils';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -95,6 +96,7 @@ export class DataProcessStack extends NestedStack {
       this.createZipHandlerECSResources({
         raitaStackIdentifier,
         vpc,
+        raitaEnv,
       });
 
     dataReceptionBucket.grantRead(handleZipTask.taskRole);
@@ -319,9 +321,11 @@ export class DataProcessStack extends NestedStack {
   private createZipHandlerECSResources({
     raitaStackIdentifier,
     vpc,
+    raitaEnv,
   }: {
     raitaStackIdentifier: string;
     vpc: IVpc;
+    raitaEnv: RaitaEnvironment;
   }) {
     const ecsCluster = new ecs.Cluster(
       this,
@@ -356,14 +360,19 @@ export class DataProcessStack extends NestedStack {
       },
     );
     // Repository for storing docker images
-    const ecsRepo = new ecr.Repository(this, 'repository-raita', {
+    const raitaEcrRepository = new ecr.Repository(this, 'repository-raita', {
       repositoryName: `repository-${raitaStackIdentifier}-zip-handler`,
       lifecycleRules: [{ maxImageCount: 3 }],
+      imageScanOnPush: true,
+      removalPolicy: getRemovalPolicy(raitaEnv),
     });
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
-        image: ecs.ContainerImage.fromEcrRepository(ecsRepo, 'latest'),
+        image: ecs.ContainerImage.fromEcrRepository(
+          raitaEcrRepository,
+          'latest',
+        ),
         logging: new ecs.AwsLogDriver({
           streamPrefix: 'FargateHandleZip',
           logRetention: RetentionDays.SIX_MONTHS,

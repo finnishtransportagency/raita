@@ -1,9 +1,15 @@
-import { ALBEvent } from 'aws-lambda';
+import { ALBEvent, ALBEventHeaders } from 'aws-lambda';
 import { validateJwtToken } from './validateJwtToken';
 import { isPermanentStack } from '../../lib/utils';
 import { RaitaEnvironment } from '../../lib/config';
 import { log } from './logger';
+import { getSSMParameter } from './ssm';
 import { RaitaLambdaError } from '../lambdas/utils';
+import {
+  RAITA_APIKEY_USER_UID,
+  REQUEST_HEADER_API_KEY,
+  SSM_API_KEY,
+} from '../../constants';
 
 const ISSUER = process.env.JWT_TOKEN_ISSUER;
 const STACK_ID = process.env.STACK_ID || '';
@@ -41,13 +47,29 @@ const getMockUser = (): RaitaUser => ({
   roles: [STATIC_ROLES.read],
 });
 
-const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
-  const headers = event.headers;
-  if (!headers) {
-    log.error('Headers missing');
-    throw new RaitaLambdaError('Headers missing', 400);
+const handleApiKeyRequest = async (
+  requestApiKey: string,
+): Promise<RaitaUser> => {
+  const ssmApiKey = await getSSMParameter({
+    parameterName: SSM_API_KEY,
+    encrypted: true,
+  });
+  if (!ssmApiKey) {
+    log.error('Api key missing');
+    throw new RaitaLambdaError('Error', 500);
   }
+  if (ssmApiKey !== requestApiKey) {
+    throw new RaitaLambdaError('Forbidden', 403);
+  }
+  return {
+    uid: RAITA_APIKEY_USER_UID,
+    roles: [STATIC_ROLES.read],
+  };
+};
 
+const handleOidcRequest = async (
+  headers: ALBEventHeaders,
+): Promise<RaitaUser> => {
   if (!ISSUER) {
     log.error('Issuer missing');
     throw new RaitaLambdaError('User validation failed', 500);
@@ -68,6 +90,23 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
     roles,
   };
   return user;
+};
+
+const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
+  const headers = event.headers;
+  if (!headers) {
+    log.error('Headers missing');
+    throw new RaitaLambdaError('Headers missing', 400);
+  }
+  /**
+   * If request has api key header present, authentication/authorization is based solely on that,
+   * not on possible oidc-headers.
+   */
+  const requestApiKey = headers[REQUEST_HEADER_API_KEY];
+  if (requestApiKey) {
+    return handleApiKeyRequest(requestApiKey);
+  }
+  return handleOidcRequest(headers);
 };
 
 const isReadUser = (user: RaitaUser) => user.roles?.includes(STATIC_ROLES.read);

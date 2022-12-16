@@ -2,6 +2,7 @@ import {
   ExcelSuffix,
   fileSuffixesToIncudeInMetadataParsing,
   KnownSuffix,
+  SUBMISSION_REPORT_INDICATOR,
 } from '../../constants';
 import {
   getGetEnvWithPreassignedContext,
@@ -100,6 +101,17 @@ export const getKeyData = (key: string) => {
     keyWithoutSuffix,
   };
 };
+
+// Helper that is meant to be temporary to address Excel parsing. See Jira 242.
+export const isSubmissionReport = ({
+  fileBaseName,
+  fileSuffix,
+}: {
+  fileBaseName: string;
+  fileSuffix: string;
+}) =>
+  isExcelSuffix(fileSuffix) &&
+  fileBaseName.toLowerCase().includes(SUBMISSION_REPORT_INDICATOR);
 
 // Expected structure for zip file path parts is designated in the PathType type
 // If the path parts are not following, processing the file will lead into data inconsistencies

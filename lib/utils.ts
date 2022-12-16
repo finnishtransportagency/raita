@@ -1,12 +1,12 @@
 import { RemovalPolicy } from 'aws-cdk-lib';
+import { EbsDeviceVolumeType, ISubnet } from 'aws-cdk-lib/aws-ec2';
+import { DomainProps } from 'aws-cdk-lib/aws-opensearchservice';
 import {
   DEVELOPMENT_MAIN_STACK_ID,
   ENVIRONMENTS,
   PRODUCTION_STACK_ID,
 } from '../constants';
 import { RaitaEnvironment } from './config';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
@@ -38,3 +38,57 @@ export const isProductionStack = (
 export const isPermanentStack = (stackId: string, raitaEnv: RaitaEnvironment) =>
   isDevelopmentMainStack(stackId, raitaEnv) ||
   isProductionStack(stackId, raitaEnv);
+
+/**
+ * Returns env dependent OpenSearch configuration properties
+ */
+export const getEnvDependentOsConfiguration = (
+  env: RaitaEnvironment,
+  subnets: ISubnet[],
+) => {
+  const envDependentProperties: Record<
+    RaitaEnvironment,
+    Partial<DomainProps>
+  > = {
+    prod: {
+      removalPolicy: getRemovalPolicy(env),
+      ebs: {
+        volumeSize: 200,
+        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
+      },
+      capacity: {
+        masterNodes: 3,
+        masterNodeInstanceType: 'm6g.large.search',
+        dataNodes: 2,
+        dataNodeInstanceType: 'm6g.large.search',
+      },
+      // Must be enabled if VPC contains multiple private subnets.
+      zoneAwareness: {
+        enabled: true,
+        availabilityZoneCount: subnets.length,
+      },
+      vpcSubnets: [
+        {
+          subnets: subnets,
+        },
+      ],
+    },
+    dev: {
+      removalPolicy: getRemovalPolicy(env),
+      ebs: {
+        volumeSize: 10,
+        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+      },
+      capacity: {
+        dataNodes: 1,
+        dataNodeInstanceType: 't3.small.search',
+      },
+      vpcSubnets: [
+        {
+          subnets: subnets.slice(0, 1),
+        },
+      ],
+    },
+  };
+  return envDependentProperties[env];
+};

@@ -1,12 +1,13 @@
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Port } from 'aws-cdk-lib/aws-ec2';
+import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { getRemovalPolicy, isDevelopmentMainStack } from './utils';
+import { getEnvDependentOsConfiguration, isPermanentStack } from './utils';
+
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
@@ -78,8 +79,8 @@ export class ApplicationStack extends NestedStack {
       vpc,
     });
 
-    // Create Bastion Host for dev
-    if (isDevelopmentMainStack(stackId, raitaEnv)) {
+    // Create Bastion Host for dev (main branch/stack) and production
+    if (isPermanentStack(stackId, raitaEnv)) {
       const bastionStack = new BastionStack(this, 'stack-bastion', {
         raitaStackIdentifier,
         vpc,
@@ -167,30 +168,13 @@ export class ApplicationStack extends NestedStack {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_3,
       enableVersionUpgrade: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
-      ebs: {
-        volumeSize: 10,
-        volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
-      },
-      capacity: {
-        dataNodes: 1,
-        dataNodeInstanceType: 't3.small.search',
-      },
       nodeToNodeEncryption: true,
+      enforceHttps: true,
+      vpc,
       encryptionAtRest: {
         enabled: true,
       },
-      enforceHttps: true,
-      // must be enabled if VPC contains multiple private subnets.
-      // zoneAwareness: {
-      //   enabled: true,
-      // },
-      vpc,
-      vpcSubnets: [
-        {
-          subnets: vpc.privateSubnets.slice(0, 1),
-        },
-      ],
+      ...getEnvDependentOsConfiguration(raitaEnv, vpc.privateSubnets),
     });
   }
 

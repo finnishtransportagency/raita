@@ -5,8 +5,8 @@ import {
   ParseValueResult,
 } from '../../../types';
 import {
-  isExcelSuffix,
   isKnownSuffix,
+  isSubmissionReport,
   KeyData,
   RaitaParseError,
 } from '../../utils';
@@ -53,7 +53,7 @@ const validateGenericFileNameStructureOrFail = (
   }
 };
 
-const parseExcelFileNameData = (
+const parseSubmissionReportExcelFileNameData = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
 ) => {
@@ -86,13 +86,13 @@ export const extractFileNameData = (
     const fileBaseNameParts = fileBaseName.split('_');
     // Get labels based on the file suffix from extractionSpec
     const labels = fileNamePartLabels[fileSuffix];
-    // Excel file name parsing is special case, some name segments need to be ignored
-    const specBasedMetadata = isExcelSuffix(fileSuffix)
-      ? parseExcelFileNameData(labels, fileBaseNameParts)
+    // Submission Report Excel file name parsing is special case, some name segments need to be ignored
+    const fileNameMetadata = isSubmissionReport({ fileBaseName, fileSuffix })
+      ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
       : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
     return {
       file_type: fileSuffix,
-      ...specBasedMetadata,
+      ...fileNameMetadata,
     };
   } catch (error) {
     // Currently just log file name parsing errors.
