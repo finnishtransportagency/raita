@@ -65,7 +65,11 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    openSearchDomain.grantIndexRead(
+    // Write permission is needed here (the Write part in ReadWrite) as it adds POST permissions to
+    // the metadata index. RaitaApiLambdaServiceRole does not need to make any
+    // data modifications to metadata index but under the hood the client from
+    // @opensearch-project/opensearch utilizes POST to retrieve data from the index.
+    openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
       this.raitaApiLambdaServiceRole,
     );
