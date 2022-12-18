@@ -66,9 +66,9 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           spec,
         });
         return {
+          // key is sent to be stored in url decoded format to db
+          key,
           file_name: keyData.fileName,
-          // key is sent to be stored in url decoded format
-          key: keyData.key,
           bucket_arn: eventRecord.s3.bucket.arn,
           bucket_name: eventRecord.s3.bucket.name,
           size: eventRecord.s3.object.size,
