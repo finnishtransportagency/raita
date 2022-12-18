@@ -146,7 +146,7 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
-  const resultsData = mutation.data?.result.body;
+  const resultsData = mutation.data;
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
@@ -322,7 +322,7 @@ const ReportsIndex: NextPage = () => {
 
               {mutation.data &&
                 t('search_result_count', {
-                  count: (resultsData?.hits?.total as SearchTotalHits).value,
+                  count: resultsData?.total,
                 })}
             </header>
 
@@ -332,8 +332,8 @@ const ReportsIndex: NextPage = () => {
               {mutation.isSuccess && mutation.data && (
                 <div>
                   <ul className="space-y-2 divide-y-2">
-                    {resultsData?.hits.hits.map((it, ix) => {
-                      const { _source: doc } = it;
+                    {resultsData?.hits.map((it, ix) => {
+                      const { source: doc } = it;
 
                       // Bail out if we have nothing
                       if (!doc) return null;
@@ -345,7 +345,7 @@ const ReportsIndex: NextPage = () => {
                               {doc.file_name}
                               <span className="text-xs">
                                 Score=
-                                <span className="font-mono">{it._score}</span>
+                                <span className="font-mono">{it.score}</span>
                               </span>
                             </header>
 
@@ -403,7 +403,10 @@ const ReportsIndex: NextPage = () => {
                     <Pager
                       size={state.paging.size}
                       page={state.paging.page}
-                      count={resultsData?.hits.total as number}
+                      // TODO: Temporary solution to default to 0.
+                      // Update to handle missing resultsData closer to source or
+                      // Pager to accept undefined count?
+                      count={resultsData?.total || 0}
                       onGotoPage={setPage}
                     />
                   )}

@@ -1,5 +1,3 @@
-import { SearchResponse } from '@opensearch-project/opensearch/api/types';
-
 /**
  * @deprecated
  */
@@ -49,7 +47,7 @@ export namespace Rest {
 
   export type Fields = Record<string, Field>;
 
-  export type Reports = SearchResponse<IDocument>;
+  export type Reports = SearchResponse;
 }
 
 //
@@ -61,21 +59,25 @@ export namespace Rest {
  * @see {@link SearchResponse}
  */
 export interface ISearchResult<T> {
-  _index: string;
-  _id: string;
-  _score: number;
-  _source: T;
+  score: number;
+  source: T;
 }
 
 //
 
 export interface IDocument {
-  key: string;
-  file_name: string;
-  bucket_arn: string;
-  bucket_name: string;
-  size: number;
-  metadata: IDocumentMetadata;
+  score?: number;
+  source: {
+    key: string;
+    file_name: string;
+    size: number;
+    metadata: IDocumentMetadata;
+  };
 }
 
 export interface IDocumentMetadata {}
+
+export interface SearchResponse {
+  total: number;
+  hits: Array<IDocument>;
+}
