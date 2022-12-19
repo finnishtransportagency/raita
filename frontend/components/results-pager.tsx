@@ -19,25 +19,6 @@ export function ResultsPager(props: Props) {
 
   const pageCount = ceil(itemCount / pageSize);
 
-  const items: Item[] = [
-    {
-      label: t('common:first_page'),
-      onClick: e => {},
-    },
-    {
-      label: t('common:previous_page'),
-      onClick: e => {},
-    },
-    {
-      label: t('common:next_page'),
-      onClick: e => {},
-    },
-    {
-      label: t('common:last_page'),
-      onClick: e => {},
-    },
-  ];
-
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage === pageCount;
   const hasPrevPage = currentPage > 1;
