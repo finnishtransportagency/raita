@@ -1,3 +1,4 @@
+import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
   fileSuffixesToIncudeInMetadataParsing,
@@ -75,13 +76,21 @@ export const getOpenSearchLambdaConfigOrFail = () => {
   };
 };
 
-export const decodeS3EventPropertyString = (s: string) => s.replace(/\+/g, ' ');
+/**
+ * Extract and decode key from S3 event record
+ */
+export const getDecodedS3ObjectKey = (eventRecord: S3EventRecord) =>
+  decodeUriString(eventRecord.s3.object.key).replace(/\+/g, ' ');
 
 export type KeyData = ReturnType<typeof getKeyData>;
+
+/**
+ * Takes in an decoded key and returns extracted informatin from it
+ */
 export const getKeyData = (key: string) => {
   const path = key.split('/');
   const rootFolder = path[0];
-  const fileName = decodeUriString(path[path.length - 1]);
+  const fileName = path[path.length - 1];
   const lastDotInFileName = fileName.lastIndexOf('.');
   const fileBaseName =
     lastDotInFileName >= 0 ? fileName.slice(0, lastDotInFileName) : fileName;

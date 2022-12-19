@@ -3,7 +3,6 @@ import { ListObjectsCommand, S3Client } from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import {
-  decodeS3EventPropertyString,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
@@ -33,7 +32,7 @@ export async function handleImagesRequest(
     }
     const { key } = requestBody;
     log.info(user, `Getting related images for ${key}`);
-    const filePath = decodeS3EventPropertyString(key).split('/');
+    const filePath = key.split('/');
     const folderPath = filePath.slice(0, -1);
     const imagesFolderKey = folderPath.concat('jpg').join('/');
     const command = new ListObjectsCommand({
