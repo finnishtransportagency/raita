@@ -30,5 +30,9 @@
   "relation_gt": ">",
   "relation_gte": ">=",
   "no_choice": "No choice",
-  "page_number_item": "Page number 123"
+  "first_page": "First page",
+  "last_page": "Last page",
+  "prev_page": "Previous",
+  "next_page": "Next",
+  "page_number_item": "Page {{ number }}"
 }
