@@ -66,7 +66,7 @@ export class CloudfrontStack extends Stack {
       };
 
       new cloudfront.Distribution(this, `cloudfront`, {
-        domainNames: [cloudfrontDomainName],
+        // domainNames: [cloudfrontDomainName],
         // certificate,
         defaultRootObject: 'reports.html',
         comment: `cloudfront for ${raitaStackIdentifier}`,
