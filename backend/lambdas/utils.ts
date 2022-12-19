@@ -116,6 +116,7 @@ export const isSubmissionReport = ({
 // Expected structure for zip file path parts is designated in the PathType type
 // If the path parts are not following, processing the file will lead into data inconsistencies
 // Only tuple length and source system are validated
+
 export type ZipPath = [
   system: 'Meeri' | 'Emma' | 'Elli',
   year: string,
@@ -123,6 +124,14 @@ export type ZipPath = [
   date: string,
   fileName: string,
 ];
+
+// export type ZipPath = [
+//   'Meeri' | 'Emma' | 'Elli',
+//   string,
+//   string,
+//   string,
+//   string,
+// ];
 
 // Type guards
 

@@ -126,3 +126,5 @@ async function parseFileMetadata({
     hash,
   };
 }
+
+export const exportForTesting = { parseFileMetadata };
