@@ -27,6 +27,7 @@ import { Entry } from 'components/filters/selector';
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
 import MultiChoice from 'components/filters/multi-choice';
+import ResultsPager from 'components/results-pager';
 
 //
 
@@ -151,8 +152,6 @@ const ReportsIndex: NextPage = () => {
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
   };
-
-  const updateReportType = () => {};
 
   const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
@@ -398,19 +397,18 @@ const ReportsIndex: NextPage = () => {
                   onClick={() => {}}
                 />
 
-                <div>
-                  {mutation.isSuccess && (
-                    <Pager
-                      size={state.paging.size}
-                      page={state.paging.page}
-                      // TODO: Temporary solution to default to 0.
-                      // Update to handle missing resultsData closer to source or
-                      // Pager to accept undefined count?
-                      count={resultsData?.total || 0}
+                {mutation.isSuccess && (
+                  <ResultsPager
+                    currentPage={state.paging.page}
+                    itemCount={mutation.data?.total || 0}
+                    pageSize={state.paging.size}
+                    onGotoPage={setPage}
+                  />
+                )}
+
+                {/* <div>
                       onGotoPage={setPage}
-                    />
-                  )}
-                </div>
+                  )} */}
               </footer>
             </section>
           </section>

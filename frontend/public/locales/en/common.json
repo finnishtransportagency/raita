@@ -29,5 +29,6 @@
   "relation_lte": "<=",
   "relation_gt": ">",
   "relation_gte": ">=",
-  "no_choice": "No choice"
+  "no_choice": "No choice",
+  "page_number_item": "Page number 123"
 }
