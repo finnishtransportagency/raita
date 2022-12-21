@@ -1,6 +1,10 @@
 .root {
 }
 
+.isLoading {
+  @apply opacity-50;
+}
+
 .subSection {
   /* @apply border-2 border-green-500; */
 }
