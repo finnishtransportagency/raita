@@ -2,7 +2,7 @@
  * @todo Handle empty search queries
  * @todo Handle form data validation
  */
-import { useState, useMemo, useRef, Fragment } from 'react';
+import { useState, useMemo, useRef, Fragment, useEffect } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -27,6 +27,7 @@ import { Entry } from 'components/filters/selector';
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
 import MultiChoice from 'components/filters/multi-choice';
+import ResultsPager from 'components/results-pager';
 
 //
 
@@ -38,6 +39,8 @@ const ReportsIndex: NextPage = () => {
 
   const curPage_ = parseInt(router.query['p'] as string, 10);
   const curPage = !isNaN(curPage_) ? curPage_ : 1;
+
+  const isDebug = !!(router.query['debug'] === '1');
 
   const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -152,13 +155,20 @@ const ReportsIndex: NextPage = () => {
     setState(R.assocPath(['special', 'dateRange'], range));
   };
 
-  const updateReportType = () => {};
-
   const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
   //
 
-  const setPage = (n: number) => setState(R.assocPath(['paging', 'page'], n));
+  const setPage = (n: number) => {
+    setState(R.assocPath(['paging', 'page'], n));
+    mutation.mutate(query);
+  };
+
+  /**
+   * Check whether any of our queries/mutations are loading,
+   * so that we can do things like disable UI controls.
+   */
+  const isLoading = [meta.isLoading, mutation.isLoading].some(R.identity);
 
   //
 
@@ -169,7 +179,7 @@ const ReportsIndex: NextPage = () => {
   //
 
   return (
-    <div className={clsx(css.root)}>
+    <div className={clsx(css.root, isLoading && css.isLoading)}>
       <Head>
         <title>{t('common:reports_head_title')}</title>
       </Head>
@@ -211,29 +221,6 @@ const ReportsIndex: NextPage = () => {
                 <DateRange range={state.dateRange} onUpdate={updateDateRange} />
               </section>
 
-              {/* Search file types */}
-              <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_file_types')}</header>
-
-                <MultiChoice
-                  items={(meta.data?.fileTypes || []).map(x => ({
-                    key: x.fileType,
-                    value: x.fileType,
-                  }))}
-                  onChange={e => {
-                    setState(
-                      R.assocPath(
-                        ['subQueries', 'fileTypes'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'file_type',
-                        ),
-                      ),
-                    );
-                  }}
-                />
-              </section>
-
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_report_types')}</header>
 
@@ -249,6 +236,28 @@ const ReportsIndex: NextPage = () => {
                         makeFromMulti(
                           takeOptionValues(e.target.selectedOptions),
                           'report_type',
+                        ),
+                      ),
+                    );
+                  }}
+                />
+              </section>
+
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_systems')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.systems || []).map(x => ({
+                    key: x.value,
+                    value: x.value,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'systems'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'system',
                         ),
                       ),
                     );
@@ -278,21 +287,22 @@ const ReportsIndex: NextPage = () => {
                 />
               </section>
 
+              {/* Search file types */}
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_systems')}</header>
+                <header>{t('common:reports_file_types')}</header>
 
                 <MultiChoice
-                  items={(meta.data?.systems || []).map(x => ({
-                    key: x.value,
-                    value: x.value,
+                  items={(meta.data?.fileTypes || []).map(x => ({
+                    key: x.fileType,
+                    value: x.fileType,
                   }))}
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'systems'],
+                        ['subQueries', 'fileTypes'],
                         makeFromMulti(
                           takeOptionValues(e.target.selectedOptions),
-                          'system',
+                          'file_type',
                         ),
                       ),
                     );
@@ -398,49 +408,46 @@ const ReportsIndex: NextPage = () => {
                   onClick={() => {}}
                 />
 
-                <div>
-                  {mutation.isSuccess && (
-                    <Pager
-                      size={state.paging.size}
-                      page={state.paging.page}
-                      // TODO: Temporary solution to default to 0.
-                      // Update to handle missing resultsData closer to source or
-                      // Pager to accept undefined count?
-                      count={resultsData?.total || 0}
-                      onGotoPage={setPage}
-                    />
-                  )}
-                </div>
+                {mutation.isSuccess && (
+                  <ResultsPager
+                    currentPage={state.paging.page}
+                    itemCount={mutation.data?.total || 0}
+                    pageSize={state.paging.size}
+                    onGotoPage={setPage}
+                  />
+                )}
               </footer>
             </section>
           </section>
         </div>
       </div>
 
-      <div className="container mx-auto px-16 pb-4">
-        <details>
-          <summary>{t('debug:debug')}</summary>
-          <div className="opacity-40 space-y-4 text-xs mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <fieldset>
-                <legend>{t('debug:state')}</legend>
+      {isDebug && (
+        <div className="container mx-auto px-16 pb-4">
+          <details>
+            <summary>{t('debug:debug')}</summary>
+            <div className="opacity-40 space-y-4 text-xs mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <fieldset>
+                  <legend>{t('debug:state')}</legend>
 
-                <pre className="max-h-96 overflow-auto">
-                  <code>{JSON.stringify(state, null, 2)}</code>
-                </pre>
-              </fieldset>
+                  <pre className="max-h-96 overflow-auto">
+                    <code>{JSON.stringify(state, null, 2)}</code>
+                  </pre>
+                </fieldset>
 
-              <fieldset>
-                <legend>query</legend>
+                <fieldset>
+                  <legend>query</legend>
 
-                <pre className="max-h-96 overflow-auto">
-                  <code>{JSON.stringify(query, null, 2)}</code>
-                </pre>
-              </fieldset>
+                  <pre className="max-h-96 overflow-auto">
+                    <code>{JSON.stringify(query, null, 2)}</code>
+                  </pre>
+                </fieldset>
+              </div>
             </div>
-          </div>
-        </details>
-      </div>
+          </details>
+        </div>
+      )}
 
       <Footer />
     </div>
