@@ -120,7 +120,7 @@ Feature branches are to be merged to `main` via Pull Requests. Use squash mergin
 Naming: commit_type: PROJECT_CODE-ISSUE_NUMBER Description
 E.g. `feat: RAITA-12345 Awesome new feature`
 
-All status checks and a review need to pass to be able to merge the PR. For production updates, make a PR from `main` to `prod`.
+All status checks and a review need to pass to be able to merge the PR. For production updates, make a PR from `main` to `prod`. After the production update has gone through the pipeline, invalidate the CloudFront cache manually.
 
 ### Commit naming
 

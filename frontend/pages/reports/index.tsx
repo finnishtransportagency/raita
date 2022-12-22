@@ -37,9 +37,6 @@ const ReportsIndex: NextPage = () => {
 
   const router = useRouter();
 
-  const curPage_ = parseInt(router.query['p'] as string, 10);
-  const curPage = !isNaN(curPage_) ? curPage_ : 1;
-
   const isDebug = !!(router.query['debug'] === '1');
 
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -63,7 +60,7 @@ const ReportsIndex: NextPage = () => {
     reportTypes: [],
     paging: {
       size: cfg.paging.pageSize,
-      page: curPage,
+      page: 1,
     },
     debug: false,
   });
@@ -126,11 +123,11 @@ const ReportsIndex: NextPage = () => {
       makeQuery(
         newFilters,
         {
-          paging: { curPage, size: cfg.paging.pageSize },
+          paging: { curPage: state.paging.page, size: cfg.paging.pageSize },
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
       ),
-    [newFilters, reportTypeFilter, state.subQueries, curPage],
+    [newFilters, reportTypeFilter, state.subQueries, state.paging.page],
   );
 
   /**
@@ -187,9 +184,7 @@ const ReportsIndex: NextPage = () => {
       <div className="bg-primary text-white">
         <div className="container mx-auto px-16 py-6">
           <header>
-            <h1 className="text-4xl">
-              {t('common:reports_heading')} Page: {curPage}
-            </h1>
+            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
           </header>
         </div>
       </div>
@@ -374,12 +369,6 @@ const ReportsIndex: NextPage = () => {
 
                             <footer className="text-right space-x-2">
                               <Button
-                                disabled={true}
-                                size="sm"
-                                label={t('common:preview')}
-                                onClick={() => {}}
-                              />
-                              <Button
                                 size="sm"
                                 label={t('common:download')}
                                 onClick={() => {
@@ -400,14 +389,7 @@ const ReportsIndex: NextPage = () => {
                 </div>
               )}
 
-              <footer className="space-y-2 flex justify-between mt-2">
-                <Button
-                  disabled={true}
-                  label={t('common:download_all')}
-                  type="secondary"
-                  onClick={() => {}}
-                />
-
+              <footer className="space-y-2 flex justify-center mt-2">
                 {mutation.isSuccess && (
                   <ResultsPager
                     currentPage={state.paging.page}

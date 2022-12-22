@@ -35,6 +35,7 @@
   "first_page": "Sivu 1",
   "last_page": "Sivu {{ number }}",
   "prev_page": "Ed. sivu",
+  "previous_page": "Ed. sivu",
   "next_page": "Seur. sivu",
   "page_number_item": "Sivu {{ number }}"
 }
