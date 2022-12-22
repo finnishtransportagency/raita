@@ -116,7 +116,7 @@ export default function Selector(props: Props) {
 
                       {fieldList.map(([k, v]) => (
                         <option key={k} value={k} aria-label={k}>
-                          {t(`common:label_${k}`)}
+                          {t(`metadata:label_${k}`)}
                         </option>
                       ))}
                     </select>
