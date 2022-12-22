@@ -1,7 +1,6 @@
 import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Role } from 'aws-cdk-lib/aws-iam';
 import { Port } from 'aws-cdk-lib/aws-ec2';
 import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -81,29 +80,17 @@ export class ApplicationStack extends NestedStack {
 
     // Create Bastion Host for dev (main branch/stack) and production
     if (isPermanentStack(stackId, raitaEnv)) {
-      const bastionStack = new BastionStack(this, 'stack-bastion', {
+      new BastionStack(this, 'stack-bastion', {
         raitaStackIdentifier,
         vpc,
         securityGroup: raitaSecurityGroup,
         albDns: raitaApiStack.alb.loadBalancerDnsName,
         databaseDomainEndpoint: openSearchDomain.domainEndpoint,
       });
-
-      /**
-       * Create a policy granting bastion host (role) the permissions
-       * to make calls to OpenSearch endpoints
-       * NOTE 1: See Jira issue 231.
-       */
-      this.createManagedPolicy({
-        name: 'BastionOpenSearchHttpPolicy',
-        raitaStackIdentifier,
-        serviceRoles: [bastionStack.bastionRole],
-        resources: [openSearchDomain.domainArn],
-        actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
-      });
     }
 
     // Grant data processor lambdas permissions to call OpenSearch endpoints
+    // TODO: RAITA-273 Review if this can be dropped as permissions are given directly to metadata index
     this.createManagedPolicy({
       name: 'DataProcessOpenSearchHttpPolicy',
       raitaStackIdentifier,
@@ -113,6 +100,7 @@ export class ApplicationStack extends NestedStack {
     });
 
     // Grant api lambdas permissions to call OpenSearch endpoints
+    // TODO: RAITA-273 Review if this can be dropped as permissions are given directly to metadata index
     this.createManagedPolicy({
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
@@ -164,6 +152,14 @@ export class ApplicationStack extends NestedStack {
     raitaStackIdentifier: string;
   }) {
     const domainName = `${name}-${raitaStackIdentifier}`;
+    const domainArn =
+      'arn:aws:es:' +
+      this.region +
+      ':' +
+      this.account +
+      ':domain/' +
+      domainName +
+      '/*';
     return new opensearch.Domain(this, domainName, {
       domainName,
       version: opensearch.EngineVersion.OPENSEARCH_1_3,
@@ -175,6 +171,15 @@ export class ApplicationStack extends NestedStack {
         enabled: true,
       },
       ...getEnvDependentOsConfiguration(raitaEnv, vpc.privateSubnets),
+      // See RAITA-231 for removing wildcard permissions from AnyPrincipal
+      accessPolicies: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['es:ESHttp*'],
+          principals: [new iam.AnyPrincipal()],
+          resources: [domainArn],
+        }),
+      ],
     });
   }
 
@@ -186,7 +191,7 @@ export class ApplicationStack extends NestedStack {
     raitaStackIdentifier,
   }: {
     name: string;
-    serviceRoles: Array<Role>;
+    serviceRoles: Array<iam.Role>;
     actions: Array<string>;
     resources: Array<string>;
     raitaStackIdentifier: string;
