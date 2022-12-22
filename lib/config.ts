@@ -94,11 +94,14 @@ const getAccountVpcResourceConfig = (
     } as AccountVpcResources,
     prod: {
       vpc: {
-        vpcId: 'TO_ADD',
-        availabilityZones: ['TO_ADD1', 'TO_ADD2'],
-        privateSubnetIds: ['TO_ADD1', 'TO_ADD2'],
+        vpcId: 'vpc-08e6a6fe4f05c2c9e',
+        availabilityZones: ['eu-west-1a', 'eu-west-1b'],
+        privateSubnetIds: [
+          'subnet-077a9e22a880f1f5d',
+          'subnet-0f3c1b5baa422d1f7',
+        ],
       },
-      securityGroupId: 'TO_ADD',
+      securityGroupId: 'sg-0b2d052c73469c708',
     } as AccountVpcResources,
   } as const;
   return vpcIds[raitaEnv];

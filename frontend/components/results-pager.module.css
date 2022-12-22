@@ -1,0 +1,8 @@
+.root {
+  @apply my-4;
+}
+
+.itemList {
+  @apply flex justify-center;
+  @apply space-x-2;
+}
