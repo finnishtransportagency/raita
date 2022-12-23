@@ -2,32 +2,55 @@
  * @todo Handle empty search queries
  * @todo Handle form data validation
  */
-import { useState, useMemo, useRef, Fragment, useEffect } from 'react';
+import { useState, useMemo, Fragment, useEffect } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
-import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 import { clsx } from 'clsx';
-import { format } from 'date-fns/fp';
 
 import * as cfg from 'shared/config';
 import type { App, Range, Rest } from 'shared/types';
 import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
-import { RANGE_DATE_FMT } from 'shared/constants';
-import { Button, Dropdown } from 'components';
-import { DateRange, Pager } from 'components';
+import { Button } from 'components';
+import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
+import MultiChoice from 'components/filters/multi-choice';
+import ResultsPager from 'components/results-pager';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
-import MultiChoice from 'components/filters/multi-choice';
-import ResultsPager from 'components/results-pager';
+
+//
+
+const initialState: ReportsState = {
+  filters: {},
+  filter: [],
+  special: {
+    dateRange: { start: undefined, end: undefined },
+    fileType: undefined,
+    reportTypes: [],
+  },
+  subQueries: {
+    reportTypes: {},
+    fileTypes: {},
+  },
+  dateRange: {
+    end: undefined,
+    start: undefined,
+  },
+  reportTypes: [],
+  paging: {
+    size: cfg.paging.pageSize,
+    page: 1,
+  },
+  debug: false,
+};
 
 //
 
@@ -39,31 +62,7 @@ const ReportsIndex: NextPage = () => {
 
   const isDebug = !!(router.query['debug'] === '1');
 
-  const selectRef = useRef<HTMLSelectElement>(null);
-
-  const [state, setState] = useState<ReportsState>({
-    filters: {},
-    filter: [],
-    special: {
-      dateRange: { start: undefined, end: undefined },
-      fileType: undefined,
-      reportTypes: [],
-    },
-    subQueries: {
-      reportTypes: {},
-      fileTypes: {},
-    },
-    dateRange: {
-      end: undefined,
-      start: undefined,
-    },
-    reportTypes: [],
-    paging: {
-      size: cfg.paging.pageSize,
-      page: 1,
-    },
-    debug: false,
-  });
+  const [state, setState] = useState<ReportsState>(initialState);
 
   // #region Special extra filters
 
@@ -145,6 +144,18 @@ const ReportsIndex: NextPage = () => {
   const getFileUrl = useFileQuery();
 
   // #endregion
+
+  const doSearch = () => {
+    setState(R.assocPath(['paging', 'page'], 1));
+    mutation.mutate(query);
+  };
+
+  const resetSearch = () => {
+    setState(() => JSON.parse(JSON.stringify(initialState)) as ReportsState);
+    mutation.reset();
+  };
+
+  //
 
   const resultsData = mutation.data;
 
@@ -308,14 +319,8 @@ const ReportsIndex: NextPage = () => {
               <footer className="pt-4">
                 {/* Search controls for doing the search, reset */}
                 <div className="space-x-2">
-                  <Button
-                    label={t('common:search')}
-                    onClick={() => mutation.mutate(query as any)}
-                  />
-                  <Button
-                    label={t('common:clear')}
-                    onClick={() => mutation.reset()}
-                  />
+                  <Button label={t('common:search')} onClick={doSearch} />
+                  <Button label={t('common:clear')} onClick={resetSearch} />
                 </div>
               </footer>
             </div>
@@ -346,21 +351,17 @@ const ReportsIndex: NextPage = () => {
                       return (
                         <li key={`result-${ix}`}>
                           <article className="py-2 space-y-2">
-                            <header>
-                              {doc.file_name}
-                              <span className="text-xs">
-                                Score=
-                                <span className="font-mono">{it.score}</span>
-                              </span>
-                            </header>
+                            <header>{doc.file_name}</header>
 
                             <div className="text-xs">
-                              <dl className="grid grid-cols-4">
+                              <dl className="grid grid-cols-12 gap-x-2 gap-y-1">
                                 {Object.entries(doc.metadata).map(
                                   ([k, v], mi) => (
                                     <Fragment key={mi}>
-                                      <dt className="">{k}</dt>
-                                      <dd className="">{`${v}`}</dd>
+                                      <dt className="col-span-2 truncate">
+                                        {t(`metadata:label_${k}`)}
+                                      </dt>
+                                      <dd className="col-span-4 truncate">{`${v}`}</dd>
                                     </Fragment>
                                   ),
                                 )}
