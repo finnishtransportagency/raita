@@ -2,31 +2,55 @@
  * @todo Handle empty search queries
  * @todo Handle form data validation
  */
-import { useState, useMemo, useRef, Fragment } from 'react';
+import { useState, useMemo, Fragment, useEffect } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
-import type { SearchTotalHits } from '@opensearch-project/opensearch/api/types';
 import { clsx } from 'clsx';
-import { format } from 'date-fns/fp';
 
 import * as cfg from 'shared/config';
 import type { App, Range, Rest } from 'shared/types';
 import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
-import { RANGE_DATE_FMT } from 'shared/constants';
-import { Button, Dropdown } from 'components';
-import { DateRange, Pager } from 'components';
+import { Button } from 'components';
+import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
+import MultiChoice from 'components/filters/multi-choice';
+import ResultsPager from 'components/results-pager';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
-import MultiChoice from 'components/filters/multi-choice';
+
+//
+
+const initialState: ReportsState = {
+  filters: {},
+  filter: [],
+  special: {
+    dateRange: { start: undefined, end: undefined },
+    fileType: undefined,
+    reportTypes: [],
+  },
+  subQueries: {
+    reportTypes: {},
+    fileTypes: {},
+  },
+  dateRange: {
+    end: undefined,
+    start: undefined,
+  },
+  reportTypes: [],
+  paging: {
+    size: cfg.paging.pageSize,
+    page: 1,
+  },
+  debug: false,
+};
 
 //
 
@@ -36,34 +60,9 @@ const ReportsIndex: NextPage = () => {
 
   const router = useRouter();
 
-  const curPage_ = parseInt(router.query['p'] as string, 10);
-  const curPage = !isNaN(curPage_) ? curPage_ : 1;
+  const isDebug = !!(router.query['debug'] === '1');
 
-  const selectRef = useRef<HTMLSelectElement>(null);
-
-  const [state, setState] = useState<ReportsState>({
-    filters: {},
-    filter: [],
-    special: {
-      dateRange: { start: undefined, end: undefined },
-      fileType: undefined,
-      reportTypes: [],
-    },
-    subQueries: {
-      reportTypes: {},
-      fileTypes: {},
-    },
-    dateRange: {
-      end: undefined,
-      start: undefined,
-    },
-    reportTypes: [],
-    paging: {
-      size: cfg.paging.pageSize,
-      page: curPage,
-    },
-    debug: false,
-  });
+  const [state, setState] = useState<ReportsState>(initialState);
 
   // #region Special extra filters
 
@@ -123,11 +122,11 @@ const ReportsIndex: NextPage = () => {
       makeQuery(
         newFilters,
         {
-          paging: { curPage, size: cfg.paging.pageSize },
+          paging: { curPage: state.paging.page, size: cfg.paging.pageSize },
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
       ),
-    [newFilters, reportTypeFilter, state.subQueries, curPage],
+    [newFilters, reportTypeFilter, state.subQueries, state.paging.page],
   );
 
   /**
@@ -146,19 +145,38 @@ const ReportsIndex: NextPage = () => {
 
   // #endregion
 
+  const doSearch = () => {
+    setState(R.assocPath(['paging', 'page'], 1));
+    mutation.mutate(query);
+  };
+
+  const resetSearch = () => {
+    setState(() => JSON.parse(JSON.stringify(initialState)) as ReportsState);
+    mutation.reset();
+  };
+
+  //
+
   const resultsData = mutation.data;
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
   };
 
-  const updateReportType = () => {};
-
   const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
   //
 
-  const setPage = (n: number) => setState(R.assocPath(['paging', 'page'], n));
+  const setPage = (n: number) => {
+    setState(R.assocPath(['paging', 'page'], n));
+    mutation.mutate(query);
+  };
+
+  /**
+   * Check whether any of our queries/mutations are loading,
+   * so that we can do things like disable UI controls.
+   */
+  const isLoading = [meta.isLoading, mutation.isLoading].some(R.identity);
 
   //
 
@@ -169,7 +187,7 @@ const ReportsIndex: NextPage = () => {
   //
 
   return (
-    <div className={clsx(css.root)}>
+    <div className={clsx(css.root, isLoading && css.isLoading)}>
       <Head>
         <title>{t('common:reports_head_title')}</title>
       </Head>
@@ -177,9 +195,7 @@ const ReportsIndex: NextPage = () => {
       <div className="bg-primary text-white">
         <div className="container mx-auto px-16 py-6">
           <header>
-            <h1 className="text-4xl">
-              {t('common:reports_heading')} Page: {curPage}
-            </h1>
+            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
           </header>
         </div>
       </div>
@@ -211,29 +227,6 @@ const ReportsIndex: NextPage = () => {
                 <DateRange range={state.dateRange} onUpdate={updateDateRange} />
               </section>
 
-              {/* Search file types */}
-              <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_file_types')}</header>
-
-                <MultiChoice
-                  items={(meta.data?.fileTypes || []).map(x => ({
-                    key: x.fileType,
-                    value: x.fileType,
-                  }))}
-                  onChange={e => {
-                    setState(
-                      R.assocPath(
-                        ['subQueries', 'fileTypes'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'file_type',
-                        ),
-                      ),
-                    );
-                  }}
-                />
-              </section>
-
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_report_types')}</header>
 
@@ -249,28 +242,6 @@ const ReportsIndex: NextPage = () => {
                         makeFromMulti(
                           takeOptionValues(e.target.selectedOptions),
                           'report_type',
-                        ),
-                      ),
-                    );
-                  }}
-                />
-              </section>
-
-              <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_track_parts')}</header>
-
-                <MultiChoice
-                  items={(meta.data?.trackParts || []).map(it => ({
-                    key: it.value,
-                    value: it.value,
-                  }))}
-                  onChange={e => {
-                    setState(
-                      R.assocPath(
-                        ['subQueries', 'trackParts'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'track_part',
                         ),
                       ),
                     );
@@ -300,17 +271,56 @@ const ReportsIndex: NextPage = () => {
                 />
               </section>
 
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_track_parts')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.trackParts || []).map(it => ({
+                    key: it.value,
+                    value: it.value,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'trackParts'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'track_part',
+                        ),
+                      ),
+                    );
+                  }}
+                />
+              </section>
+
+              {/* Search file types */}
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_file_types')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.fileTypes || []).map(x => ({
+                    key: x.fileType,
+                    value: x.fileType,
+                  }))}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'fileTypes'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'file_type',
+                        ),
+                      ),
+                    );
+                  }}
+                />
+              </section>
+
               <footer className="pt-4">
                 {/* Search controls for doing the search, reset */}
                 <div className="space-x-2">
-                  <Button
-                    label={t('common:search')}
-                    onClick={() => mutation.mutate(query as any)}
-                  />
-                  <Button
-                    label={t('common:clear')}
-                    onClick={() => mutation.reset()}
-                  />
+                  <Button label={t('common:search')} onClick={doSearch} />
+                  <Button label={t('common:clear')} onClick={resetSearch} />
                 </div>
               </footer>
             </div>
@@ -341,21 +351,17 @@ const ReportsIndex: NextPage = () => {
                       return (
                         <li key={`result-${ix}`}>
                           <article className="py-2 space-y-2">
-                            <header>
-                              {doc.file_name}
-                              <span className="text-xs">
-                                Score=
-                                <span className="font-mono">{it.score}</span>
-                              </span>
-                            </header>
+                            <header>{doc.file_name}</header>
 
                             <div className="text-xs">
-                              <dl className="grid grid-cols-4">
+                              <dl className="grid grid-cols-12 gap-x-2 gap-y-1">
                                 {Object.entries(doc.metadata).map(
                                   ([k, v], mi) => (
                                     <Fragment key={mi}>
-                                      <dt className="">{k}</dt>
-                                      <dd className="">{`${v}`}</dd>
+                                      <dt className="col-span-2 truncate">
+                                        {t(`metadata:label_${k}`)}
+                                      </dt>
+                                      <dd className="col-span-4 truncate">{`${v}`}</dd>
                                     </Fragment>
                                   ),
                                 )}
@@ -363,12 +369,6 @@ const ReportsIndex: NextPage = () => {
                             </div>
 
                             <footer className="text-right space-x-2">
-                              <Button
-                                disabled={true}
-                                size="sm"
-                                label={t('common:preview')}
-                                onClick={() => {}}
-                              />
                               <Button
                                 size="sm"
                                 label={t('common:download')}
@@ -390,57 +390,47 @@ const ReportsIndex: NextPage = () => {
                 </div>
               )}
 
-              <footer className="space-y-2 flex justify-between mt-2">
-                <Button
-                  disabled={true}
-                  label={t('common:download_all')}
-                  type="secondary"
-                  onClick={() => {}}
-                />
-
-                <div>
-                  {mutation.isSuccess && (
-                    <Pager
-                      size={state.paging.size}
-                      page={state.paging.page}
-                      // TODO: Temporary solution to default to 0.
-                      // Update to handle missing resultsData closer to source or
-                      // Pager to accept undefined count?
-                      count={resultsData?.total || 0}
-                      onGotoPage={setPage}
-                    />
-                  )}
-                </div>
+              <footer className="space-y-2 flex justify-center mt-2">
+                {mutation.isSuccess && (
+                  <ResultsPager
+                    currentPage={state.paging.page}
+                    itemCount={mutation.data?.total || 0}
+                    pageSize={state.paging.size}
+                    onGotoPage={setPage}
+                  />
+                )}
               </footer>
             </section>
           </section>
         </div>
       </div>
 
-      <div className="container mx-auto px-16 pb-4">
-        <details>
-          <summary>{t('debug:debug')}</summary>
-          <div className="opacity-40 space-y-4 text-xs mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <fieldset>
-                <legend>{t('debug:state')}</legend>
+      {isDebug && (
+        <div className="container mx-auto px-16 pb-4">
+          <details>
+            <summary>{t('debug:debug')}</summary>
+            <div className="opacity-40 space-y-4 text-xs mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <fieldset>
+                  <legend>{t('debug:state')}</legend>
 
-                <pre className="max-h-96 overflow-auto">
-                  <code>{JSON.stringify(state, null, 2)}</code>
-                </pre>
-              </fieldset>
+                  <pre className="max-h-96 overflow-auto">
+                    <code>{JSON.stringify(state, null, 2)}</code>
+                  </pre>
+                </fieldset>
 
-              <fieldset>
-                <legend>query</legend>
+                <fieldset>
+                  <legend>query</legend>
 
-                <pre className="max-h-96 overflow-auto">
-                  <code>{JSON.stringify(query, null, 2)}</code>
-                </pre>
-              </fieldset>
+                  <pre className="max-h-96 overflow-auto">
+                    <code>{JSON.stringify(query, null, 2)}</code>
+                  </pre>
+                </fieldset>
+              </div>
             </div>
-          </div>
-        </details>
-      </div>
+          </details>
+        </div>
+      )}
 
       <Footer />
     </div>
