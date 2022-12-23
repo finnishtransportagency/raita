@@ -146,6 +146,7 @@ const ReportsIndex: NextPage = () => {
   // #endregion
 
   const doSearch = () => {
+    setState(R.assocPath(['pading', 'page'], 1));
     mutation.mutate(query);
   };
 
