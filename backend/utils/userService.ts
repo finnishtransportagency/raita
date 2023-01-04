@@ -76,8 +76,8 @@ const handleOidcRequest = async (
   }
 
   const jwt = await validateJwtToken(
-    headers['x-amzn-oidc-accesstoken'],
-    headers['x-amzn-oidc-data'],
+    headers['x-iam-accesstoken'],
+    headers['x-iam-data'],
     ISSUER,
   );
 
