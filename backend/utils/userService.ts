@@ -76,8 +76,8 @@ const handleOidcRequest = async (
   }
 
   const jwt = await validateJwtToken(
-    headers['x-iam-accesstoken'],
-    headers['x-iam-data'],
+    headers['x-Iam-Accesstoken'],
+    headers['x-Iam-Data'],
     ISSUER,
   );
 
