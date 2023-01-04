@@ -6,6 +6,7 @@ import { log } from './logger';
 import { getSSMParameter } from './ssm';
 import { RaitaLambdaError } from '../lambdas/utils';
 import {
+  ENVIRONMENTS,
   RAITA_APIKEY_USER_UID,
   REQUEST_HEADER_API_KEY,
   SSM_API_KEY,
@@ -75,11 +76,16 @@ const handleOidcRequest = async (
     throw new RaitaLambdaError('User validation failed', 500);
   }
 
-  const jwt = await validateJwtToken(
-    headers['x-iam-accesstoken'],
-    headers['x-iam-data'],
-    ISSUER,
-  );
+  let accessToken;
+  let dataToken;
+
+  // Hopefully a temporary workaround test and prod using different JWT headers
+  [accessToken, dataToken] =
+    ENVIRONMENT === ENVIRONMENTS.prod
+      ? ['x-iam-accesstoken', 'x-iam-data']
+      : ['x-amzn-oidc-accesstoken', 'x-amzn-oidc-data'];
+
+  const jwt = await validateJwtToken(accessToken, dataToken, ISSUER);
 
   if (!jwt) {
     throw new RaitaLambdaError('User validation failed', 500);
