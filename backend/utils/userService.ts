@@ -75,11 +75,9 @@ const handleOidcRequest = async (
     throw new RaitaLambdaError('User validation failed', 500);
   }
 
-  // TODO: DO NOT LEAVE THIS HERE!
-  console.log('headers: ', JSON.stringify(headers));
   const jwt = await validateJwtToken(
-    headers['x-Iam-Accesstoken'],
-    headers['x-Iam-Data'],
+    headers['x-iam-accesstoken'],
+    headers['x-iam-data'],
     ISSUER,
   );
 
