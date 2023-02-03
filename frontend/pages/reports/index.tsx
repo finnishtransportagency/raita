@@ -9,9 +9,11 @@ import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 
 import * as cfg from 'shared/config';
-import type { App, Range, Rest } from 'shared/types';
+import type { App, ImageKeys, Range, Rest } from 'shared/types';
 import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
@@ -25,6 +27,8 @@ import ResultsPager from 'components/results-pager';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import { getFile, getImageKeysForFileKey } from 'shared/rest';
+
 
 //
 
@@ -52,6 +56,7 @@ const initialState: ReportsState = {
   debug: false,
 };
 
+
 //
 
 const ReportsIndex: NextPage = () => {
@@ -63,6 +68,9 @@ const ReportsIndex: NextPage = () => {
   const isDebug = !!(router.query['debug'] === '1');
 
   const [state, setState] = useState<ReportsState>(initialState);
+  const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
+  const [imageUrls, setImageUrls] = useState<string []>([])
+  const [open, setOpen] = useState(false);
 
   // #region Special extra filters
 
@@ -155,9 +163,33 @@ const ReportsIndex: NextPage = () => {
     mutation.reset();
   };
 
-  //
+  const handleImageUrlFetch = async (key: string) => {
+    const keys = imageKeys.find(ik => ik.fileKey === key)?.imageKeys;
+    if (!keys) return;
+    return await Promise.all(keys.map(key => getFile(key).then(x => x.url)));
+  };
+
+  const handleLightBox = async (key: string) => {
+    const imageUrls = await handleImageUrlFetch(key);
+    if (imageUrls?.length) {
+      setImageUrls(imageUrls);
+      setOpen(true);
+    }
+  };
 
   const resultsData = mutation.data;
+
+  useEffect(() => {
+    const fileKeys = resultsData?.hits.map(x => x.source.key);
+    if (fileKeys?.length) {
+      fileKeys.map(async (fileKey) => {
+        const fileImageKeys = await getImageKeysForFileKey(fileKey);
+        if (!fileImageKeys) return;
+        setImageKeys(prevImageKeys => [...prevImageKeys, {fileKey, imageKeys: fileImageKeys}]);
+      });
+    }
+  }, [resultsData]);
+
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
@@ -369,6 +401,13 @@ const ReportsIndex: NextPage = () => {
                             </div>
 
                             <footer className="text-right space-x-2">
+                              {imageKeys.find(imageKey => imageKey.fileKey === doc.key) &&
+                              <Button
+                                size="sm"
+                                label={t('common:show_images')}
+                                onClick={() => handleLightBox(doc.key)}
+                              />}
+
                               <Button
                                 size="sm"
                                 label={t('common:download')}
@@ -405,6 +444,17 @@ const ReportsIndex: NextPage = () => {
         </div>
       </div>
 
+      <Lightbox
+        open={open}
+        close={() => setOpen(false)}
+        slides= {imageUrls.map((imageUrl, idx) => {
+          return {
+            src: imageUrl,
+            alt: `Image(${idx + 1})`
+          }
+        })}
+      />
+
       {isDebug && (
         <div className="container mx-auto px-16 pb-4">
           <details>
@@ -430,6 +480,7 @@ const ReportsIndex: NextPage = () => {
             </div>
           </details>
         </div>
+
       )}
 
       <Footer />

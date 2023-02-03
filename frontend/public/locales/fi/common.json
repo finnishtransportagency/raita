@@ -37,5 +37,6 @@
   "prev_page": "Ed. sivu",
   "previous_page": "Ed. sivu",
   "next_page": "Seur. sivu",
-  "page_number_item": "Sivu {{ number }}"
+  "page_number_item": "Sivu {{ number }}",
+  "show_images": "Näytä kuva(t)"
 }

@@ -34,5 +34,6 @@
   "last_page": "Last page",
   "prev_page": "Previous",
   "next_page": "Next",
-  "page_number_item": "Page {{ number }}"
+  "page_number_item": "Page {{ number }}",
+  "show_images": "Show image(s)"
 }

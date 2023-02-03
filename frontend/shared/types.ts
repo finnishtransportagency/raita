@@ -50,6 +50,10 @@ export namespace Rest {
   export type Reports = SearchResponse;
 }
 
+export type ImageKeys = {
+  fileKey: string;
+  imageKeys: string[];
+}
 //
 
 /**
@@ -80,4 +84,9 @@ export interface IDocumentMetadata {}
 export interface SearchResponse {
   total: number;
   hits: Array<IDocument>;
+}
+
+export interface ImageKeyResponse {
+  key: string;
+  size: string;
 }
