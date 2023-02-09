@@ -20,7 +20,7 @@ export function MultiChoice(props: Props) {
         className={clsx(css.select)}
       >
         <option value="">{t('common:no_choice')}</option>
-        {items.sort((a, b) => a.value >  b.value ? 1 : -1)
+        {items.sort((a, b) => a.value > b.value ? 1 : -1)
         .map((it, ix) => {
           return (
             <option key={ix} value={it.value}>

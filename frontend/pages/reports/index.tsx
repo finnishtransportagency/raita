@@ -29,7 +29,6 @@ import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 
-
 //
 
 const initialState: ReportsState = {
@@ -55,7 +54,6 @@ const initialState: ReportsState = {
   },
   debug: false,
 };
-
 
 //
 
@@ -480,7 +478,6 @@ const ReportsIndex: NextPage = () => {
             </div>
           </details>
         </div>
-
       )}
 
       <Footer />
