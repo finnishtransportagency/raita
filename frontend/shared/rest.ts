@@ -1,5 +1,6 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
+import { ImageKeyResponse } from './types';
 
 /**
  * API client for use in calling the REST API endpoint
@@ -22,6 +23,10 @@ export const getFile = (key: string) =>
 export const getMeta = () => {
   return apiClient.get<GetMetaResult>('meta').then(res => res.data);
 };
+
+export const getImageKeysForFileKey = async (key: string) => {
+  return apiClient.post<ImageKeyResponse[]>('images', key).then(res => res.data).then(x => x.map(x => x.key));
+}
 
 type GetFilesResult = {};
 

@@ -51,7 +51,7 @@ export function useFileQuery(saveFile = true) {
     const { key, fileName } = opts;
     console.assert(
       key,
-      'The given `key` fpr `useFileQuery` is invalid; %s',
+      'The given `key` for `useFileQuery` is invalid; %s',
       key,
     );
 
