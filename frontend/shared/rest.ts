@@ -25,8 +25,11 @@ export const getMeta = () => {
 };
 
 export const getImageKeysForFileKey = async (key: string) => {
-  return apiClient.post<ImageKeyResponse[]>('images', { key }).then(res => res.data).then(x => x.map(x => x.key));
-}
+  return apiClient
+    .post<ImageKeyResponse>('images', { key })
+    .then(res => res.data.images)
+    .then(images => images.map(image => image.key));
+};
 
 type GetFilesResult = {};
 
