@@ -87,6 +87,8 @@ export interface SearchResponse {
 }
 
 export interface ImageKeyResponse {
-  key: string;
-  size: string;
+  images: {
+    key: string;
+    size: number
+  }[];
 }
