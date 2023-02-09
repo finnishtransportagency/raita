@@ -114,7 +114,11 @@ export default function Selector(props: Props) {
                         {EMPTY_KEY}
                       </option>
 
-                      {fieldList.map(([k, v]) => (
+                      {fieldList.sort((a,b) => {
+                        const aTranslated = t(`metadata:label_${a[0]}`);
+                        const bTranslated = t(`metadata:label_${b[0]}`);
+                        return aTranslated.localeCompare(bTranslated);
+                      }).map(([k, v]) => (
                         <option key={k} value={k} aria-label={k}>
                           {t(`metadata:label_${k}`)}
                         </option>
