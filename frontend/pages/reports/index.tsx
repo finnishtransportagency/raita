@@ -182,7 +182,7 @@ const ReportsIndex: NextPage = () => {
     if (fileKeys?.length) {
       fileKeys.map(async (fileKey) => {
         const fileImageKeys = await getImageKeysForFileKey(fileKey);
-        if (!fileImageKeys) return;
+        if (!fileImageKeys.length) return;
         setImageKeys(prevImageKeys => [...prevImageKeys, {fileKey, imageKeys: fileImageKeys}]);
       });
     }
