@@ -14,7 +14,7 @@ import "yet-another-react-lightbox/styles.css";
 
 import * as cfg from 'shared/config';
 import type { App, ImageKeys, Range, Rest } from 'shared/types';
-import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
+import { sizeformatter, takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
 import { Button } from 'components';
@@ -360,10 +360,24 @@ const ReportsIndex: NextPage = () => {
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
               {!mutation.data && t('no_search_results')}
 
-              {mutation.data &&
-                t('search_result_count', {
-                  count: resultsData?.total,
-                })}
+
+                {mutation.data && (
+                  <div className="flex">
+                    <div className="mt-1">
+                      {t('search_result_count', {
+                        count: resultsData?.total,
+                      })}
+                    </div>
+                    <div className="ml-2">
+                      <Button
+                        size="sm"
+                        label={`${t('common:download_zip')} ${sizeformatter(resultsData?.totalSize)}`}
+                        onClick={() => console.log('jee')}
+                      />
+                    </div>
+                  </div>
+                )}
+
             </header>
 
             <section>

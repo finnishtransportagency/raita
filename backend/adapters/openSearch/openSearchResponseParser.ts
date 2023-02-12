@@ -69,8 +69,10 @@ export class OpenSearchResponseParser {
     }
     const responseData = MetadataSearchResponseSchema.parse(res.body);
     const total = responseData.hits.total;
+    const totalSize = res.body.aggregations?.total_size?.value || 0;
     return {
       total: typeof total === 'number' ? total : total.value,
+      totalSize,
       hits: responseData.hits.hits
         .filter(
           (

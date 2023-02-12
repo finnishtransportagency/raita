@@ -4,6 +4,7 @@ export interface IMetadataStorageInterface {
   saveFileMetadata: (data: Array<FileMetadataEntry>) => Promise<void>;
   queryOpenSearchMetadata: (query: any) => Promise<{
     total: number;
+    totalSize: number;
     hits: Array<{
       score: number | undefined;
       source: {

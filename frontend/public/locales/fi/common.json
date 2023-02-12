@@ -38,5 +38,6 @@
   "previous_page": "Ed. sivu",
   "next_page": "Seur. sivu",
   "page_number_item": "Sivu {{ number }}",
-  "show_images": "Näytä kuva(t)"
+  "show_images": "Näytä kuva(t)",
+  "download_zip": "Lataa kaikki"
 }
