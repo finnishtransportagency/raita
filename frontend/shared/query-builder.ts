@@ -24,6 +24,7 @@ const log = (x: any) =>
  * @param fs
  * @param opts
  * @param extraQueries
+ * @param textToSearch
  * @returns
  */
 export function makeQuery(
@@ -39,6 +40,7 @@ export function makeQuery(
    * instead of trying to AND them all (which wouldn't return anything).
    */
   extraQueries?: any[],
+  textToSearch?: string,
 ) {
   const queryType = opts?.queryType || 'and';
   const pageOpts = opts?.paging;
@@ -62,7 +64,7 @@ export function makeQuery(
     ...ranges.map(e => ({ range: e })),
   ];
 
-  const emptyQuery = qs.length === 0 && extraQueries?.length === 0;
+  const emptyQuery = qs.length === 0 && extraQueries?.length === 0 && !textToSearch;
 
   const qbody = emptyQuery
     ? { match_all: {} }
@@ -71,6 +73,13 @@ export function makeQuery(
           [queryTypeMap[queryType]]: qs.concat(
             extraQueries ? extraQueries : [],
           ),
+          ...textToSearch && {
+            should: {
+              query_string: {
+                query: `*${textToSearch}*`
+              }
+            }
+          }
         },
       };
 
