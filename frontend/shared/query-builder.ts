@@ -74,9 +74,18 @@ export function makeQuery(
         },
       };
 
+  const aggs = {
+    total_size: {
+      sum: {
+        field: 'source.size',
+      },
+    },
+  };
+
   const qʼ = {
     ...paging,
     query: qbody,
+    aggs: aggs,
   };
 
   return qʼ;
