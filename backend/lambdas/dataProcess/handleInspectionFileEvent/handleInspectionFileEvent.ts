@@ -19,7 +19,7 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import { getDecodedS3ObjectKey, getKeyData, KeyData } from '../../utils';
+import { getDecodedS3ObjectKey, getKeyData, isKnownSuffix, KeyData } from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -58,6 +58,10 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         // of the designated source systems.
         if (!isRaitaSourceSystem(keyData.rootFolder)) {
           log.warn(`Ignoring file ${key} outside Raita source system folders.`);
+          return null;
+        }
+        if (!isKnownSuffix(keyData.fileSuffix)) {
+          log.error(`Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`);
           return null;
         }
         const parseResults = await parseFileMetadata({
