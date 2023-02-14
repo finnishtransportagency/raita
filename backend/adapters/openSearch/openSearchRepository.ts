@@ -3,6 +3,7 @@ import { Client } from '@opensearch-project/opensearch';
 import { IMetadataStorageInterface } from '../../types/portDataStorage';
 import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { OpenSearchResponseParser } from './openSearchResponseParser';
+import { log } from '../../utils/logger';
 
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
@@ -24,28 +25,30 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   }
 
   getExistingDoc = async (client: Client, file_name: string) => {
-    console.log(`Searching for existing doc with filename: ${file_name}`)
-    const existingDoc = await client.search({
-      index: this.#dataIndex,
-      body: {
-        query: {
-          match: {
-            file_name: {
-              query: file_name,
+    try {
+      const existingDoc = await client.search({
+        index: this.#dataIndex,
+        body: {
+          query: {
+            match: {
+              file_name: {
+                query: file_name,
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    console.log(`Existing doc: ${existingDoc.body}`)
-    return existingDoc.body.hits.total.value > 0
-      ? existingDoc.body.hits.hits[0]
-      : undefined;
+      return existingDoc.body.hits.total.value > 0
+        ? existingDoc.body.hits.hits[0]
+        : null;
+    } catch (error) {
+      log.error(`Error while searching for existing doc: ${error}`);
+      return null;
+    }
   };
 
   addDoc = async (client: Client, entry: FileMetadataEntry) => {
-    console.log(`Adding doc: ${entry.file_name}`);
     return client.index({
       index: this.#dataIndex,
       body: entry,
@@ -53,28 +56,25 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   };
 
   updateDoc = async (client: Client, id: string, entry: FileMetadataEntry) => {
-    console.log(`Trying to update doc: ${id}`);
     return client.update({
       index: this.#dataIndex,
       id,
-      body: entry,
+      body: {
+        doc: entry,
+      },
     });
   };
 
   upsertDocument = async (entry: FileMetadataEntry) => {
     const client = await this.#openSearchClient.getClient();
     const { file_name, hash } = entry;
-
     const existingDoc = await this.getExistingDoc(client, file_name);
-
     if (!existingDoc) {
-      console.log('Existing doc not found');
       return this.addDoc(client, entry);
     }
-    console.log('Existing doc found');
     return hash !== existingDoc._source.hash
       ? this.updateDoc(client, existingDoc._id, entry)
-      : Promise.resolve();
+      : null;
   };
 
   saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
