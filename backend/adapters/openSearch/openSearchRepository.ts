@@ -38,8 +38,8 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       },
     });
 
-    console.log(`Existing doc: ${existingDoc}`)
-    return existingDoc.body.hits.total > 0
+    console.log(`Existing doc: ${existingDoc.body}`)
+    return existingDoc.body.hits.total.value > 0
       ? existingDoc.body.hits.hits[0]
       : undefined;
   };
