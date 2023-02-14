@@ -1,4 +1,5 @@
 import { FileMetadataEntry } from '../../types';
+import { Client } from '@opensearch-project/opensearch';
 import { IMetadataStorageInterface } from '../../types/portDataStorage';
 import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { OpenSearchResponseParser } from './openSearchResponseParser';
@@ -22,15 +23,63 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     this.#responseParser = responseParser;
   }
 
-  saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
+  getExistingDoc = async (client: Client, file_name: string) => {
+    console.log(`Searching for existing doc with filename: ${file_name}`)
+    const existingDoc = await client.search({
+      index: this.#dataIndex,
+      body: {
+        query: {
+          match: {
+            file_name: {
+              query: file_name,
+            },
+          },
+        },
+      },
+    });
+
+    console.log(`Existing doc: ${existingDoc}`)
+    return existingDoc.body.hits.total > 0
+      ? existingDoc.body.hits.hits[0]
+      : undefined;
+  };
+
+  addDoc = async (client: Client, entry: FileMetadataEntry) => {
+    console.log(`Adding doc: ${entry.file_name}`);
+    return client.index({
+      index: this.#dataIndex,
+      body: entry,
+    });
+  };
+
+  updateDoc = async (client: Client, id: string, entry: FileMetadataEntry) => {
+    console.log(`Trying to update doc: ${id}`);
+    return client.update({
+      index: this.#dataIndex,
+      id,
+      body: entry,
+    });
+  };
+
+  upsertDocument = async (entry: FileMetadataEntry) => {
     const client = await this.#openSearchClient.getClient();
-    // Add entries to the index.
+    const { file_name, hash } = entry;
+
+    const existingDoc = await this.getExistingDoc(client, file_name);
+
+    if (!existingDoc) {
+      console.log('Existing doc not found');
+      return this.addDoc(client, entry);
+    }
+    console.log('Existing doc found');
+    return hash !== existingDoc._source.hash
+      ? this.updateDoc(client, existingDoc._id, entry)
+      : Promise.resolve();
+  };
+
+  saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
     const additions = data.map(async entry => {
-      const addDocresponse = client.index({
-        index: this.#dataIndex,
-        body: entry,
-      });
-      return addDocresponse;
+      return this.upsertDocument(entry);
     });
     await Promise.all(additions).catch(err => {
       throw err;
