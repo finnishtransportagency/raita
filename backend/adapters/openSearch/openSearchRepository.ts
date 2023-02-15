@@ -24,30 +24,33 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     this.#responseParser = responseParser;
   }
 
-  getExistingDoc = async (client: Client, key: string) => {
+  searchExisting = async (client: Client, entry: FileMetadataEntry) => {
     try {
-      const existingDoc = await client.search({
+      const existing = await client.search({
         index: this.#dataIndex,
         body: {
           query: {
-            match: {
-              key: {
-                query: key,
-              },
+            bool: {
+              must: [
+                {
+                  match: {
+                    'file_name.keyword': entry.file_name,
+                  },
+                },
+                {
+                  match: {
+                    'key.keyword': entry.key,
+                  },
+                },
+              ],
             },
           },
         },
       });
-      // Opensearch query can return results that it thinks are relevant, but the one with the
-      // most relevance score is the first on the list. Extra check for safety, to be sure that we actually
-      // are handling the file that we queried for.
-      return existingDoc.body.hits.total.value > 0 &&
-        existingDoc.body.hits.hits[0].key === key
-        ? existingDoc.body.hits.hits[0]
-        : null;
+      return existing.body.hits;
     } catch (error) {
       log.error(
-        `Error while searching for existing doc: ${error}, if no index yet, it will be created`,
+        `Error while searching for existing doc: ${error}, Index creation will be attempted`,
       );
       return null;
     }
@@ -73,12 +76,17 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   upsertDocument = async (entry: FileMetadataEntry) => {
     const client = await this.#openSearchClient.getClient();
     const { key, hash } = entry;
-    const existingDoc = await this.getExistingDoc(client, key);
-    if (!existingDoc) {
+    const exists = await this.searchExisting(client, entry);
+    // Double check, as opensearch can sometimes give "relevant" results even
+    // if they are not complete matches. This way we can be sure to only
+    // update documents that we are supposed to.
+    const docToUpdate =
+      exists && exists.hits.find(doc => doc._source.key === key);
+    if (!exists || !docToUpdate) {
       return this.addDoc(client, entry);
     }
-    return hash !== existingDoc._source.hash
-      ? this.updateDoc(client, existingDoc._id, entry)
+    return hash !== docToUpdate._source.hash
+      ? this.updateDoc(client, docToUpdate._id, entry)
       : null;
   };
 
