@@ -24,26 +24,31 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     this.#responseParser = responseParser;
   }
 
-  getExistingDoc = async (client: Client, file_name: string) => {
+  getExistingDoc = async (client: Client, key: string) => {
     try {
       const existingDoc = await client.search({
         index: this.#dataIndex,
         body: {
           query: {
             match: {
-              file_name: {
-                query: file_name,
+              key: {
+                query: key,
               },
             },
           },
         },
       });
-
-      return existingDoc.body.hits.total.value > 0
+      // Opensearch query can return results that it thinks are relevant, but the one with the
+      // most relevance score is the first on the list. Extra check for safety, to be sure that we actually
+      // are handling the file that we queried for.
+      return existingDoc.body.hits.total.value > 0 &&
+        existingDoc.body.hits.hits[0].key === key
         ? existingDoc.body.hits.hits[0]
         : null;
     } catch (error) {
-      log.error(`Error while searching for existing doc: ${error}`);
+      log.error(
+        `Error while searching for existing doc: ${error}, if no index yet, it will be created`,
+      );
       return null;
     }
   };
@@ -67,8 +72,8 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
 
   upsertDocument = async (entry: FileMetadataEntry) => {
     const client = await this.#openSearchClient.getClient();
-    const { file_name, hash } = entry;
-    const existingDoc = await this.getExistingDoc(client, file_name);
+    const { key, hash } = entry;
+    const existingDoc = await this.getExistingDoc(client, key);
     if (!existingDoc) {
       return this.addDoc(client, entry);
     }
