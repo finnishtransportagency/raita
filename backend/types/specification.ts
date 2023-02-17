@@ -30,6 +30,7 @@ export const ExtractionSpec = z.object({
     xls: z.record(z.string(), FieldExtractionSpecObject),
   }),
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
+  vRunFolderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
 });
 
