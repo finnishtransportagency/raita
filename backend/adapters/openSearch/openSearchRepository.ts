@@ -83,10 +83,10 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     const docToUpdate =
       exists && exists.hits.find(doc => doc._source.key === key);
     if (!exists || !docToUpdate) {
-      return this.addDoc(client, entry);
+      await this.addDoc(client, entry);
     }
-    return hash !== docToUpdate._source.hash
-      ? this.updateDoc(client, docToUpdate._id, entry)
+    hash !== docToUpdate._source.hash
+      ? await this.updateDoc(client, docToUpdate._id, entry)
       : null;
   };
 

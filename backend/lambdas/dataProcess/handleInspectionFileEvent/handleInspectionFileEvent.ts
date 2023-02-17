@@ -111,17 +111,17 @@ async function parseFileMetadata({
   file: IFileResult;
   spec: IExtractionSpec;
 }): Promise<{ metadata: ParseValueResult; hash: string }> {
+  const { fileBody } = file;
   const fileNameData = extractFileNameData(
     keyData,
     spec.fileNameExtractionSpec,
   );
   const pathData = extractPathData(keyData, spec.folderTreeExtractionSpec);
-  const fileBody = file.fileBody?.toString() || '';
   const fileContentData =
     shouldParseContent(keyData.fileSuffix) && fileBody
       ? extractFileContentData(spec, fileBody)
       : {};
-  const hash = calculateHash(fileBody);
+  const hash = calculateHash(fileBody ?? '');
   return {
     metadata: {
       ...pathData,
