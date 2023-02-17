@@ -84,10 +84,9 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       exists && exists.hits.find(doc => doc._source.key === key);
     if (!exists || !docToUpdate) {
       await this.addDoc(client, entry);
+    } else if (hash !== docToUpdate._source.hash) {
+      await this.updateDoc(client, docToUpdate._id, entry);
     }
-    hash !== docToUpdate._source.hash
-      ? await this.updateDoc(client, docToUpdate._id, entry)
-      : null;
   };
 
   saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
