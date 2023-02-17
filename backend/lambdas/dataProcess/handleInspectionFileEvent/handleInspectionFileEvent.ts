@@ -10,7 +10,6 @@ import { extractFileNameData } from './fileNameDataParser';
 import {
   calculateHash,
   extractFileContentData,
-  shouldCalculateHash,
   shouldParseContent,
 } from './contentDataParser';
 import { log } from '../../../utils/logger';
@@ -19,7 +18,12 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import { getDecodedS3ObjectKey, getKeyData, isKnownSuffix, KeyData } from '../../utils';
+import {
+  getDecodedS3ObjectKey,
+  getKeyData,
+  isKnownSuffix,
+  KeyData,
+} from '../../utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -61,7 +65,9 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           return null;
         }
         if (!isKnownSuffix(keyData.fileSuffix)) {
-          log.error(`Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`);
+          log.error(
+            `Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`,
+          );
           return null;
         }
         const parseResults = await parseFileMetadata({
@@ -104,22 +110,18 @@ async function parseFileMetadata({
   keyData: KeyData;
   file: IFileResult;
   spec: IExtractionSpec;
-}): Promise<{ metadata: ParseValueResult; hash: string | undefined }> {
+}): Promise<{ metadata: ParseValueResult; hash: string }> {
+  const { fileBody } = file;
   const fileNameData = extractFileNameData(
     keyData,
     spec.fileNameExtractionSpec,
   );
   const pathData = extractPathData(keyData, spec.folderTreeExtractionSpec);
-  const fileBody = file.fileBody?.toString();
   const fileContentData =
     shouldParseContent(keyData.fileSuffix) && fileBody
       ? extractFileContentData(spec, fileBody)
       : {};
-  const hash =
-    shouldCalculateHash(keyData.fileSuffix) && fileBody
-      ? calculateHash(fileBody)
-      : undefined;
-
+  const hash = calculateHash(fileBody ?? '');
   return {
     metadata: {
       ...pathData,
