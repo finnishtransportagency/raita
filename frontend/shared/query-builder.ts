@@ -62,9 +62,11 @@ export function makeQuery(
   const qs = [
     ...match.map(e => ({ match: e })),
     ...ranges.map(e => ({ range: e })),
+    ...(textToSearch ? [{ wildcard: { file_name: `*${textToSearch}*` } }] : []),
   ];
 
-  const emptyQuery = qs.length === 0 && extraQueries?.length === 0 && !textToSearch;
+  const emptyQuery =
+    qs.length === 0 && extraQueries?.length === 0 && !textToSearch;
 
   const qbody = emptyQuery
     ? { match_all: {} }
@@ -73,13 +75,6 @@ export function makeQuery(
           [queryTypeMap[queryType]]: qs.concat(
             extraQueries ? extraQueries : [],
           ),
-          ...textToSearch && {
-            should: {
-              query_string: {
-                query: `*${textToSearch}*`
-              }
-            }
-          }
         },
       };
 

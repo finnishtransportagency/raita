@@ -242,7 +242,7 @@ const ReportsIndex: NextPage = () => {
               {t('common:reports_search')}
             </header>
 
-            <TextInput onUpdate={updateSearchText} value={state.text} placeholder="Vapaa tekstihaku" />
+            <TextInput onUpdate={updateSearchText} value={state.text} placeholder={t('common:search_by_filename')} />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>

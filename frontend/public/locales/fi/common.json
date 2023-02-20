@@ -38,5 +38,6 @@
   "previous_page": "Ed. sivu",
   "next_page": "Seur. sivu",
   "page_number_item": "Sivu {{ number }}",
-  "show_images": "Näytä kuva(t)"
+  "show_images": "Näytä kuva(t)",
+  "search_by_filename": "Hae tiedoston nimellä"
 }
