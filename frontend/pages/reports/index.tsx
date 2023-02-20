@@ -17,7 +17,7 @@ import type { App, ImageKeys, Range, Rest } from 'shared/types';
 import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
-import { Button } from 'components';
+import { Button, TextInput } from 'components';
 import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
@@ -32,6 +32,7 @@ import { getFile, getImageKeysForFileKey } from 'shared/rest';
 //
 
 const initialState: ReportsState = {
+  text: '',
   filters: {},
   filter: [],
   special: {
@@ -131,8 +132,9 @@ const ReportsIndex: NextPage = () => {
           paging: { curPage: state.paging.page, size: cfg.paging.pageSize },
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
+        state.text,
       ),
-    [newFilters, reportTypeFilter, state.subQueries, state.paging.page],
+    [newFilters, reportTypeFilter, state.subQueries, state.paging.page, state.text],
   );
 
   /**
@@ -195,6 +197,7 @@ const ReportsIndex: NextPage = () => {
 
   const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
+  const updateSearchText = (text: string) => setState(R.assoc('text', text));
   //
 
   const setPage = (n: number) => {
@@ -238,6 +241,8 @@ const ReportsIndex: NextPage = () => {
             <header className="text-3xl border-primary border-b-2 mb-4 pb-2">
               {t('common:reports_search')}
             </header>
+
+            <TextInput onUpdate={updateSearchText} value={state.text} placeholder={t('common:search_by_filename')} />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
@@ -494,6 +499,7 @@ export type StaticProps = {
 };
 
 type ReportsState = {
+  text: string;
   filters: Record<string, string>;
   filter: Entry[];
   special: {
