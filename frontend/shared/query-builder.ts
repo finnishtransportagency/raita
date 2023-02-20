@@ -83,7 +83,7 @@ export function makeQuery(
   const aggs = {
     total_size: {
       sum: {
-        field: 'source.size',
+        field: '_source.size',
       },
     },
   };
