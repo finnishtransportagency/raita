@@ -35,5 +35,6 @@
   "prev_page": "Previous",
   "next_page": "Next",
   "page_number_item": "Page {{ number }}",
-  "show_images": "Show image(s)"
+  "show_images": "Show image(s)",
+  "search_by_filename": "Search by filename"
 }
