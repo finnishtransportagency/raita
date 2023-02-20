@@ -66,7 +66,9 @@ export function makeQuery(
   ];
 
   const emptyQuery =
-    qs.length === 0 && extraQueries?.length === 0 && !textToSearch;
+    qs.length === 0 &&
+    (!extraQueries || extraQueries.length === 0) &&
+    !textToSearch;
 
   const qbody = emptyQuery
     ? { match_all: {} }
