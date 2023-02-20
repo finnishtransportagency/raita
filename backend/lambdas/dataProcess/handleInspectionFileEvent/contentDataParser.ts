@@ -15,14 +15,6 @@ import { log } from '../../../utils/logger';
 export const shouldParseContent = (suffix: string) =>
   suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
 
-/**
- * Resolves whether hash should be calculated for the file contents
- * The logic for now is the same as for when content needs to be parsed
- * If the logic between these two cases differ in future, implement hash calculation
- * specific logic below
- */
-export const shouldCalculateHash = shouldParseContent;
-
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
   fileBody: string,
