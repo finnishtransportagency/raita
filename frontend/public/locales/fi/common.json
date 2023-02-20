@@ -39,5 +39,6 @@
   "next_page": "Seur. sivu",
   "page_number_item": "Sivu {{ number }}",
   "show_images": "Näytä kuva(t)",
-  "download_zip": "Lataa kaikki"
+  "download_zip": "Lataa kaikki",
+  "search_by_filename": "Hae tiedoston nimellä"
 }

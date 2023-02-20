@@ -167,22 +167,12 @@ export class DataProcessStack extends NestedStack {
       this.handleInspectionFileEventFn,
     );
 
-    // Add s3 event source with filter for each targeted file suffix
-    const metaDataFileSuffixes = Object.values(
-      fileSuffixesToIncudeInMetadataParsing,
+    // Add s3 event source for any added file
+    this.handleInspectionFileEventFn.addEventSource(
+      new S3EventSource(this.inspectionDataBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
     );
-    metaDataFileSuffixes.forEach(suffix => {
-      this.handleInspectionFileEventFn.addEventSource(
-        new S3EventSource(this.inspectionDataBucket, {
-          events: [s3.EventType.OBJECT_CREATED],
-          filters: [
-            {
-              suffix,
-            },
-          ],
-        }),
-      );
-    });
   }
 
   /**
