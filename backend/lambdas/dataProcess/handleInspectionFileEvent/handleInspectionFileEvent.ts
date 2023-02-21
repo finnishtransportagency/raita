@@ -116,7 +116,7 @@ async function parseFileMetadata({
     keyData,
     spec.fileNameExtractionSpec,
   );
-  const pathData = extractPathData(keyData, spec.folderTreeExtractionSpec);
+  const pathData = extractPathData(keyData, spec);
   const fileContentData =
     shouldParseContent(keyData.fileSuffix) && fileBody
       ? extractFileContentData(spec, fileBody)
