@@ -83,6 +83,7 @@ export interface IDocumentMetadata {}
 
 export interface SearchResponse {
   total: number;
+  keys: Array<string>;
   totalSize: number;
   hits: Array<IDocument>;
 }

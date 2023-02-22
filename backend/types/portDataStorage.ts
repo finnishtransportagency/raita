@@ -5,6 +5,7 @@ export interface IMetadataStorageInterface {
   queryOpenSearchMetadata: (query: any) => Promise<{
     total: number;
     totalSize: number;
+    keys: string[];
     hits: Array<{
       score: number | undefined;
       source: {

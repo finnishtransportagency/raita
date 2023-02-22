@@ -9,12 +9,16 @@ import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
 import type { App, ImageKeys, Range, Rest } from 'shared/types';
-import { sizeformatter, takeOptionValues, toSearchQueryTerm } from 'shared/util';
+import {
+  sizeformatter,
+  takeOptionValues,
+  toSearchQueryTerm,
+} from 'shared/util';
 
 import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
 import { Button, TextInput } from 'components';
@@ -27,7 +31,13 @@ import ResultsPager from 'components/results-pager';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
-import { getFile, getImageKeysForFileKey } from 'shared/rest';
+import {
+  getFile,
+  getKeysOfFiles,
+  getImageKeysForFileKey,
+  getZipFile,
+} from 'shared/rest';
+import { saveAs } from 'file-saver';
 
 //
 
@@ -68,7 +78,7 @@ const ReportsIndex: NextPage = () => {
 
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
-  const [imageUrls, setImageUrls] = useState<string []>([])
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
   // #region Special extra filters
@@ -134,7 +144,13 @@ const ReportsIndex: NextPage = () => {
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
         state.text,
       ),
-    [newFilters, reportTypeFilter, state.subQueries, state.paging.page, state.text],
+    [
+      newFilters,
+      reportTypeFilter,
+      state.subQueries,
+      state.paging.page,
+      state.text,
+    ],
   );
 
   /**
@@ -182,14 +198,16 @@ const ReportsIndex: NextPage = () => {
   useEffect(() => {
     const fileKeys = resultsData?.hits.map(x => x.source.key);
     if (fileKeys?.length) {
-      fileKeys.map(async (fileKey) => {
+      fileKeys.map(async fileKey => {
         const fileImageKeys = await getImageKeysForFileKey(fileKey);
         if (!fileImageKeys.length) return;
-        setImageKeys(prevImageKeys => [...prevImageKeys, {fileKey, imageKeys: fileImageKeys}]);
+        setImageKeys(prevImageKeys => [
+          ...prevImageKeys,
+          { fileKey, imageKeys: fileImageKeys },
+        ]);
       });
     }
   }, [resultsData]);
-
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
@@ -217,6 +235,30 @@ const ReportsIndex: NextPage = () => {
 
   if (meta.isError) return <div>Error</div>;
 
+  /**
+   * If the user wants to load all of the results as a zip,
+   * we make the same query again, but skip the results
+   * and just get the S3 keys with the aggregation.
+   * We then send those keys to the zipRequestHandler
+   * lambda to compress, and get the presigned url as
+   * result.
+   */
+  async function handleZipDownload() {
+    const keyAggs = {
+      keys: {
+        terms: {
+          field: 'key',
+          size: resultsData?.total,
+        },
+      },
+    };
+    const newQuery = { ...query, aggs: keyAggs, size: 0 };
+    const keys = await getKeysOfFiles(newQuery);
+
+    await getZipFile(keys).then(res => {
+      saveAs(res.url, res.destKey);
+    });
+  }
   //
 
   return (
@@ -242,7 +284,11 @@ const ReportsIndex: NextPage = () => {
               {t('common:reports_search')}
             </header>
 
-            <TextInput onUpdate={updateSearchText} value={state.text} placeholder={t('common:search_by_filename')} />
+            <TextInput
+              onUpdate={updateSearchText}
+              value={state.text}
+              placeholder={t('common:search_by_filename')}
+            />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
@@ -365,24 +411,24 @@ const ReportsIndex: NextPage = () => {
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
               {!mutation.data && t('no_search_results')}
 
-
-                {mutation.data && (
-                  <div className="flex">
-                    <div className="mt-1">
-                      {t('search_result_count', {
-                        count: resultsData?.total,
-                      })}
-                    </div>
-                    <div className="ml-2">
-                      <Button
-                        size="sm"
-                        label={`${t('common:download_zip')} ${sizeformatter(resultsData?.totalSize)}`}
-                        onClick={() => console.log('jee')}
-                      />
-                    </div>
+              {mutation.data && (
+                <div className="flex">
+                  <div className="mt-1">
+                    {t('search_result_count', {
+                      count: resultsData?.total,
+                    })}
                   </div>
-                )}
-
+                  <div className="ml-2">
+                    <Button
+                      size="sm"
+                      label={`${t('common:download_zip')} ${sizeformatter(
+                        resultsData?.totalSize,
+                      )}`}
+                      onClick={() => handleZipDownload()}
+                    />
+                  </div>
+                </div>
+              )}
             </header>
 
             <section>
@@ -418,12 +464,15 @@ const ReportsIndex: NextPage = () => {
                             </div>
 
                             <footer className="text-right space-x-2">
-                              {imageKeys.find(imageKey => imageKey.fileKey === doc.key) &&
-                              <Button
-                                size="sm"
-                                label={t('common:show_images')}
-                                onClick={() => handleLightBox(doc.key)}
-                              />}
+                              {imageKeys.find(
+                                imageKey => imageKey.fileKey === doc.key,
+                              ) && (
+                                <Button
+                                  size="sm"
+                                  label={t('common:show_images')}
+                                  onClick={() => handleLightBox(doc.key)}
+                                />
+                              )}
 
                               <Button
                                 size="sm"
@@ -464,11 +513,11 @@ const ReportsIndex: NextPage = () => {
       <Lightbox
         open={open}
         close={() => setOpen(false)}
-        slides= {imageUrls.map((imageUrl, idx) => {
+        slides={imageUrls.map((imageUrl, idx) => {
           return {
             src: imageUrl,
-            alt: `Image(${idx + 1})`
-          }
+            alt: `Image(${idx + 1})`,
+          };
         })}
       />
 

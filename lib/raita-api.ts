@@ -98,6 +98,17 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
+    const handleZipRequestFn = this.createZipRequestHandler({
+      name: 'api-handler-zip',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: inspectionDataBucket,
+      vpc,
+    });
+
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
       raitaStackIdentifier,
@@ -150,6 +161,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 210,
         path: ['/api/images'],
         targetName: 'images',
+      },
+      {
+        lambda: handleZipRequestFn,
+        priority: 220,
+        path: ['/api/zip'],
+        targetName: 'zip',
       },
       {
         lambda: this.handleFilesRequestFn,
@@ -291,6 +308,53 @@ export class RaitaApiStack extends NestedStack {
       entry: path.join(
         __dirname,
         `../backend/lambdas/raitaApi/handleImagesRequest/handleImagesRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for compressing selected files
+   */
+  private createZipRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    dataBucket,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    dataBucket: Bucket;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(10),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleZipRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
