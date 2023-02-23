@@ -5,7 +5,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 
 import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
