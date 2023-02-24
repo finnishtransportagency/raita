@@ -63,7 +63,7 @@ export class RaitaApiStack extends NestedStack {
     // it's own role
     this.raitaApiZipLambdaServiceRole = createRaitaServiceRole({
       scope: this,
-      name: 'RaitaApiLambdaServiceRole',
+      name: 'RaitaApiZipLambdaServiceRole',
       servicePrincipal: 'lambda.amazonaws.com',
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
@@ -120,8 +120,6 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: inspectionDataBucket,
       vpc,
     });
-    inspectionDataBucket.grantWrite(handleZipRequestFn);
-
 
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
