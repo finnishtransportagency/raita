@@ -1,6 +1,6 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
-import { ImageKeyResponse } from './types';
+import { ImageKeyResponse, SearchResponse } from './types';
 
 /**
  * API client for use in calling the REST API endpoint
@@ -14,14 +14,21 @@ export const apiClient = A.create({ baseURL: baseURL });
  * @param q
  * @returns
  */
-export const getFiles = (q: object) =>
-  apiClient.post<GetFilesResult>('files', q);
+export const getKeysOfFiles = (q: object) => {
+  return apiClient.post<SearchResponse>('files', q).then(res => res.data.keys);
+};
 
 export const getFile = (key: string) =>
   apiClient.post<GetSignedUrlResult>('file', { key }).then(res => res.data);
 
 export const getMeta = () => {
   return apiClient.get<GetMetaResult>('meta').then(res => res.data);
+};
+
+export const getZipFile = (keys: string[]) => {
+  return apiClient
+    .post<GetZipFileResult>('zip', { keys })
+    .then(res => res.data);
 };
 
 export const getImageKeysForFileKey = async (key: string) => {
@@ -36,6 +43,11 @@ type GetFilesResult = {};
 type GetSignedUrlResult = {
   url: string;
 };
+
+type GetZipFileResult = {
+  url: string;
+  destKey: string;
+}
 
 type GetMetaResult = {
   fileTypes: { fileType: string; count: number }[];

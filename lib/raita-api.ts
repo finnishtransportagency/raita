@@ -40,6 +40,7 @@ type ListenerTargetLambdas = {
  */
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
+  public readonly raitaApiZipLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
   public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
@@ -57,6 +58,17 @@ export class RaitaApiStack extends NestedStack {
       openSearchDomain,
       cloudfrontDomainName,
     } = props;
+
+    // Zip handler needs read and write permissions, so it gets
+    // it's own role
+    this.raitaApiZipLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiZipLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+    inspectionDataBucket.grantReadWrite(this.raitaApiZipLambdaServiceRole)
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -94,6 +106,17 @@ export class RaitaApiStack extends NestedStack {
       stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: inspectionDataBucket,
+      vpc,
+    });
+
+    const handleZipRequestFn = this.createZipRequestHandler({
+      name: 'api-handler-zip',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiZipLambdaServiceRole,
       dataBucket: inspectionDataBucket,
       vpc,
     });
@@ -150,6 +173,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 210,
         path: ['/api/images'],
         targetName: 'images',
+      },
+      {
+        lambda: handleZipRequestFn,
+        priority: 220,
+        path: ['/api/zip'],
+        targetName: 'zip',
       },
       {
         lambda: this.handleFilesRequestFn,
@@ -291,6 +320,53 @@ export class RaitaApiStack extends NestedStack {
       entry: path.join(
         __dirname,
         `../backend/lambdas/raitaApi/handleImagesRequest/handleImagesRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for compressing selected files
+   */
+  private createZipRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    dataBucket,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    dataBucket: Bucket;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(10),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleZipRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,

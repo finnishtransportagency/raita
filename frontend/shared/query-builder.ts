@@ -80,9 +80,18 @@ export function makeQuery(
         },
       };
 
+  const aggs = {
+    total_size: {
+      sum: {
+        field: 'size',
+      },
+    },
+  };
+
   const qʼ = {
     ...paging,
     query: qbody,
+    aggs: aggs,
   };
 
   return qʼ;
