@@ -40,6 +40,7 @@ type ListenerTargetLambdas = {
  */
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
+  public readonly raitaApiZipLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
   public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
@@ -57,6 +58,17 @@ export class RaitaApiStack extends NestedStack {
       openSearchDomain,
       cloudfrontDomainName,
     } = props;
+
+    // Zip handler needs read and write permissions, so it gets
+    // it's own role
+    this.raitaApiZipLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+    inspectionDataBucket.grantReadWrite(this.raitaApiZipLambdaServiceRole)
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -104,10 +116,12 @@ export class RaitaApiStack extends NestedStack {
       raitaEnv,
       stackId,
       jwtTokenIssuer,
-      lambdaRole: this.raitaApiLambdaServiceRole,
+      lambdaRole: this.raitaApiZipLambdaServiceRole,
       dataBucket: inspectionDataBucket,
       vpc,
     });
+    inspectionDataBucket.grantWrite(handleZipRequestFn);
+
 
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
