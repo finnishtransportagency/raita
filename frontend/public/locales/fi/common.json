@@ -40,5 +40,9 @@
   "page_number_item": "Sivu {{ number }}",
   "show_images": "Näytä kuva(t)",
   "download_zip": "Lataa kaikki",
-  "search_by_filename": "Hae tiedoston nimellä"
+  "search_by_filename": "Hae tiedoston nimellä",
+  "iam_problem_contact_info": "Käyttöoikeusasioissa ja ongelmatilanteisiin liittyen, ole yhteydessä raide@vayla.fi",
+  "ftia_name": "Väylävirasto",
+  "rights_restriction_info": "Järjestelmään tallennetun aineiston käyttö on käyttöoikeuksilla rajoitettua ja sallittua vain Väyläviraston tilauksiin liittyvissä töissä.",
+  "loading": "Ladataan..."
 }
