@@ -71,7 +71,7 @@ export class OpenSearchResponseParser {
     const total = responseData.hits.total;
     const totalSize = res.body.aggregations?.total_size?.value || 0;
     const keys =
-      res.body.aggregations.keys.buckets.map(
+      res.body.aggregations?.keys?.buckets?.map(
         (bucket: { key: string; doc_count: number }) => bucket.key,
       ) || [];
     return {
