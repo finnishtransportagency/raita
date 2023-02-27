@@ -13,14 +13,10 @@ import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
-import type { App, ImageKeys, Range, Rest } from 'shared/types';
-import {
-  sizeformatter,
-  takeOptionValues,
-  toSearchQueryTerm,
-} from 'shared/util';
+import type { App, ImageKeys, Range } from 'shared/types';
+import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
+import { makeFromMulti, makeQuery } from 'shared/query-builder';
 import { Button, TextInput } from 'components';
 import { DateRange } from 'components';
 import Footer from 'components/footer';
@@ -28,6 +24,8 @@ import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
 import MultiChoice from 'components/filters/multi-choice';
 import ResultsPager from 'components/results-pager';
+import LoadingOverlay from 'components/loading-overlay';
+import InfoBanner from 'components/infobanner';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
@@ -231,7 +229,7 @@ const ReportsIndex: NextPage = () => {
 
   //
 
-  if (meta.isLoading || !meta.data) return <div>Loading</div>;
+  if (meta.isLoading || !meta.data) return <LoadingOverlay />;
 
   if (meta.isError) return <div>Error</div>;
 
@@ -247,7 +245,7 @@ const ReportsIndex: NextPage = () => {
     const keyAggs = {
       keys: {
         terms: {
-          field: 'key',
+          field: 'key.keyword',
           size: resultsData?.total,
         },
       },
@@ -274,6 +272,8 @@ const ReportsIndex: NextPage = () => {
           </header>
         </div>
       </div>
+
+      <InfoBanner />
 
       <div className="container mx-auto px-16 py-6">
         <header className="mb-4"></header>

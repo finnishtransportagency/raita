@@ -37,5 +37,9 @@
   "page_number_item": "Page {{ number }}",
   "show_images": "Show image(s)",
   "download_zip": "Download all",
-  "search_by_filename": "Search by filename"
+  "search_by_filename": "Search by filename",
+  "iam_problem_contact_info": "Regarding usage rights and problem situations, please contact raide@vayla.fi",
+  "ftia_name": "Finnish Transport Infrastructure Agency",
+  "rights_restriction_info": "The use of material stored in the system is restricted by usage rights and allowed only for work related to orders from the Finnish Transport Infrastructure Agency",
+  "loading": "Loading..."
 }
