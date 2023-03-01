@@ -19,5 +19,12 @@
   "label_inspection_date": "Päivämäärä",
   "label_km_start": "Aloitus, ratakilometri",
   "label_km_end": "Lopetus, ratakilometri",
-  "label_accounting_route_number": "Tilirataosanumero"
+  "label_accounting_route_number": "Tilirataosanumero",
+  "label_size": "Tiedoston koko",
+  "label_zip_name": "ZIP tiedostonimi",
+  "label_zip_reception__year": "ZIP vastaanottovuosi",
+  "label_zip_reception__date": "ZIP vastaanotto pvm",
+  "label_campaign": "Kampanja"
+
+
 }

@@ -481,6 +481,12 @@ const ReportsIndex: NextPage = () => {
                                     </Fragment>
                                   ),
                                 )}
+                                {doc.size && (
+                                  <Fragment>
+                                    <dt className='col-span-2 truncate'>{t('metadata:label_size')}</dt>
+                                    <dd className="col-span-4 truncate">{`${sizeformatter(doc.size)}`}</dd>
+                                  </Fragment>
+                                )}
                               </dl>
                             </div>
 
