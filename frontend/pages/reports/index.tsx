@@ -14,7 +14,11 @@ import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
 import type { App, ImageKeys, Range } from 'shared/types';
-import { sizeformatter, takeOptionValues } from 'shared/util';
+import {
+  getKeyAggregations,
+  sizeformatter,
+  takeOptionValues,
+} from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
 import { Button, TextInput } from 'components';
@@ -27,15 +31,21 @@ import ResultsPager from 'components/results-pager';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
 
-import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
+import {
+  useMetadataQuery,
+  useSearch,
+  useFileQuery,
+  usePollingQuery,
+} from '../../shared/hooks';
 import css from './reports.module.css';
 import {
   getFile,
   getKeysOfFiles,
   getImageKeysForFileKey,
-  getZipFile,
+  triggerZipLambda,
 } from 'shared/rest';
 import { saveAs } from 'file-saver';
+import { Spinner } from 'components/spinner';
 
 //
 
@@ -78,6 +88,7 @@ const ReportsIndex: NextPage = () => {
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   // #region Special extra filters
 
@@ -242,22 +253,20 @@ const ReportsIndex: NextPage = () => {
    * result.
    */
   async function handleZipDownload() {
-    const keyAggs = {
-      keys: {
-        terms: {
-          field: 'key.keyword',
-          size: resultsData?.total,
-        },
-      },
-    };
-    const newQuery = { ...query, aggs: keyAggs, size: 0 };
-    const keys = await getKeysOfFiles(newQuery);
+    const keyAggs = getKeyAggregations(resultsData?.total);
+    const keys = await getKeysOfFiles({ ...query, aggs: keyAggs, size: 0 });
+    if (!keys.length) return;
+    const pollingFileKey = `progress/data-${Date.now()}.json`;
+    triggerZipLambda(keys, pollingFileKey);
 
-    await getZipFile(keys).then(res => {
-      saveAs(res.url, res.destKey);
-    });
+    const { data, isLoading } = usePollingQuery(pollingFileKey);
+
+    if (isLoading) setProgressLoading(true);
+    if (data?.url) {
+      saveAs(data.url);
+      setProgressLoading(false);
+    }
   }
-  //
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -420,12 +429,24 @@ const ReportsIndex: NextPage = () => {
                   </div>
                   <div className="ml-2">
                     <Button
+                      disabled={progressLoading}
                       size="sm"
-                      label={`${t('common:download_zip')} ${sizeformatter(
-                        resultsData?.totalSize,
-                      )}`}
+                      label={
+                        progressLoading ? (
+                          <Spinner size={4} bottomMargin={0} />
+                        ) : (
+                          `${t('common:download_zip')} ${sizeformatter(
+                            resultsData?.totalSize,
+                          )}`
+                        )
+                      }
                       onClick={() => handleZipDownload()}
                     />
+                    {progressLoading && (
+                      <span>
+                        <Spinner />
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

@@ -25,10 +25,12 @@ export const getMeta = () => {
   return apiClient.get<GetMetaResult>('meta').then(res => res.data);
 };
 
-export const getZipFile = (keys: string[]) => {
-  return apiClient
-    .post<GetZipFileResult>('zip', { keys })
-    .then(res => res.data);
+export const getPollingProgress = (queryKey: string) => {
+  return apiClient.get(`/polling?queryKey=${queryKey}`).then(res => res.data);
+};
+
+export const triggerZipLambda = (keys: string[], pollingFileKey: string) => {
+  apiClient.post<GetZipFileResult>('zip', { keys, pollingFileKey });
 };
 
 export const getImageKeysForFileKey = async (key: string) => {
@@ -47,7 +49,7 @@ type GetSignedUrlResult = {
 type GetZipFileResult = {
   url: string;
   destKey: string;
-}
+};
 
 type GetMetaResult = {
   fileTypes: { fileType: string; count: number }[];

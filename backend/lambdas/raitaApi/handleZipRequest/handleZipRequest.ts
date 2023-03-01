@@ -7,49 +7,67 @@ import { S3 } from 'aws-sdk';
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import JSZip from 'jszip';
 
-import { getEnvOrFail } from '../../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateReadUser } from '../../../utils/userService';
 import {
-  getRaitaLambdaErrorResponse,
-  getRaitaSuccessResponse,
-} from '../../utils';
+  shouldUpdateProgressData,
+  updateProgressFailed,
+  uploadProgressData,
+  validateInputs,
+} from './utils';
+import { initialProgressData, successProgressData } from './constants';
 
 function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
   return {
-    dataBucket: getEnvOrFail('DATA_BUCKET', 'handleZipRequest)'),
+    sourceBucket: getEnv('SOURCE_BUCKET'),
+    targetBucket: getEnv('TARGET_BUCKET'),
   };
 }
 
 export async function handleZipRequest(
   event: ALBEvent,
   _context: Context,
-): Promise<APIGatewayProxyResult> {
+): Promise<void> {
   const { body } = event;
   const requestBody = body && JSON.parse(body);
-  const { keys } = requestBody;
+  const { keys, pollingFileKey } = requestBody;
   const s3Client = new S3Client({});
-
   const zip = new JSZip();
   try {
     const user = await getUser(event);
     await validateReadUser(user);
-    const { dataBucket } = getLambdaConfigOrFail();
-    if (!keys.length) {
-      throw new Error('No file keys to handle');
-    }
-    const promises = keys.map(async (key: string) => {
+    validateInputs(keys, pollingFileKey);
+    const { sourceBucket, targetBucket } = getLambdaConfigOrFail();
+
+    const totalKeys = keys.length;
+    uploadProgressData(initialProgressData, targetBucket, pollingFileKey);
+
+    let lastUpdateStep = 0;
+    let progressPercentage = 0;
+    const promises = keys.map(async (key: string, index: number) => {
       const command = new GetObjectCommand({
-        Bucket: dataBucket,
+        Bucket: sourceBucket,
         Key: key,
       });
       const data = await s3Client.send(command);
-      zip.file(key, data.Body as Uint8Array);
+      zip.file(key, data.Body as Blob);
+      progressPercentage = Math.floor(((index + 1) / totalKeys) * 100);
+      if (shouldUpdateProgressData(progressPercentage, lastUpdateStep)) {
+        uploadProgressData(
+          { ...initialProgressData, progressPercentage },
+          targetBucket,
+          pollingFileKey,
+        );
+        lastUpdateStep = progressPercentage;
+      }
       return data;
     });
 
     await Promise.all(promises).catch(err => {
       log.error(`Error getting S3 Objects: ${err}`);
+      updateProgressFailed(targetBucket, pollingFileKey);
       throw err;
     });
 
@@ -57,31 +75,43 @@ export async function handleZipRequest(
       .generateAsync({ type: 'nodebuffer' })
       .catch(err => {
         log.error(`Error generating zip file: ${err}`);
+        updateProgressFailed(targetBucket, pollingFileKey);
         throw err;
       });
 
-    const destKey = `raita-zip-${Date.now()}.zip`;
+    const destKey = `zip/raita-zip-${Date.now()}.zip`;
     const putCommand = new PutObjectCommand({
-      Bucket: dataBucket,
+      Bucket: targetBucket,
       Key: destKey,
       Body: zipData,
     });
 
     await s3Client.send(putCommand).catch(err => {
       log.error(`Error uploading zip file to S3: ${err}`);
+      updateProgressFailed(targetBucket, pollingFileKey);
       throw err;
     });
 
     const s3 = new S3();
-    const url = s3.getSignedUrl('getObject', {
-      Bucket: dataBucket,
-      Key: destKey,
-      Expires: 30,
-    });
+    const url = await s3
+      .getSignedUrlPromise('getObject', {
+        Bucket: targetBucket,
+        Key: destKey,
+        Expires: 30,
+      })
+      .catch(err => {
+        log.error(
+          `Error getting the signed url for key: ${destKey} error: ${err}`,
+        );
+        throw err;
+      });
 
-    return getRaitaSuccessResponse({ url, destKey });
+    uploadProgressData(
+      { ...successProgressData, url },
+      targetBucket,
+      pollingFileKey,
+    );
   } catch (err: unknown) {
     log.error(err);
-    return getRaitaLambdaErrorResponse(err);
   }
 }

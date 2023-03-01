@@ -49,8 +49,19 @@ export const sizeformatter = (size: number | undefined, decimalPlaces = 2) => {
 
     return `${size.toFixed(decimalPlaces)} ${units[unit]}`;
   }
-
 };
 
 export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
   Array.from(fs, R.prop('value'));
+
+export const getKeyAggregations = (size: number | undefined) => {
+  if (!size) return;
+  return {
+    keys: {
+      terms: {
+        field: 'key.keyword',
+        size: size,
+      },
+    },
+  };
+};
