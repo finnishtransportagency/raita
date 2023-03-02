@@ -53,7 +53,7 @@ export namespace Rest {
 export type ImageKeys = {
   fileKey: string;
   imageKeys: string[];
-}
+};
 //
 
 /**
@@ -91,6 +91,20 @@ export interface SearchResponse {
 export interface ImageKeyResponse {
   images: {
     key: string;
-    size: number
+    size: number;
   }[];
+}
+
+export interface PollingProgress {
+  progressData: {
+    status: ProgressStatus;
+    progressPercentage: number;
+    url?: string | undefined;
+  };
+}
+
+export enum ProgressStatus {
+  SUCCESS = 'SUCCESS',
+  PENDING = 'PENDING',
+  FAILED = 'FAILED',
 }

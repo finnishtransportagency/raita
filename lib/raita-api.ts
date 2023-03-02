@@ -11,7 +11,10 @@ import { Construct } from 'constructs';
 import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
-import { createRaitaServiceRole } from './raitaResourceCreators';
+import {
+  createRaitaBucket,
+  createRaitaServiceRole,
+} from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 
@@ -59,8 +62,17 @@ export class RaitaApiStack extends NestedStack {
       cloudfrontDomainName,
     } = props;
 
-    // Zip handler needs read and write permissions, so it gets
-    // it's own role
+    // Create a bucket to hold the data of user made
+    // collections as a zip.
+    const dataCollectionBucket = createRaitaBucket({
+      scope: this,
+      name: 'data-collection',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+
+    // Ziphandler needs rights to two buckets so it gets its
+    // own role with proper permissions.
     this.raitaApiZipLambdaServiceRole = createRaitaServiceRole({
       scope: this,
       name: 'RaitaApiZipLambdaServiceRole',
@@ -68,7 +80,8 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    inspectionDataBucket.grantReadWrite(this.raitaApiZipLambdaServiceRole)
+    inspectionDataBucket.grantRead(this.raitaApiZipLambdaServiceRole);
+    dataCollectionBucket.grantReadWrite(this.raitaApiZipLambdaServiceRole);
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -86,6 +99,7 @@ export class RaitaApiStack extends NestedStack {
       this.raitaApiLambdaServiceRole,
     );
     inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
+    dataCollectionBucket.grantRead(this.raitaApiLambdaServiceRole);
 
     // Create handler lambdas
     const handleFileRequestFn = this.createFileRequestHandler({
@@ -117,7 +131,19 @@ export class RaitaApiStack extends NestedStack {
       stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiZipLambdaServiceRole,
-      dataBucket: inspectionDataBucket,
+      sourceBucket: inspectionDataBucket,
+      targetBucket: dataCollectionBucket,
+      vpc,
+    });
+
+    const handlePollingRequestFn = this.createPollingRequestHandler({
+      name: 'api-handler-polling',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      dataBucket: dataCollectionBucket,
       vpc,
     });
 
@@ -179,6 +205,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 220,
         path: ['/api/zip'],
         targetName: 'zip',
+      },
+      {
+        lambda: handlePollingRequestFn,
+        priority: 230,
+        path: ['/api/polling'],
+        targetName: 'polling',
       },
       {
         lambda: this.handleFilesRequestFn,
@@ -346,6 +378,56 @@ export class RaitaApiStack extends NestedStack {
     stackId,
     jwtTokenIssuer,
     lambdaRole,
+    sourceBucket,
+    targetBucket,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    sourceBucket: Bucket;
+    targetBucket: Bucket;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.minutes(10),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleZipRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
+      ),
+      environment: {
+        SOURCE_BUCKET: sourceBucket.bucketName,
+        TARGET_BUCKET: targetBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns a handler for polling.
+   */
+  private createPollingRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
     dataBucket,
     vpc,
   }: {
@@ -363,10 +445,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(10),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleZipRequest',
+      handler: 'handlePollingRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
+        `../backend/lambdas/raitaApi/handleZipRequest/handlePollingRequest.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,

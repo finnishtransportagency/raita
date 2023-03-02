@@ -31,7 +31,7 @@ export default Button;
 //
 
 export type Props = {
-  label: string;
+  label: any;
   type?: 'primary' | 'secondary';
   size?: 'sm' | 'md';
   disabled?: boolean;

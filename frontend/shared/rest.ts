@@ -1,6 +1,6 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
-import { ImageKeyResponse, SearchResponse } from './types';
+import { ImageKeyResponse, PollingProgress, SearchResponse } from './types';
 
 /**
  * API client for use in calling the REST API endpoint
@@ -25,10 +25,14 @@ export const getMeta = () => {
   return apiClient.get<GetMetaResult>('meta').then(res => res.data);
 };
 
-export const getZipFile = (keys: string[]) => {
+export const getPollingProgress = (queryKey: string) => {
   return apiClient
-    .post<GetZipFileResult>('zip', { keys })
+    .get<PollingProgress>(`/polling?queryKey=${queryKey}`)
     .then(res => res.data);
+};
+
+export const triggerZipLambda = (keys: string[], pollingFileKey: string) => {
+  return apiClient.post<GetZipFileResult>('zip', { keys, pollingFileKey });
 };
 
 export const getImageKeysForFileKey = async (key: string) => {
@@ -47,7 +51,7 @@ type GetSignedUrlResult = {
 type GetZipFileResult = {
   url: string;
   destKey: string;
-}
+};
 
 type GetMetaResult = {
   fileTypes: { fileType: string; count: number }[];
