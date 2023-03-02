@@ -1,6 +1,6 @@
 import * as R from 'rambda';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { DependencyList, useEffect, useState } from 'react';
+import { DependencyList, useState } from 'react';
 import { MsearchBody } from '@opensearch-project/opensearch/api/types';
 import { saveAs } from 'file-saver';
 
@@ -63,25 +63,29 @@ export function useFileQuery(saveFile = true) {
   });
 }
 
-export function usePollingQuery(queryKey: string) {
-  const [shouldPoll, setShouldPoll] = useState(true);
+function retryFunction(failureCount: number) {
+  return failureCount < 3;
+}
 
-  const { data, isLoading, isError } = useQuery(
-    ['progressData'],
-    () => getPollingProgress(queryKey),
+export function doPollingQuery(queryKey: string) {
+  const [shouldPoll, setShouldPoll] = useState(true);
+  return useQuery(
+    ['fileData', queryKey],
+    () => {
+      return getPollingProgress(queryKey);
+    },
     {
-      refetchInterval: 2000, // poll every 2 seconds
-      enabled: shouldPoll, // enable/disable the query based on the state
-      retry: false, // disable automatic retries
+      enabled: shouldPoll,
+      refetchInterval: 2000,
+      retry: retryFunction,
+      retryDelay: 2000,
       onSuccess: (data: PollingProgress) => {
         if (data?.progressData.status === ProgressStatus.SUCCESS) {
-          setShouldPoll(false); // disable polling
+          setShouldPoll(false);
         }
       },
     },
   );
-
-  return { data: data?.progressData, isLoading, isError };
 }
 
 type UseFileQueryArgs = {

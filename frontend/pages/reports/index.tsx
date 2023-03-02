@@ -35,7 +35,7 @@ import {
   useMetadataQuery,
   useSearch,
   useFileQuery,
-  usePollingQuery,
+  doPollingQuery,
 } from '../../shared/hooks';
 import css from './reports.module.css';
 import {
@@ -259,11 +259,11 @@ const ReportsIndex: NextPage = () => {
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     triggerZipLambda(keys, pollingFileKey);
 
-    const { data, isLoading } = usePollingQuery(pollingFileKey);
+    const { data, isLoading } = doPollingQuery(pollingFileKey);
 
     if (isLoading) setProgressLoading(true);
-    if (data?.url) {
-      saveAs(data.url);
+    if (data?.progressData?.url) {
+      saveAs(data.progressData.url);
       setProgressLoading(false);
     }
   }
