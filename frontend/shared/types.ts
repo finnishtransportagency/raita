@@ -96,9 +96,11 @@ export interface ImageKeyResponse {
 }
 
 export interface PollingProgress {
-  status: ProgressStatus;
-  progressPercentage: number;
-  url?: string | undefined;
+  progressData: {
+    status: ProgressStatus;
+    progressPercentage: number;
+    url?: string | undefined;
+  };
 }
 
 export enum ProgressStatus {

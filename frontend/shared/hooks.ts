@@ -74,14 +74,14 @@ export function usePollingQuery(queryKey: string) {
       enabled: shouldPoll, // enable/disable the query based on the state
       retry: false, // disable automatic retries
       onSuccess: (data: PollingProgress) => {
-        if (data.status === ProgressStatus.SUCCESS) {
+        if (data?.progressData.status === ProgressStatus.SUCCESS) {
           setShouldPoll(false); // disable polling
         }
       },
     },
   );
 
-  return { data, isLoading, isError };
+  return { data: data?.progressData, isLoading, isError };
 }
 
 type UseFileQueryArgs = {
