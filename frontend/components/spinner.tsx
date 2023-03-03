@@ -5,7 +5,6 @@ export function Spinner(props: Props) {
   let { size, bottomMargin } = props;
   size = size ?? 12;
   bottomMargin = bottomMargin ?? 4;
-  console.log(bottomMargin);
   return (
     <div
       className={clsx(
