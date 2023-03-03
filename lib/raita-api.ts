@@ -448,7 +448,7 @@ export class RaitaApiStack extends NestedStack {
       handler: 'handlePollingRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/handleZipRequest/handlePollingRequest.ts`,
+        `../backend/lambdas/raitaApi/handlePollingRequest/handlePollingRequest.ts`,
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
