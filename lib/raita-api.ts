@@ -81,7 +81,7 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
     inspectionDataBucket.grantRead(this.raitaApiZipLambdaServiceRole);
-    dataCollectionBucket.grantReadWrite(this.raitaApiZipLambdaServiceRole);
+    dataCollectionBucket.grantWrite(this.raitaApiZipLambdaServiceRole);
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -394,7 +394,7 @@ export class RaitaApiStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
+      memorySize: 1768,
       timeout: cdk.Duration.minutes(10),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleZipRequest',

@@ -15,7 +15,6 @@ import 'yet-another-react-lightbox/styles.css';
 import * as cfg from 'shared/config';
 import type { App, ImageKeys, Range } from 'shared/types';
 import {
-  getKeyAggregations,
   sizeformatter,
   takeOptionValues,
 } from 'shared/util';
@@ -35,17 +34,13 @@ import {
   useMetadataQuery,
   useSearch,
   useFileQuery,
-  usePollingQuery,
 } from '../../shared/hooks';
 import css from './reports.module.css';
 import {
   getFile,
-  getKeysOfFiles,
   getImageKeysForFileKey,
-  triggerZipLambda,
 } from 'shared/rest';
-import { saveAs } from 'file-saver';
-import { Spinner } from 'components/spinner';
+import { ZipDownload } from 'components/zip-download';
 
 //
 
@@ -88,7 +83,6 @@ const ReportsIndex: NextPage = () => {
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
-  const [progressLoading, setProgressLoading] = useState(false);
 
   // #region Special extra filters
 
@@ -243,30 +237,6 @@ const ReportsIndex: NextPage = () => {
   if (meta.isLoading || !meta.data) return <LoadingOverlay />;
 
   if (meta.isError) return <div>Error</div>;
-
-  /**
-   * If the user wants to load all of the results as a zip,
-   * we make the same query again, but skip the results
-   * and just get the S3 keys with the aggregation.
-   * We then send those keys to the zipRequestHandler
-   * lambda to compress, and get the presigned url as
-   * result.
-   */
-  async function handleZipDownload() {
-    const keyAggs = getKeyAggregations(resultsData?.total);
-    const keys = await getKeysOfFiles({ ...query, aggs: keyAggs, size: 0 });
-    if (!keys.length) return;
-    const pollingFileKey = `progress/data-${Date.now()}.json`;
-    triggerZipLambda(keys, pollingFileKey);
-
-    const { data, isLoading } = usePollingQuery(pollingFileKey);
-
-    if (isLoading) setProgressLoading(true);
-    if (data?.url) {
-      saveAs(data.url);
-      setProgressLoading(false);
-    }
-  }
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -428,25 +398,8 @@ const ReportsIndex: NextPage = () => {
                     })}
                   </div>
                   <div className="ml-2">
-                    <Button
-                      disabled={progressLoading}
-                      size="sm"
-                      label={
-                        progressLoading ? (
-                          <Spinner size={4} bottomMargin={0} />
-                        ) : (
-                          `${t('common:download_zip')} ${sizeformatter(
-                            resultsData?.totalSize,
-                          )}`
-                        )
-                      }
-                      onClick={() => handleZipDownload()}
-                    />
-                    {progressLoading && (
-                      <span>
-                        <Spinner />
-                      </span>
-                    )}
+                    <ZipDownload aggregationSize={resultsData?.total} usedQuery={query} resultTotalSize={resultsData?.totalSize} />
+
                   </div>
                 </div>
               )}
