@@ -131,8 +131,8 @@ export async function handleZipRequest(
     const user = await getUser(event);
     await validateReadUser(user);
     startZipProcess(keys, pollingFileKey);
-    return getRaitaSuccessResponse({
-      message: 'Zip process initiated successfully.',
+    return new Promise(resolve => {
+      setTimeout(() => resolve(getRaitaSuccessResponse({message: 'jee'})), 3000);
     });
   } catch (error) {
     log.error(error);
