@@ -4,10 +4,11 @@ import { failedProgressData } from './constants';
 const s3Client = new S3Client({});
 
 export async function uploadProgressData(
-  progressData: object,
+  progressData: CompressionProgress,
   bucket: string,
   key: string,
 ): Promise<void> {
+  console.log('Uploads progress data: ' + progressData.status)
   const params = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -26,8 +27,8 @@ export function shouldUpdateProgressData(
   );
 }
 
-export function updateProgressFailed(bucket: string, key: string) {
-  uploadProgressData(failedProgressData, bucket, key);
+export async function updateProgressFailed(bucket: string, key: string) {
+  await uploadProgressData(failedProgressData, bucket, key);
 }
 
 export function validateInputs(keys: string[], pollingFileKey: string) {
