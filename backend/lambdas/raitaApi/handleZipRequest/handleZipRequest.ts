@@ -39,7 +39,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
     const { sourceBucket, targetBucket } = getLambdaConfigOrFail();
 
     const totalKeys = keys.length;
-    await uploadProgressData(initialProgressData, targetBucket, pollingFileKey);
+    uploadProgressData(initialProgressData, targetBucket, pollingFileKey);
     console.log('initial uploadi valmistuu')
 
     let lastUpdateStep = 0;
@@ -55,7 +55,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
       console.log('progress: ' + progressPercentage);
       console.log('lastupdateperc: ' + lastUpdateStep);
       if (shouldUpdateProgressData(progressPercentage, lastUpdateStep)) {
-        await uploadProgressData(
+        uploadProgressData(
           { ...initialProgressData, progressPercentage },
           targetBucket,
           pollingFileKey,
@@ -107,7 +107,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
         throw err;
       });
 
-    await uploadProgressData(
+    uploadProgressData(
       { ...successProgressData, url },
       targetBucket,
       pollingFileKey,
