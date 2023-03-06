@@ -31,6 +31,7 @@ function getLambdaConfigOrFail() {
 }
 
 async function startZipProcess(keys: string[], pollingFileKey: string) {
+  console.log('triggaa zippauksen, polling avain: ' + pollingFileKey);
   const s3Client = new S3Client({});
   const zip = new JSZip();
   try {
@@ -39,6 +40,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
 
     const totalKeys = keys.length;
     await uploadProgressData(initialProgressData, targetBucket, pollingFileKey);
+    console.log('initial uploadi valmistuu')
 
     let lastUpdateStep = 0;
     let progressPercentage = 0;

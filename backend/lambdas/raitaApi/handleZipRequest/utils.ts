@@ -14,7 +14,7 @@ export async function uploadProgressData(
     Key: key,
     Body: JSON.stringify(progressData),
   });
-  await s3Client.send(params);
+  await s3Client.send(params).catch(err => {console.log(err)});
 }
 
 export function shouldUpdateProgressData(
