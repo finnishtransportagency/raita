@@ -21,6 +21,7 @@ import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
+import { Readable } from 'stream';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
@@ -39,18 +40,18 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
     const { sourceBucket, targetBucket } = getLambdaConfigOrFail();
 
     const totalKeys = keys.length;
-    uploadProgressData(initialProgressData, targetBucket, pollingFileKey);
-    console.log('initial uploadi valmistuu')
+    uploadProgressData(initialProgressData, targetBucket, pollingFileKey, s3Client).then(() => console.log('initial valmis'));
 
     let lastUpdateStep = 0;
     let progressPercentage = 0;
+    console.log('ennen promiseja')
     const promises = keys.map(async (key: string, index: number) => {
       const command = new GetObjectCommand({
         Bucket: sourceBucket,
         Key: key,
       });
       const data = await s3Client.send(command);
-      zip.file(key, data.Body as Blob);
+      zip.file(key, data.Body as Readable);
       progressPercentage = Math.floor(((index + 1) / totalKeys) * 100);
       console.log('progress: ' + progressPercentage);
       console.log('lastupdateperc: ' + lastUpdateStep);
@@ -59,6 +60,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
           { ...initialProgressData, progressPercentage },
           targetBucket,
           pollingFileKey,
+          s3Client
         );
         lastUpdateStep = progressPercentage;
       }
@@ -67,7 +69,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
 
     await Promise.all(promises).catch(async err => {
       log.error(`Error getting S3 Objects: ${err}`);
-      await updateProgressFailed(targetBucket, pollingFileKey);
+      await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
       throw err;
     });
 
@@ -75,7 +77,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
       .generateAsync({ type: 'nodebuffer' })
       .catch(async err => {
         log.error(`Error generating zip file: ${err}`);
-        await updateProgressFailed(targetBucket, pollingFileKey);
+        await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
         throw err;
       });
 
@@ -88,7 +90,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
 
     await s3Client.send(putCommand).catch(async err => {
       log.error(`Error uploading zip file to S3: ${err}`);
-      await updateProgressFailed(targetBucket, pollingFileKey);
+      await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
       throw err;
     });
 
@@ -103,7 +105,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
         log.error(
           `Error getting the signed url for key: ${destKey} error: ${err}`,
         );
-        await updateProgressFailed(targetBucket, pollingFileKey);
+        await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
         throw err;
       });
 
@@ -111,6 +113,7 @@ async function startZipProcess(keys: string[], pollingFileKey: string) {
       { ...successProgressData, url },
       targetBucket,
       pollingFileKey,
+      s3Client
     );
   } catch (err: unknown) {
     log.error(err);
