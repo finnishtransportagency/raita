@@ -27,6 +27,7 @@ export async function handleZipRequest(
     const user = await getUser(event);
     await validateReadUser(user);
     const { zipProcessingFn, region } = getLambdaConfigOrFail();
+    console.log('zipfn: ' + zipProcessingFn)
     const lambda = new Lambda({ region });
     lambda.invoke({
       FunctionName: zipProcessingFn,
