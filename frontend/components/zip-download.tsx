@@ -67,8 +67,6 @@ export function ZipDownload(props: Props) {
     setState(initialState);
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     setState(R.assoc('pollingFileKey', pollingFileKey));
-    console.log(state);
-    console.log(usedQuery);
     const keyAggs = getKeyAggregations(aggregationSize);
     const keys = await getKeysOfFiles({ ...usedQuery, aggs: keyAggs, size: 0 });
     triggerZipLambda(keys, pollingFileKey).then(() =>
