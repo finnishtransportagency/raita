@@ -34,7 +34,7 @@ export async function handleZipRequest(
       Payload: requestBody,
       InvocationType: 'Event'
     });
-    client.send(command);
+    await client.send(command);
 
     return getRaitaSuccessResponse({
       message: 'Zip processing initiated succesfully',

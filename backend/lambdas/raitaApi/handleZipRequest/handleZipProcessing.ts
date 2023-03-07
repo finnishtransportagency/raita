@@ -16,8 +16,9 @@ function getLambdaConfigOrFail() {
   };
 }
 
-export async function handleZipProcessing(keys: string[], pollingFileKey: string) {
-  console.log('triggaa prosessoinning, polling: ' + pollingFileKey)
+export async function handleZipProcessing(event: { keys: string[], pollingFileKey: string}) {
+  const { pollingFileKey, keys } = event;
+  console.log('triggaa prosessoinnin, polling: ' + pollingFileKey)
   const s3Client = new S3Client({});
   const zip = new JSZip();
   try {
