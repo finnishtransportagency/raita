@@ -8,6 +8,7 @@ import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
+import { TextEncoder } from 'util';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
@@ -23,15 +24,17 @@ export async function handleZipRequest(
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
   const requestBody = body && JSON.parse(body);
+  const payloadString = JSON.stringify(requestBody);
+  const payloadBytes = new TextEncoder().encode(payloadString);
   try {
     const user = await getUser(event);
     await validateReadUser(user);
     const { zipProcessingFn, region } = getLambdaConfigOrFail();
-    console.log('zipfn: ' + zipProcessingFn)
+
     const client = new LambdaClient({region});
     const command = new InvokeCommand({
       FunctionName: zipProcessingFn,
-      Payload: requestBody,
+      Payload: payloadBytes,
       InvocationType: 'Event'
     });
     await client.send(command);
