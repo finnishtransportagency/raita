@@ -1,12 +1,24 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
-import JSZip from "jszip";
-import { Readable } from "stream";
-import { getGetEnvWithPreassignedContext } from "../../../../utils";
-import { log } from "../../../utils/logger";
-import { getRaitaLambdaErrorResponse, getRaitaSuccessResponse } from "../../utils";
-import { initialProgressData, successProgressData } from "./constants";
-import { validateInputs, uploadProgressData, shouldUpdateProgressData, updateProgressFailed } from "./utils";
+import JSZip from 'jszip';
+import { Readable } from 'stream';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { log } from '../../../utils/logger';
+import {
+  getRaitaLambdaErrorResponse,
+  getRaitaSuccessResponse,
+} from '../../utils';
+import { initialProgressData, successProgressData } from './constants';
+import {
+  validateInputs,
+  uploadProgressData,
+  shouldUpdateProgressData,
+  updateProgressFailed,
+} from './utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
@@ -16,17 +28,23 @@ function getLambdaConfigOrFail() {
   };
 }
 
-export async function handleZipProcessing(event: { keys: string[], pollingFileKey: string}) {
+export async function handleZipProcessing(event: {
+  keys: string[];
+  pollingFileKey: string;
+}) {
   const { pollingFileKey, keys } = event;
-  console.log('triggaa prosessoinnin, polling: ' + pollingFileKey)
   const s3Client = new S3Client({});
   const zip = new JSZip();
   try {
     validateInputs(keys, pollingFileKey);
     const { sourceBucket, targetBucket } = getLambdaConfigOrFail();
-
     const totalKeys = keys.length;
-    await uploadProgressData(initialProgressData, targetBucket, pollingFileKey, s3Client);
+    await uploadProgressData(
+      initialProgressData,
+      targetBucket,
+      pollingFileKey,
+      s3Client,
+    );
 
     let lastUpdateStep = 0;
     let progressPercentage = 0;
@@ -43,7 +61,7 @@ export async function handleZipProcessing(event: { keys: string[], pollingFileKe
           { ...initialProgressData, progressPercentage },
           targetBucket,
           pollingFileKey,
-          s3Client
+          s3Client,
         );
         lastUpdateStep = progressPercentage;
       }
@@ -96,10 +114,10 @@ export async function handleZipProcessing(event: { keys: string[], pollingFileKe
       { ...successProgressData, url },
       targetBucket,
       pollingFileKey,
-      s3Client
+      s3Client,
     );
 
-    return getRaitaSuccessResponse({message: 'Zipping completed'});
+    return getRaitaSuccessResponse({ message: 'Zipping completed' });
   } catch (err: unknown) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
