@@ -4,6 +4,7 @@ import JSZip from "jszip";
 import { Readable } from "stream";
 import { getGetEnvWithPreassignedContext } from "../../../../utils";
 import { log } from "../../../utils/logger";
+import { getRaitaLambdaErrorResponse, getRaitaSuccessResponse } from "../../utils";
 import { initialProgressData, successProgressData } from "./constants";
 import { validateInputs, uploadProgressData, shouldUpdateProgressData, updateProgressFailed } from "./utils";
 
@@ -96,7 +97,10 @@ export async function handleZipProcessing(keys: string[], pollingFileKey: string
       pollingFileKey,
       s3Client
     );
+
+    return getRaitaSuccessResponse({message: 'Zipping completed'});
   } catch (err: unknown) {
     log.error(err);
+    return getRaitaLambdaErrorResponse(err);
   }
 }

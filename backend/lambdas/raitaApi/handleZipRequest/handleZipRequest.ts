@@ -1,5 +1,5 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { Lambda } from 'aws-sdk';
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
@@ -28,12 +28,14 @@ export async function handleZipRequest(
     await validateReadUser(user);
     const { zipProcessingFn, region } = getLambdaConfigOrFail();
     console.log('zipfn: ' + zipProcessingFn)
-    const lambda = new Lambda({ region });
-    lambda.invoke({
+    const client = new LambdaClient({region});
+    const command = new InvokeCommand({
       FunctionName: zipProcessingFn,
       Payload: requestBody,
-      InvocationType: 'Event',
+      InvocationType: 'Event'
     });
+    client.send(command);
+
     return getRaitaSuccessResponse({
       message: 'Zip processing initiated succesfully',
     });
