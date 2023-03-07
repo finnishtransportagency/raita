@@ -46,7 +46,6 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiZipLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
-  public readonly handleZipProcessFn: NodejsFunction;
   public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
@@ -125,7 +124,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    this.handleZipProcessFn = this.createZipProcessHandler({
+    const handleZipProcessFn = this.createZipProcessHandler({
       name: 'api-handler-zip-process',
       raitaStackIdentifier,
       raitaEnv,
@@ -144,7 +143,7 @@ export class RaitaApiStack extends NestedStack {
       stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiLambdaServiceRole,
-      zipProcessingFn: this.handleZipProcessFn.functionName,
+      zipProcessingFn: handleZipProcessFn.functionName,
       vpc,
     });
 
@@ -429,7 +428,7 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns handler for the zip requesting
+   * Creates and returns handler for the zip Processing
    */
   private createZipProcessHandler({
     name,
