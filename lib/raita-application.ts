@@ -109,16 +109,6 @@ export class ApplicationStack extends NestedStack {
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
 
-    // Grant api handleZipRequestLambda permission to invoke the
-    // handleZipProcess lambda.
-    this.createManagedPolicy({
-      name: 'ApiZipProcessInvokePolicy',
-      raitaStackIdentifier,
-      serviceRoles: [raitaApiStack.raitaApiZipRequestLambdaServiceRole],
-      resources: [raitaApiStack.handleZipProcessFn.functionArn],
-      actions: ['lambda:invokeFunction'],
-    });
-
     // Allow connections to OpenSearch
     openSearchDomain.connections.allowFrom(
       raitaSecurityGroup,

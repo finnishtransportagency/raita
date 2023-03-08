@@ -1,22 +1,19 @@
-import {
-  PutObjectCommand,
-  PutObjectCommandOutput,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { failedProgressData } from './constants';
 
+const s3Client = new S3Client({});
+
 export async function uploadProgressData(
-  progressData: CompressionProgress,
+  progressData: object,
   bucket: string,
   key: string,
-  s3Client: S3Client,
-): Promise<void | PutObjectCommandOutput> {
+): Promise<void> {
   const params = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
     Body: JSON.stringify(progressData),
   });
-  return s3Client.send(params);
+  await s3Client.send(params);
 }
 
 export function shouldUpdateProgressData(
@@ -29,12 +26,8 @@ export function shouldUpdateProgressData(
   );
 }
 
-export async function updateProgressFailed(
-  bucket: string,
-  key: string,
-  s3Client: S3Client,
-) {
-  await uploadProgressData(failedProgressData, bucket, key, s3Client);
+export function updateProgressFailed(bucket: string, key: string) {
+  uploadProgressData(failedProgressData, bucket, key);
 }
 
 export function validateInputs(keys: string[], pollingFileKey: string) {
