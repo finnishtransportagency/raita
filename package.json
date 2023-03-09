@@ -46,6 +46,7 @@
     "@aws-cdk/aws-elasticsearch": "^1.173.0",
     "@aws-cdk/custom-resources": "^1.173.0",
     "@aws-sdk/client-ecs": "^3.216.0",
+    "@aws-sdk/client-lambda": "^3.287.0",
     "@aws-sdk/client-opensearch": "^3.171.0",
     "@aws-sdk/client-s3": "^3.215.0",
     "@aws-sdk/credential-provider-node": "^3.171.0",
