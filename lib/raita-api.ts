@@ -43,9 +43,11 @@ type ListenerTargetLambdas = {
  */
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
-  public readonly raitaApiZipLambdaServiceRole: Role;
+  public readonly raitaApiZipProcessLambdaServiceRole: Role;
+  public readonly raitaApiZipRequestLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
+  public readonly handleZipProcessFn: NodejsFunction;
   public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
@@ -71,17 +73,27 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
 
-    // Ziphandler needs rights to two buckets so it gets its
+    // ZipProcesser needs rights to two buckets so it gets its
     // own role with proper permissions.
-    this.raitaApiZipLambdaServiceRole = createRaitaServiceRole({
+    this.raitaApiZipProcessLambdaServiceRole = createRaitaServiceRole({
       scope: this,
-      name: 'RaitaApiZipLambdaServiceRole',
+      name: 'RaitaApiZipProcessLambdaServiceRole',
       servicePrincipal: 'lambda.amazonaws.com',
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    inspectionDataBucket.grantRead(this.raitaApiZipLambdaServiceRole);
-    dataCollectionBucket.grantWrite(this.raitaApiZipLambdaServiceRole);
+    inspectionDataBucket.grantRead(this.raitaApiZipProcessLambdaServiceRole);
+    dataCollectionBucket.grantWrite(this.raitaApiZipProcessLambdaServiceRole);
+
+    // Zip request function only invokes the zipProcess lambda, so
+    // we give it a role with only that permission.
+    this.raitaApiZipRequestLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiZipRequestLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -124,15 +136,26 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    const handleZipRequestFn = this.createZipRequestHandler({
-      name: 'api-handler-zip',
+    this.handleZipProcessFn = this.createZipProcessHandler({
+      name: 'api-handler-zip-process',
       raitaStackIdentifier,
       raitaEnv,
       stackId,
       jwtTokenIssuer,
-      lambdaRole: this.raitaApiZipLambdaServiceRole,
+      lambdaRole: this.raitaApiZipProcessLambdaServiceRole,
       sourceBucket: inspectionDataBucket,
       targetBucket: dataCollectionBucket,
+      vpc,
+    });
+
+    const handleZipRequestFn = this.createZipRequestHandler({
+      name: 'api-handler-zip-request',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiZipRequestLambdaServiceRole,
+      zipProcessingFn: this.handleZipProcessFn.functionName,
       vpc,
     });
 
@@ -186,6 +209,7 @@ export class RaitaApiStack extends NestedStack {
      * Add all lambdas to alb targets
      * 200-series if for lambdas accessing S3 information and
      * 300-series is for database access lambdas
+     * Keep list in order by priority. Don’t reuse priority numbers
      */
     const albLambdaTargets: ListenerTargetLambdas[] = [
       {
@@ -202,7 +226,7 @@ export class RaitaApiStack extends NestedStack {
       },
       {
         lambda: handleZipRequestFn,
-        priority: 220,
+        priority: 221,
         path: ['/api/zip'],
         targetName: 'zip',
       },
@@ -369,9 +393,57 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns handler for compressing selected files
+   * Creates and returns handler for the zip requesting
    */
   private createZipRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    zipProcessingFn,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    zipProcessingFn: string;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(15),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleZipRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
+      ),
+      environment: {
+        ZIP_PROCESSING_FN: zipProcessingFn,
+        REGION: this.region,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for the zip Processing
+   */
+  private createZipProcessHandler({
     name,
     raitaStackIdentifier,
     raitaEnv,
@@ -397,10 +469,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 1768,
       timeout: cdk.Duration.minutes(10),
       runtime: lambda.Runtime.NODEJS_16_X,
-      handler: 'handleZipRequest',
+      handler: 'handleZipProcessing',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
+        `../backend/lambdas/raitaApi/handleZipRequest/handleZipProcessing.ts`,
       ),
       environment: {
         SOURCE_BUCKET: sourceBucket.bucketName,
