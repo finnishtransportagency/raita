@@ -48,6 +48,7 @@ const initialState: ReportsState = {
   text: '',
   filters: {},
   filter: [],
+  resetFilters: false,
   special: {
     dateRange: { start: undefined, end: undefined },
     fileType: undefined,
@@ -179,6 +180,7 @@ const ReportsIndex: NextPage = () => {
 
   const resetSearch = () => {
     setState(() => JSON.parse(JSON.stringify(initialState)) as ReportsState);
+    setState(R.assoc('resetFilters', true));
     mutation.reset();
   };
 
@@ -295,6 +297,7 @@ const ReportsIndex: NextPage = () => {
                     key: it.reportType,
                     value: it.reportType,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -317,6 +320,7 @@ const ReportsIndex: NextPage = () => {
                     key: x.value,
                     value: x.value,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -339,6 +343,7 @@ const ReportsIndex: NextPage = () => {
                     key: it.value,
                     value: it.value,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -362,6 +367,7 @@ const ReportsIndex: NextPage = () => {
                     key: x.fileType,
                     value: x.fileType,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -545,6 +551,7 @@ type ReportsState = {
   text: string;
   filters: Record<string, string>;
   filter: Entry[];
+  resetFilters: boolean;
   special: {
     dateRange?: Partial<Range<Date>>;
     fileType?: 'csv' | 'pdf' | 'txt' | 'xlsx';
