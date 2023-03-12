@@ -132,3 +132,17 @@ feat(api)!: RAITA-12345 Awesome new feature
 
 Remade API to be more awesome, but with breaking changes
 ```
+
+### Possible problems
+
+If you make changes on the CDK stack files under /lib folder, in some occasions it can
+fail the update on Cloudformation.
+
+One known example of this was after separating a single lambda function into two, without
+modifying the original listener target group, it led into a conflict when updating.
+The original target group couldn't be overwritten and it always led to failure.
+In the end the only way to get it work, was to remove all references of the old target group
+on the stack template. (Cloudformation -> Failed stack -> template tab) and updating that
+stack with the modified template. This removed the old target group and its dependencies.
+After this the pipeline could be updated succesfully, and it created all the resources correctly.
+Some references:
