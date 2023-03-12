@@ -18,30 +18,34 @@ import {
   uploadProgressData,
   shouldUpdateProgressData,
   updateProgressFailed,
+  ZipRequestBody,
+  getJsonObjectFromS3,
 } from './utils';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
   return {
     sourceBucket: getEnv('SOURCE_BUCKET'),
-    targetBucket: getEnv('TARGET_BUCKET'),
+    dataCollectionBucket: getEnv('TARGET_BUCKET'),
   };
 }
 
-export async function handleZipProcessing(event: {
-  keys: string[];
-  pollingFileKey: string;
-}) {
-  const { pollingFileKey, keys } = event;
+export async function handleZipProcessing(event: ZipRequestBody) {
   const s3Client = new S3Client({});
+  const s3 = new S3();
   const zip = new JSZip();
   try {
-    validateInputs(keys, pollingFileKey);
-    const { sourceBucket, targetBucket } = getLambdaConfigOrFail();
+    const { sourceBucket, dataCollectionBucket } = getLambdaConfigOrFail();
+    validateInputs(event.keys, event.pollingFileKey);
+    const keys =
+      event.keys.length === 1 && event.dehydrated
+        ? await getJsonObjectFromS3(dataCollectionBucket, event.keys[0], s3)
+        : event.keys;
+    const { pollingFileKey } = event;
     const totalKeys = keys.length;
     await uploadProgressData(
       initialProgressData,
-      targetBucket,
+      dataCollectionBucket,
       pollingFileKey,
       s3Client,
     );
@@ -59,7 +63,7 @@ export async function handleZipProcessing(event: {
       if (shouldUpdateProgressData(progressPercentage, lastUpdateStep)) {
         await uploadProgressData(
           { ...initialProgressData, progressPercentage },
-          targetBucket,
+          dataCollectionBucket,
           pollingFileKey,
           s3Client,
         );
@@ -70,7 +74,11 @@ export async function handleZipProcessing(event: {
 
     await Promise.all(promises).catch(async err => {
       log.error(`Error getting S3 Objects: ${err}`);
-      await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
+      await updateProgressFailed(
+        dataCollectionBucket,
+        pollingFileKey,
+        s3Client,
+      );
       throw err;
     });
 
@@ -78,27 +86,34 @@ export async function handleZipProcessing(event: {
       .generateAsync({ type: 'nodebuffer' })
       .catch(async err => {
         log.error(`Error generating zip file: ${err}`);
-        await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
+        await updateProgressFailed(
+          dataCollectionBucket,
+          pollingFileKey,
+          s3Client,
+        );
         throw err;
       });
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
     const putCommand = new PutObjectCommand({
-      Bucket: targetBucket,
+      Bucket: dataCollectionBucket,
       Key: destKey,
       Body: zipData,
     });
 
     await s3Client.send(putCommand).catch(async err => {
       log.error(`Error uploading zip file to S3: ${err}`);
-      await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
+      await updateProgressFailed(
+        dataCollectionBucket,
+        pollingFileKey,
+        s3Client,
+      );
       throw err;
     });
 
-    const s3 = new S3();
     const url = await s3
       .getSignedUrlPromise('getObject', {
-        Bucket: targetBucket,
+        Bucket: dataCollectionBucket,
         Key: destKey,
         Expires: 30,
       })
@@ -106,13 +121,17 @@ export async function handleZipProcessing(event: {
         log.error(
           `Error getting the signed url for key: ${destKey} error: ${err}`,
         );
-        await updateProgressFailed(targetBucket, pollingFileKey, s3Client);
+        await updateProgressFailed(
+          dataCollectionBucket,
+          pollingFileKey,
+          s3Client,
+        );
         throw err;
       });
 
     await uploadProgressData(
       { ...successProgressData, url },
-      targetBucket,
+      dataCollectionBucket,
       pollingFileKey,
       s3Client,
     );

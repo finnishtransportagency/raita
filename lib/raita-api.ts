@@ -83,7 +83,9 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
     inspectionDataBucket.grantRead(this.raitaApiZipProcessLambdaServiceRole);
-    dataCollectionBucket.grantWrite(this.raitaApiZipProcessLambdaServiceRole);
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiZipProcessLambdaServiceRole,
+    );
 
     // Zip request function only invokes the zipProcess lambda, so
     // we give it a role with only that permission.
