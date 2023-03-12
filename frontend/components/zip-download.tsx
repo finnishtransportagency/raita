@@ -19,25 +19,26 @@ const initialState: ZipState = {
   pollingFileKey: undefined,
   zipUrl: undefined,
   error: undefined,
+  isLoading: false,
 };
 
 export function ZipDownload(props: Props) {
   const { aggregationSize, usedQuery, resultTotalSize } = props;
   const [state, setState] = useState<ZipState>(initialState);
-  const { shouldPoll, zipUrl, error } = state;
+  const { zipUrl, error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
 
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
-      setState(R.assoc('shouldPoll', false));
+      setState(initialState);
       setState(R.assoc('error', `${t('common:zip_error')}`));
       return false;
     }
     return true;
   };
 
-  const { data, isLoading, isFetching, isError } = useQuery(
+  const { data } = useQuery(
     ['fileData', state.pollingFileKey],
     () => {
       if (!state.pollingFileKey) return;
@@ -53,10 +54,10 @@ export function ZipDownload(props: Props) {
           data?.progressData?.status === ProgressStatus.SUCCESS &&
           data?.progressData?.url
         ) {
-          setState(R.assoc('shouldPoll', false));
+          setState(initialState);
           setState(R.assoc('zipUrl', data.progressData.url));
         } else if (data?.progressData?.status === ProgressStatus.FAILED) {
-          setState(R.assoc('shouldPoll', false));
+          setState(initialState);
           setState(R.assoc('error', `${t('common:zip_error')}`));
         }
       },
@@ -67,23 +68,33 @@ export function ZipDownload(props: Props) {
     setState(initialState);
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     setState(R.assoc('pollingFileKey', pollingFileKey));
+    setState(R.assoc('isLoading', true));
     const keyAggs = getKeyAggregations(aggregationSize);
-    const keys = await getKeysOfFiles({ ...usedQuery, aggs: keyAggs, size: 0 });
-    triggerZipLambda(keys, pollingFileKey).then(() =>
-      setState(R.assoc('shouldPoll', true)),
-    );
+    try {
+      const keys = await getKeysOfFiles({
+        ...usedQuery,
+        aggs: keyAggs,
+        size: 0,
+      });
+      triggerZipLambda(keys, pollingFileKey).then(() =>
+        setState(R.assoc('shouldPoll', true)),
+      );
+    } catch (err) {
+      setState(initialState);
+      setState(R.assoc('error', `${t('common:zip_error')}`));
+    }
   };
 
   const handleZipDownload = () => (zipUrl ? saveAs(zipUrl) : null);
 
   return (
     <div>
-      {!data?.progressData?.url || error ? (
+      {!zipUrl || error ? (
         <Button
-          disabled={isFetching && isLoading}
+          disabled={isLoading}
           size="sm"
           label={
-            isFetching && isLoading ? (
+            isLoading ? (
               <Spinner size={4} bottomMargin={0} />
             ) : (
               `${t('common:compress_all')} ${sizeformatter(resultTotalSize)}`
@@ -121,4 +132,5 @@ type ZipState = {
   pollingFileKey?: string;
   zipUrl?: string;
   error?: string;
+  isLoading: boolean;
 };

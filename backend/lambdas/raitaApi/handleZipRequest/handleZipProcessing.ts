@@ -115,7 +115,7 @@ export async function handleZipProcessing(event: ZipRequestBody) {
       .getSignedUrlPromise('getObject', {
         Bucket: dataCollectionBucket,
         Key: destKey,
-        Expires: 30,
+        Expires: 600,
       })
       .catch(async err => {
         log.error(
