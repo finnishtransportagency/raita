@@ -14,10 +14,7 @@ import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
 import type { App, ImageKeys, Range } from 'shared/types';
-import {
-  sizeformatter,
-  takeOptionValues,
-} from 'shared/util';
+import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
 import { Button, TextInput } from 'components';
@@ -30,16 +27,9 @@ import ResultsPager from 'components/results-pager';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
 
-import {
-  useMetadataQuery,
-  useSearch,
-  useFileQuery,
-} from '../../shared/hooks';
+import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
-import {
-  getFile,
-  getImageKeysForFileKey,
-} from 'shared/rest';
+import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
 //
@@ -398,8 +388,11 @@ const ReportsIndex: NextPage = () => {
                     })}
                   </div>
                   <div className="ml-2">
-                    <ZipDownload aggregationSize={resultsData?.total} usedQuery={query} resultTotalSize={resultsData?.totalSize} />
-
+                    <ZipDownload
+                      aggregationSize={resultsData?.total}
+                      usedQuery={query}
+                      resultTotalSize={resultsData?.totalSize}
+                    />
                   </div>
                 </div>
               )}
@@ -436,8 +429,12 @@ const ReportsIndex: NextPage = () => {
                                 )}
                                 {doc.size && (
                                   <Fragment>
-                                    <dt className='col-span-2 truncate'>{t('metadata:label_size')}</dt>
-                                    <dd className="col-span-4 truncate">{`${sizeformatter(doc.size)}`}</dd>
+                                    <dt className="col-span-2 truncate">
+                                      {t('metadata:label_size')}
+                                    </dt>
+                                    <dd className="col-span-4 truncate">{`${sizeformatter(
+                                      doc.size,
+                                    )}`}</dd>
                                   </Fragment>
                                 )}
                               </dl>
