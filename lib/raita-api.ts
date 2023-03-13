@@ -96,7 +96,7 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    dataCollectionBucket.grantReadWrite(this.raitaApiLambdaServiceRole);
+    dataCollectionBucket.grantReadWrite(this.raitaApiZipRequestLambdaServiceRole);
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
