@@ -30,6 +30,15 @@ function getLambdaConfigOrFail() {
   };
 }
 
+function streamToBuffer(stream: PassThrough) {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', chunk => chunks.push(chunk));
+    stream.on('error', reject);
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+}
+
 export async function handleZipProcessing(event: ZipRequestBody) {
   const s3Client = new S3Client({});
   const s3 = new S3();
@@ -41,7 +50,11 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     validateInputs(event.keys, event.pollingFileKey);
     const keys =
       event.keys.length === 1 && event.dehydrated
-        ? await getJsonObjectFromS3(dataCollectionBucket, event.keys[0], s3)
+        ? await getJsonObjectFromS3(
+            dataCollectionBucket,
+            event.keys[0],
+            s3,
+          ).then(obj => obj.keys)
         : event.keys;
     const { pollingFileKey } = event;
     const totalKeys = keys.length;
@@ -98,10 +111,11 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     archive.finalize();
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
+    const buffer: Buffer = (await streamToBuffer(stream)) as Buffer;
     const putCommand = new PutObjectCommand({
       Bucket: dataCollectionBucket,
       Key: destKey,
-      Body: stream,
+      Body: buffer,
     });
 
     await s3Client.send(putCommand).catch(async err => {

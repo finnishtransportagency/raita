@@ -28,6 +28,9 @@ export function ZipDownload(props: Props) {
   const { zipUrl, error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
+  const resultTooBigToCompress =
+    (resultTotalSize && resultTotalSize > 15728640) ||
+    (aggregationSize && aggregationSize > 500);
 
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
@@ -91,7 +94,7 @@ export function ZipDownload(props: Props) {
     <div>
       {!zipUrl || error ? (
         <Button
-          disabled={isLoading}
+          disabled={resultTooBigToCompress || isLoading}
           size="sm"
           label={
             isLoading ? (
