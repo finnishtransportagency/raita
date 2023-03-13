@@ -83,7 +83,9 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
     inspectionDataBucket.grantRead(this.raitaApiZipProcessLambdaServiceRole);
-    dataCollectionBucket.grantWrite(this.raitaApiZipProcessLambdaServiceRole);
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiZipProcessLambdaServiceRole,
+    );
 
     // Zip request function only invokes the zipProcess lambda, so
     // we give it a role with only that permission.
@@ -156,6 +158,7 @@ export class RaitaApiStack extends NestedStack {
       jwtTokenIssuer,
       lambdaRole: this.raitaApiZipRequestLambdaServiceRole,
       zipProcessingFn: this.handleZipProcessFn.functionName,
+      targetBucket: dataCollectionBucket,
       vpc,
     });
 
@@ -403,6 +406,7 @@ export class RaitaApiStack extends NestedStack {
     jwtTokenIssuer,
     lambdaRole,
     zipProcessingFn,
+    targetBucket,
     vpc,
   }: {
     name: string;
@@ -412,6 +416,7 @@ export class RaitaApiStack extends NestedStack {
     jwtTokenIssuer: string;
     lambdaRole: Role;
     zipProcessingFn: string;
+    targetBucket: Bucket;
     vpc: ec2.IVpc;
   }) {
     return new NodejsFunction(this, name, {
@@ -425,6 +430,7 @@ export class RaitaApiStack extends NestedStack {
         `../backend/lambdas/raitaApi/handleZipRequest/handleZipRequest.ts`,
       ),
       environment: {
+        TARGET_BUCKET: targetBucket.bucketName,
         ZIP_PROCESSING_FN: zipProcessingFn,
         REGION: this.region,
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
