@@ -4,8 +4,8 @@ import {
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
-import JSZip from 'jszip';
-import { Readable } from 'stream';
+import archiver from 'archiver';
+import { PassThrough, Readable } from 'stream';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import {
@@ -33,7 +33,9 @@ function getLambdaConfigOrFail() {
 export async function handleZipProcessing(event: ZipRequestBody) {
   const s3Client = new S3Client({});
   const s3 = new S3();
-  const zip = new JSZip();
+  const archive = archiver('zip', {
+    zlib: { level: 9 },
+  });
   try {
     const { sourceBucket, dataCollectionBucket } = getLambdaConfigOrFail();
     validateInputs(event.keys, event.pollingFileKey);
@@ -58,7 +60,8 @@ export async function handleZipProcessing(event: ZipRequestBody) {
         Key: key,
       });
       const data = await s3Client.send(command);
-      zip.file(key, data.Body as Readable);
+      const fileStream = data.Body as Readable;
+      archive.append(fileStream, { name: key });
       progressPercentage = Math.floor(((index + 1) / totalKeys) * 100);
       if (shouldUpdateProgressData(progressPercentage, lastUpdateStep)) {
         await uploadProgressData(
@@ -82,23 +85,19 @@ export async function handleZipProcessing(event: ZipRequestBody) {
       throw err;
     });
 
-    const zipData = await zip
-      .generateAsync({ type: 'nodebuffer' })
-      .catch(async err => {
-        log.error(`Error generating zip file: ${err}`);
-        await updateProgressFailed(
-          dataCollectionBucket,
-          pollingFileKey,
-          s3Client,
-        );
-        throw err;
-      });
+    const stream = new PassThrough();
+    archive.on('error', (err) => {
+      log.error(`Error generating zip file: ${err}`);
+      updateProgressFailed(dataCollectionBucket, pollingFileKey, s3Client);
+    });
+    archive.pipe(stream);
+    archive.finalize();
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
     const putCommand = new PutObjectCommand({
       Bucket: dataCollectionBucket,
       Key: destKey,
-      Body: zipData,
+      Body: stream,
     });
 
     await s3Client.send(putCommand).catch(async err => {

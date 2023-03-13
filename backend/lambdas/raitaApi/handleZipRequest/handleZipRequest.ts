@@ -31,7 +31,7 @@ async function getPayloadString(
   if (requestBodyString.length <= invocationTypeByteLimit) {
     return requestBodyString;
   } else {
-    const key = `dehydrate/${Date.now()}-${Math.floor(Math.random() * 100)}`;
+    const key = `dehydrate/${Date.now()}-${Math.floor(Math.random() * 100)}.json`;
     await uploadDeHydratedToS3(targetBucket, key, s3Client, requestBodyString);
     const dehydratedPayload = {
       keys: [key],
