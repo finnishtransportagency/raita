@@ -14,3 +14,5 @@ export const successProgressData: CompressionProgress = {
   status: ProgressStatus.SUCCESS,
   progressPercentage: 100,
 };
+
+export const invocationTypeByteLimit: number = 262143;

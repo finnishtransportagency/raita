@@ -1,8 +1,10 @@
 import {
   PutObjectCommand,
   PutObjectCommandOutput,
+  PutObjectRequest,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { S3 } from 'aws-sdk';
 import { failedProgressData } from './constants';
 
 export async function uploadProgressData(
@@ -17,6 +19,29 @@ export async function uploadProgressData(
     Body: JSON.stringify(progressData),
   });
   return s3Client.send(params);
+}
+
+export async function uploadDeHydratedToS3(
+  bucket: string,
+  key: string,
+  s3Client: S3Client,
+  payload: string,
+) {
+  const params = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: payload,
+  });
+  return s3Client.send(params);
+}
+
+export async function getJsonObjectFromS3(bucket: string, key: string, s3: S3) {
+  const command = {
+    Bucket: bucket,
+    Key: key,
+  };
+  const data = await s3.getObject(command).promise();
+  return data?.Body ? JSON.parse(data.Body.toString()) : null;
 }
 
 export function shouldUpdateProgressData(
@@ -47,6 +72,12 @@ export interface CompressionProgress {
   status: ProgressStatus;
   progressPercentage: number;
   url?: string | undefined;
+}
+
+export interface ZipRequestBody {
+  keys: string[];
+  pollingFileKey: string;
+  dehydrated?: boolean | undefined;
 }
 
 export enum ProgressStatus {
