@@ -87,8 +87,8 @@ export class RaitaApiStack extends NestedStack {
       this.raitaApiZipProcessLambdaServiceRole,
     );
 
-    // Zip request function only invokes the zipProcess lambda, so
-    // we give it a role with only that permission.
+    // Zip request function needs permission to invoke another lambda,
+    // and access to datacollection bucket
     this.raitaApiZipRequestLambdaServiceRole = createRaitaServiceRole({
       scope: this,
       name: 'RaitaApiZipRequestLambdaServiceRole',
@@ -96,6 +96,7 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
+    dataCollectionBucket.grantReadWrite(this.raitaApiZipRequestLambdaServiceRole);
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
