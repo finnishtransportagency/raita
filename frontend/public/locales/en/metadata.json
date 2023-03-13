@@ -24,5 +24,8 @@
   "label_campaign": "Campaign",
   "label_zip_reception__year": "ZIP Year",
   "label_zip_reception__date": "ZIP Date",
-  "label_file_type": "File type"
+  "label_file_type": "File type",
+  "label_size": "File size",
+  "label_zip_name": "ZIP filename"
+
 }

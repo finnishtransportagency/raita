@@ -24,6 +24,7 @@ const log = (x: any) =>
  * @param fs
  * @param opts
  * @param extraQueries
+ * @param textToSearch
  * @returns
  */
 export function makeQuery(
@@ -39,6 +40,7 @@ export function makeQuery(
    * instead of trying to AND them all (which wouldn't return anything).
    */
   extraQueries?: any[],
+  textToSearch?: string,
 ) {
   const queryType = opts?.queryType || 'and';
   const pageOpts = opts?.paging;
@@ -60,9 +62,13 @@ export function makeQuery(
   const qs = [
     ...match.map(e => ({ match: e })),
     ...ranges.map(e => ({ range: e })),
+    ...(textToSearch ? [{ wildcard: { file_name: `*${textToSearch}*` } }] : []),
   ];
 
-  const emptyQuery = qs.length === 0 && extraQueries?.length === 0;
+  const emptyQuery =
+    qs.length === 0 &&
+    (!extraQueries || extraQueries.length === 0) &&
+    !textToSearch;
 
   const qbody = emptyQuery
     ? { match_all: {} }
@@ -74,9 +80,18 @@ export function makeQuery(
         },
       };
 
+  const aggs = {
+    total_size: {
+      sum: {
+        field: 'size',
+      },
+    },
+  };
+
   const qʼ = {
     ...paging,
     query: qbody,
+    aggs: aggs,
   };
 
   return qʼ;

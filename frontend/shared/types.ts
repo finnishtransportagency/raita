@@ -50,6 +50,10 @@ export namespace Rest {
   export type Reports = SearchResponse;
 }
 
+export type ImageKeys = {
+  fileKey: string;
+  imageKeys: string[];
+};
 //
 
 /**
@@ -79,5 +83,28 @@ export interface IDocumentMetadata {}
 
 export interface SearchResponse {
   total: number;
+  keys: Array<string>;
+  totalSize: number;
   hits: Array<IDocument>;
+}
+
+export interface ImageKeyResponse {
+  images: {
+    key: string;
+    size: number;
+  }[];
+}
+
+export interface PollingProgress {
+  progressData: {
+    status: ProgressStatus;
+    progressPercentage: number;
+    url?: string | undefined;
+  };
+}
+
+export enum ProgressStatus {
+  SUCCESS = 'SUCCESS',
+  PENDING = 'PENDING',
+  FAILED = 'FAILED',
 }

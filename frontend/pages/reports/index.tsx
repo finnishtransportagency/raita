@@ -9,28 +9,36 @@ import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
-import type { App, Range, Rest } from 'shared/types';
-import { takeOptionValues, toSearchQueryTerm } from 'shared/util';
+import type { App, ImageKeys, Range } from 'shared/types';
+import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { makeFromMulti, makeMatchQuery, makeQuery } from 'shared/query-builder';
-import { Button } from 'components';
+import { makeFromMulti, makeQuery } from 'shared/query-builder';
+import { Button, TextInput } from 'components';
 import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
 import MultiChoice from 'components/filters/multi-choice';
 import ResultsPager from 'components/results-pager';
+import LoadingOverlay from 'components/loading-overlay';
+import InfoBanner from 'components/infobanner';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import { getFile, getImageKeysForFileKey } from 'shared/rest';
+import { ZipDownload } from 'components/zip-download';
 
 //
 
 const initialState: ReportsState = {
+  text: '',
   filters: {},
   filter: [],
+  resetFilters: false,
   special: {
     dateRange: { start: undefined, end: undefined },
     fileType: undefined,
@@ -63,6 +71,9 @@ const ReportsIndex: NextPage = () => {
   const isDebug = !!(router.query['debug'] === '1');
 
   const [state, setState] = useState<ReportsState>(initialState);
+  const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
 
   // #region Special extra filters
 
@@ -125,8 +136,15 @@ const ReportsIndex: NextPage = () => {
           paging: { curPage: state.paging.page, size: cfg.paging.pageSize },
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
+        state.text,
       ),
-    [newFilters, reportTypeFilter, state.subQueries, state.paging.page],
+    [
+      newFilters,
+      reportTypeFilter,
+      state.subQueries,
+      state.paging.page,
+      state.text,
+    ],
   );
 
   /**
@@ -152,12 +170,39 @@ const ReportsIndex: NextPage = () => {
 
   const resetSearch = () => {
     setState(() => JSON.parse(JSON.stringify(initialState)) as ReportsState);
+    setState(R.assoc('resetFilters', true));
     mutation.reset();
   };
 
-  //
+  const handleImageUrlFetch = async (key: string) => {
+    const keys = imageKeys.find(ik => ik.fileKey === key)?.imageKeys;
+    if (!keys) return;
+    return await Promise.all(keys.map(key => getFile(key).then(x => x.url)));
+  };
+
+  const handleLightBox = async (key: string) => {
+    const imageUrls = await handleImageUrlFetch(key);
+    if (imageUrls?.length) {
+      setImageUrls(imageUrls);
+      setOpen(true);
+    }
+  };
 
   const resultsData = mutation.data;
+
+  useEffect(() => {
+    const fileKeys = resultsData?.hits.map(x => x.source.key);
+    if (fileKeys?.length) {
+      fileKeys.map(async fileKey => {
+        const fileImageKeys = await getImageKeysForFileKey(fileKey);
+        if (!fileImageKeys.length) return;
+        setImageKeys(prevImageKeys => [
+          ...prevImageKeys,
+          { fileKey, imageKeys: fileImageKeys },
+        ]);
+      });
+    }
+  }, [resultsData]);
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
@@ -165,6 +210,7 @@ const ReportsIndex: NextPage = () => {
 
   const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
 
+  const updateSearchText = (text: string) => setState(R.assoc('text', text));
   //
 
   const setPage = (n: number) => {
@@ -180,11 +226,9 @@ const ReportsIndex: NextPage = () => {
 
   //
 
-  if (meta.isLoading || !meta.data) return <div>Loading</div>;
+  if (meta.isLoading || !meta.data) return <LoadingOverlay />;
 
   if (meta.isError) return <div>Error</div>;
-
-  //
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -200,6 +244,8 @@ const ReportsIndex: NextPage = () => {
         </div>
       </div>
 
+      <InfoBanner />
+
       <div className="container mx-auto px-16 py-6">
         <header className="mb-4"></header>
 
@@ -208,6 +254,12 @@ const ReportsIndex: NextPage = () => {
             <header className="text-3xl border-primary border-b-2 mb-4 pb-2">
               {t('common:reports_search')}
             </header>
+
+            <TextInput
+              onUpdate={updateSearchText}
+              value={state.text}
+              placeholder={t('common:search_by_filename')}
+            />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
@@ -235,6 +287,7 @@ const ReportsIndex: NextPage = () => {
                     key: it.reportType,
                     value: it.reportType,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -257,6 +310,7 @@ const ReportsIndex: NextPage = () => {
                     key: x.value,
                     value: x.value,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -279,6 +333,7 @@ const ReportsIndex: NextPage = () => {
                     key: it.value,
                     value: it.value,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -302,6 +357,7 @@ const ReportsIndex: NextPage = () => {
                     key: x.fileType,
                     value: x.fileType,
                   }))}
+                  resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
@@ -330,10 +386,22 @@ const ReportsIndex: NextPage = () => {
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
               {!mutation.data && t('no_search_results')}
 
-              {mutation.data &&
-                t('search_result_count', {
-                  count: resultsData?.total,
-                })}
+              {mutation.data && (
+                <div className="flex">
+                  <div className="mt-1">
+                    {t('search_result_count', {
+                      count: resultsData?.total,
+                    })}
+                  </div>
+                  <div className="ml-2">
+                    <ZipDownload
+                      aggregationSize={resultsData?.total}
+                      usedQuery={query}
+                      resultTotalSize={resultsData?.totalSize}
+                    />
+                  </div>
+                </div>
+              )}
             </header>
 
             <section>
@@ -365,10 +433,30 @@ const ReportsIndex: NextPage = () => {
                                     </Fragment>
                                   ),
                                 )}
+                                {doc.size && (
+                                  <Fragment>
+                                    <dt className="col-span-2 truncate">
+                                      {t('metadata:label_size')}
+                                    </dt>
+                                    <dd className="col-span-4 truncate">{`${sizeformatter(
+                                      doc.size,
+                                    )}`}</dd>
+                                  </Fragment>
+                                )}
                               </dl>
                             </div>
 
                             <footer className="text-right space-x-2">
+                              {imageKeys.find(
+                                imageKey => imageKey.fileKey === doc.key,
+                              ) && (
+                                <Button
+                                  size="sm"
+                                  label={t('common:show_images')}
+                                  onClick={() => handleLightBox(doc.key)}
+                                />
+                              )}
+
                               <Button
                                 size="sm"
                                 label={t('common:download')}
@@ -404,6 +492,17 @@ const ReportsIndex: NextPage = () => {
           </section>
         </div>
       </div>
+
+      <Lightbox
+        open={open}
+        close={() => setOpen(false)}
+        slides={imageUrls.map((imageUrl, idx) => {
+          return {
+            src: imageUrl,
+            alt: `Image(${idx + 1})`,
+          };
+        })}
+      />
 
       {isDebug && (
         <div className="container mx-auto px-16 pb-4">
@@ -446,8 +545,10 @@ export type StaticProps = {
 };
 
 type ReportsState = {
+  text: string;
   filters: Record<string, string>;
   filter: Entry[];
+  resetFilters: boolean;
   special: {
     dateRange?: Partial<Range<Date>>;
     fileType?: 'csv' | 'pdf' | 'txt' | 'xlsx';

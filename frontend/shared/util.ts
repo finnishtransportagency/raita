@@ -37,5 +37,31 @@ export const toSearchQueryTerm = (
   },
 });
 
+export const sizeformatter = (size: number | undefined, decimalPlaces = 2) => {
+  if (size) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    let unit = 0;
+
+    while (size >= 1024) {
+      size /= 1024;
+      unit += 1;
+    }
+
+    return `${size.toFixed(decimalPlaces)} ${units[unit]}`;
+  }
+};
+
 export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
   Array.from(fs, R.prop('value'));
+
+export const getKeyAggregations = (size: number | undefined) => {
+  if (!size) return;
+  return {
+    keys: {
+      terms: {
+        field: 'key.keyword',
+        size: size,
+      },
+    },
+  };
+};

@@ -49,9 +49,10 @@ export function useSearch() {
 export function useFileQuery(saveFile = true) {
   return useMutation((opts: UseFileQueryArgs) => {
     const { key, fileName } = opts;
+
     console.assert(
       key,
-      'The given `key` fpr `useFileQuery` is invalid; %s',
+      'The given `key` for `useFileQuery` is invalid; %s',
       key,
     );
 

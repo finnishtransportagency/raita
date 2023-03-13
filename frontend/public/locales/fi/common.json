@@ -37,5 +37,14 @@
   "prev_page": "Ed. sivu",
   "previous_page": "Ed. sivu",
   "next_page": "Seur. sivu",
-  "page_number_item": "Sivu {{ number }}"
+  "page_number_item": "Sivu {{ number }}",
+  "show_images": "Näytä kuva(t)",
+  "download_zip": "Lataa ZIP",
+  "compress_all": "Pakkaa tiedostot",
+  "zip_error": "Tapahtui virhe, yritä uudelleen",
+  "search_by_filename": "Hae tiedoston nimellä",
+  "iam_problem_contact_info": "Käyttöoikeusasioissa ja ongelmatilanteisiin liittyen, ole yhteydessä raide@vayla.fi",
+  "ftia_name": "Väylävirasto",
+  "rights_restriction_info": "Järjestelmään tallennetun aineiston käyttö on käyttöoikeuksilla rajoitettua ja sallittua vain Väyläviraston tilauksiin liittyvissä töissä.",
+  "loading": "Ladataan..."
 }
