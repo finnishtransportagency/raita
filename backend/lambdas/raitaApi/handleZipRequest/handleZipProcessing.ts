@@ -86,9 +86,13 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     });
 
     const stream = new PassThrough();
-    archive.on('error', (err) => {
+    archive.on('error', async err => {
       log.error(`Error generating zip file: ${err}`);
-      updateProgressFailed(dataCollectionBucket, pollingFileKey, s3Client);
+      await updateProgressFailed(
+        dataCollectionBucket,
+        pollingFileKey,
+        s3Client,
+      );
     });
     archive.pipe(stream);
     archive.finalize();
