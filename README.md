@@ -146,3 +146,6 @@ on the stack template. (Cloudformation -> Failed stack -> template tab) and upda
 stack with the modified template. This removed the old target group and its dependencies.
 After this the pipeline could be updated succesfully, and it created all the resources correctly.
 Some references:
+https://aws.amazon.com/premiumsupport/knowledge-center/cloudformation-update-rollback-failed/
+https://aws.amazon.com/premiumsupport/knowledge-center/failing-stack-updates-deleted/
+https://www.youtube.com/watch?v=GwbDjuy00Jw
