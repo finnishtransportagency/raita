@@ -10,6 +10,7 @@ import { getEnvDependentOsConfiguration, isPermanentStack } from './utils';
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
+import { SSM_API_KEY } from '../constants';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -97,6 +98,16 @@ export class ApplicationStack extends NestedStack {
       serviceRoles: [dataProcessStack.dataProcessorLambdaServiceRole],
       resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
+    });
+
+    // Grant api lambdas permissions to get API-key from
+    // SSM Parameterstore
+    this.createManagedPolicy({
+      name: 'ApiParameterStorePolicy',
+      raitaStackIdentifier,
+      serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/${SSM_API_KEY}`],
+      actions: ['ssm:GetParameter'],
     });
 
     // Grant api lambdas permissions to call OpenSearch endpoints
