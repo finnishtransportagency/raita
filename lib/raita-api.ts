@@ -96,7 +96,9 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    dataCollectionBucket.grantReadWrite(this.raitaApiZipRequestLambdaServiceRole);
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiZipRequestLambdaServiceRole,
+    );
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -257,6 +259,13 @@ export class RaitaApiStack extends NestedStack {
         priority: 400,
         path: ['/api/return-login'],
         targetName: 'return-login',
+      },
+      // Endpoints for external API
+      {
+        lambda: this.handleMetaRequestFn,
+        priority: 510,
+        path: ['/api/ext/meta'],
+        targetName: 'ext-meta',
       },
     ];
 
