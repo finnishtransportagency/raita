@@ -262,6 +262,36 @@ export class RaitaApiStack extends NestedStack {
       },
       // Endpoints for external API
       {
+        lambda: handleFileRequestFn,
+        priority: 501,
+        path: ['/api/ext/file'],
+        targetName: 'ext-file',
+      },
+      {
+        lambda: handleImagesRequestFn,
+        priority: 502,
+        path: ['/api/ext/images'],
+        targetName: 'ext-images',
+      },
+      {
+        lambda: handleZipRequestFn,
+        priority: 503,
+        path: ['/api/ext/zip'],
+        targetName: 'ext-zip',
+      },
+      {
+        lambda: handlePollingRequestFn,
+        priority: 504,
+        path: ['/api/ext/polling'],
+        targetName: 'ext-polling',
+      },
+      {
+        lambda: this.handleFilesRequestFn,
+        priority: 505,
+        path: ['/api/ext/files'],
+        targetName: 'ext-files',
+      },
+      {
         lambda: this.handleMetaRequestFn,
         priority: 510,
         path: ['/api/ext/meta'],
