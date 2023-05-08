@@ -71,7 +71,7 @@ export function DateRange(props: Props) {
             className={clsx(css.input)}
             onChange={e => {
               const selectedDate = new Date(e.target.value);
-              selectedDate.setUTCHours(23,59,59);
+              selectedDate.setHours(23, 59, 59);
               setState(assoc('end', selectedDate));
             }}
           />
