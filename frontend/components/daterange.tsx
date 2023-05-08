@@ -69,7 +69,11 @@ export function DateRange(props: Props) {
             type={'date'}
             value={rangeValues[1]}
             className={clsx(css.input)}
-            onChange={e => setState(assoc('end', new Date(e.target.value)))}
+            onChange={e => {
+              const selectedDate = new Date(e.target.value);
+              selectedDate.setUTCHours(23,59,59);
+              setState(assoc('end', selectedDate));
+            }}
           />
 
           <Button
