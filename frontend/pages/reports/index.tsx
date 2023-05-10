@@ -258,7 +258,7 @@ const ReportsIndex: NextPage = () => {
             <TextInput
               onUpdate={updateSearchText}
               value={state.text}
-              placeholder={t('common:search_by_filename')}
+              placeholder={t<string>('common:search_by_filename')}
             />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
