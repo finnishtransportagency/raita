@@ -52,7 +52,7 @@ export const sizeformatter = (size: number | undefined, decimalPlaces = 2) => {
 };
 
 export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
-  Array.from(fs, R.prop('value'));
+  Array.from(fs, (opt) => opt.value as string).filter(Boolean);
 
 export const getKeyAggregations = (size: number | undefined) => {
   if (!size) return;
