@@ -13,7 +13,7 @@ import { useTranslation } from 'next-i18next';
 export function DateRange(props: Props) {
   const { t } = useTranslation(['common']);
 
-  const { range, format, disabled = false, onUpdate } = props;
+  const { range, format, disabled = false, onUpdate, resetDateRange } = props;
 
   const [state, setState] = useState({
     start: range?.start,
@@ -35,6 +35,13 @@ export function DateRange(props: Props) {
   }, [state.start, state.end]);
 
   //
+
+  useEffect(() => {
+    if (resetDateRange) {
+      setState(assoc('start', undefined));
+      setState(assoc('end', undefined));
+    }
+  }, [resetDateRange]);
 
   useEffect(() => {
     onUpdate && onUpdate(state);
@@ -97,5 +104,6 @@ export type Props = {
   range?: Range<Date>;
   format?: Range<string>;
   disabled?: boolean;
+  resetDateRange: boolean;
   onUpdate: (range: Range<Date>) => void;
 };
