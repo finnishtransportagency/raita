@@ -12,10 +12,8 @@ export function TextInput(props: Props) {
   };
 
   useEffect(() => {
-    if (resetSearchText) {
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+    if (resetSearchText && inputRef.current) {
+      inputRef.current.value = '';
     }
   }, [resetSearchText]);
 
