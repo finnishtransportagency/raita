@@ -206,11 +206,18 @@ const ReportsIndex: NextPage = () => {
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
+    setState(R.assoc('resetFilters', false));
   };
 
-  const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
+  const updateFilterList = (fs: Entry[]) => {
+    setState(R.assoc('filter', fs));
+    setState(R.assoc('resetFilters', false));
+  };
 
-  const updateSearchText = (text: string) => setState(R.assoc('text', text));
+  const updateSearchText = (text: string) => {
+    setState(R.assoc('text', text));
+    setState(R.assoc('resetFilters', false));
+  };
   //
 
   const setPage = (n: number) => {
@@ -259,6 +266,7 @@ const ReportsIndex: NextPage = () => {
               onUpdate={updateSearchText}
               value={state.text}
               placeholder={t<string>('common:search_by_filename')}
+              resetSearchText={state.resetFilters}
             />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
@@ -269,6 +277,7 @@ const ReportsIndex: NextPage = () => {
                   filters={[]}
                   onChange={updateFilterList}
                   fields={meta.data?.fields!}
+                  resetFilterSelector={state.resetFilters}
                 />
               </section>
 
@@ -276,7 +285,11 @@ const ReportsIndex: NextPage = () => {
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
-                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
+                <DateRange
+                  range={state.special.dateRange}
+                  onUpdate={updateDateRange}
+                  resetDateRange={state.resetFilters}
+                />
               </section>
 
               <section className={clsx(css.subSection)}>
@@ -298,6 +311,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -321,6 +335,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -344,6 +359,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -368,6 +384,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>

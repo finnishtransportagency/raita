@@ -25,6 +25,11 @@ export default function Selector(props: Props) {
 
   const filterList = useMemo(() => state.filters || [], [state.filters]);
 
+  useEffect(() => {
+    props.resetFilterSelector &&
+      setState({ fields: props.fields, filters: [] });
+  }, [props.resetFilterSelector]);
+
   // #region Filter callbacks
 
   const addFilter = () =>
@@ -114,15 +119,17 @@ export default function Selector(props: Props) {
                         {EMPTY_KEY}
                       </option>
 
-                      {fieldList.sort((a,b) => {
-                        const aTranslated = t(`metadata:label_${a[0]}`);
-                        const bTranslated = t(`metadata:label_${b[0]}`);
-                        return aTranslated.localeCompare(bTranslated);
-                      }).map(([k, v]) => (
-                        <option key={k} value={k} aria-label={k}>
-                          {t(`metadata:label_${k}`)}
-                        </option>
-                      ))}
+                      {fieldList
+                        .sort((a, b) => {
+                          const aTranslated = t(`metadata:label_${a[0]}`);
+                          const bTranslated = t(`metadata:label_${b[0]}`);
+                          return aTranslated.localeCompare(bTranslated);
+                        })
+                        .map(([k, v]) => (
+                          <option key={k} value={k} aria-label={k}>
+                            {t(`metadata:label_${k}`)}
+                          </option>
+                        ))}
                     </select>
                   </div>
 
@@ -169,6 +176,7 @@ export default function Selector(props: Props) {
 export type Props = {
   fields: FieldDict;
   filters?: Entry[];
+  resetFilterSelector: boolean;
   onChange?: (filters: Entry[]) => void;
 };
 
