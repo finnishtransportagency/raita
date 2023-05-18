@@ -13,7 +13,7 @@ import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
-import type { App, ImageKeys, Range } from 'shared/types';
+import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
@@ -251,10 +251,19 @@ const ReportsIndex: NextPage = () => {
         </div>
       </div>
 
-      <InfoBanner />
+      <InfoBanner
+        bannerType={BannerType.INFO}
+        text={t<string>('common:rights_restriction_info')}
+      />
 
       <div className="container mx-auto px-16 py-6">
         <header className="mb-4"></header>
+        {resultsData?.total && resultsData.total >= 10000 && (
+          <InfoBanner
+            bannerType={BannerType.WARNING}
+            text={t<string>('common:too_many_results')}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-12">
           <section className="space-y-4">

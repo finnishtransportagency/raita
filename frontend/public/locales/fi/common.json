@@ -13,6 +13,7 @@
   "remove_selection": "Poista valinta",
   "no_selection": "-- Tyhjä --",
   "clear": "Tyhjennä",
+  "close": "Sulje",
   "add_filter": "Lisää",
   "remove_filter": "Poista",
   "preview": "Esikatsele",
@@ -46,5 +47,6 @@
   "iam_problem_contact_info": "Käyttöoikeusasioissa ja ongelmatilanteisiin liittyen, ole yhteydessä raide@vayla.fi",
   "ftia_name": "Väylävirasto",
   "rights_restriction_info": "Järjestelmään tallennetun aineiston käyttö on käyttöoikeuksilla rajoitettua ja sallittua vain Väyläviraston tilauksiin liittyvissä töissä.",
-  "loading": "Ladataan..."
+  "loading": "Ladataan...",
+  "too_many_results": "Haku tuotti yli 10k tulosta, rajaa hakua tarkemmin"
 }
