@@ -1,6 +1,4 @@
-import {
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
 import archiver, { Archiver } from 'archiver';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
@@ -63,14 +61,20 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     );
 
     const totalKeys = keys.length;
-    keys.map(async (key: string, index: number) => {
-      log.info(`handling file ${index} of ${totalKeys}`);
-      const fileStream = await createLazyDownloadStreamFrom(
-        sourceBucket,
-        key,
-        s3Client,
-      );
-      archive.append(fileStream, { name: key });
+    const appendPromises = keys.map(async (key: string, index: number) => {
+      if (index === totalKeys - 1) {
+        log.info(`streaming the last of ${totalKeys} files`);
+      }
+      return new Promise<void>((resolve, reject) => {
+        const fileStream = createLazyDownloadStreamFrom(
+          sourceBucket,
+          key,
+          s3Client,
+        );
+        fileStream.on('error', reject);
+        fileStream.on('end', () => resolve());
+        archive.append(fileStream, { name: key });
+      });
     });
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;

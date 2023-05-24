@@ -419,13 +419,15 @@ const ReportsIndex: NextPage = () => {
                       count: resultsData?.total,
                     })}
                   </div>
-                  <div className="ml-2">
-                    <ZipDownload
-                      aggregationSize={resultsData?.total}
-                      usedQuery={query}
-                      resultTotalSize={resultsData?.totalSize}
-                    />
-                  </div>
+                  {resultsData?.totalSize && resultsData?.totalSize > 0 && (
+                    <div className="ml-2">
+                      <ZipDownload
+                        aggregationSize={resultsData?.total}
+                        usedQuery={query}
+                        resultTotalSize={resultsData?.totalSize}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </header>
