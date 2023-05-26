@@ -331,7 +331,7 @@ const ReportsIndex: NextPage = () => {
                 <MultiChoice
                   items={(meta.data?.systems || []).map(x => ({
                     key: i18n?.exists(`metadata:${x.value}`)
-                      ? x.value + ' / ' + t(`metadata:${x.value}`)
+                      ? `${x.value} / ${t(`metadata:${x.value}`)}`
                       : x.value,
                     value: x.value,
                   }))}
