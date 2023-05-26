@@ -26,6 +26,25 @@
   "label_zip_reception__date": "ZIP Date",
   "label_file_type": "File type",
   "label_size": "File size",
-  "label_zip_name": "ZIP filename"
-
+  "label_zip_name": "ZIP filename",
+  "AMS": "Acceleration Measuring System",
+  "TG": "Track Geometry Measuring System",
+  "TGMS": "Track Geometry Measuring System",
+  "OHL": "Overhead Line Geometry Measuring System",
+  "OHLMS": "Overhead Line Geometry Measuring System",
+  "CW": "Contact Wire Measuring System",
+  "RP": "Rail Profile Measuring System",
+  "RPMS": "Rail Profile Measuring System",
+  "RC": "Rail Corrugation Measuring System",
+  "RCMS": "Rail Corrugation Measuring System",
+  "TSIGHT": "Clearance Profile Measuring System",
+  "VCUBE": "Track Superstructure Inspection System",
+  "LSI-TSI": "Overhead Line Inspection System",
+  "THIS": "Track Head Inspection System",
+  "URFDS": "Ultrasonic Rail Flaw Detection System",
+  "UT": "Ultrasonic Rail Flaw Detection System",
+  "TVSS": "Video Surveillance System Driver View",
+  "SMS": "Turnout Measuring System",
+  "PI": "Pantograph / Catenary Interaction Measuring System",
+  "PIMS": "Pantograph / Catenary Interaction Measuring System"
 }

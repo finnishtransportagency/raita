@@ -7,7 +7,7 @@ import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
-import { useTranslation } from 'next-i18next';
+import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
@@ -330,7 +330,9 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.systems || []).map(x => ({
-                    key: x.value,
+                    key: i18n?.exists(`metadata:${x.value}`)
+                      ? `${x.value} / ${t(`metadata:${x.value}`)}`
+                      : x.value,
                     value: x.value,
                   }))}
                   resetFilters={state.resetFilters}

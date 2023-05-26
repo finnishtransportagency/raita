@@ -24,7 +24,25 @@
   "label_zip_name": "ZIP tiedostonimi",
   "label_zip_reception__year": "ZIP vastaanottovuosi",
   "label_zip_reception__date": "ZIP vastaanotto pvm",
-  "label_campaign": "Kampanja"
-
-
+  "label_campaign": "Kampanja",
+  "AMS": "Kulkudynamiikan mittaus",
+  "TG": "Raiteiden ja vaihteiden geometrian mittaus",
+  "TGMS": "Raiteiden ja vaihteiden geometrian mittaus",
+  "OHL": "Ajolangan staattisen aseman mittaus",
+  "OHLMS": "Ajolangan staattisen aseman mittaus",
+  "CW": "Ajolangan kuluneisuuden mittaus",
+  "RP": "Kiskon kuluneisuuden mittaus",
+  "RPMS": "Kiskon kuluneisuuden mittaus",
+  "RC": "Kiskon aallonmuodostuksen mittaus",
+  "RCMS": "Kiskon aallonmuodostuksen mittaus",
+  "TSIGHT": "Ulottumamittaus",
+  "VCUBE": "Radan päällysrakenteen optinen tarkastus",
+  "LSI-TSI": "Ratajohdon optinen tarkastus ",
+  "THIS": "Kiskon kulkupinnan optinen tarkastus",
+  "RFDS": "Kiskojen ultraäänitarkastus",
+  "UT": "Kiskojen ultraäänitarkastus",
+  "TVSS": "Ratakuvapalvelu",
+  "SMS": "Automatisoitu vaihteen mittaus",
+  "PI": "Ratajohdon dynaaminen mittaus",
+  "PIMS": "Ratajohdon dynaaminen mittaus"
 }
