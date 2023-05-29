@@ -1,9 +1,7 @@
-import {
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
 import archiver, { Archiver } from 'archiver';
-import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { getEnvOrFail, getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import {
   getRaitaLambdaErrorResponse,
@@ -63,15 +61,13 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     );
 
     const totalKeys = keys.length;
-    keys.map(async (key: string, index: number) => {
-      log.info(`handling file ${index} of ${totalKeys}`);
-      const fileStream = await createLazyDownloadStreamFrom(
-        sourceBucket,
-        key,
-        s3Client,
-      );
-      archive.append(fileStream, { name: key });
-    });
+    keys.forEach((key: string, index: number) => {
+      if (index === totalKeys -1) {
+        log.info(`Streaming the last of ${totalKeys} files`);
+      }
+      const fileStream = createLazyDownloadStreamFrom(sourceBucket, key, s3Client);
+      archive.append(fileStream, { name: key});
+    })
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
     await Promise.all([
@@ -89,11 +85,6 @@ export async function handleZipProcessing(event: ZipRequestBody) {
         log.error(
           `Error getting the signed url for key: ${destKey} error: ${err}`,
         );
-        await updateProgressFailed(
-          dataCollectionBucket,
-          pollingFileKey,
-          s3Client,
-        );
         throw err;
       });
 
@@ -108,6 +99,11 @@ export async function handleZipProcessing(event: ZipRequestBody) {
   } catch (err: unknown) {
     log.error(err);
     archive.abort();
+    await updateProgressFailed(
+          getLambdaConfigOrFail().dataCollectionBucket,
+          event.pollingFileKey,
+          s3Client,
+        );
     return getRaitaLambdaErrorResponse(err);
   }
 }

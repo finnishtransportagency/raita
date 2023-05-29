@@ -47,10 +47,9 @@ export async function handleZipRequest(
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
-  const requestBody = body && JSON.parse(body);
   const s3Client = new S3Client({});
-
   try {
+    const requestBody = body && JSON.parse(body);
     const user = await getUser(event);
     await validateReadUser(user);
     const { zipProcessingFn, region, targetBucket } = getLambdaConfigOrFail();

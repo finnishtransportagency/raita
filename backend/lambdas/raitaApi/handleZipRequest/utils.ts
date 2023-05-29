@@ -9,11 +9,11 @@ import { failedProgressData } from './constants';
 import { Readable, PassThrough } from 'stream';
 import { Upload } from '@aws-sdk/lib-storage';
 
-export async function createLazyDownloadStreamFrom(
+export function createLazyDownloadStreamFrom(
   bucket: string,
   key: string,
   s3Client: S3Client,
-): Promise<Readable> {
+): Readable {
   let streamCreated = false;
   // create a dummy stream to pass on
   const stream = new PassThrough();
