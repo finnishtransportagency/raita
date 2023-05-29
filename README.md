@@ -39,6 +39,7 @@ The script will deploy CodePipeline, which will automatically set up the environ
 Note! `pipeline:synth` script is used by the pipeline in the build step: If you update the `pipeline:synth` script name, you need to have the old script available for at least one commit in the followed branch or you have to rerun the deployment script by hand.
 
 Note! A valid GitHub token with the scopes `admin:repo_hook, public_repo, repo:status, repo_deployment` is required to be in place in AWS Secrets Manager. Refer to `.lib/raita-pipeline.ts` for authenticationToken name to be set. Set the token as plaintext value.
+Note! If you only update the value of the github token in Secrets Manager, you have to reconnect Github with the CodePipeline. AWS CodePipeline -> Pipeline -> {name_of_pipeline} -> edit pipeline : Edit Source stage and follow the instructions.
 
 Note! If deployment fails to Internal Failure, check that you have GitHub token in _Secrets Manager_!
 

@@ -9,16 +9,23 @@ import { Range } from 'shared/types';
 import { DATE_FMT } from 'shared/constants';
 import { assoc } from 'rambda';
 import { useTranslation } from 'next-i18next';
+import { addDays, formatISO } from 'date-fns';
 
 export function DateRange(props: Props) {
   const { t } = useTranslation(['common']);
 
-  const { range, format, disabled = false, onUpdate } = props;
+  const { range, format, disabled = false, onUpdate, resetDateRange } = props;
 
   const [state, setState] = useState({
     start: range?.start,
     end: range?.end,
   });
+
+  function getTomorrowDateString(dateString: string) {
+    const date = new Date(dateString);
+    const tomorrow = addDays(date, 1);
+    return formatISO(tomorrow, { representation: 'date' });
+  }
 
   //
 
@@ -37,6 +44,13 @@ export function DateRange(props: Props) {
   //
 
   useEffect(() => {
+    if (resetDateRange) {
+      setState(assoc('start', undefined));
+      setState(assoc('end', undefined));
+    }
+  }, [resetDateRange]);
+
+  useEffect(() => {
     onUpdate && onUpdate(state);
   }, [state]);
 
@@ -50,7 +64,11 @@ export function DateRange(props: Props) {
             value={rangeValues[0]}
             className={clsx(css.input)}
             onChange={e => {
-              setState(assoc('start', new Date(e.target.value)));
+              const newStartDate = new Date(e.target.value);
+              if (rangeValues[1] && newStartDate > new Date(rangeValues[1])) {
+                setState(assoc('end', undefined));
+              }
+              setState(assoc('start', newStartDate));
             }}
           />
 
@@ -68,8 +86,13 @@ export function DateRange(props: Props) {
             {...{ disabled }}
             type={'date'}
             value={rangeValues[1]}
+            min={
+              rangeValues[0] ? getTomorrowDateString(rangeValues[0]) : undefined
+            }
             className={clsx(css.input)}
-            onChange={e => setState(assoc('end', new Date(e.target.value)))}
+            onChange={e => {
+              setState(assoc('end', new Date(e.target.value)));
+            }}
           />
 
           <Button
@@ -93,5 +116,6 @@ export type Props = {
   range?: Range<Date>;
   format?: Range<string>;
   disabled?: boolean;
+  resetDateRange: boolean;
   onUpdate: (range: Range<Date>) => void;
 };

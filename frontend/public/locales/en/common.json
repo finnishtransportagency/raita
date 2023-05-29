@@ -13,6 +13,7 @@
   "remove_selection": "Remove selection",
   "no_selection": "-- EMPTY --",
   "clear": "Clear",
+  "close": "Close",
   "add_filter": "Add filter",
   "remove_filter": "Remove filter",
   "preview": "Preview",
@@ -43,5 +44,7 @@
   "iam_problem_contact_info": "Regarding usage rights and problem situations, please contact raide@vayla.fi",
   "ftia_name": "Finnish Transport Infrastructure Agency",
   "rights_restriction_info": "The use of material stored in the system is restricted by usage rights and allowed only for work related to orders from the Finnish Transport Infrastructure Agency",
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "too_many_results": "Too many results, try filtering your search more",
+  "big_compression": "Note! Compressing a lot of data might take several minutes"
 }

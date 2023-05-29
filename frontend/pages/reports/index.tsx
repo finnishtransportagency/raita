@@ -7,13 +7,13 @@ import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
-import { useTranslation } from 'next-i18next';
+import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
 import * as cfg from 'shared/config';
-import type { App, ImageKeys, Range } from 'shared/types';
+import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
@@ -206,11 +206,18 @@ const ReportsIndex: NextPage = () => {
 
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
+    setState(R.assoc('resetFilters', false));
   };
 
-  const updateFilterList = (fs: Entry[]) => setState(R.assoc('filter', fs));
+  const updateFilterList = (fs: Entry[]) => {
+    setState(R.assoc('filter', fs));
+    setState(R.assoc('resetFilters', false));
+  };
 
-  const updateSearchText = (text: string) => setState(R.assoc('text', text));
+  const updateSearchText = (text: string) => {
+    setState(R.assoc('text', text));
+    setState(R.assoc('resetFilters', false));
+  };
   //
 
   const setPage = (n: number) => {
@@ -244,10 +251,19 @@ const ReportsIndex: NextPage = () => {
         </div>
       </div>
 
-      <InfoBanner />
+      <InfoBanner
+        bannerType={BannerType.INFO}
+        text={t<string>('common:rights_restriction_info')}
+      />
 
       <div className="container mx-auto px-16 py-6">
         <header className="mb-4"></header>
+        {resultsData?.total && resultsData.total >= 10000 && (
+          <InfoBanner
+            bannerType={BannerType.WARNING}
+            text={t<string>('common:too_many_results')}
+          />
+        )}
 
         <div className="grid grid-cols-2 gap-12">
           <section className="space-y-4">
@@ -258,7 +274,8 @@ const ReportsIndex: NextPage = () => {
             <TextInput
               onUpdate={updateSearchText}
               value={state.text}
-              placeholder={t('common:search_by_filename')}
+              placeholder={t<string>('common:search_by_filename')}
+              resetSearchText={state.resetFilters}
             />
 
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
@@ -269,6 +286,7 @@ const ReportsIndex: NextPage = () => {
                   filters={[]}
                   onChange={updateFilterList}
                   fields={meta.data?.fields!}
+                  resetFilterSelector={state.resetFilters}
                 />
               </section>
 
@@ -276,7 +294,11 @@ const ReportsIndex: NextPage = () => {
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_timespan')}</header>
 
-                <DateRange range={state.dateRange} onUpdate={updateDateRange} />
+                <DateRange
+                  range={state.special.dateRange}
+                  onUpdate={updateDateRange}
+                  resetDateRange={state.resetFilters}
+                />
               </section>
 
               <section className={clsx(css.subSection)}>
@@ -298,6 +320,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -307,7 +330,9 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.systems || []).map(x => ({
-                    key: x.value,
+                    key: i18n?.exists(`metadata:${x.value}`)
+                      ? `${x.value} / ${t(`metadata:${x.value}`)}`
+                      : x.value,
                     value: x.value,
                   }))}
                   resetFilters={state.resetFilters}
@@ -321,6 +346,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -344,6 +370,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -368,6 +395,7 @@ const ReportsIndex: NextPage = () => {
                         ),
                       ),
                     );
+                    setState(R.assoc('resetFilters', false));
                   }}
                 />
               </section>
@@ -393,13 +421,15 @@ const ReportsIndex: NextPage = () => {
                       count: resultsData?.total,
                     })}
                   </div>
-                  <div className="ml-2">
-                    <ZipDownload
-                      aggregationSize={resultsData?.total}
-                      usedQuery={query}
-                      resultTotalSize={resultsData?.totalSize}
-                    />
-                  </div>
+                  {resultsData?.totalSize && resultsData?.totalSize > 0 && (
+                    <div className="ml-2">
+                      <ZipDownload
+                        aggregationSize={resultsData?.total}
+                        usedQuery={query}
+                        resultTotalSize={resultsData?.totalSize}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </header>

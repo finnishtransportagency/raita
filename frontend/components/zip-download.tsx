@@ -29,8 +29,8 @@ export function ZipDownload(props: Props) {
 
   const { t } = useTranslation(['common']);
   const resultTooBigToCompress =
-    (resultTotalSize && resultTotalSize > 15728640) ||
-    (aggregationSize && aggregationSize > 500);
+    resultTotalSize && resultTotalSize > 5000000000 ? true : false;
+  const bigCompression = resultTotalSize && resultTotalSize > 1000000000 && !resultTooBigToCompress ? true : false;
 
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
@@ -94,7 +94,7 @@ export function ZipDownload(props: Props) {
     <div>
       {!zipUrl || error ? (
         <Button
-          disabled={resultTooBigToCompress || isLoading}
+          disabled={isLoading || resultTooBigToCompress}
           size="sm"
           label={
             isLoading ? (
@@ -111,6 +111,9 @@ export function ZipDownload(props: Props) {
           label={`${t('common:download_zip')}`}
           onClick={() => handleZipDownload()}
         />
+      )}
+      {bigCompression && (
+        <p className='text-xs'>{t('common:big_compression')}</p>
       )}
       {error && (
         <div

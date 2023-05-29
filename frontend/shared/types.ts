@@ -108,3 +108,8 @@ export enum ProgressStatus {
   PENDING = 'PENDING',
   FAILED = 'FAILED',
 }
+
+export enum BannerType {
+  INFO = 'INFO',
+  WARNING = 'WARNING',
+}
