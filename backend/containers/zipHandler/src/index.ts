@@ -19,7 +19,7 @@ async function start() {
   const { bucket, key, targetBucket } = getConfig();
   const startMessage = `Zip extraction from bucket: ${bucket} to ${targetBucket} started for ${key}`;
   // TODO: Temporary logging
-  log.debug(startMessage);
+  log.info(startMessage);
   try {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileName } = getKeyData(zipKey);
@@ -68,7 +68,7 @@ async function start() {
         .then(data => {
           const { entries, streamError } = data;
           // TODO: Temporary logging
-          log.debug(logMessages['resultMessage'](entries));
+          log.info(logMessages['resultMessage'](entries));
           if (streamError) {
             // The process succeeded possibly partially. Currently only logs error, does not throw.
             // TODO: Temporary logging
