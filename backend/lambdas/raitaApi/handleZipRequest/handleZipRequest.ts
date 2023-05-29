@@ -48,7 +48,6 @@ export async function handleZipRequest(
 ): Promise<APIGatewayProxyResult> {
   const { body } = event;
   const s3Client = new S3Client({});
-
   try {
     const requestBody = body && JSON.parse(body);
     const user = await getUser(event);

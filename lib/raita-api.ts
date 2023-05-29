@@ -65,13 +65,15 @@ export class RaitaApiStack extends NestedStack {
     } = props;
 
     // Create a bucket to hold the data of user made
-    // collections as a zip.
+    // collections as a zip. Set lifecycle policy to delete
+    // the objects in 30 days
     const dataCollectionBucket = createRaitaBucket({
       scope: this,
       name: 'data-collection',
       raitaEnv,
       raitaStackIdentifier,
     });
+    dataCollectionBucket.addLifecycleRule({expiration: cdk.Duration.days(30)});
 
     // ZipProcesser needs rights to two buckets so it gets its
     // own role with proper permissions.
@@ -512,8 +514,8 @@ export class RaitaApiStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1768,
-      timeout: cdk.Duration.minutes(10),
+      memorySize: 3008,
+      timeout: cdk.Duration.minutes(15),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleZipProcessing',
       entry: path.join(
