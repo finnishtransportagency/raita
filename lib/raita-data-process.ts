@@ -34,6 +34,9 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
+  readonly soaPolicyAccountId: string;
+  readonly vaylaPolicyUserId: string;
+  readonly loramPolicyUserId: string;
 }
 
 export class DataProcessStack extends NestedStack {
@@ -52,6 +55,9 @@ export class DataProcessStack extends NestedStack {
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
+      soaPolicyAccountId,
+      vaylaPolicyUserId,
+      loramPolicyUserId,
     } = props;
 
     this.dataProcessorLambdaServiceRole = createRaitaServiceRole({
@@ -84,12 +90,64 @@ export class DataProcessStack extends NestedStack {
     });
 
     // Grant sftpUser access to data reception bucket
-    const sftpReceivePolicy = this.createSftpReceivePolicy({
-      sftpPolicyAccountId,
-      sftpPolicyUserId,
-      dataReceptionBucket,
+    const sftpReceivePolicy = this.createBucketPolicy({
+      policyAccountId: sftpPolicyAccountId,
+      policyUserId: sftpPolicyUserId,
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      ],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+        's3:DeleteObject',
+      ],
     });
     dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+
+    // Grant SOA-offices väylä role full access to data reception bucket
+    const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
+      policyAccountId: soaPolicyAccountId,
+      policyUserId: vaylaPolicyUserId,
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      ],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+        's3:DeleteObject',
+      ],
+    });
+    dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
+
+    // Grant SOA-offices loram role read access to data reception bucket
+    const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
+      policyAccountId: soaPolicyAccountId,
+      policyUserId: loramPolicyUserId,
+      resources: [
+        dataReceptionBucket.bucketArn,
+        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      ],
+      actions: [
+        's3:ListBucket',
+        's3:GetBucketLocation',
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+      ],
+    });
+    dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
     // Create ECS cluster resources for zip extraction task
     const { ecsCluster, handleZipTask, handleZipContainer } =
@@ -272,37 +330,28 @@ export class DataProcessStack extends NestedStack {
   }
 
   /**
-   * Creates a policy permitting sftpUser access to data reception bucket
+   * Helper to create bucket policies
    */
-  private createSftpReceivePolicy({
-    sftpPolicyAccountId,
-    dataReceptionBucket,
-    sftpPolicyUserId,
+
+  private createBucketPolicy({
+    policyAccountId,
+    policyUserId,
+    resources,
+    actions,
   }: {
-    sftpPolicyAccountId: string;
-    sftpPolicyUserId: string;
-    dataReceptionBucket: Bucket;
+    policyAccountId: string;
+    policyUserId: string;
+    resources: Array<string>;
+    actions: Array<string>;
   }) {
     return new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
-      principals: [new iam.AccountPrincipal(sftpPolicyAccountId)],
-      actions: [
-        's3:GetObject',
-        's3:GetObjectVersion',
-        's3:GetObjectAcl',
-        's3:PutObject',
-        's3:PutObjectAcl',
-        's3:ListBucket',
-        's3:GetBucketLocation',
-        's3:DeleteObject',
-      ],
-      resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      ],
+      principals: [new iam.AccountPrincipal(policyAccountId)],
+      actions,
+      resources,
       conditions: {
         StringLike: {
-          'aws:userId': `${sftpPolicyUserId}:*`,
+          'aws:userId': `${policyUserId}:*`,
         },
       },
     });
