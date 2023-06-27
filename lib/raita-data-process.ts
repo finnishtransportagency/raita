@@ -125,7 +125,7 @@ export class DataProcessStack extends NestedStack {
     // Grant SOA-offices loram role read access to data reception bucket
     const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
       policyAccountId: soaPolicyAccountId,
-      policyUserId: vaylaPolicyUserId,
+      policyUserId: loramPolicyUserId,
       resources: [
         dataReceptionBucket.bucketArn,
         `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
