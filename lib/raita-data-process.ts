@@ -118,7 +118,16 @@ export class DataProcessStack extends NestedStack {
         dataReceptionBucket.bucketArn,
         `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
       ],
-      actions: ['s3:ListBucket', 's3:GetBucketLocation', 's3:*Object'],
+      actions: [
+        's3:GetObject',
+        's3:GetObjectVersion',
+        's3:GetObjectAcl',
+        's3:PutObject',
+        's3:PutObjectAcl',
+        's3:ListBucket',
+        's3:GetBucketLocation',
+        's3:DeleteObject',
+      ],
     });
     dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
