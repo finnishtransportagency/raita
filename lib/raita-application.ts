@@ -23,6 +23,9 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
+  readonly soaPolicyAccountId: string;
+  readonly vaylaPolicyUserId: string;
+  readonly loramPolicyUserId: string;
   readonly cloudfrontDomainName: string;
 }
 
@@ -43,6 +46,9 @@ export class ApplicationStack extends NestedStack {
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
+      soaPolicyAccountId,
+      vaylaPolicyUserId,
+      loramPolicyUserId,
       cloudfrontDomainName,
     } = props;
 
@@ -64,6 +70,9 @@ export class ApplicationStack extends NestedStack {
       parserConfigurationFile: parserConfigurationFile,
       sftpPolicyAccountId: sftpPolicyAccountId,
       sftpPolicyUserId: sftpPolicyUserId,
+      soaPolicyAccountId: soaPolicyAccountId,
+      vaylaPolicyUserId: vaylaPolicyUserId,
+      loramPolicyUserId: loramPolicyUserId,
     });
 
     // Create API Gateway
@@ -106,7 +115,9 @@ export class ApplicationStack extends NestedStack {
       name: 'ApiParameterStorePolicy',
       raitaStackIdentifier,
       serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
-      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/${SSM_API_KEY}`],
+      resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/${SSM_API_KEY}`,
+      ],
       actions: ['ssm:GetParameter'],
     });
 

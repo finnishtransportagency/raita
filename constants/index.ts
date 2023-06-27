@@ -37,7 +37,10 @@ export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
 export const SSM_CLOUDFRONT_DOMAIN_NAME = 'raita-cloudfront-domain-name';
 export const SSM_DMZ_API_DOMAIN_NAME = 'raita-dmz-api-domain-name';
 export const SFTP_POLICY_ACCOUNT_ID = 'raita-sftp-policy-account-id';
+export const SOA_POLICY_ACCOUNT_ID = 'raita-soa-policy-account-id';
 export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
+export const VAYLA_POLICY_USER_ID = 'raita-vayla-policy-user-id';
+export const LORAM_POLICY_USER_ID = 'raita-loram-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
 export const SSM_API_KEY = 'raita-api-key';
 
