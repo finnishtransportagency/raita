@@ -3,8 +3,6 @@ import { devApiKey, devApiUrl } from 'shared/config';
 
 /**
  * Overwrite api requests in dev environment
- *
- * TODO: this should only run in local dev environment
  */
 export async function middleware(request: NextRequest) {
   if (devApiUrl && devApiKey) {
