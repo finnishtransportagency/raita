@@ -1,6 +1,5 @@
 import { useTranslation } from 'next-i18next';
-import { useEffect, useRef } from 'react';
-import Select, { SelectInstance } from 'react-select';
+import { ChangeEvent, useEffect, useRef } from 'react';
 
 import { clsx } from 'clsx';
 
@@ -8,46 +7,50 @@ import css from './multi-choice.module.css';
 
 export function MultiChoice(props: Props) {
   const { t } = useTranslation(['common']);
-  const ref = useRef<SelectInstance<Item>>(null);
+  const ref = useRef<HTMLSelectElement>(null);
 
   const { items, onChange, resetFilters } = props;
 
   useEffect(() => {
     if (ref.current && resetFilters) {
-      ref.current.clearValue();
+      ref.current.value = '';
     }
-  }, [resetFilters]);
+  }, [resetFilters])
 
   return (
     <div className={clsx(css.root)}>
-      <Select
-        id="multi-choice"
-        isMulti={true}
+      <select
+        id='multi-choice'
+        multiple={true}
         ref={ref}
-        placeholder={t('common:no_choice')}
-        onChange={newValue => {
-          if (newValue && Array.isArray(newValue)) {
-            onChange(newValue);
-          } else {
-            onChange([]);
-          }
-        }}
+        onChange={onChange}
         className={clsx(css.select)}
-        options={items.sort((a, b) => (a.value > b.value ? 1 : -1))}
-      ></Select>
+      >
+        <option id='empty' value="">{t('common:no_choice')}</option>
+        {items.sort((a, b) => a.value > b.value ? 1 : -1)
+        .map((it, ix) => {
+          return (
+            <option key={ix} value={it.value}>
+              {it.key}
+            </option>
+          );
+        })}
+      </select>
     </div>
   );
 }
 
 export default MultiChoice;
 
+//
+
 export type Props = {
   items: Item[];
   resetFilters: boolean;
-  onChange: (options: Item[]) => void;
+  onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
 };
 
 export type Item = {
-  label: string;
+  key: string;
   value: string;
 };

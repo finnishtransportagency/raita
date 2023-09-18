@@ -306,16 +306,16 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.reportTypes || []).map(it => ({
-                    label: it.reportType,
+                    key: it.reportType,
                     value: it.reportType,
                   }))}
                   resetFilters={state.resetFilters}
-                  onChange={newItems => {
+                  onChange={e => {
                     setState(
                       R.assocPath(
                         ['subQueries', 'reportTypes'],
                         makeFromMulti(
-                          newItems.map(i => i.value),
+                          takeOptionValues(e.target.selectedOptions),
                           'report_type',
                         ),
                       ),
@@ -330,18 +330,18 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.systems || []).map(x => ({
-                    label: i18n?.exists(`metadata:${x.value}`)
+                    key: i18n?.exists(`metadata:${x.value}`)
                       ? `${x.value} / ${t(`metadata:${x.value}`)}`
                       : x.value,
                     value: x.value,
                   }))}
                   resetFilters={state.resetFilters}
-                  onChange={newItems => {
+                  onChange={e => {
                     setState(
                       R.assocPath(
                         ['subQueries', 'systems'],
                         makeFromMulti(
-                          newItems.map(i => i.value),
+                          takeOptionValues(e.target.selectedOptions),
                           'system',
                         ),
                       ),
@@ -356,16 +356,16 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.trackParts || []).map(it => ({
-                    label: it.value,
+                    key: it.value,
                     value: it.value,
                   }))}
                   resetFilters={state.resetFilters}
-                  onChange={newItems => {
+                  onChange={e => {
                     setState(
                       R.assocPath(
                         ['subQueries', 'trackParts'],
                         makeFromMulti(
-                          newItems.map(i => i.value),
+                          takeOptionValues(e.target.selectedOptions),
                           'track_part',
                         ),
                       ),
@@ -381,16 +381,16 @@ const ReportsIndex: NextPage = () => {
 
                 <MultiChoice
                   items={(meta.data?.fileTypes || []).map(x => ({
-                    label: x.fileType,
+                    key: x.fileType,
                     value: x.fileType,
                   }))}
                   resetFilters={state.resetFilters}
-                  onChange={newItems => {
+                  onChange={e => {
                     setState(
                       R.assocPath(
                         ['subQueries', 'fileTypes'],
                         makeFromMulti(
-                          newItems.map(v => v.value),
+                          takeOptionValues(e.target.selectedOptions),
                           'file_type',
                         ),
                       ),

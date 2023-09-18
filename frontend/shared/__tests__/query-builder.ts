@@ -33,13 +33,6 @@ describe('make queries', () => {
     };
 
     expect(makeQuery(fs, { keyFn: a => a })).toEqual({
-      aggs: {
-        total_size: {
-          sum: {
-            field: 'size',
-          },
-        },
-      },
       query: {
         bool: {
           must: [
@@ -53,13 +46,6 @@ describe('make queries', () => {
     });
 
     expect(makeQuery(fs, { paging })).toEqual({
-      aggs: {
-        total_size: {
-          sum: {
-            field: 'size',
-          },
-        },
-      },
       from: 0,
       size: 10,
       query: {
