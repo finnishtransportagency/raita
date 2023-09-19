@@ -1,5 +1,5 @@
 import { useTranslation } from 'next-i18next';
-import { ChangeEvent, useEffect, useRef } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { clsx } from 'clsx';
 
@@ -8,33 +8,48 @@ import css from './multi-choice.module.css';
 export function MultiChoice(props: Props) {
   const { t } = useTranslation(['common']);
   const ref = useRef<HTMLSelectElement>(null);
+  const [searchValue, setSearchValue] = useState('');
 
   const { items, onChange, resetFilters } = props;
 
   useEffect(() => {
     if (ref.current && resetFilters) {
       ref.current.value = '';
+      setSearchValue('');
     }
-  }, [resetFilters])
+  }, [resetFilters]);
 
   return (
     <div className={clsx(css.root)}>
+      <input
+        type="text"
+        className={clsx(css.search)}
+        value={searchValue}
+        onChange={e => setSearchValue(e.target.value.toLocaleLowerCase())}
+        placeholder={t('common:filter_options') || ''}
+      />
       <select
-        id='multi-choice'
+        id="multi-choice"
         multiple={true}
         ref={ref}
         onChange={onChange}
         className={clsx(css.select)}
       >
-        <option id='empty' value="">{t('common:no_choice')}</option>
-        {items.sort((a, b) => a.value > b.value ? 1 : -1)
-        .map((it, ix) => {
-          return (
-            <option key={ix} value={it.value}>
-              {it.key}
-            </option>
-          );
-        })}
+        {searchValue === '' && (
+          <option id="empty" value="">
+            {t('common:no_choice')}
+          </option>
+        )}
+        {items
+          .filter(item => item.key.toLocaleLowerCase().includes(searchValue))
+          .sort((a, b) => (a.value > b.value ? 1 : -1))
+          .map((it, ix) => {
+            return (
+              <option key={ix} value={it.value}>
+                {it.key}
+              </option>
+            );
+          })}
       </select>
     </div>
   );
