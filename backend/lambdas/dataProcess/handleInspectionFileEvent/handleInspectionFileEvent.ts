@@ -102,7 +102,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   }
 }
 
-async function parseFileMetadata({
+export async function parseFileMetadata({
   keyData,
   file,
   spec,
