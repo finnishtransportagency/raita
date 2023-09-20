@@ -1,29 +1,14 @@
 import { S3Event } from 'aws-lambda';
-import {
-  FileMetadataEntry,
-  IExtractionSpec,
-  IFileResult,
-  ParseValueResult,
-} from '../../../types';
-import { extractPathData } from './pathDataParser';
-import { extractFileNameData } from './fileNameDataParser';
-import {
-  calculateHash,
-  extractFileContentData,
-  shouldParseContent,
-} from './contentDataParser';
+import { FileMetadataEntry } from '../../../types';
+
 import { log } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
 import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import {
-  getDecodedS3ObjectKey,
-  getKeyData,
-  isKnownSuffix,
-  KeyData,
-} from '../../utils';
+import { getDecodedS3ObjectKey, getKeyData, isKnownSuffix } from '../../utils';
+import { parseFileMetadata } from './parseFileMetadata';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -100,34 +85,4 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
   }
-}
-
-export async function parseFileMetadata({
-  keyData,
-  file,
-  spec,
-}: {
-  keyData: KeyData;
-  file: IFileResult;
-  spec: IExtractionSpec;
-}): Promise<{ metadata: ParseValueResult; hash: string }> {
-  const { fileBody } = file;
-  const fileNameData = extractFileNameData(
-    keyData,
-    spec.fileNameExtractionSpec,
-  );
-  const pathData = extractPathData(keyData, spec);
-  const fileContentData =
-    shouldParseContent(keyData.fileSuffix) && fileBody
-      ? extractFileContentData(spec, fileBody)
-      : {};
-  const hash = calculateHash(fileBody ?? '');
-  return {
-    metadata: {
-      ...pathData,
-      ...fileContentData,
-      ...fileNameData,
-    },
-    hash,
-  };
 }
