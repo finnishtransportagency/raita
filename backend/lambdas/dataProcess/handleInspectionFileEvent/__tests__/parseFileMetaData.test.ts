@@ -59,11 +59,45 @@ const extractionSpec: IExtractionSpec = {
     '1': { name: 'pathOnly1' },
     '2': { name: 'vPathOnly2' },
   },
-  fileContentExtractionSpec: [],
+  fileContentExtractionSpec: [
+    {
+      propertyKey: 'contentOnly1',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'VAL1',
+      },
+    },
+    {
+      propertyKey: 'contentOnly2',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'VAL2',
+      },
+      parseAs: 'integer',
+    },
+    {
+      propertyKey: 'overlapping',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'OVERLAP',
+      },
+    },
+  ],
 };
 
+// hash for 'dummy' string
 const dummyHash =
   'b5a2c96250612366ea272ffac6d9744aaf4b45aacd96aa7cfcb931ee3b558259';
+
+const testFileBody = `ver. 5.67.53
+VAL1: first value
+VAL2: 123456
+OVERLAP: FROMCONTENT
+
+data here
+`;
+const testFileHash =
+  'e53d3e1705050cad90935209f87b7ef494dcf68365f521693e06f1a5e8ac05fc';
 
 describe('parseFileMetadata', () => {
   test('success: normal .txt', async () => {
@@ -76,7 +110,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
     const fileData = {
-      fileBody: 'dummy',
+      fileBody: testFileBody,
       contentType: 'text/plain',
       tags: {}, // TODO what is this
     };
@@ -87,13 +121,15 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
-      hash: dummyHash,
+      hash: testFileHash,
       metadata: {
         file_type: 'txt',
         pathOnly1: 'test',
         pathOnly2: 'path',
         nameOnly1: 'TEST',
         nameOnly2: 112233,
+        contentOnly1: 'first value',
+        contentOnly2: 123456,
         overlapping: 'FROMNAME',
       },
     });
@@ -151,6 +187,7 @@ describe('parseFileMetadata', () => {
     expect(result).toEqual({
       hash: dummyHash,
       metadata: {
+        // data from path missing
         file_type: 'csv',
         nameOnly1: 'TEST',
         nameOnly2: 112233,
@@ -158,8 +195,105 @@ describe('parseFileMetadata', () => {
       },
     });
   });
-  test.skip('success: parse submission report .xlsx', () => {});
-  test.skip('partial: malformed filename, .txt', () => {});
-  test.skip('partial: malformed path, .txt', () => {});
-  test.skip('partial: malformed content, .txt', () => {});
+  test.skip('success: parse submission report .xlsx', () => {
+    // TODO
+  });
+  test('partial: malformed filename, .txt', async () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'FROMPATH', 'TOO_MAY_NAME_SEGMENTS_HERE.txt'],
+      rootFolder: 'test',
+      fileName: 'TOO_MAY_NAME_SEGMENTS_HERE.txt',
+      fileBaseName: 'TOO_MAY_NAME_SEGMENTS_HERE',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
+    };
+    const fileData = {
+      fileBody: testFileBody,
+      contentType: 'text/plain',
+      tags: {}, // TODO what is this
+    };
+    const params = {
+      keyData,
+      file: fileData,
+      spec: extractionSpec,
+    };
+    const result = await parseFileMetadata(params);
+    expect(result).toEqual({
+      hash: testFileHash,
+      metadata: {
+        // data from name missing
+        pathOnly1: 'test',
+        pathOnly2: 'path',
+        contentOnly1: 'first value',
+        contentOnly2: 123456,
+        overlapping: 'FROMCONTENT',
+      },
+    });
+  });
+  test('partial: malformed path, .txt', async () => {
+    const keyData: KeyData = {
+      path: ['TOO', 'LONG', 'PATH', 'HERE', 'TEST_FROMNAME_112233.txt'],
+      rootFolder: 'test',
+      fileName: 'TEST_FROMNAME_112233.txt',
+      fileBaseName: 'TEST_FROMNAME_112233',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
+    };
+    const fileData = {
+      fileBody: testFileBody,
+      contentType: 'text/plain',
+      tags: {}, // TODO what is this
+    };
+    const params = {
+      keyData,
+      file: fileData,
+      spec: extractionSpec,
+    };
+    const result = await parseFileMetadata(params);
+    expect(result).toEqual({
+      hash: testFileHash,
+      metadata: {
+        // data form path missing
+        file_type: 'txt',
+        nameOnly1: 'TEST',
+        nameOnly2: 112233,
+        contentOnly1: 'first value',
+        contentOnly2: 123456,
+        overlapping: 'FROMNAME',
+      },
+    });
+  });
+  test('partial: malformed content, .txt', async () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'FROMPATH', 'TEST_FROMNAME_112233.txt'],
+      rootFolder: 'test',
+      fileName: 'TEST_FROMNAME_112233.txt',
+      fileBaseName: 'TEST_FROMNAME_112233',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
+    };
+    const fileData = {
+      fileBody: 'dummy',
+      contentType: 'text/plain',
+      tags: {}, // TODO what is this
+    };
+    const params = {
+      keyData,
+      file: fileData,
+      spec: extractionSpec,
+    };
+    const result = await parseFileMetadata(params);
+    expect(result).toEqual({
+      hash: dummyHash,
+      metadata: {
+        // data from content missing
+        file_type: 'txt',
+        pathOnly1: 'test',
+        pathOnly2: 'path',
+        nameOnly1: 'TEST',
+        nameOnly2: 112233,
+        overlapping: 'FROMNAME',
+      },
+    });
+  });
 });

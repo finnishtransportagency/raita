@@ -1,4 +1,8 @@
-import { shouldParseContent } from '../contentDataParser';
+import { ExtractionSpec, IExtractionSpec } from '../../../../types';
+import {
+  extractFileContentData,
+  shouldParseContent,
+} from '../contentDataParser';
 
 jest.mock('../../../../utils/logger', () => {
   return {
@@ -19,17 +23,32 @@ jest.mock('../../../../utils/logger', () => {
 
 const extractionSpec = {
   fileNameExtractionSpec: {},
-  folderTreeExtractionSpec: {
-    '1': { name: 'part1' },
-    '2': { name: 'part2' },
-    '3': { name: 'part3' },
-    '4': { name: 'filename' },
-  },
-  vRunFolderTreeExtractionSpec: {
-    '1': { name: 'vPart1' },
-    '2': { name: 'filename' },
-  },
-  fileContentExtractionSpec: {},
+  folderTreeExtractionSpec: {},
+  vRunFolderTreeExtractionSpec: {},
+  fileContentExtractionSpec: [
+    {
+      propertyKey: 'contentVal1',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'VAL1',
+      },
+    },
+    {
+      propertyKey: 'contentVal2',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'VAL2',
+      },
+    },
+    {
+      propertyKey: 'contentVal3',
+      pattern: {
+        predefinedPatternId: 'colonSeparatedKeyValuePair',
+        searchKey: 'VAL3',
+      },
+      parseAs: 'integer',
+    },
+  ],
 };
 
 describe('shouldParseContent', () => {
@@ -46,6 +65,74 @@ describe('shouldParseContent', () => {
 });
 describe('extractFileContentData', () => {
   test('success: txt file', () => {
-    // TODO
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL2: value number 2
+VAL3: 332211
+
+data here
+`;
+    const result = extractFileContentData(
+      extractionSpec as any as IExtractionSpec,
+      fileBody,
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      contentVal2: 'value number 2',
+      contentVal3: 332211,
+    });
+  });
+  test.skip('error: empty value', () => {
+    // TODO: fix this, currently parses VAL2 value as "VAL3: 332211"
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL2:
+VAL3: 332211
+
+data here
+`;
+    const result = extractFileContentData(
+      extractionSpec as any as IExtractionSpec,
+      fileBody,
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      contentVal3: 332211,
+    });
+  });
+  test('success: value in spec but missing', () => {
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL3: 332211
+
+data here
+`;
+    const result = extractFileContentData(
+      extractionSpec as any as IExtractionSpec,
+      fileBody,
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      // missing contentVal2
+      contentVal3: 332211,
+    });
+  });
+  test('success: keyword found but malformed', () => {
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL2 malformed row
+VAL3: 332211
+
+data here
+`;
+    const result = extractFileContentData(
+      extractionSpec as any as IExtractionSpec,
+      fileBody,
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      // missing contentVal2
+      contentVal3: 332211,
+    });
   });
 });

@@ -34,33 +34,36 @@ describe('parsePrimitive', () => {
       value: NaN, // TODO: should show error?
     });
   });
-  test('success: multiple date formats', () => {
-    // multiple different date formats accepted
-    // TODO: times are checked in current timezone
-    const date1 = format(new Date('2023-09-19T18:00:00.000Z'), 'd/M/y h:m:s a');
-    const date2 = format(
+  test('success: format d/M/y h:m:s a', () => {
+    const date = format(new Date('2023-09-19T18:00:00.000Z'), 'd/M/y h:m:s a');
+    const result = parsePrimitive('test', date, 'date');
+
+    expect(result).toEqual({
+      key: 'test',
+      value: '2023-09-19T18:00:00.000Z',
+    });
+  });
+  test.skip('success: format yyyyMMdd_hhmmss', () => {
+    // TODO: only dates in 12h formats are accepted, is this intentional?
+    const date = format(
       new Date('2023-09-19T18:00:00.000Z'),
       'yyyyMMdd_HHmmss',
     );
-    const date3 = format(new Date('2023-09-19'), 'yyyyMMdd');
-    const result1 = parsePrimitive('test', date1, 'date');
-    // const result2 = parsePrimitive('test', date2, 'date');
-    // const result3 = parsePrimitive('test', date3, 'date');
-    const expectedDateTime = '2023-09-19T18:00:00.000Z';
-    const expectedDateOnly = '2023-09-19T00:00:00.000Z';
+    const result = parsePrimitive('test', date, 'date');
 
-    expect(result1).toEqual({
+    expect(result).toEqual({
       key: 'test',
-      value: expectedDateTime,
+      value: '2023-09-19T18:00:00.000Z',
     });
-    // TODO: fix these
-    // expect(result2).toEqual({
-    //   key: 'test',
-    //   value: expectedDateTime,
-    // });
-    // expect(result3).toEqual({
-    //   key: 'test',
-    //   value: expectedDateOnly,
-    // });
+  });
+  test.skip('success: format yyyyMMdd', () => {
+    // TODO: returning wrong date because of timezone?
+    const date = format(new Date('2023-09-19'), 'yyyyMMdd');
+    const result = parsePrimitive('test', date, 'date');
+
+    expect(result).toEqual({
+      key: 'test',
+      value: '2023-09-19T00:00:00.000Z',
+    });
   });
 });
