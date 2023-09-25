@@ -176,7 +176,13 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
             max: {
               field: "metadata.inspection_date",
             }
+          },
+          "latest_zip_date": {
+            max: {
+              field: "metadata.zip_reception__date",
+            }
           }
+
         }
       },
     },(error, result) => { // callback to log the output
