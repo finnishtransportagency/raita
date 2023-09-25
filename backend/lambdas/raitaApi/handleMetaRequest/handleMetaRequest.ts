@@ -31,6 +31,9 @@ export async function handleMetaRequest(
       metadataPort.getMetadataFields(),
       metadataPort.getMetadataAggregations(),
     ]);
+    log.info('Got metadata');
+    log.info(fields);
+    log.info(aggregations);
     return getRaitaSuccessResponse({
       fields,
       ...aggregations,
