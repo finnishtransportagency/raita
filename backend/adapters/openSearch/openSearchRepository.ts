@@ -176,8 +176,8 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         }
       },
     });
-    log.debug("HELLO");
-    log.debug(response);
+    log.info("HELLO");
+    log.info(response);
     return this.#responseParser.parseMetadataFields(response, this.#dataIndex);
   };
 
