@@ -172,13 +172,27 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       index: this.#dataIndex,
       body: {
         aggs: {
-          'latest_inspection_date': { 'max': { 'field': 'metadata.inspection_date' } }
+          "latest_inspection_date": {
+            max: {
+              field: "metadata.inspection_date",
+            }
+          }
         }
       },
+    },(error, result) => { // callback to log the output
+      if (error) {
+        log.error("HELLO ERROR");
+        log.error(error);
+      } else {
+        log.info("HELLO SUCCCESS");
+        log.info(result.body.aggregations["latest_inspection_date"]);
+      }
     });
     log.info("HELLO");
     log.info(response);
-    return this.#responseParser.parseMetadataFields(response, this.#dataIndex);
+    return;
   };
+
+
 
 }
