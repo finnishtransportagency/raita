@@ -172,7 +172,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       index: this.#dataIndex,
       body: {
         aggs: {
-          "latest_inspection_date": { "max": { "field": "inspection_date" } }
+          'latest_inspection_date': { 'max': { 'field': 'metadata.inspection_date' } }
         }
       },
     });
