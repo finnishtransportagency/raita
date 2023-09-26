@@ -9,7 +9,7 @@ import { Range } from 'shared/types';
 import { DATE_FMT } from 'shared/constants';
 import { assoc } from 'rambda';
 import { useTranslation } from 'next-i18next';
-import { addDays, formatISO } from 'date-fns';
+import { add } from 'date-fns';
 
 export function DateRange(props: Props) {
   const { t } = useTranslation(['common']);
@@ -21,10 +21,11 @@ export function DateRange(props: Props) {
     end: range?.end,
   });
 
-  function getTomorrowDateString(dateString: string) {
-    const date = new Date(dateString);
-    const tomorrow = addDays(date, 1);
-    return formatISO(tomorrow, { representation: 'date' });
+  /**
+   * Assumes that param date is local time equivalent of UTC 00:00:00
+   */
+  function getEndOfDay(date: Date) {
+    return add(date, { hours: 23, minutes: 59, seconds: 59 });
   }
 
   //
@@ -64,6 +65,9 @@ export function DateRange(props: Props) {
             value={rangeValues[0]}
             className={clsx(css.input)}
             onChange={e => {
+              if (!e.target.value) {
+                return;
+              }
               const newStartDate = new Date(e.target.value);
               if (rangeValues[1] && newStartDate > new Date(rangeValues[1])) {
                 setState(assoc('end', undefined));
@@ -86,12 +90,15 @@ export function DateRange(props: Props) {
             {...{ disabled }}
             type={'date'}
             value={rangeValues[1]}
-            min={
-              rangeValues[0] ? getTomorrowDateString(rangeValues[0]) : undefined
-            }
+            min={rangeValues[0] ? rangeValues[0] : undefined}
             className={clsx(css.input)}
             onChange={e => {
-              setState(assoc('end', new Date(e.target.value)));
+              if (!e.target.value) {
+                return;
+              }
+              const date = new Date(e.target.value);
+              const endOfDay = getEndOfDay(date);
+              setState(assoc('end', endOfDay));
             }}
           />
 
