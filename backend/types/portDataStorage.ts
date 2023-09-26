@@ -24,4 +24,5 @@ export interface IMetadataStorageInterface {
     trackNumbers: Array<{ value: string; count: number }>;
     trackParts: Array<{ value: string; count: number }>;
   }>;
+  getLatestEntryData: () => Promise<void>;
 }

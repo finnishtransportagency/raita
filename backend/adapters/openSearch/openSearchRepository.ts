@@ -177,12 +177,11 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
               field: "metadata.inspection_date",
             }
           },
-          "latest_zip_date": {
+   /*       "latest_zip_date": {
             max: {
               field: "metadata.zip_reception__date.keyword",
             }
-          }
-
+          }*/
         }
       },
     },(error, result) => { // callback to log the output

@@ -30,6 +30,7 @@ export async function handleMetaRequest(
     const [fields, aggregations] = await Promise.all([
       metadataPort.getMetadataFields(),
       metadataPort.getMetadataAggregations(),
+      metadataPort.getLatestEntryData(),
     ]);
     log.info('Got metadata');
     log.info(fields);

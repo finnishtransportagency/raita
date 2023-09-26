@@ -54,4 +54,8 @@ export default class MetadataPort implements IMetadataStorageInterface {
   getMetadataAggregations = () => {
     return this.#backend.getMetadataAggregations();
   };
+
+  getLatestEntryData = () => {
+    return this.#backend.getLatestEntryData();
+  };
 }
