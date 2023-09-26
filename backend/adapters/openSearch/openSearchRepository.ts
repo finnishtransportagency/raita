@@ -179,7 +179,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
           },
           "latest_zip_date": {
             max: {
-              field: "metadata.zip_reception__date",
+              field: "metadata.zip_reception__date.keyword",
             }
           }
 
