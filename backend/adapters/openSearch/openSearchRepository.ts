@@ -176,8 +176,8 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
             max: {
               field: "metadata.inspection_date",
             }
-          },
-   /*       "latest_zip_date": {
+          }
+   /* ,      "latest_zip_date": {
             max: {
               field: "metadata.zip_reception__date.keyword",
             }
@@ -190,7 +190,11 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         log.error(error);
       } else {
         log.info("HELLO SUCCCESS");
+        log.info(result);
+        log.info(result.body);
+        log.info(result.body.aggregations);
         log.info(result.body.aggregations["latest_inspection_date"]);
+        log.info("HELLO SUCCCESS2");
       }
     });
     log.info("HELLO");
