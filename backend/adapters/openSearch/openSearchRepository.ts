@@ -195,7 +195,9 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       }
     });
     log.info("HELLO");
+    log.info("HELLO got response:");
     log.info(response);
+    log.info("that was response:");
     return;
   };
 
