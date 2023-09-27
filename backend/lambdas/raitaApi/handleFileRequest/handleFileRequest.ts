@@ -23,7 +23,6 @@ export async function handleFileRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
-  log.debug("kalle testing");
   const { body } = event;
   const s3 = new S3();
   try {

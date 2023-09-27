@@ -6,7 +6,6 @@ import {
   IMetadataDocument,
   MetadataSearchResponseSchema,
 } from './openSearchResponseSchemas';
-import {log} from "../../utils/logger";
 
 export class OpenSearchResponseParser {
   parseAggregations = (res: any) => {
@@ -106,13 +105,7 @@ export class OpenSearchResponseParser {
     }));
 
     parseLatestEntryAggregation(res: any) {
-      if (!res.body) {
-        return {
-          latestInspection:"No latest date available",
-        }
-        //throw new Error('Missing LatestEntryAggregation response body');
-      }
-      const latestInspection = res.body.aggregations?.latest_inspection_date?.value_as_string || "No latest date available";
+      const latestInspection = res?.body?.aggregations?.latest_inspection_date?.value_as_string || "n/a";
       return {
         latestInspection,
       }

@@ -170,6 +170,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
               field: "metadata.inspection_date",
             }
           }
+          //zip_reception__date on tekstikenttä joten siitä ei max-aggregaatio onnistu
    /* ,      "latest_zip_date": {
             max: {
               field: "metadata.zip_reception__date.keyword",
@@ -178,14 +179,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         }
       },
     });
-    log.info("HELLO got response:" + response);
-    log.info(response);
-    log.info("that was response:");
-    const parsedRes = this.#responseParser.parseLatestEntryAggregation(response);log.info("HELLO got response:" + response);
-    log.info("HELLO parsed response:" + parsedRes);
-    log.info(parsedRes);
-
-    return parsedRes;
+    return this.#responseParser.parseLatestEntryAggregation(response);
   };
 
 

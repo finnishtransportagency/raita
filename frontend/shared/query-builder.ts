@@ -115,9 +115,6 @@ export function makeQuery(
     aggs: aggs,
   };
 
-
-  console.log("HELLO QUOERY");
-  console.log(qʼ);
   return qʼ;
 }
 
