@@ -177,20 +177,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
           }*/
         }
       },
-    },(error, result) => { // callback to log the output
-      if (error) {
-        log.error("HELLO ERROR");
-        log.error(error);
-      } else {
-        log.info("HELLO SUCCCESS");
-        log.info(result);
-        log.info(result.body);
-        log.info(result.body.aggregations);
-        log.info(result.body.aggregations["latest_inspection_date"]);
-     //   log.info(result.body.aggregations["latest_inspection_date"].value_as_string);
-     //   log.info(result.body.aggregations.latest_inspection_date.value_as_string);
-        log.info("HELLO SUCCCESS2");
-      }
     });
     log.info("HELLO got response:" + response);
     log.info(response);
