@@ -255,7 +255,7 @@ const ReportsIndex: NextPage = () => {
       <div className="bg-primary text-white">
         <div className="container mx-auto px-16 py-6">
           <header>
-            <h1 className="text-4xl">{t('common:reports_heading')}</h1>
+            <h1 className="text-4xl">{t('common:reports_heading') }</h1> <div> {meta.data.latestInspection} </div>
           </header>
         </div>
       </div>
