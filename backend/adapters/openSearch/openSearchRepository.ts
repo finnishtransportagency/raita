@@ -159,7 +159,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     return this.#responseParser.parseAggregations(response);
   };
 
-  getLatestEntryData: () => Promise<{ latestInspection: any }> = async () => {
+  getLatestEntryData = async () => {
     const client = await this.#openSearchClient.getClient();
     const response = await client.search({
       index: this.#dataIndex,
