@@ -107,7 +107,10 @@ export class OpenSearchResponseParser {
 
     parseLatestEntryAggregation(res: any) {
       if (!res.body) {
-        throw new Error('Missing LatestEntryAggregation response body');
+        return {
+          latestInspection:"No latest date available",
+        }
+        //throw new Error('Missing LatestEntryAggregation response body');
       }
       const latestInspection = res.body.aggregations?.latest_inspection_date?.value_as_string || "No latest date available";
       return {
