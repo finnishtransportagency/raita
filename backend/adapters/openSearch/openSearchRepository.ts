@@ -181,7 +181,11 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     log.info("HELLO got response:" + response);
     log.info(response);
     log.info("that was response:");
-    return this.#responseParser.parseLatestEntryAggregation(response);
+    const parsedRes = this.#responseParser.parseLatestEntryAggregation(response);log.info("HELLO got response:" + response);
+    log.info("HELLO parsed response:" + parsedRes);
+    log.info(parsedRes);
+
+    return parsedRes;
   };
 
 
