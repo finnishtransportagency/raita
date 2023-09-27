@@ -117,11 +117,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   };
 
   getMetadataAggregations = async () => {
-    try {
-      this.getLatestEntryData();
-    } catch (error) {
-      log.error(error);
-    }
     const client = await this.#openSearchClient.getClient();
     const response = await client.search({
       index: this.#dataIndex,
@@ -161,8 +156,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         },
       },
     });
-    log.debug("HELLO1");
-    log.debug(response);
     return this.#responseParser.parseAggregations(response);
   };
 
@@ -194,13 +187,12 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         log.info(result.body);
         log.info(result.body.aggregations);
         log.info(result.body.aggregations["latest_inspection_date"]);
-        log.info(result.body.aggregations["latest_inspection_date"].value_as_string);
-        log.info(result.body.aggregations.latest_inspection_date.value_as_string);
+     //   log.info(result.body.aggregations["latest_inspection_date"].value_as_string);
+     //   log.info(result.body.aggregations.latest_inspection_date.value_as_string);
         log.info("HELLO SUCCCESS2");
       }
     });
-    log.info("HELLO");
-    log.info("HELLO got response:");
+    log.info("HELLO got response:" + response);
     log.info(response);
     log.info("that was response:");
     return this.#responseParser.parseLatestEntryAggregation(response);
