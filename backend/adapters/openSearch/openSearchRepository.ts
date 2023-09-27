@@ -166,7 +166,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     return this.#responseParser.parseAggregations(response);
   };
 
-  getLatestEntryData = async () => {
+  getLatestEntryData: () => Promise<{ latestInspection: any }> = async () => {
     const client = await this.#openSearchClient.getClient();
     const response = await client.search({
       index: this.#dataIndex,
@@ -194,6 +194,8 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         log.info(result.body);
         log.info(result.body.aggregations);
         log.info(result.body.aggregations["latest_inspection_date"]);
+        log.info(result.body.aggregations["latest_inspection_date"].value_as_string);
+        log.info(result.body.aggregations.latest_inspection_date.value_as_string);
         log.info("HELLO SUCCCESS2");
       }
     });
@@ -201,7 +203,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     log.info("HELLO got response:");
     log.info(response);
     log.info("that was response:");
-    return;
+    return this.#responseParser.parseLatestEntryAggregation(response);
   };
 
 
