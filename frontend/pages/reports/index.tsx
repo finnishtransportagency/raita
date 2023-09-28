@@ -58,6 +58,7 @@ const initialState: ReportsState = {
     page: 1,
   },
   debug: false,
+  waitingToUpdateMutation: false,
 };
 
 //
@@ -165,7 +166,7 @@ const ReportsIndex: NextPage = () => {
 
   const doSearch = () => {
     setState(R.assocPath(['paging', 'page'], 1));
-    mutation.mutate(query);
+    setState(R.assocPath(['waitingToUpdateMutation'], true));
   };
 
   const resetSearch = () => {
@@ -204,6 +205,14 @@ const ReportsIndex: NextPage = () => {
     }
   }, [resultsData]);
 
+  // make sure mutation is updated only after query object is changed
+  useEffect(() => {
+    if (state.waitingToUpdateMutation) {
+      mutation.mutate(query);
+      setState(R.assoc('waitingToUpdateMutation', false));
+    }
+  }, [state.waitingToUpdateMutation]);
+
   const updateDateRange = (range: Range<Date>) => {
     setState(R.assocPath(['special', 'dateRange'], range));
     setState(R.assoc('resetFilters', false));
@@ -222,7 +231,7 @@ const ReportsIndex: NextPage = () => {
 
   const setPage = (n: number) => {
     setState(R.assocPath(['paging', 'page'], n));
-    mutation.mutate(query);
+    setState(R.assocPath(['waitingToUpdateMutation'], true));
   };
 
   /**
@@ -595,6 +604,7 @@ type ReportsState = {
     page: number;
   };
   debug?: boolean;
+  waitingToUpdateMutation: boolean;
 };
 
 type ReportFilters = Record<string, string>;
