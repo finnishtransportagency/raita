@@ -33,6 +33,7 @@
   "relation_gt": ">",
   "relation_gte": ">=",
   "no_choice": "Ei valintaa",
+  "filter_options": "Suodata vaihtoehtoja",
   "first_page": "Sivu 1",
   "last_page": "Sivu {{ number }}",
   "prev_page": "Ed. sivu",

@@ -31,6 +31,7 @@
   "relation_gt": ">",
   "relation_gte": ">=",
   "no_choice": "No choice",
+  "filter_options": "Filter options",
   "first_page": "First page",
   "last_page": "Last page",
   "prev_page": "Previous",
