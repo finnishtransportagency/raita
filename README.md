@@ -9,6 +9,10 @@
 
 ## Setup
 
+### Frontend
+
+Instructions for running the frontend locally are in the [Frontend README](/frontend/README.md).
+
 ### Local dev
 
 Check node version. You can use `nvm use` to automatically set the right version.
@@ -48,6 +52,8 @@ Reference for pipeline setup: https://docs.aws.amazon.com/cdk/v2/guide/cdk_pipel
 ## Accessing dev environment RAITA-api directly via bastion host
 
 In development environment it is possible to call Raita-api directly via bastion host connection.
+
+For local frontend development the recommended way is to route api requests from the frontend to this bastion host pipe. Instructions for this are in the [Frontend README](/frontend/README.md).
 
 ### Installations
 
@@ -100,6 +106,10 @@ nohup sudo socat TCP4-LISTEN:LISTEN_PORT_TO_FIX,reuseaddr,fork TCP:DNS_TO_REDIRE
 where `LISTEN_PORT_TO_FIX` is the port you want to listen on (e.g. 3004), `DNS_TO_REDIRECT` is where you want to redirect to and `PORT_TO_PIPE` is port in the receiving end. With ALB, the port that ALB listens to is port 80 and DNS is the DNS of the ALB (check AWS console).
 
 ## Scripts
+
+## Tests
+
+TODO: describe backend tests
 
 ## Tools
 

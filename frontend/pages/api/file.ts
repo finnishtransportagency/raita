@@ -1,9 +1,7 @@
 import { NextApiHandler } from 'next';
 
 const handler: NextApiHandler = (req, res) => {
-  res.status(200).json({
-    url: 'https://s3-raita-dev-main-inspection-data.s3.eu-west-1.amazonaws.com/Meeri/007/KEKYT/2/2022/TG%20Master/20220805_111609/GraphicalReports/TG_K%C3%A4yr%C3%A4_20220805_007_KEKYT_2_29_29.pdf?AWSAccessKeyId=ASIAYUBMRLWKXC6A2TFD&Expires=1667979214&Signature=L9%2BIAqc07t%2FXfwkJflU1%2Fjqbxwo%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEGAaCWV1LXdlc3QtMSJIMEYCIQDFl726qYeKgh5ojmFO2deCeTqAH7d3JiHX26UWM59V4QIhALj13rAvsm%2BWfyEaeLcnR5aovtrWiHG3YpVhaDNOV52aKqEDCFkQABoMNTkyNzk4ODk5NjA1IgxNJahc2sjQZH2IW2Eq%2FgJo48MjfJJgH7tP6DhnLsFaJyVzUpwNT%2FSiyol6UFNmtwMam5167hVEMD6rUu0DiIAyo%2Bq69QWzxCok%2FwklQbeLZY2Q%2FBWZbA%2B3jGAJ8R0IJOAoRDNZc3ww9j140sZgiOJpbBGutQ%2Fh%2Fy9Xo20b1QZq4RAvCJU9X4i5zL%2FaKWImx0jkp%2Beb7cNVdK8dFz2P2LzS%2FIroI3%2FcXzI2wRfS3wIAPu5pVUwicQ3J7wVP0jP4zDpRM3%2F3TUFLyvRRZXno8v2KxXfJP5LPCDTY3vYNmu8JJrQmOcN4fLCSqlqAuGfcwKdh6jwtRi8kr5iYBHkeb30lQp0N%2Byn4wrAx8LLzVnRLdye8ar0MvpJkUoTNlCJvSO%2FoNvGnj%2BP0j1LseieCUp%2F%2B1aB4O89li2qhPv0zrzncq1p7O80mVSzq%2BFxlZ%2BflPxNtnbkSLJ4gCGvqFkXmP%2FX%2B59wzMSJAz7Zzzhud4sODZicAik%2BOLMfr%2FQViqJkBYTHSdvpNBrrzDtwuBBvAMM2urZsGOpwBOiZf3hmO03YGf1%2BW8P%2F34RZzMHDQQfU1v8SZKEneiQVwfiQP%2BiH4rLCCQL48NdCYAVXh0fCRURgY7e2sDka8H8tbzD3NpthYK5eIGXUCOVOf5fUEgpzcMr0Xd7Ry1PfWL5lXHsM8zPL3f4yti7cuSgwuIHFKtQFXQJPmFYmeP1gwFA9qEhFL1fljSqDccpzvy5YhFydiDD%2F1kGAk',
-  });
+  res.status(200).json({});
 };
 
 export default handler;
