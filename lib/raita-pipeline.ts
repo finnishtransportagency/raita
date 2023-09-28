@@ -57,21 +57,21 @@ export class RaitaPipelineStack extends Stack {
       }),
     );
 
+    const githubSource = CodePipelineSource.gitHub(
+      'finnishtransportagency/raita',
+      config.branch,
+      {
+        authentication: SecretValue.secretsManager(config.authenticationToken),
+      },
+    );
+
     const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
         codePipeline: pipeline,
         synth: new ShellStep('Synth', {
-          input: CodePipelineSource.gitHub(
-            'finnishtransportagency/raita',
-            config.branch,
-            {
-              authentication: SecretValue.secretsManager(
-                config.authenticationToken,
-              ),
-            },
-          ),
+          input: githubSource,
           installCommands: ['npm ci', 'npm --prefix frontend ci'],
           commands: [
             'npm run --prefix frontend build',
@@ -98,6 +98,15 @@ export class RaitaPipelineStack extends Stack {
         raitaEnv: config.env,
         tags: config.tags,
       }),
+      {
+        pre: [
+          new ShellStep('UnitTest', {
+            input: githubSource,
+            installCommands: ['npm ci', 'npm --prefix frontend ci'],
+            commands: ['npm run test', 'npm run --prefix frontend test'],
+          }),
+        ],
+      },
     );
   }
 }

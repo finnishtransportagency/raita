@@ -13,7 +13,7 @@ import {
 import { log, logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
-const parseFileNameParts = (
+export const parseFileNameParts = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
 ) =>
@@ -35,7 +35,7 @@ const parseFileNameParts = (
     return acc;
   }, {});
 
-const validateGenericFileNameStructureOrFail = (
+export const validateGenericFileNameStructureOrFail = (
   fileName: string,
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
