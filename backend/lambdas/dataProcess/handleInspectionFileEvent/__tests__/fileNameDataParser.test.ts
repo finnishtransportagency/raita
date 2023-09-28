@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { IExtractionSpec, IExtractionSpecLabels } from '../../../../types';
 import { KeyData } from '../../../utils';
 import {
