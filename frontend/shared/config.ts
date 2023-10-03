@@ -12,7 +12,7 @@ export const baseURL =
 /**
  * Overwrite api requests for dev environment
  */
-export const devApiUrl = process.env.DEV_RAITA_API_FEATURE_BASEURL || null;
+export const devApiUrl = process.env.DEV_RAITA_API_BASEURL || null;
 export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 
 export const paging = {
