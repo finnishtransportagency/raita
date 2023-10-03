@@ -47,5 +47,6 @@
   "rights_restriction_info": "The use of material stored in the system is restricted by usage rights and allowed only for work related to orders from the Finnish Transport Infrastructure Agency",
   "loading": "Loading...",
   "too_many_results": "Too many results, try filtering your search more",
-  "big_compression": "Note! Compressing a lot of data might take several minutes"
+  "big_compression": "Note! Compressing a lot of data might take several minutes",
+  "latest_inspection": "Latest inspection date: "
 }

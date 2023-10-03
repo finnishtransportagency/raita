@@ -27,13 +27,15 @@ export async function handleMetaRequest(
       region,
       openSearchDomain,
     });
-    const [fields, aggregations] = await Promise.all([
+    const [fields, aggregations, latestEntryData] = await Promise.all([
       metadataPort.getMetadataFields(),
       metadataPort.getMetadataAggregations(),
+      metadataPort.getLatestEntryData(),
     ]);
     return getRaitaSuccessResponse({
       fields,
       ...aggregations,
+      ...latestEntryData
     });
   } catch (err: unknown) {
     log.error(err);

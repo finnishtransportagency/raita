@@ -158,4 +158,30 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     });
     return this.#responseParser.parseAggregations(response);
   };
+
+  getLatestEntryData = async () => {
+    const client = await this.#openSearchClient.getClient();
+    const response = await client.search({
+      index: this.#dataIndex,
+      body: {
+        aggs: {
+          "latest_inspection_date": {
+            max: {
+              field: "metadata.inspection_date",
+            }
+          }
+          //zip_reception__date on tekstikenttä joten siitä ei max-aggregaatio onnistu
+   /* ,      "latest_zip_date": {
+            max: {
+              field: "metadata.zip_reception__date.keyword",
+            }
+          }*/
+        }
+      },
+    });
+    return this.#responseParser.parseLatestEntryAggregation(response);
+  };
+
+
+
 }

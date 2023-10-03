@@ -60,6 +60,7 @@ type GetMetaResult = {
   trackParts: { value: string; count: number }[];
   fields: any[];
   reportTypes: MetaResultType[];
+  latestInspection: string;
 };
 
 type MetaResultType = { reportType: string; count: number };
