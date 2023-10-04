@@ -315,33 +315,6 @@ export class RaitaApiStack extends NestedStack {
     let importedListener: elbv2.IApplicationListener | null = null;
 
     if (isDevelopmentPreMainStack(stackId, raitaEnv)) {
-      // const albArnParameter = StringParameter.fromStringParameterName(
-      //   this,
-      //   'main-alb-arn',
-      //   'raita-dev-main-alb-arn', // not needed? TODO poista
-      // );
-      // const listenerArnParameter = StringParameter.fromStringParameterName(
-      //   this,
-      //   'main-alb-arn',
-      //   'raita-dev-main-alb-arn', // not needed?
-      // );
-      // if (!albArnParameter || !albArnParameter.stringValue) {
-      //   return;
-      // }
-      // const importedAlb =
-      //   elbv2.ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(
-      //     this,
-      //     'raita-api',
-      //     {
-      //       loadBalancerArn: albArnParameter.stringValue,
-      //       securityGroupId: raitaSecurityGroup.securityGroupId,
-      //       vpc,
-      //     },
-      //   );
-      // if (!importedAlb) {
-      //   // TODO
-      //   return;
-      // }
       const listenerArnParameter = StringParameter.fromStringParameterName(
         this,
         'main-listener-arn',
@@ -364,11 +337,6 @@ export class RaitaApiStack extends NestedStack {
       isDevelopmentPreMainStack(stackId, raitaEnv)
     ) {
       albLambdaTargets.forEach(target => {
-        // importedListener.addTargets(`target-${target.targetName}`, {
-        //   targets: [new LambdaTarget(target.lambda)],
-        //   priority: target.priority,
-        //   conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
-        // });
         if (importedListener !== null) {
           const premainPriorityPrefix = 1000; // TODO
           const group = new elbv2.ApplicationTargetGroup(

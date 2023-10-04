@@ -139,10 +139,8 @@ export class CloudfrontStack extends Stack {
           cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
         };
         additionalBehaviors = {
-          // [`/main/api*`]: apiProxyBehavior,
           [`/premain/api*`]: apiProxyBehavior,
           [`/api*`]: apiProxyBehavior,
-          // [`/main*`]: frontEndBehavior,
           [`/premain*`]: frontEndPremainBehavior,
           [`/oauth2*`]: apiProxyBehavior,
         };
