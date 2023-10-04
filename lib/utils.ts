@@ -3,6 +3,7 @@ import { EbsDeviceVolumeType, ISubnet } from 'aws-cdk-lib/aws-ec2';
 import { DomainProps } from 'aws-cdk-lib/aws-opensearchservice';
 import {
   DEVELOPMENT_MAIN_STACK_ID,
+  DEVELOPMENT_PREMAIN_STACK_ID,
   ENVIRONMENTS,
   PRODUCTION_STACK_ID,
 } from '../constants';
@@ -21,6 +22,14 @@ export const isDevelopmentMainStack = (
   stackId: string,
   raitaEnv: RaitaEnvironment,
 ) => stackId === DEVELOPMENT_MAIN_STACK_ID && raitaEnv === ENVIRONMENTS.dev;
+
+/**
+ * Returns whether the stack is the premain development stack
+ */
+export const isDevelopmentPreMainStack = (
+  stackId: string,
+  raitaEnv: RaitaEnvironment,
+) => stackId === DEVELOPMENT_PREMAIN_STACK_ID && raitaEnv === ENVIRONMENTS.dev;
 
 /**
  * Returns whether the stack is the production stack
