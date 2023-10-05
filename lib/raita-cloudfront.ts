@@ -151,30 +151,20 @@ export class CloudfrontStack extends Stack {
         additionalBehaviors,
       });
 
+      const OAIPrincipal = new iam.CanonicalUserPrincipal(
+        cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
+      );
       // Grant OAI permissions to access the frontend bucket resources
       frontendStack.frontendBucket.addToResourcePolicy(
         new iam.PolicyStatement({
           actions: ['s3:GetObject'],
           resources: [frontendStack.frontendBucket.arnForObjects('*')],
-          principals: [
-            new iam.CanonicalUserPrincipal(
-              cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
-            ),
-          ],
+          principals: [OAIPrincipal],
         }),
       );
       if (importedBucket && isDevelopmentMainStack(stackId, raitaEnv)) {
-        importedBucket.addToResourcePolicy(
-          new iam.PolicyStatement({
-            actions: ['s3:GetObject'],
-            resources: [importedBucket.arnForObjects('*')],
-            principals: [
-              new iam.CanonicalUserPrincipal(
-                cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
-              ),
-            ],
-          }),
-        );
+        // grant read to premain bucket
+        importedBucket.grantRead(OAIPrincipal, '*');
       }
     }
   }
