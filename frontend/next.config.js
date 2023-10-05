@@ -5,6 +5,7 @@ const nextConfig = {
   compiler: {
     removeConsole: false,
   },
+  basePath: process.env.RAITA_BASEURL || '',
 };
 
 module.exports = nextConfig;

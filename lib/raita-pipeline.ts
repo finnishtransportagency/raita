@@ -67,11 +67,11 @@ export class RaitaPipelineStack extends Stack {
       },
     );
 
-    const overwriteApiPath = isDevelopmentPreMainStack(
+    const overwriteBaseUrl = isDevelopmentPreMainStack(
       config.stackId,
       config.env,
     )
-      ? `/${config.stackId}/api`
+      ? `/${config.stackId}`
       : '';
 
     const codePipeline = new CodePipeline(
@@ -83,7 +83,7 @@ export class RaitaPipelineStack extends Stack {
           input: githubSource,
           installCommands: ['npm ci', 'npm --prefix frontend ci'],
           env: {
-            NEXT_PUBLIC_API_BASEURL: overwriteApiPath,
+            RAITA_BASEURL: overwriteBaseUrl,
           },
           commands: [
             'npm run --prefix frontend build',
