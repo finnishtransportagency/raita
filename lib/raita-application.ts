@@ -86,6 +86,7 @@ export class ApplicationStack extends NestedStack {
       openSearchMetadataIndex: openSearchMetadataIndex,
       cloudfrontDomainName: cloudfrontDomainName,
       vpc,
+      raitaSecurityGroup,
     });
 
     // Create Bastion Host for dev (main branch/stack) and production
