@@ -163,6 +163,19 @@ export class CloudfrontStack extends Stack {
           ],
         }),
       );
+      if (importedBucket && isDevelopmentMainStack(stackId, raitaEnv)) {
+        importedBucket.addToResourcePolicy(
+          new iam.PolicyStatement({
+            actions: ['s3:GetObject'],
+            resources: [importedBucket.arnForObjects('*')],
+            principals: [
+              new iam.CanonicalUserPrincipal(
+                cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
+              ),
+            ],
+          }),
+        );
+      }
     }
   }
 }
