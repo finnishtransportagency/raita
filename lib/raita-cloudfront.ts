@@ -67,24 +67,26 @@ export class CloudfrontStack extends Stack {
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       };
 
+      const redirectFunction = new cloudfront.Function(
+        this,
+        'FrontendRedirectCFFunction',
+        {
+          code: cloudfront.FunctionCode.fromFile({
+            filePath: path.join(
+              __dirname,
+              '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
+            ),
+          }),
+        },
+      );
+
       const frontEndBehavior = {
         origin: new origins.S3Origin(frontendStack.frontendBucket, {
           originAccessIdentity: cloudfrontOAI,
         }),
         functionAssociations: [
           {
-            function: new cloudfront.Function(
-              this,
-              'FrontendRedirectCFFunction',
-              {
-                code: cloudfront.FunctionCode.fromFile({
-                  filePath: path.join(
-                    __dirname,
-                    '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
-                  ),
-                }),
-              },
-            ),
+            function: redirectFunction,
             eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
           },
         ],
@@ -117,19 +119,7 @@ export class CloudfrontStack extends Stack {
           }),
           functionAssociations: [
             {
-              function: new cloudfront.Function(
-                this,
-                'FrontendRedirectCFFunction',
-                {
-                  // TODO config overwrite?
-                  code: cloudfront.FunctionCode.fromFile({
-                    filePath: path.join(
-                      __dirname,
-                      '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
-                    ),
-                  }),
-                },
-              ),
+              function: redirectFunction,
               eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
             },
           ],
