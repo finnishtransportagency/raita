@@ -5,7 +5,7 @@ function handler(event) {
   var headers = request.headers;
   var cookies = request.cookies;
 
-  const originalUri = request.uri;
+  var originalUri = request.uri;
   // fix for serving premain env under /premain
   request.uri = request.uri.replace('/premain/', '/');
   request.uri = request.uri.replace('/premain', '/');
