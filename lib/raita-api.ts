@@ -364,6 +364,12 @@ export class RaitaApiStack extends NestedStack {
         vpc,
         listenerTargets: albLambdaTargets,
       });
+      if (isDevelopmentMainStack(stackId, raitaEnv)) {
+        new StringParameter(this, `bucket-arn-param`, {
+          parameterName: `raita-${raitaEnv}-${stackId}-application-listener-arn`,
+          stringValue: this.alb.listeners[0].listenerArn,
+        });
+      }
     }
   }
 

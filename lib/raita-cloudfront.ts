@@ -44,6 +44,7 @@ export class CloudfrontStack extends Stack {
     const frontendStack = new FrontendStack(this, 'stack-fe', {
       raitaEnv,
       raitaStackIdentifier,
+      stackId,
     });
 
     // Create Cloudfront itself conditionally - only for main and prod stackIds
@@ -67,26 +68,24 @@ export class CloudfrontStack extends Stack {
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       };
 
-      const redirectFunction = new cloudfront.Function(
-        this,
-        'FrontendRedirectCFFunction',
-        {
-          code: cloudfront.FunctionCode.fromFile({
-            filePath: path.join(
-              __dirname,
-              '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
-            ),
-          }),
-        },
-      );
-
       const frontEndBehavior = {
         origin: new origins.S3Origin(frontendStack.frontendBucket, {
           originAccessIdentity: cloudfrontOAI,
         }),
         functionAssociations: [
           {
-            function: redirectFunction,
+            function: new cloudfront.Function(
+              this,
+              'FrontendRedirectCFFunction',
+              {
+                code: cloudfront.FunctionCode.fromFile({
+                  filePath: path.join(
+                    __dirname,
+                    '../backend/lambdas/cloudfront/frontendRedirect/handleFrontendRedirect.js',
+                  ),
+                }),
+              },
+            ),
             eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
           },
         ],
@@ -100,7 +99,7 @@ export class CloudfrontStack extends Stack {
         const bucketArnParam = StringParameter.fromStringParameterName(
           this,
           'premain-front-bucket-arn',
-          'raita-dev-premain-front-bucket-arn', // TODO
+          'raita-dev-premain-front-bucket-arn',
         );
         if (bucketArnParam && bucketArnParam.stringValue) {
           importedBucket = Bucket.fromBucketArn(
@@ -119,10 +118,22 @@ export class CloudfrontStack extends Stack {
           }),
           functionAssociations: [
             {
-              function: redirectFunction,
+              function: new cloudfront.Function(
+                this,
+                'FrontendRedirectCFFunction-premain',
+                {
+                  code: cloudfront.FunctionCode.fromFile({
+                    filePath: path.join(
+                      __dirname,
+                      '../backend/lambdas/cloudfront/frontendRedirect/handlePremainFrontendRedirect.js',
+                    ),
+                  }),
+                },
+              ),
               eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
             },
           ],
+          cachePolicy: CachePolicy.CACHING_DISABLED, // fix to caching wrong file for premain
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
           viewerProtocolPolicy:
             cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -164,7 +175,8 @@ export class CloudfrontStack extends Stack {
       );
       if (importedBucket && isDevelopmentMainStack(stackId, raitaEnv)) {
         // grant read to premain bucket
-        importedBucket.grantRead(OAIPrincipal, '*');
+        // TODO: updating policy here does not work
+        // importedBucket.grantRead(OAIPrincipal, '*');
       }
     }
   }
