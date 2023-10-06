@@ -5,10 +5,12 @@ import { Construct } from 'constructs';
 import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaBucket } from './raitaResourceCreators';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 interface FrontendStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  stackId: string;
 }
 
 export class FrontendStack extends NestedStack {
@@ -16,7 +18,7 @@ export class FrontendStack extends NestedStack {
 
   constructor(scope: Construct, id: string, props: FrontendStackProps) {
     super(scope, id, props);
-    const { raitaEnv, raitaStackIdentifier } = props;
+    const { raitaEnv, raitaStackIdentifier, stackId } = props;
 
     this.frontendBucket = createRaitaBucket({
       scope: this,
@@ -30,6 +32,10 @@ export class FrontendStack extends NestedStack {
     new BucketDeployment(this, 'FrontendDeployment', {
       sources: [Source.asset(path.join(__dirname, buildDir))],
       destinationBucket: this.frontendBucket,
+    });
+    new StringParameter(this, `bucket-arn-param`, {
+      parameterName: `raita-dev-${stackId}-front-bucket-arn`,
+      stringValue: this.frontendBucket.bucketArn,
     });
   }
 }

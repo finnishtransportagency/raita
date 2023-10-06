@@ -9,5 +9,9 @@ declare namespace NodeJS {
      * @deprecated
      */
     API_BASEURL: string;
+    /**
+     * Set if serving the application from a subpath
+     */
+    NEXT_PUBLIC_RAITA_BASEURL: string;
   }
 }
