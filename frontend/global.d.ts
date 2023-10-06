@@ -12,6 +12,6 @@ declare namespace NodeJS {
     /**
      * Set if serving the application from a subpath
      */
-    RAITA_BASEURL: string;
+    NEXT_PUBLIC_RAITA_BASEURL: string;
   }
 }

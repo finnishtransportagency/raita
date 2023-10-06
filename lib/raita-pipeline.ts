@@ -83,7 +83,7 @@ export class RaitaPipelineStack extends Stack {
           input: githubSource,
           installCommands: ['npm ci', 'npm --prefix frontend ci'],
           env: {
-            RAITA_BASEURL: overwriteBaseUrl,
+            NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
           },
           commands: [
             'npm run --prefix frontend build',
