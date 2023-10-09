@@ -52,7 +52,8 @@ export function DateRange(props: Props) {
   }, [resetDateRange]);
 
   useEffect(() => {
-    onUpdate && onUpdate(state);
+    const newEndDate = state.end ? getEndOfDay(state.end) : state.end;
+    onUpdate && onUpdate({ ...state, end: newEndDate });
   }, [state]);
 
   return (
@@ -97,8 +98,7 @@ export function DateRange(props: Props) {
               if (!isValid(endDate)) {
                 return;
               }
-              const endOfDay = getEndOfDay(endDate);
-              setState(assoc('end', endOfDay));
+              setState(assoc('end', endDate));
             }}
           />
 
