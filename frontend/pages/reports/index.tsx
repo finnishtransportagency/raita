@@ -243,11 +243,29 @@ const ReportsIndex: NextPage = () => {
    */
   const isLoading = [meta.isLoading, mutation.isLoading].some(R.identity);
 
-  //
-
   if (meta.isLoading || !meta.data) return <LoadingOverlay />;
 
   if (meta.isError) return <div>Error</div>;
+
+  let latestInspectionFormattedDate = '';
+  if (meta.data?.latestInspection) {
+    try {
+      const latestInspectionParsedDate = Date.parse(meta.data.latestInspection);
+      latestInspectionFormattedDate = formatDate(
+          DATE_FMT_LATEST_MEASUREMENT,
+          latestInspectionParsedDate,
+      );
+    } catch (e) {
+      console.warn(
+          'Error parsing or formatting latest inspection date ' +
+          meta.data.latestInspection +
+          ' ' +
+          e,
+      );
+    }
+  } else {
+    console.warn('Latest inspection date missing');
+  }
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -261,10 +279,7 @@ const ReportsIndex: NextPage = () => {
             <h1 className="text-4xl">{t('common:reports_heading')}</h1>{' '}
             <div className="latestInspection">
               {t('common:latest_inspection')}
-              {formatDate(
-                DATE_FMT_LATEST_MEASUREMENT,
-                Date.parse(meta.data.latestInspection),
-              )}{' '}
+              {latestInspectionFormattedDate}
             </div>
           </header>
         </div>
