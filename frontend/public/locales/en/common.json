@@ -48,5 +48,5 @@
   "loading": "Loading...",
   "too_many_results": "Too many results, try filtering your search more",
   "big_compression": "Note! Compressing a lot of data might take several minutes",
-  "latest_inspection": "Latest inspection date: "
+  "latest_inspection": "Date of the most recent measurement: "
 }

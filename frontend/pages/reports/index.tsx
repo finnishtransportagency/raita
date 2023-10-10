@@ -32,6 +32,9 @@ import css from './reports.module.css';
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
+import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
+import { format as formatDate } from 'date-fns/fp';
+
 //
 
 const initialState: ReportsState = {
@@ -255,7 +258,14 @@ const ReportsIndex: NextPage = () => {
       <div className="bg-primary text-white">
         <div className="container mx-auto px-16 py-6">
           <header>
-            <h1 className="text-4xl">{t('common:reports_heading') }</h1> <div className="latestInspection">{t('common:latest_inspection')}{meta.data.latestInspection} </div>
+            <h1 className="text-4xl">{t('common:reports_heading')}</h1>{' '}
+            <div className="latestInspection">
+              {t('common:latest_inspection')}
+              {formatDate(
+                DATE_FMT_LATEST_MEASUREMENT,
+                Date.parse(meta.data.latestInspection),
+              )}{' '}
+            </div>
           </header>
         </div>
       </div>
