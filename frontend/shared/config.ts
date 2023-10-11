@@ -6,8 +6,9 @@ export const openSearch = {
   indexName: 'metadata-index-v2',
 } as const;
 
-export const baseURL =
-  process.env.NEXT_PUBLIC_API_BASEURL || process.env.API_BASEURL || '/api';
+export const baseURL = process.env.NEXT_PUBLIC_RAITA_BASEURL
+  ? `${process.env.NEXT_PUBLIC_RAITA_BASEURL}/api`
+  : process.env.API_BASEURL || '/api';
 
 /**
  * Overwrite api requests for dev environment
