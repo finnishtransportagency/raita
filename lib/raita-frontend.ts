@@ -6,6 +6,8 @@ import * as path from 'path';
 import { RaitaEnvironment } from './config';
 import { createRaitaBucket } from './raitaResourceCreators';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { isDevelopmentPreMainStack } from './utils';
+import { CanonicalUserPrincipal } from 'aws-cdk-lib/aws-iam';
 
 interface FrontendStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -33,9 +35,25 @@ export class FrontendStack extends NestedStack {
       sources: [Source.asset(path.join(__dirname, buildDir))],
       destinationBucket: this.frontendBucket,
     });
-    new StringParameter(this, `bucket-arn-param`, {
-      parameterName: `raita-dev-${stackId}-front-bucket-arn`,
-      stringValue: this.frontendBucket.bucketArn,
-    });
+    if (isDevelopmentPreMainStack(stackId, raitaEnv)) {
+      // save bucket arn for use by main stack, in dev premain stack only
+      new StringParameter(this, `bucket-arn-param`, {
+        parameterName: `raita-${raitaEnv}-${stackId}-front-bucket-arn`,
+        stringValue: this.frontendBucket.bucketArn,
+      });
+
+      //give read access to main cf distribution
+      const OAIIdParam = StringParameter.fromStringParameterName(
+        this,
+        'oai-id-param-import',
+        'raita-dev-main-cloudfront-oai-id',
+      );
+      if (OAIIdParam && OAIIdParam.stringValue) {
+        this.frontendBucket.grantRead(
+          new CanonicalUserPrincipal(OAIIdParam.stringValue),
+          '*',
+        );
+      }
+    }
   }
 }

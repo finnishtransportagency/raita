@@ -173,10 +173,13 @@ export class CloudfrontStack extends Stack {
           principals: [OAIPrincipal],
         }),
       );
-      if (importedBucket && isDevelopmentMainStack(stackId, raitaEnv)) {
-        // grant read to premain bucket
-        // TODO: updating policy here does not work
-        // importedBucket.grantRead(OAIPrincipal, '*');
+      if (isDevelopmentMainStack(stackId, raitaEnv)) {
+        //save this to grant read access for premain front bucket, for dev env only
+        new StringParameter(this, 'oai-id-param', {
+          parameterName: `raita-${raitaEnv}-${stackId}-cloudfront-oai-id`,
+          stringValue:
+            cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId,
+        });
       }
     }
   }
