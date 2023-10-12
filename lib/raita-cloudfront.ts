@@ -4,7 +4,7 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Construct } from 'constructs';
-import { RaitaEnvironment } from './config';
+import { RaitaEnvironment, getRaitaStackConfig } from './config';
 import { isDevelopmentMainStack, isPermanentStack } from './utils';
 import { FrontendStack } from './raita-frontend';
 import {
@@ -22,7 +22,6 @@ interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
   readonly stackId: string;
-  readonly cloudfrontCertificateArn: string;
   readonly cloudfrontDomainName: string;
   readonly dmzApiEndpoint: string;
 }
@@ -33,7 +32,6 @@ export class CloudfrontStack extends Stack {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
-      cloudfrontCertificateArn,
       cloudfrontDomainName,
       dmzApiEndpoint,
       stackId,
@@ -47,6 +45,10 @@ export class CloudfrontStack extends Stack {
       stackId,
     });
 
+    const cloudfrontCertificateArn = getRaitaStackConfig(
+      this,
+      raitaEnv,
+    ).cloudfrontCertificateArn;
     // Create Cloudfront itself conditionally - only for main and prod stackIds
     // Feature branches do not provide access from outside
     if (isPermanentStack(stackId, raitaEnv)) {
