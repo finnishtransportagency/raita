@@ -248,6 +248,7 @@ export class DataProcessStack extends NestedStack {
       }),
     );
     const allAlarms = [...receptionAlarms, ...inspectionAlarms];
+    // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
       this,
       'data-process-error-composite-alarm',
@@ -401,6 +402,8 @@ export class DataProcessStack extends NestedStack {
 
   /**
    * Add alarms for monitoring errors from logs
+   *
+   * Multiple alarms for different types if errors
    */
   private createInspectionHandlerAlarms(
     handler: NodejsFunction,
