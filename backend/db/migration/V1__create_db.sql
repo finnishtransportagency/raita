@@ -273,30 +273,31 @@ CREATE TABLE raita.tg_raportti(
 ) INHERITS (raita.raportti);
 
 CREATE TABLE raita.tsight_raportti(
-                                      ballast_slope_l decimal,
-                                      ballast_width_l decimal,
-                                      ballast_height_l decimal,
-                                      ballast_slope_r decimal,
-                                      ballast_width_r decimal,
-                                      ballast_height_r decimal,
-                                      platform_center_h_l decimal,
-                                      platform_run_v_l decimal,
-                                      platform_center_h_r decimal,
-                                      platform_run_v_r decimal,
-                                      fin1_kin_min_distance decimal,
-                                      fin1_kin_leftrail_min_dist decimal,
-                                      fin1_kin_rightrail_min_dist decimal,
-                                      sg_mt_kin_min_distance decimal,
-                                      sg_mt_kin_leftrail_min_distance decimal,
-                                      sg_mt_kin_rightrail_min_distance decimal,
-                                      sg_st_kin_min_distance decimal,
-                                      sg_st_kin_leftrail_min_distance decimal,
-                                      sg_st_kin_rightrail_min_distance decimal,
-                                      oversize_kin_min_distance decimal,
-                                      oversize_kin_leftrail_min_distance decimal,
-                                      oversize_kin_rightrail_min_distance decimal,
-                                      gauge_adjacenttrack_left decimal,
-                                      distance_adjacenttrack_left decimal,
-                                      gauge_adjacenttrack_right decimal,
-                                      distance_adjacenttrack_right decimal
+                                      ballast_slope_l decimal,                                 -- T-Sight 600.Ballast slope_L [°]
+                                      ballast_width_l decimal,                                 -- T-Sight 600.Ballast width_L [mm]
+                                      ballast_height_l decimal,                                -- T-Sight 600.Ballast height_L [mm]
+                                      ballast_slope_r decimal,                                 -- T-Sight 600.Ballast slope_R [°]
+                                      ballast_width_r decimal,                                 -- T-Sight 600.Ballast width_R [mm]
+                                      ballast_height_r decimal,                                -- T-Sight 600.Ballast height_R [mm]
+                                      platform_center_h_l decimal,                             -- T-Sight 600.Platform_Center_H_L [mm]
+                                      platform_run_v_l decimal,                                -- T-Sight 600.Platform_Run_V_L [mm]
+                                      platform_center_h_r decimal,                             -- T-Sight 600.Platform_Center_H_R [mm]
+                                      platform_run_v_r decimal,                                -- T-Sight 600.Platform_Run_V_R [mm]
+                                      fin1_kin_min_distance decimal,                           -- T-Sight 600.FIN1 Kin Min Distance [mm]
+                                      fin1_kin_leftrail_min_dist decimal,                      -- T-Sight 600.FIN1 Kin LeftRail Min Dist [mm]
+                                      fin1_kin_rightrail_min_dist decimal,                     -- T-Sight 600.FIN1 Kin RightRail Min Dist [mm]
+                                      sg_mt_kin_min_distance decimal,                          -- T-Sight 600.SG MT Kin Min Distance [mm]
+                                      sg_mt_kin_leftrail_min_distance decimal,                 -- T-Sight 600.SG MT Kin LeftRail Min Distance [mm]
+                                      sg_mt_kin_rightrail_min_distance decimal,                -- T-Sight 600.SG MT Kin RightRail Min Distance [mm]
+                                      sg_st_kin_min_distance decimal,                          -- T-Sight 600.SG ST Kin Min Distance [mm]
+                                      sg_st_kin_leftrail_min_distance decimal,                 -- T-Sight 600.SG ST Kin LeftRail Min Distance [mm]
+                                      sg_st_kin_rightrail_min_distance decimal,                -- T-Sight 600.SG ST Kin RightRail Min Distance [mm]
+                                      oversize_kin_min_distance decimal,                       -- T-Sight 600.Oversize Kin Min Distance [mm]
+                                      oversize_kin_leftrail_min_distance decimal,              -- T-Sight 600.Oversize Kin LeftRail Min Distance [mm]
+                                      oversize_kin_rightrail_min_distance decimal,             -- T-Sight 600.Oversize Kin RightRail Min Distance [mm]
+                                      gauge_adjacenttrack_left decimal,                        -- T-Sight 600.Gauge_AdjacentTrack_Left [mm]
+                                      distance_adjacenttrack_left decimal,                     -- T-Sight 600.Distance_AdjacentTrack_Left [mm]
+                                      gauge_adjacenttrack_right decimal,                       -- T-Sight 600.Gauge_AdjacentTrack_Right [mm]
+                                      distance_adjacenttrack_right decimal                     -- T-Sight 600.Distance_AdjacentTrack_Right [mm]
 ) INHERITS (raita.raportti);
+
