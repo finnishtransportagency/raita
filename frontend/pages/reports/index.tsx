@@ -252,12 +252,12 @@ const ReportsIndex: NextPage = () => {
     try {
       const latestInspectionParsedDate = Date.parse(meta.data.latestInspection);
       latestInspectionFormattedDate = formatDate(
-          DATE_FMT_LATEST_MEASUREMENT,
-          latestInspectionParsedDate,
+        DATE_FMT_LATEST_MEASUREMENT,
+        latestInspectionParsedDate,
       );
     } catch (e) {
       console.warn(
-          'Error parsing or formatting latest inspection date ' +
+        'Error parsing or formatting latest inspection date ' +
           meta.data.latestInspection +
           ' ' +
           e,
@@ -280,6 +280,11 @@ const ReportsIndex: NextPage = () => {
             <div className="latestInspection">
               {t('common:latest_inspection')}
               {latestInspectionFormattedDate}
+            </div>
+            <div className="userManualLink">
+              <a href={cfg.userManualFilePath} target="_blank">
+                {t('common:user_manual')}
+              </a>
             </div>
           </header>
         </div>

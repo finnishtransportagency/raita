@@ -5,7 +5,10 @@ const LocalStorageBackend = require('i18next-localstorage-backend').default;
 module.exports = {
   backend: {
     backendOptions: [
-      { expirationTime: 60 * 60 * 1000 },
+      {
+        expirationTime:
+          process.env.NODE_ENV === 'development' ? 0 : 60 * 60 * 1000,
+      }, // TODO: refresh is still a problem in production
       {
         /* loadPath: 'https:// somewhere else' */
       },

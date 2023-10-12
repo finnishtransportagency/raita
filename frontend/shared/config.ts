@@ -19,3 +19,5 @@ export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 export const paging = {
   pageSize: 10,
 } as const;
+
+export const userManualFilePath = '/doc/ohjeet.txt'; // TODO: change
