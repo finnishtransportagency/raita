@@ -12,6 +12,7 @@ export const extractPathData = (keyData: KeyData, spec: IExtractionSpec) => {
   const folderParsingSpec = determineParsingSpec(keyData, spec);
   if (!folderParsingSpec) {
     logParsingException.warn(
+      { errorType: 'WRONG_FOLDER_PATH_LENGTH' },
       `Unexpected folder path length ${path.length} for path ${path}. Folder path analysis not carried out`,
     );
     return {};
@@ -32,11 +33,11 @@ export const extractPathData = (keyData: KeyData, spec: IExtractionSpec) => {
   }, {});
 };
 
- // Submission Report Excel files are located higher in the hierarchy than other files which always are at the lowest level,
-  // as quick and dirty solution expectedPathLength for these Excel files is hard coded to 5 which corresponds to their location.
-  // This is a rough implementation which can be replaced with more sofisticated one as the needs for
-  // path data parsing come more clear (is is enough to configure this based on file suffix or if more detailed configration is needed),
-  // more robust solution should be built on modifying the structure in extractionSpec parsing instructions. See Jira 242.
+// Submission Report Excel files are located higher in the hierarchy than other files which always are at the lowest level,
+// as quick and dirty solution expectedPathLength for these Excel files is hard coded to 5 which corresponds to their location.
+// This is a rough implementation which can be replaced with more sofisticated one as the needs for
+// path data parsing come more clear (is is enough to configure this based on file suffix or if more detailed configration is needed),
+// more robust solution should be built on modifying the structure in extractionSpec parsing instructions. See Jira 242.
 const determineParsingSpec = (keyData: KeyData, spec: IExtractionSpec) => {
   const { fileSuffix, fileBaseName, path } = keyData;
   switch (true) {

@@ -11,19 +11,26 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { FilterPattern, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import {
-  fileSuffixesToIncudeInMetadataParsing,
-  raitaSourceSystems,
-} from '../constants';
+import { raitaSourceSystems } from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
 import { getRemovalPolicy } from './utils';
+import {
+  Alarm,
+  AlarmRule,
+  ComparisonOperator,
+  CompositeAlarm,
+  Stats,
+  TreatMissingData,
+} from 'aws-cdk-lib/aws-cloudwatch';
+import { Topic } from 'aws-cdk-lib/aws-sns';
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -174,6 +181,11 @@ export class DataProcessStack extends NestedStack {
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
     dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
+    const receptionAlarms = this.createReceptionHandlerAlarms(
+      handleReceptionFileEventFn,
+      raitaStackIdentifier,
+    );
+
     this.dataProcessorLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
@@ -216,6 +228,10 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
       vpc,
     });
+    const inspectionAlarms = this.createInspectionHandlerAlarms(
+      this.handleInspectionFileEventFn,
+      raitaStackIdentifier,
+    );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
     this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
@@ -231,6 +247,20 @@ export class DataProcessStack extends NestedStack {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
+    const allAlarms = [...receptionAlarms, ...inspectionAlarms];
+    const compositeAlarm = new CompositeAlarm(
+      this,
+      'data-process-error-composite-alarm',
+      {
+        alarmRule: AlarmRule.anyOf(...allAlarms),
+      },
+    );
+
+    const topic = new Topic(this, 'data-process-topic', {
+      displayName: `Raita data process ${raitaStackIdentifier}`,
+    });
+
+    compositeAlarm.addAlarmAction(new SnsAction(topic));
   }
 
   /**
@@ -256,7 +286,7 @@ export class DataProcessStack extends NestedStack {
     task: cdk.aws_ecs.FargateTaskDefinition;
     container: cdk.aws_ecs.ContainerDefinition;
   }) {
-    return new NodejsFunction(this, name, {
+    const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 8192,
       timeout: Duration.seconds(900),
@@ -279,6 +309,8 @@ export class DataProcessStack extends NestedStack {
         subnets: vpc.privateSubnets,
       },
     });
+
+    return receptionHandler;
   }
 
   /**
@@ -327,6 +359,135 @@ export class DataProcessStack extends NestedStack {
         subnets: vpc.privateSubnets,
       },
     });
+  }
+
+  /**
+   * Add alarms for monitoring errors from logs
+   */
+  private createReceptionHandlerAlarms(
+    handler: NodejsFunction,
+    raitaStackIdentifier: string,
+  ) {
+    const logGroup = handler.logGroup;
+    const errorMetricFilter = logGroup.addMetricFilter(
+      'reception-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.any(
+            FilterPattern.stringValue('$.level', '=', 'warn'),
+            FilterPattern.stringValue('$.level', '=', 'error'),
+          ),
+        ),
+        metricName: 'parsing-error',
+        metricNamespace: 'raita-inspection',
+        metricValue: '1',
+      },
+    );
+    const errorAlarm = new Alarm(this, 'reception-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `reception-errors-alarm-${raitaStackIdentifier}`,
+      metric: errorMetricFilter.metric({
+        label: `Reception other errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm];
+  }
+
+  /**
+   * Add alarms for monitoring errors from logs
+   */
+  private createInspectionHandlerAlarms(
+    handler: NodejsFunction,
+    raitaStackIdentifier: string,
+  ) {
+    const logGroup = handler.logGroup;
+    const timeoutMetricFilter = logGroup.addMetricFilter(
+      'inspection-timeout-filter',
+      {
+        filterPattern: FilterPattern.literal('%Task timed out%'),
+        metricName: 'inspection-timout',
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const parsingErrorMetricFilter = logGroup.addMetricFilter(
+      'inspection-parsing-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_PARSING_EXCEPTION'),
+          FilterPattern.any(
+            FilterPattern.stringValue('$.level', '=', 'warn'),
+            FilterPattern.stringValue('$.level', '=', 'error'),
+          ),
+        ),
+        metricName: 'inspection-parsing-error',
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const otherErrorMetricFilter = logGroup.addMetricFilter(
+      'inspection-other-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.any(
+            FilterPattern.stringValue('$.level', '=', 'warn'),
+            FilterPattern.stringValue('$.level', '=', 'error'),
+          ),
+        ),
+        metricName: 'inspection-other-error',
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const timeoutAlarm = new Alarm(this, 'inspection-timeout-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `inspection-timeout-alarm-${raitaStackIdentifier}`,
+      metric: timeoutMetricFilter.metric({
+        label: `Inspection timeout ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const parsingErrorAlarm = new Alarm(
+      this,
+      'inspection-parsing-errors-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `inspection-parsing-errors-alarm-${raitaStackIdentifier}`,
+        metric: parsingErrorMetricFilter.metric({
+          label: `Inspection parsing errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    const otherErrorAlarm = new Alarm(this, 'inspection-other-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `inspection-other-errors-alarm-${raitaStackIdentifier}`,
+      metric: otherErrorMetricFilter.metric({
+        label: `Inspection other errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [timeoutAlarm, parsingErrorAlarm, otherErrorAlarm];
   }
 
   /**
