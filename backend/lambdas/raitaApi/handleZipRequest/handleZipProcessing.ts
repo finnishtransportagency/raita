@@ -1,7 +1,7 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
 import archiver, { Archiver } from 'archiver';
-import { getEnvOrFail, getGetEnvWithPreassignedContext } from '../../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import {
   getRaitaLambdaErrorResponse,
@@ -62,12 +62,20 @@ export async function handleZipProcessing(event: ZipRequestBody) {
 
     const totalKeys = keys.length;
     keys.forEach((key: string, index: number) => {
-      if (index === totalKeys -1) {
+      if (index === totalKeys - 1) {
         log.info(`Streaming the last of ${totalKeys} files`);
       }
-      const fileStream = createLazyDownloadStreamFrom(sourceBucket, key, s3Client);
-      archive.append(fileStream, { name: key});
-    })
+      const fileStream = createLazyDownloadStreamFrom(
+        sourceBucket,
+        key,
+        s3Client,
+      );
+      // Use only filename inside zip, not the whole directory path
+      // Note: filename must be unique. If not, files will probably overwrite each other
+      const splitKey = key.split('/');
+      const fileName = splitKey[splitKey.length - 1];
+      archive.append(fileStream, { name: fileName });
+    });
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
     await Promise.all([
@@ -100,10 +108,10 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     log.error(err);
     archive.abort();
     await updateProgressFailed(
-          getLambdaConfigOrFail().dataCollectionBucket,
-          event.pollingFileKey,
-          s3Client,
-        );
+      getLambdaConfigOrFail().dataCollectionBucket,
+      event.pollingFileKey,
+      s3Client,
+    );
     return getRaitaLambdaErrorResponse(err);
   }
 }
