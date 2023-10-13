@@ -59,7 +59,6 @@ export class RaitaStack extends Stack {
       raitaEnv,
       stackId,
       tags: tags,
-      cloudfrontCertificateArn: config.cloudfrontCertificateArn,
       cloudfrontDomainName: config.cloudfrontDomainName,
       dmzApiEndpoint: config.dmzApiEndpoint,
     });
