@@ -22,8 +22,12 @@ export class RaitaLambdaError extends Error {
 }
 
 export class RaitaParseError extends Error {
-  constructor(message: string) {
+  errorType: string = 'GENERIC_PARSING_ERROR';
+  constructor(message: string, errorType?: string) {
     super(message);
+    if (errorType) {
+      this.errorType = errorType;
+    }
   }
 }
 
