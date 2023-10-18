@@ -31,3 +31,33 @@
   @apply px-2 py-1;
   @apply checked:bg-primary checked:text-white;
 }
+
+.manual-modal {
+  position: absolute;
+  top: 40px;
+  left: 20%;
+  right: 20%;
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: auto;
+  webkitoverflowscrolling: touch;
+  borderradius: 4px;
+  outline: none;
+  padding: 30px;
+}
+
+.manual-header {
+  display: flex;
+  justify-content: flex-end;
+}
+.manual-content {
+  text-align: center;
+}
+.manual-content h2 {
+  @apply text-4xl font-bold;
+  @apply py-4;
+}
+.manual-content h3 {
+  @apply text-3xl font-bold;
+  @apply py-3;
+}

@@ -11,7 +11,10 @@ import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import Modal from 'react-modal';
+import { marked } from 'marked';
 
+import manualData from 'public/doc/manual.md'; // TODO: get name from config file
 import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
@@ -77,7 +80,8 @@ const ReportsIndex: NextPage = () => {
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [open, setOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [manualModalOpen, setManualModalOpen] = useState(false);
 
   // #region Special extra filters
 
@@ -188,7 +192,7 @@ const ReportsIndex: NextPage = () => {
     const imageUrls = await handleImageUrlFetch(key);
     if (imageUrls?.length) {
       setImageUrls(imageUrls);
-      setOpen(true);
+      setLightboxOpen(true);
     }
   };
 
@@ -282,9 +286,9 @@ const ReportsIndex: NextPage = () => {
               {latestInspectionFormattedDate}
             </div>
             <div className="userManualLink">
-              <a href={cfg.userManualFilePath} target="_blank">
+              <button onClick={() => setManualModalOpen(true)}>
                 {t('common:user_manual')}
-              </a>
+              </button>
             </div>
           </header>
         </div>
@@ -563,8 +567,8 @@ const ReportsIndex: NextPage = () => {
       </div>
 
       <Lightbox
-        open={open}
-        close={() => setOpen(false)}
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
         slides={imageUrls.map((imageUrl, idx) => {
           return {
             src: imageUrl,
@@ -572,6 +576,29 @@ const ReportsIndex: NextPage = () => {
           };
         })}
       />
+      <Modal
+        isOpen={manualModalOpen}
+        onRequestClose={() => setManualModalOpen(false)}
+        contentLabel={t('common:user_manual')}
+        appElement={document.getElementById('__next')}
+        className={clsx(css['manual-modal'])}
+      >
+        <div className={clsx(css['manual-header'])}>
+          <button
+            className={clsx(css['manual-close-button'])}
+            onClick={() => setManualModalOpen(false)}
+          >
+            X{/* TODO icon */}
+          </button>
+        </div>
+        <div
+          className={clsx(css['manual-content'])}
+          dangerouslySetInnerHTML={{
+            // TODO: do we need to sanitize?
+            __html: marked.parse(manualData),
+          }}
+        ></div>
+      </Modal>
 
       {isDebug && (
         <div className="container mx-auto px-16 pb-4">
