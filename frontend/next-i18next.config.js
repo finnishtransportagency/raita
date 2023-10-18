@@ -6,15 +6,13 @@ module.exports = {
   backend: {
     backendOptions: [
       {
-        expirationTime:
-          process.env.NODE_ENV === 'development' ? 0 : 60 * 60 * 1000,
-      }, // TODO: refresh is still a problem in production
+        expirationTime: 60 * 60 * 1000,
+      },
       {
         /* loadPath: 'https:// somewhere else' */
       },
     ], // 1 hour
-    backends:
-      typeof window !== 'undefined' ? [LocalStorageBackend, HttpBackend] : [],
+    backends: typeof window !== 'undefined' ? [HttpBackend] : [],
   },
   i18n: {
     defaultLocale: 'fi',
