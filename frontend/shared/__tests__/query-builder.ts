@@ -33,6 +33,13 @@ describe('make queries', () => {
     };
 
     expect(makeQuery(fs, { keyFn: a => a })).toEqual({
+      aggs: {
+        total_size: {
+          sum: {
+            field: 'size',
+          },
+        },
+      },
       query: {
         bool: {
           must: [
@@ -46,6 +53,13 @@ describe('make queries', () => {
     });
 
     expect(makeQuery(fs, { paging })).toEqual({
+      aggs: {
+        total_size: {
+          sum: {
+            field: 'size',
+          },
+        },
+      },
       from: 0,
       size: 10,
       query: {
@@ -135,5 +149,61 @@ describe('paged queries', () => {
 
     expect(r1).toEqual(e1);
     expect(r2).toEqual(e2);
+  });
+
+  it('should translate inspection_datetime range query to an OR query', () => {
+    const entries: Entry[] = [
+      {
+        field: 'inspection_datetime',
+        value: '2023-01-01T00:00:00.000Z',
+        type: 'range',
+        rel: 'gte',
+      },
+      {
+        field: 'inspection_datetime',
+        value: '2023-01-02T00:00:00.000Z',
+        type: 'range',
+        rel: 'lte',
+      },
+    ];
+
+    const q = makeQuery(entries, { keyFn: a => a });
+    expect(q).toEqual({
+      aggs: {
+        total_size: {
+          sum: {
+            field: 'size',
+          },
+        },
+      },
+      query: {
+        bool: {
+          must: [
+            {
+              bool: {
+                should: [
+                  {
+                    range: {
+                      inspection_datetime: {
+                        gte: '2023-01-01T00:00:00.000Z',
+                        lte: '2023-01-02T00:00:00.000Z',
+                      },
+                    },
+                  },
+                  {
+                    range: {
+                      inspection_date: {
+                        gte: '2023-01-01T00:00:00.000Z',
+                        lte: '2023-01-02T00:00:00.000Z',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
   });
 });

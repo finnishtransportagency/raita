@@ -1,9 +1,9 @@
 export type KnownSuffix =
-  typeof fileSuffixesToIncudeInMetadataParsing[keyof typeof fileSuffixesToIncudeInMetadataParsing];
+  (typeof fileSuffixesToIncudeInMetadataParsing)[keyof typeof fileSuffixesToIncudeInMetadataParsing];
 
 export type ExcelSuffix =
-  | typeof fileSuffixesToIncudeInMetadataParsing['XLSX_FILE']
-  | typeof fileSuffixesToIncudeInMetadataParsing['XLS_FILE'];
+  | (typeof fileSuffixesToIncudeInMetadataParsing)['XLSX_FILE']
+  | (typeof fileSuffixesToIncudeInMetadataParsing)['XLS_FILE'];
 
 export const fileSuffixesToIncudeInMetadataParsing = {
   TXT_FILE: 'txt',
@@ -23,7 +23,7 @@ export const EMPTY_FILE_INDICATOR = 'EMPTY';
 export const SUBMISSION_REPORT_INDICATOR = 'submission report';
 
 export type RaitaSourceSystem =
-  typeof raitaSourceSystems[keyof typeof raitaSourceSystems];
+  (typeof raitaSourceSystems)[keyof typeof raitaSourceSystems];
 
 export const raitaSourceSystems = {
   Meeri: 'Meeri',
@@ -56,3 +56,5 @@ export const PRODUCTION_BRANCH = 'prod';
 export const PRODUCTION_STACK_ID = PRODUCTION_BRANCH;
 export const DEVELOPMENT_MAIN_BRANCH = 'main';
 export const DEVELOPMENT_MAIN_STACK_ID = DEVELOPMENT_MAIN_BRANCH;
+export const DEVELOPMENT_PREMAIN_BRANCH = 'test/pre-main';
+export const DEVELOPMENT_PREMAIN_STACK_ID = 'premain';

@@ -14,6 +14,7 @@ export const getCorrelationId = () => {
   if (correlationId) {
     return correlationId;
   }
+  return undefined;
 };
 
 function getLogger(tag: string) {

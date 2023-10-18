@@ -19,6 +19,7 @@ export function useMetadataQuery() {
         fileTypes,
         fields,
         reportTypes,
+        latestInspection,
       }) => {
         return {
           fields: fields.reduce((o, x) => R.merge(o, x), {}),
@@ -27,6 +28,7 @@ export function useMetadataQuery() {
           trackParts,
           systems,
           fileTypes,
+          latestInspection,
         };
       },
     ),

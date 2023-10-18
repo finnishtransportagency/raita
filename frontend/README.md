@@ -10,25 +10,39 @@ npm run dev
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application is served in http://localhost:3000/reports
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+Note: all commands should be run on the frontend directory and not the project root.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+## Api
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+The recommended way is to redirect api requests to a backend running in the cloud dev environment. This can be done by using the bastion host pipe. The api requests can be routed to a port locally using the following environment variables
 
-## Learn More
+- DEV_RAITA_API_BASEURL
+- DEV_RAITA_API_KEY
 
-To learn more about Next.js, take a look at the following resources:
+For example to route to a local pipe on port 3001
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+DEV_RAITA_API_BASEURL=http://localhost:3001/api DEV_RAITA_API_KEY=<apikey> npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+It might be possible to run the opensearch backend locally, but it is not tested currently. The api routes in the pages/api folder are only used for this purpose and are not included in the production build.
 
-## Deploy on Vercel
+## Middleware
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The middleware.ts file is is only used for redirecting api requests in the local dev environment.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Tests
+
+Run the unit tests using
+
+```bash
+npm run test
+```
+
+# Production build
+
+```bash
+npm run build
+```

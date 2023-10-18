@@ -42,3 +42,7 @@ a {
 .input--boolean {
   @apply border-blue-500;
 }
+
+.latestInspection {
+  text-align: right;
+}

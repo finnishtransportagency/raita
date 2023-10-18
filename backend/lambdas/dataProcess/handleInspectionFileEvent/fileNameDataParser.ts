@@ -13,7 +13,7 @@ import {
 import { log, logParsingException } from '../../../utils/logger';
 import { parsePrimitive } from './parsePrimitives';
 
-const parseFileNameParts = (
+export const parseFileNameParts = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
 ) =>
@@ -35,7 +35,7 @@ const parseFileNameParts = (
     return acc;
   }, {});
 
-const validateGenericFileNameStructureOrFail = (
+export const validateGenericFileNameStructureOrFail = (
   fileName: string,
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
@@ -49,6 +49,7 @@ const validateGenericFileNameStructureOrFail = (
   if (fileBaseNameParts.length !== expectedFileNamePartCount) {
     throw new RaitaParseError(
       `Unexpected number of file name segments in ${fileName}. Expected ${expectedFileNamePartCount}, received ${fileBaseNameParts.length}.`,
+      'WRONG_NUMBER_OF_FILE_NAME_SEGMENTS',
     );
   }
 };
@@ -77,10 +78,16 @@ export const extractFileNameData = (
   try {
     const { fileName, fileBaseName, fileSuffix } = keyData;
     if (!fileBaseName || !fileSuffix) {
-      throw new RaitaParseError(`Unexpected file name structure: ${fileName}`);
+      throw new RaitaParseError(
+        `Unexpected file name structure: ${fileName}`,
+        'WRONG_FILE_NAME_STRUCTURE',
+      );
     }
     if (!isKnownSuffix(fileSuffix)) {
-      throw new RaitaParseError(`Unexpected suffix in file name: ${fileName}`);
+      throw new RaitaParseError(
+        `Unexpected suffix in file name: ${fileName}`,
+        'WRONG_FILE_TYPE',
+      );
     }
     // File name segments are separated by underscore
     const fileBaseNameParts = fileBaseName.split('_');
@@ -98,6 +105,7 @@ export const extractFileNameData = (
     // Currently just log file name parsing errors.
     if (error instanceof RaitaParseError) {
       logParsingException.warn(
+        { errorType: error.errorType },
         `${error.message}. File name extraction skipped.`,
       );
       return {};

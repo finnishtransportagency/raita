@@ -103,4 +103,11 @@ export class OpenSearchResponseParser {
       [outputKey]: element.key,
       count: element.doc_count,
     }));
+
+    parseLatestEntryAggregation(res: any) {
+      const latestInspection = res?.body?.aggregations?.latest_inspection_date?.value_as_string || "n/a";
+      return {
+        latestInspection,
+      }
+    }
 }

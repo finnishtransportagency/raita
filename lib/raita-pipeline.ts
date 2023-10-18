@@ -23,6 +23,7 @@ import { getPipelineConfig, RaitaEnvironment } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { isDevelopmentPreMainStack } from './utils';
 
 /**
  * The stack that defines the application pipeline
@@ -47,6 +48,7 @@ export class RaitaPipelineStack extends Stack {
     const pipeline = new Pipeline(this, 'pipeline', {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
+      restartExecutionOnUpdate: true,
     });
     // Can't start build process otherwise
     pipeline.addToRolePolicy(
@@ -57,22 +59,32 @@ export class RaitaPipelineStack extends Stack {
       }),
     );
 
+    const githubSource = CodePipelineSource.gitHub(
+      'finnishtransportagency/raita',
+      config.branch,
+      {
+        authentication: SecretValue.secretsManager(config.authenticationToken),
+      },
+    );
+
+    const overwriteBaseUrl = isDevelopmentPreMainStack(
+      config.stackId,
+      config.env,
+    )
+      ? `/${config.stackId}`
+      : '';
+
     const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
         codePipeline: pipeline,
         synth: new ShellStep('Synth', {
-          input: CodePipelineSource.gitHub(
-            'finnishtransportagency/raita',
-            config.branch,
-            {
-              authentication: SecretValue.secretsManager(
-                config.authenticationToken,
-              ),
-            },
-          ),
+          input: githubSource,
           installCommands: ['npm ci', 'npm --prefix frontend ci'],
+          env: {
+            NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
+          },
           commands: [
             'npm run --prefix frontend build',
             `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
@@ -98,6 +110,15 @@ export class RaitaPipelineStack extends Stack {
         raitaEnv: config.env,
         tags: config.tags,
       }),
+      {
+        pre: [
+          new ShellStep('UnitTest', {
+            input: githubSource,
+            installCommands: ['npm ci', 'npm --prefix frontend ci'],
+            commands: ['npm run test', 'npm run --prefix frontend test'],
+          }),
+        ],
+      },
     );
   }
 }

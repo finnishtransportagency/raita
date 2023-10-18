@@ -17,6 +17,8 @@ import {
 } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { isDevelopmentMainStack, isDevelopmentPreMainStack } from './utils';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -28,6 +30,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
   readonly cloudfrontDomainName: string;
+  readonly raitaSecurityGroup: ec2.ISecurityGroup;
 }
 
 type ListenerTargetLambdas = {
@@ -48,7 +51,9 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
   public readonly handleZipProcessFn: NodejsFunction;
-  public readonly alb: cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer;
+  public readonly alb:
+    | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
+    | elbv2.IApplicationLoadBalancer;
 
   constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
@@ -62,6 +67,7 @@ export class RaitaApiStack extends NestedStack {
       inspectionDataBucket,
       openSearchDomain,
       cloudfrontDomainName,
+      raitaSecurityGroup,
     } = props;
 
     // Create a bucket to hold the data of user made
@@ -73,7 +79,9 @@ export class RaitaApiStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
     });
-    dataCollectionBucket.addLifecycleRule({expiration: cdk.Duration.days(30)});
+    dataCollectionBucket.addLifecycleRule({
+      expiration: cdk.Duration.days(30),
+    });
 
     // ZipProcesser needs rights to two buckets so it gets its
     // own role with proper permissions.
@@ -213,6 +221,9 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
+    let apiBaseUrl = isDevelopmentPreMainStack(stackId, raitaEnv)
+      ? `/${stackId}/api`
+      : '/api';
     /**
      * Add all lambdas to alb targets
      * 200-series if for lambdas accessing S3 information and
@@ -223,91 +234,143 @@ export class RaitaApiStack extends NestedStack {
       {
         lambda: handleFileRequestFn,
         priority: 200,
-        path: ['/api/file'],
+        path: [`${apiBaseUrl}/file`],
         targetName: 'file',
       },
       {
         lambda: handleImagesRequestFn,
         priority: 210,
-        path: ['/api/images'],
+        path: [`${apiBaseUrl}/images`],
         targetName: 'images',
       },
       {
         lambda: handleZipRequestFn,
         priority: 221,
-        path: ['/api/zip'],
+        path: [`${apiBaseUrl}/zip`],
         targetName: 'zip',
       },
       {
         lambda: handlePollingRequestFn,
         priority: 230,
-        path: ['/api/polling'],
+        path: [`${apiBaseUrl}/polling`],
         targetName: 'polling',
       },
       {
         lambda: this.handleFilesRequestFn,
         priority: 300,
-        path: ['/api/files'],
+        path: [`${apiBaseUrl}/files`],
         targetName: 'files',
       },
       {
         lambda: this.handleMetaRequestFn,
         priority: 310,
-        path: ['/api/meta'],
+        path: [`${apiBaseUrl}/meta`],
         targetName: 'meta',
       },
       {
         lambda: handleReturnLogin,
         priority: 400,
-        path: ['/api/return-login'],
+        path: [`${apiBaseUrl}/return-login`],
         targetName: 'return-login',
       },
       // Endpoints for external API
       {
         lambda: handleFileRequestFn,
         priority: 501,
-        path: ['/api/ext/file'],
+        path: [`${apiBaseUrl}/ext/file`],
         targetName: 'ext-file',
       },
       {
         lambda: handleImagesRequestFn,
         priority: 502,
-        path: ['/api/ext/images'],
+        path: [`${apiBaseUrl}/ext/images`],
         targetName: 'ext-images',
       },
       {
         lambda: handleZipRequestFn,
         priority: 503,
-        path: ['/api/ext/zip'],
+        path: [`${apiBaseUrl}/ext/zip`],
         targetName: 'ext-zip',
       },
       {
         lambda: handlePollingRequestFn,
         priority: 504,
-        path: ['/api/ext/polling'],
+        path: [`${apiBaseUrl}/ext/polling`],
         targetName: 'ext-polling',
       },
       {
         lambda: this.handleFilesRequestFn,
         priority: 505,
-        path: ['/api/ext/files'],
+        path: [`${apiBaseUrl}/ext/files`],
         targetName: 'ext-files',
       },
       {
         lambda: this.handleMetaRequestFn,
         priority: 510,
-        path: ['/api/ext/meta'],
+        path: [`${apiBaseUrl}/ext/meta`],
         targetName: 'ext-meta',
       },
     ];
 
-    // ALB for API
-    this.alb = this.createlAlb({
-      raitaStackIdentifier: raitaStackIdentifier,
-      name: 'raita-api',
-      vpc,
-      listenerTargets: albLambdaTargets,
-    });
+    let importedListener: elbv2.IApplicationListener | null = null;
+
+    if (isDevelopmentPreMainStack(stackId, raitaEnv)) {
+      const listenerArnParameter = StringParameter.fromStringParameterName(
+        this,
+        'main-listener-arn',
+        'raita-dev-main-application-listener-arn',
+      );
+      if (listenerArnParameter && listenerArnParameter.stringValue) {
+        importedListener =
+          elbv2.ApplicationListener.fromApplicationListenerAttributes(
+            this,
+            'raita-listener',
+            {
+              listenerArn: listenerArnParameter.stringValue,
+              securityGroup: raitaSecurityGroup,
+            },
+          );
+      }
+    }
+    if (
+      importedListener !== null &&
+      isDevelopmentPreMainStack(stackId, raitaEnv)
+    ) {
+      albLambdaTargets.forEach(target => {
+        if (importedListener !== null) {
+          const premainPriorityPrefix = 1000; // TODO
+          const group = new elbv2.ApplicationTargetGroup(
+            this,
+            `premain-target-${target.targetName}`,
+            {
+              targets: [new LambdaTarget(target.lambda)],
+            },
+          );
+          importedListener.addTargetGroups(
+            `premain-target-group-${target.targetName}`,
+            {
+              targetGroups: [group],
+              priority: premainPriorityPrefix + target.priority,
+              conditions: [elbv2.ListenerCondition.pathPatterns(target.path)],
+            },
+          );
+        }
+      });
+    } else {
+      // ALB for API
+      this.alb = this.createlAlb({
+        raitaStackIdentifier: raitaStackIdentifier,
+        name: 'raita-api',
+        vpc,
+        listenerTargets: albLambdaTargets,
+      });
+      if (isDevelopmentMainStack(stackId, raitaEnv)) {
+        new StringParameter(this, `bucket-arn-param`, {
+          parameterName: `raita-${raitaEnv}-${stackId}-application-listener-arn`,
+          stringValue: this.alb.listeners[0].listenerArn,
+        });
+      }
+    }
   }
 
   /**
@@ -329,6 +392,7 @@ export class RaitaApiStack extends NestedStack {
       internetFacing: false,
       vpc,
     });
+    // TODO: save to parameter store
     const listener = alb.addListener('raita-listener', {
       port: 80,
       defaultAction: elbv2.ListenerAction.fixedResponse(404),

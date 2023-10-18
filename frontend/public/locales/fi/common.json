@@ -33,6 +33,7 @@
   "relation_gt": ">",
   "relation_gte": ">=",
   "no_choice": "Ei valintaa",
+  "filter_options": "Suodata vaihtoehtoja",
   "first_page": "Sivu 1",
   "last_page": "Sivu {{ number }}",
   "prev_page": "Ed. sivu",
@@ -49,5 +50,6 @@
   "rights_restriction_info": "Järjestelmään tallennetun aineiston käyttö on käyttöoikeuksilla rajoitettua ja sallittua vain Väyläviraston tilauksiin liittyvissä töissä.",
   "loading": "Ladataan...",
   "too_many_results": "Haku tuotti yli 10k tulosta, rajaa hakua tarkemmin",
-  "big_compression": "Huom! Ison datamäärän pakkaaminen voi viedä useita minuutteja"
+  "big_compression": "Huom! Ison datamäärän pakkaaminen voi viedä useita minuutteja",
+  "latest_inspection": "Uusimman mittauksen ajankohta: "
 }

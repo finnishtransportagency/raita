@@ -58,11 +58,32 @@ export function makeQuery(
   const match = makeMatchQuery(byType.match || [], { keyFn });
   const paging = pageOpts ? makePagedQuery(pageOpts) : {};
 
+  // if ranges contain an inspection_datetime query, change it into an OR query checking for both inspection_datetime and inspection_date
+  const dateTimeKey = keyFn('inspection_datetime');
+  const dateKey = keyFn('inspection_date');
+  const dateTimeQueryIndex = ranges.findIndex(range => range[dateTimeKey]);
+
+  let newRanges = ranges;
+  let dateOrQueries = [];
+  if (dateTimeQueryIndex !== -1) {
+    const dateTimeRange = ranges[dateTimeQueryIndex];
+    const dateRange = {
+      [dateKey]: dateTimeRange[dateTimeKey],
+    };
+    ranges.splice(dateTimeQueryIndex, 1); // remove existing
+    dateOrQueries.push({
+      bool: {
+        should: [{ range: dateTimeRange }, { range: dateRange }],
+      },
+    });
+  }
+
   // This is the part that goes into the bool query (no paging here!)
   const qs = [
     ...match.map(e => ({ match: e })),
-    ...ranges.map(e => ({ range: e })),
+    ...newRanges.map(e => ({ range: e })),
     ...(textToSearch ? [{ wildcard: { file_name: `*${textToSearch}*` } }] : []),
+    ...dateOrQueries,
   ];
 
   const emptyQuery =

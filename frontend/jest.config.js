@@ -10,6 +10,8 @@ const jestConfig = {
    * `moduleDirectories`, @see {@link https://github.com/facebook/jest/issues/12889}
    */
   moduleDirectories: ['node_modules', __dirname],
+  collectCoverage: true,
+  coverageReporters: ['text'],
 };
 
 module.exports = createJestConfig(jestConfig);
