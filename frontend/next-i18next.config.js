@@ -6,13 +6,15 @@ module.exports = {
   backend: {
     backendOptions: [
       {
-        expirationTime: 60 * 60 * 1000,
+        expirationTime: 0, //60 * 60 * 1000,
+        // version: '', TODO: use a hash of translation files here
       },
       {
         /* loadPath: 'https:// somewhere else' */
       },
     ], // 1 hour
-    backends: typeof window !== 'undefined' ? [HttpBackend] : [],
+    backends:
+      typeof window !== 'undefined' ? [LocalStorageBackend, HttpBackend] : [],
   },
   i18n: {
     defaultLocale: 'fi',
