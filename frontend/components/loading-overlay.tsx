@@ -13,6 +13,19 @@ export function LoadingOverlay() {
       <p className="w-1/3 text-center text-white">
         {t('common:iam_problem_contact_info')}
       </p>
+      {/* Hardcoded error message if javascript isn't working. */}
+      <noscript>
+        <p>
+          Jos näet tämän virheviestin, syynä saattaa olla vanhojen
+          javascript-tiedostojen säilyminen välimuistissa sivustopäivityksen
+          jälkeen.
+        </p>
+        Mahdollisia korjauksia:
+        <ul>
+          <li>Tyhjennä selaimen välimuisti tältä sivulta: CTRL+F5</li>
+          <li>Kokeile toista selainta tai selaimen incognito-tilaa</li>
+        </ul>
+      </noscript>
     </div>
   );
 }
