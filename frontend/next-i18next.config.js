@@ -5,10 +5,7 @@ const LocalStorageBackend = require('i18next-localstorage-backend').default;
 module.exports = {
   backend: {
     backendOptions: [
-      {
-        expirationTime: 0, //60 * 60 * 1000,
-        // version: '', TODO: use a hash of translation files here
-      },
+      { expirationTime: 60 * 60 * 1000 },
       {
         /* loadPath: 'https:// somewhere else' */
       },
