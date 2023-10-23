@@ -35,52 +35,64 @@ describe('parsePrimitive', () => {
     });
   });
   test('success: date format d/M/y h:m:s a', () => {
-    const date = format(new Date('2023-09-19T18:00:00.000Z'), 'd/M/y h:m:s a');
-    const date2 = format(new Date('2023-09-19T06:00:00.000Z'), 'd/M/y h:m:s a');
-
-    const result = parsePrimitive('test', date, 'date');
-    const result2 = parsePrimitive('test', date2, 'date');
-
-    expect(result).toEqual({
+    // note: dates interpreted in local (fi) time
+    // winter time
+    const morning = '02/01/2023 8:00:00 am';
+    const morningResult = parsePrimitive('test', morning, 'date');
+    expect(morningResult).toEqual({
       key: 'test',
-      value: '2023-09-19T18:00:00.000Z',
+      value: '2023-01-02T06:00:00.000Z',
     });
-
-    expect(result2).toEqual({
+    const evening = '02/01/2023 8:00:00 pm';
+    const eveningResult = parsePrimitive('test', evening, 'date');
+    expect(eveningResult).toEqual({
       key: 'test',
-      value: '2023-09-19T06:00:00.000Z',
+      value: '2023-01-02T18:00:00.000Z',
+    });
+    // summer time
+    const summerMorning = '02/06/2023 8:00:00 am';
+    const summerMorningResult = parsePrimitive('test', summerMorning, 'date');
+    expect(summerMorningResult).toEqual({
+      key: 'test',
+      value: '2023-06-02T05:00:00.000Z',
     });
   });
   test('success: date format yyyyMMdd_HHmmss', () => {
-    const date = format(
-      new Date('2023-09-19T18:00:00.000Z'),
-      'yyyyMMdd_HHmmss',
-    );
-    const date2 = format(
-      new Date('2023-09-19T06:00:00.000Z'),
-      'yyyyMMdd_HHmmss',
-    );
-
-    const result = parsePrimitive('test', date, 'date');
-    const result2 = parsePrimitive('test', date2, 'date');
-
-    expect(result).toEqual({
+    // winter time
+    const morning = '20230102_080000';
+    const morningResult = parsePrimitive('test', morning, 'date');
+    expect(morningResult).toEqual({
       key: 'test',
-      value: '2023-09-19T18:00:00.000Z',
+      value: '2023-01-02T06:00:00.000Z',
     });
-    expect(result2).toEqual({
+    const evening = '20230102_200000';
+    const eveningResult = parsePrimitive('test', evening, 'date');
+    expect(eveningResult).toEqual({
       key: 'test',
-      value: '2023-09-19T06:00:00.000Z',
+      value: '2023-01-02T18:00:00.000Z',
+    });
+    // summer time
+    const summerMorning = '20230602_080000';
+    const summerMorningResult = parsePrimitive('test', summerMorning, 'date');
+    expect(summerMorningResult).toEqual({
+      key: 'test',
+      value: '2023-06-02T05:00:00.000Z',
     });
   });
-  test.skip('success: date format yyyyMMdd', () => {
-    // TODO: returning wrong date because of timezone?
-    const date = format(new Date('2023-09-19'), 'yyyyMMdd');
+  test('success: date format yyyyMMdd', () => {
+    // winter time
+    const date = format(new Date('2023-01-02'), 'yyyyMMdd');
     const result = parsePrimitive('test', date, 'date');
-
     expect(result).toEqual({
       key: 'test',
-      value: '2023-09-19T00:00:00.000Z',
+      value: '2023-01-02T00:00:00.000Z',
+    });
+    // summer date
+    const summerDate = format(new Date('2023-06-02'), 'yyyyMMdd');
+    const summerResult = parsePrimitive('test', summerDate, 'date');
+    expect(summerResult).toEqual({
+      key: 'test',
+      value: '2023-06-02T00:00:00.000Z',
     });
   });
 });

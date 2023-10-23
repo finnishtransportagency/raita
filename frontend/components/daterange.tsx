@@ -66,6 +66,7 @@ export function DateRange(props: Props) {
             value={rangeValues[0]}
             className={clsx(css.input)}
             onChange={e => {
+              console.log(e.target.value);
               const newStartDate = new Date(e.target.value);
               if (!isValid(newStartDate)) {
                 return;
