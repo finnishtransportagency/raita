@@ -133,31 +133,41 @@ describe('validateGenericFileNameStructureOrFail', () => {
 });
 describe('extractFileNameData', () => {
   const extractionSpec: IExtractionSpec['fileNameExtractionSpec'] = {
-    txt: {
-      '1': { name: 'name' },
-      '2': { name: 'test1' },
-      '3': { name: 'test2' },
-    },
-    csv: {
-      '1': { name: 'name' },
-      '2': { name: 'test1' },
-      '3': { name: 'test2' },
-    },
-    pdf: {
-      '1': { name: 'name' },
-      '2': { name: 'test1' },
-      '3': { name: 'test2' },
-    },
-    xlsx: {
-      '1': { name: 'name' },
-      '2': { name: 'test1' },
-      '3': { name: 'test2' },
-    },
-    xls: {
-      '1': { name: 'name' },
-      '2': { name: 'test1' },
-      '3': { name: 'test2' },
-    },
+    txt: [
+      {
+        '1': { name: 'name' },
+        '2': { name: 'test1' },
+        '3': { name: 'test2' },
+      },
+    ],
+    csv: [
+      {
+        '1': { name: 'name' },
+        '2': { name: 'test1' },
+        '3': { name: 'test2' },
+      },
+    ],
+    pdf: [
+      {
+        '1': { name: 'name' },
+        '2': { name: 'test1' },
+        '3': { name: 'test2' },
+      },
+    ],
+    xlsx: [
+      {
+        '1': { name: 'name' },
+        '2': { name: 'test1' },
+        '3': { name: 'test2' },
+      },
+    ],
+    xls: [
+      {
+        '1': { name: 'name' },
+        '2': { name: 'test1' },
+        '3': { name: 'test2' },
+      },
+    ],
   };
   test('success', () => {
     const keyData: KeyData = {
@@ -174,6 +184,64 @@ describe('extractFileNameData', () => {
       name: 'test',
       test1: '123',
       test2: '456',
+    });
+  });
+  test('success: multiple specs', () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'test_123_456.txt'],
+      rootFolder: 'test',
+      fileName: 'test_123_456.txt',
+      fileBaseName: 'test_123_456',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'test/path/test_123_456',
+    };
+    const testExtractionSpec = {
+      txt: [
+        {
+          '1': { name: 'name' },
+        },
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+    };
+    const result = extractFileNameData(keyData, testExtractionSpec as any);
+    expect(result).toEqual({
+      file_type: 'txt',
+      name: 'test',
+      test1: '123',
+      test2: '456',
+    });
+  });
+  test('success: submission report', () => {
+    const keyData: KeyData = {
+      path: [
+        'test',
+        'path',
+        'P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
+      ],
+      rootFolder: 'test',
+      fileName: 'P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
+      fileBaseName: 'P420016A68Z ASM 03 - Submission Report_20230213_TG_PI',
+      fileSuffix: 'xlsx',
+      keyWithoutSuffix:
+        'test/path/P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
+    };
+    const testExtractionSpec = {
+      xlsx: [
+        {
+          '1': { name: 'report_type' },
+          '2': { name: 'inspection_date' },
+        },
+      ],
+    };
+    const result = extractFileNameData(keyData, testExtractionSpec as any);
+    expect(result).toEqual({
+      file_type: 'xlsx',
+      report_type: 'P420016A68Z ASM 03 - Submission Report',
+      inspection_date: '20230213',
     });
   });
   test('fail: too many file name segments', () => {

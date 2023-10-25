@@ -92,15 +92,36 @@ export const extractFileNameData = (
     // File name segments are separated by underscore
     const fileBaseNameParts = fileBaseName.split('_');
     // Get labels based on the file suffix from extractionSpec
-    const labels = fileNamePartLabels[fileSuffix];
-    // Submission Report Excel file name parsing is special case, some name segments need to be ignored
-    const fileNameMetadata = isSubmissionReport({ fileBaseName, fileSuffix })
-      ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
-      : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
-    return {
-      file_type: fileSuffix,
-      ...fileNameMetadata,
-    };
+    const labelsList = fileNamePartLabels[fileSuffix];
+    // try different possible specs
+    for (let i = 0; i < labelsList.length; i++) {
+      const labels = labelsList[i];
+      try {
+        // try parsing and return immediately if successful
+        // Submission Report Excel file name parsing is special case, some name segments need to be ignored
+        const fileNameMetadata = isSubmissionReport({
+          fileBaseName,
+          fileSuffix,
+        })
+          ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
+          : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
+        return {
+          file_type: fileSuffix,
+          ...fileNameMetadata,
+        };
+      } catch (error) {
+        // filename did not match spec, try next
+        continue;
+      }
+    }
+    // no spec matched
+    const expectedLengths = labelsList
+      .map(labels => Object.keys(labels).length)
+      .join(', ');
+    throw new RaitaParseError(
+      `Number of filename segments did not match any parsing spec. Amount of segments received: ${fileBaseNameParts.length} but expected one of: ${expectedLengths}`,
+      'WRONG_NUMBER_OF_FILE_NAME_SEGMENTS',
+    );
   } catch (error) {
     // Currently just log file name parsing errors.
     if (error instanceof RaitaParseError) {

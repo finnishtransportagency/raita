@@ -23,31 +23,41 @@ jest.mock('../../../../utils/logger', () => {
 
 const extractionSpec: IExtractionSpec = {
   fileNameExtractionSpec: {
-    txt: {
-      '1': { name: 'nameOnly1' },
-      '2': { name: 'overlapping' },
-      '3': { name: 'nameOnly2', parseAs: 'integer' },
-    },
-    csv: {
-      '1': { name: 'nameOnly1' },
-      '2': { name: 'overlapping' },
-      '3': { name: 'nameOnly2', parseAs: 'integer' },
-    },
-    pdf: {
-      '1': { name: 'nameOnly1' },
-      '2': { name: 'overlapping' },
-      '3': { name: 'nameOnly2', parseAs: 'integer' },
-    },
-    xlsx: {
-      '1': { name: 'nameOnly1' },
-      '2': { name: 'overlapping' },
-      '3': { name: 'nameOnly2', parseAs: 'integer' },
-    },
-    xls: {
-      '1': { name: 'nameOnly1' },
-      '2': { name: 'overlapping' },
-      '3': { name: 'nameOnly2', parseAs: 'integer' },
-    },
+    txt: [
+      {
+        '1': { name: 'nameOnly1' },
+        '2': { name: 'overlapping' },
+        '3': { name: 'nameOnly2', parseAs: 'integer' },
+      },
+    ],
+    csv: [
+      {
+        '1': { name: 'nameOnly1' },
+        '2': { name: 'overlapping' },
+        '3': { name: 'nameOnly2', parseAs: 'integer' },
+      },
+    ],
+    pdf: [
+      {
+        '1': { name: 'nameOnly1' },
+        '2': { name: 'overlapping' },
+        '3': { name: 'nameOnly2', parseAs: 'integer' },
+      },
+    ],
+    xlsx: [
+      {
+        '1': { name: 'nameOnly1' },
+        '2': { name: 'overlapping' },
+        '3': { name: 'nameOnly2', parseAs: 'integer' },
+      },
+    ],
+    xls: [
+      {
+        '1': { name: 'nameOnly1' },
+        '2': { name: 'overlapping' },
+        '3': { name: 'nameOnly2', parseAs: 'integer' },
+      },
+    ],
   },
   folderTreeExtractionSpec: {
     '1': { name: 'pathOnly1' },
