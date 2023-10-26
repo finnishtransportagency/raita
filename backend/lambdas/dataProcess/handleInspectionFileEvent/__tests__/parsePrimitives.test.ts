@@ -34,29 +34,46 @@ describe('parsePrimitive', () => {
       value: NaN, // TODO: should show error?
     });
   });
-  test('success: format d/M/y h:m:s a', () => {
+  test('success: date format d/M/y h:m:s a', () => {
     const date = format(new Date('2023-09-19T18:00:00.000Z'), 'd/M/y h:m:s a');
+    const date2 = format(new Date('2023-09-19T06:00:00.000Z'), 'd/M/y h:m:s a');
+
     const result = parsePrimitive('test', date, 'date');
+    const result2 = parsePrimitive('test', date2, 'date');
 
     expect(result).toEqual({
       key: 'test',
       value: '2023-09-19T18:00:00.000Z',
     });
+
+    expect(result2).toEqual({
+      key: 'test',
+      value: '2023-09-19T06:00:00.000Z',
+    });
   });
-  test.skip('success: format yyyyMMdd_hhmmss', () => {
-    // TODO: only dates in 12h formats are accepted, is this intentional?
+  test('success: date format yyyyMMdd_HHmmss', () => {
     const date = format(
       new Date('2023-09-19T18:00:00.000Z'),
       'yyyyMMdd_HHmmss',
     );
+    const date2 = format(
+      new Date('2023-09-19T06:00:00.000Z'),
+      'yyyyMMdd_HHmmss',
+    );
+
     const result = parsePrimitive('test', date, 'date');
+    const result2 = parsePrimitive('test', date2, 'date');
 
     expect(result).toEqual({
       key: 'test',
       value: '2023-09-19T18:00:00.000Z',
     });
+    expect(result2).toEqual({
+      key: 'test',
+      value: '2023-09-19T06:00:00.000Z',
+    });
   });
-  test.skip('success: format yyyyMMdd', () => {
+  test.skip('success: date format yyyyMMdd', () => {
     // TODO: returning wrong date because of timezone?
     const date = format(new Date('2023-09-19'), 'yyyyMMdd');
     const result = parsePrimitive('test', date, 'date');

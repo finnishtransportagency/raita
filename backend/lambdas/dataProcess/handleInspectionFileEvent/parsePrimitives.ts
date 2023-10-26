@@ -15,7 +15,7 @@ export const parsePrimitive = (
         return parse(x, 'd/M/y h:m:s a', new Date()).toISOString();
       } catch (error) {
         try {
-          return parse(x, 'yyyyMMdd_hhmmss', new Date()).toISOString();
+          return parse(x, 'yyyyMMdd_HHmmss', new Date()).toISOString();
         } catch (error) {
           return parse(x, 'yyyyMMdd', new Date()).toISOString();
         }
