@@ -16,6 +16,8 @@ export const fileSuffixesToIncudeInMetadataParsing = {
 export const ZIP_SUFFIX = 'zip';
 export const EMPTY_FILE_INDICATOR = 'EMPTY';
 
+export const DATA_TIME_ZONE = 'Europe/Helsinki';
+
 // Constant that is meant to be temporary to address Excel-parsing.
 // See Jira 242.
 // Identifier here is lowercased though it is expected that incoming
