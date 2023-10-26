@@ -15,3 +15,5 @@ declare namespace NodeJS {
     NEXT_PUBLIC_RAITA_BASEURL: string;
   }
 }
+
+declare module '*.md';
