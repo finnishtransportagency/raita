@@ -15,7 +15,7 @@ import Modal from 'react-modal';
 import { marked } from 'marked';
 
 // TODO: this could be loaded dynamically using filename from config
-import manualData from 'public/doc/manual.md';
+import manualData from 'shared/doc/manual.md';
 import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
