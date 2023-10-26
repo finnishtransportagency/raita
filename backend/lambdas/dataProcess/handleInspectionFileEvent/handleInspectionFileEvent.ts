@@ -40,8 +40,9 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
       async eventRecord => {
-        const file = await backend.files.getFile(eventRecord);
         const key = getDecodedS3ObjectKey(eventRecord);
+        log.info({ fileName: key }, 'Start handler');
+        const file = await backend.files.getFile(eventRecord);
         const keyData = getKeyData(key);
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.

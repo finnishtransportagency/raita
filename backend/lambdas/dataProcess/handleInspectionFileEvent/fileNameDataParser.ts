@@ -50,6 +50,7 @@ export const validateGenericFileNameStructureOrFail = (
     throw new RaitaParseError(
       `Unexpected number of file name segments in ${fileName}. Expected ${expectedFileNamePartCount}, received ${fileBaseNameParts.length}.`,
       'WRONG_NUMBER_OF_FILE_NAME_SEGMENTS',
+      fileName,
     );
   }
 };
@@ -81,12 +82,14 @@ export const extractFileNameData = (
       throw new RaitaParseError(
         `Unexpected file name structure: ${fileName}`,
         'WRONG_FILE_NAME_STRUCTURE',
+        fileName,
       );
     }
     if (!isKnownSuffix(fileSuffix)) {
       throw new RaitaParseError(
         `Unexpected suffix in file name: ${fileName}`,
         'WRONG_FILE_TYPE',
+        fileName,
       );
     }
     // File name segments are separated by underscore
@@ -105,7 +108,7 @@ export const extractFileNameData = (
     // Currently just log file name parsing errors.
     if (error instanceof RaitaParseError) {
       logParsingException.warn(
-        { errorType: error.errorType },
+        { errorType: error.errorType, fileName: error.fileName },
         `${error.message}. File name extraction skipped.`,
       );
       return {};

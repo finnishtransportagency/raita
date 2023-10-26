@@ -254,6 +254,9 @@ export class DataProcessStack extends NestedStack {
       'data-process-error-composite-alarm',
       {
         alarmRule: AlarmRule.anyOf(...allAlarms),
+        compositeAlarmName: `metadata-parsing-errors-composite-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm that goes off when parsing errors are encountered in metadata parsing',
       },
     );
 
@@ -340,7 +343,7 @@ export class DataProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
+      timeout: cdk.Duration.seconds(15),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
@@ -380,7 +383,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'parsing-error',
+        metricName: `parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-inspection',
         metricValue: '1',
       },
@@ -414,7 +417,7 @@ export class DataProcessStack extends NestedStack {
       'inspection-timeout-filter',
       {
         filterPattern: FilterPattern.literal('%Task timed out%'),
-        metricName: 'inspection-timout',
+        metricName: `inspection-timeout-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -429,7 +432,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'inspection-parsing-error',
+        metricName: `inspection-parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -444,7 +447,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'inspection-other-error',
+        metricName: `inspection-other-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
