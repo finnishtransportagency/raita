@@ -101,9 +101,9 @@ export class ApplicationStack extends NestedStack {
       });
     }
 
-    // Create Bastion Host for dev (main branch/stack) and production
+    // Create an ec2 machine for easy postgres access for dev (main branch/stack) and production
     if (isPermanentStack(stackId, raitaEnv)) {
-      new PsqlClientStack(this, 'stack-bastion', {
+      new PsqlClientStack(this, 'stack-psql-client', {
         raitaStackIdentifier,
         vpc,
         securityGroup: raitaSecurityGroup,
