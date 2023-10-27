@@ -10,6 +10,7 @@ import { getEnvDependentOsConfiguration, isPermanentStack } from './utils';
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
+import { PsqlClientStack } from './raita-psql-client-ec2';
 import { SSM_API_KEY } from '../constants';
 
 interface ApplicationStackProps extends NestedStackProps {
@@ -97,6 +98,15 @@ export class ApplicationStack extends NestedStack {
         securityGroup: raitaSecurityGroup,
         albDns: raitaApiStack.alb.loadBalancerDnsName,
         databaseDomainEndpoint: openSearchDomain.domainEndpoint,
+      });
+    }
+
+    // Create Bastion Host for dev (main branch/stack) and production
+    if (isPermanentStack(stackId, raitaEnv)) {
+      new PsqlClientStack(this, 'stack-bastion', {
+        raitaStackIdentifier,
+        vpc,
+        securityGroup: raitaSecurityGroup,
       });
     }
 
