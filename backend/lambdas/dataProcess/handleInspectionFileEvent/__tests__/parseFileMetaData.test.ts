@@ -93,6 +93,11 @@ const extractionSpec: IExtractionSpec = {
       },
     },
   ],
+  knownExceptions: {
+    fileNameExtractionSpec: {
+      containsUnderscore: [],
+    },
+  },
 };
 
 // hash for 'dummy' string

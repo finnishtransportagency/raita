@@ -1,0 +1,195 @@
+{
+  "fileNameExtractionSpec": {
+    "csv": [
+      {
+        "1": { "name": "system" },
+        "2": { "name": "inspection_date", "parseAs": "date" },
+        "3": { "name": "track_number" },
+        "4": { "name": "track_part" },
+        "5": { "name": "track_id" },
+        "6": { "name": "km_start", "parseAs": "integer" },
+        "7": { "name": "km_end", "parseAs": "integer" }
+      }
+    ] ,
+    "txt": [
+      {
+        "1": { "name": "system" },
+        "2": { "name": "report_type" },
+        "3": { "name": "inspection_date", "parseAs": "date" },
+        "4": { "name": "track_number", "parseAs": "integer" },
+        "5": { "name": "track_part" },
+        "6": { "name": "track_id" },
+        "7": { "name": "km_start", "parseAs": "integer" },
+        "8": { "name": "km_end", "parseAs": "integer" }
+      }
+    ],
+    "pdf": [
+      {
+        "1": { "name": "system" },
+        "2": { "name": "report_type" },
+        "3": { "name": "inspection_date", "parseAs": "date" },
+        "4": { "name": "track_number", "parseAs": "integer" },
+        "5": { "name": "track_part" },
+        "6": { "name": "track_id" },
+        "7": { "name": "km_start", "parseAs": "integer" },
+        "8": { "name": "km_end", "parseAs": "integer" }
+      }
+    ],
+    "xlsx": [
+      {
+        "1": { "name": "report_type" },
+        "2": { "name": "inspection_date", "parseAs": "date" }
+      },
+      {
+        "1": { "name": "system" },
+        "2": { "name": "report_type" },
+        "3": { "name": "inspection_date", "parseAs": "date" },
+        "4": { "name": "track_number", "parseAs": "integer" },
+        "5": { "name": "track_part" },
+        "6": { "name": "track_id" },
+        "7": { "name": "km_start", "parseAs": "integer" },
+        "8": { "name": "km_end", "parseAs": "integer" }
+      }
+    ],
+    "xls": [
+      {
+        "1": { "name": "report_type" },
+        "2": { "name": "inspection_date", "parseAs": "date" }
+      }
+    ]
+  },
+  "folderTreeExtractionSpec": {
+    "1": { "name": "source_system" },
+    "2": { "name": "zip_reception__year" },
+    "3": { "name": "campaign" },
+    "4": { "name": "zip_reception__date" },
+    "5": { "name": "zip_name" },
+    "6": { "name": "track_number", "parseAs": "integer" },
+    "7": { "name": "track_part" },
+    "8": { "name": "track_id" },
+    "9": { "name": "year", "parseAs": "integer" },
+    "10": { "name": "system" },
+    "11": { "name": "inspection_datetime", "parseAs": "date" },
+    "12": { "name": "report_category" },
+    "13": { "name": "filename" }
+  },
+  "vRunFolderTreeExtractionSpec": {
+    "1": { "name": "source_system" },
+    "2": { "name": "zip_reception__year" },
+    "3": { "name": "campaign" },
+    "4": { "name": "zip_reception__date" },
+    "5": { "name": "zip_name" },
+    "6": { "name": "year", "parseAs": "integer"},
+    "7": { "name": "track_number", "parseAs": "integer"},
+    "8": { "name": "track_part"},
+    "9": { "name": "track_id"},
+    "10": { "name": "filename"}
+  },
+  "fileContentExtractionSpec": [
+    {
+      "propertyKey": "maintenance_area",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "ISÄNNÖINTIALUE"
+      }
+    },
+    {
+      "propertyKey": "track_number",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "RATAOSAN NUMERO"
+      },
+      "parseAs": "integer"
+    },
+    {
+      "propertyKey": "track_part",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "RATAOSAN TUNNUS"
+      }
+    },
+    {
+      "propertyKey": "track_id",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "RAIDE"
+      }
+    },
+    {
+      "propertyKey": "measurement_start_location",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "LIIKENNÖINNIN ALKUPISTE"
+      }
+    },
+    {
+      "propertyKey": "measurement_end_location",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "LIIKENNÖINNIN LOPPUPISTE"
+      }
+    },
+    {
+      "propertyKey": "measurement_direction",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "MITTAUSSUUNTA"
+      }
+    },
+    {
+      "propertyKey": "temperature",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "LÄMPÖTILA"
+      },
+      "parseAs": "float"
+    },
+    {
+      "propertyKey": "inspection_datetime",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "MITTAUSPÄIVÄMÄÄRÄ"
+      },
+      "parseAs": "date"
+    },
+    {
+      "propertyKey": "km_start",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "KM ALKU"
+      },
+      "parseAs": "integer"
+    },
+    {
+      "propertyKey": "km_end",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "KM LOPPU"
+      },
+      "parseAs": "integer"
+    },
+    {
+      "propertyKey": "length",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "PITUUS"
+      },
+      "parseAs": "integer"
+    },
+    {
+      "propertyKey": "maintenance_level",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "KUNNOSSAPITOTASO"
+      }
+    }
+  ],
+  "knownExceptions": {
+    "fileNameExtractionSpec": {
+      "containsUnderscore": [
+        {"name": "track_part", "value": "LRMST_D"},
+        {"name": "track_part", "value": "LRMST_U"}
+      ]
+    }
+  }
+}

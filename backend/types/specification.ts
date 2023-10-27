@@ -33,6 +33,16 @@ export const ExtractionSpec = z.object({
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   vRunFolderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
+  knownExceptions: z.object({
+    fileNameExtractionSpec: z.object({
+      containsUnderscore: z.array(
+        z.object({
+          name: z.string(),
+          value: z.string(),
+        }),
+      ),
+    }),
+  }),
 });
 
 export type IExtractionSpec = z.infer<typeof ExtractionSpec>;

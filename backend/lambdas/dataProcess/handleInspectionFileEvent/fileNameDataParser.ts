@@ -74,6 +74,7 @@ const parseGenericFileNameData = (
 export const extractFileNameData = (
   keyData: KeyData,
   fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
+  fileNameExceptions?: IExtractionSpec['knownExceptions']['fileNameExtractionSpec'],
 ) => {
   try {
     const { fileName, fileBaseName, fileSuffix } = keyData;
@@ -90,7 +91,29 @@ export const extractFileNameData = (
       );
     }
     // File name segments are separated by underscore
-    const fileBaseNameParts = fileBaseName.split('_');
+    let fileBaseNameParts = fileBaseName.split('_');
+    // Underscore is used as a separator for data fields in name. Check for and handle any known values containing underscore
+    let foundWithUnderscore: { value: string; name: string } | undefined =
+      undefined;
+    if (
+      fileNameExceptions &&
+      fileNameExceptions.containsUnderscore &&
+      fileNameExceptions.containsUnderscore.length
+    ) {
+      foundWithUnderscore = fileNameExceptions.containsUnderscore.find(
+        exception => fileBaseName.includes(exception.value),
+      );
+      if (foundWithUnderscore) {
+        const [before, after] = fileBaseName.split(foundWithUnderscore.value);
+        const valuesBefore = before.split('_').filter(v => v.length);
+        const valuesAfter = after.split('_').filter(v => v.length);
+        fileBaseNameParts = [
+          ...valuesBefore,
+          foundWithUnderscore.value,
+          ...valuesAfter,
+        ];
+      }
+    }
     // Get labels based on the file suffix from extractionSpec
     const labelsList = fileNamePartLabels[fileSuffix];
     // try different possible specs
@@ -105,6 +128,17 @@ export const extractFileNameData = (
         })
           ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
           : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
+        if (
+          foundWithUnderscore &&
+          fileNameMetadata[foundWithUnderscore.name] !==
+            foundWithUnderscore.value
+        ) {
+          // underscore value found in the wrong place
+          throw new RaitaParseError(
+            `Found known value with underscore ${foundWithUnderscore.value} in the wrong slot`,
+            'VALUE_IN_WRONG_SLOT',
+          );
+        }
         return {
           file_type: fileSuffix,
           ...fileNameMetadata,

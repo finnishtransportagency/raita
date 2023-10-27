@@ -15,7 +15,7 @@ import { FilterPattern, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { raitaSourceSystems } from '../constants';
+import { EXTRACTION_SPEC_PATH, raitaSourceSystems } from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -31,6 +31,7 @@ import {
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -94,6 +95,11 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
       versioned: true,
+    });
+
+    new BucketDeployment(this, 'ExtractionSpecDeployment', {
+      sources: [Source.asset(EXTRACTION_SPEC_PATH)],
+      destinationBucket: configurationBucket,
     });
 
     // Grant sftpUser access to data reception bucket
