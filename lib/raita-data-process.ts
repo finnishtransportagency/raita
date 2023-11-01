@@ -220,6 +220,7 @@ export class DataProcessStack extends NestedStack {
     handleReceptionFileEventFn.addEventSource(
       new S3EventSource(dataReceptionBucket, {
         events: [s3.EventType.OBJECT_CREATED],
+        filters: [{ prefix: `${raitaSourceSystems.Meeri}/` }],
       }),
     );
 
