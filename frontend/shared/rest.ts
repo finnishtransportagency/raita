@@ -58,6 +58,7 @@ type GetMetaResult = {
   systems: { value: string; count: number }[];
   trackNumbers: any[];
   trackParts: { value: string; count: number }[];
+  tilirataosanumerot: { value: string; count: number }[];
   fields: any[];
   reportTypes: MetaResultType[];
   latestInspection: string;

@@ -1,5 +1,6 @@
 {
   "label_system": "Järjestelmä",
+  "label_tilirataosanumero": "Tilirataosanumero",
   "label_track_number": "Ratanumero",
   "label_track_part": "Raportointiosuus",
   "label_track_id": "Raide",

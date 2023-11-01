@@ -94,6 +94,13 @@
       }
     },
     {
+      "propertyKey": "tilirataosanumero",
+      "pattern": {
+        "predefinedPatternId": "colonSeparatedKeyValuePair",
+        "searchKey": "TILIRATAOSANUMERO"
+      }
+    },
+    {
       "propertyKey": "track_number",
       "pattern": {
         "predefinedPatternId": "colonSeparatedKeyValuePair",

@@ -419,6 +419,29 @@ const ReportsIndex: NextPage = () => {
                   }}
                 />
               </section>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_tilirataosanumerot')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.tilirataosanumerot || []).map(it => ({
+                    key: it.value,
+                    value: it.value,
+                  }))}
+                  resetFilters={state.resetFilters}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'tilirataosanumerot'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'tilirataosanumero',
+                        ),
+                      ),
+                    );
+                    setState(R.assoc('resetFilters', false));
+                  }}
+                />
+              </section>
 
               {/* Search file types */}
               <section className={clsx(css.subSection)}>
