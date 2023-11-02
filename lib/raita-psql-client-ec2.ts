@@ -28,7 +28,7 @@ export class PsqlClientStack extends cdk.NestedStack {
     });
     const userData = this.createPsqlClientUserData();
     this.createPsqlClientHost({
-      name: 'psqlClient2',
+      name: 'psqlClient',
       userData,
       role: this.psqlClientRole,
       vpc,

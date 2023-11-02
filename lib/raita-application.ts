@@ -104,7 +104,7 @@ export class ApplicationStack extends NestedStack {
     // Create an ec2 machine for easy postgres access for dev (main branch/stack) and production
     //TODO uncomment permanent stack if
     // if (isPermanentStack(stackId, raitaEnv)) {
-    new PsqlClientStack(this, 'stack-psql-client2', {
+    new PsqlClientStack(this, 'stack-psql-client', {
       raitaStackIdentifier,
       vpc,
       securityGroup: new ec2.SecurityGroup(this, 'psql-client-sg', {
