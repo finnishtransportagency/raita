@@ -15,6 +15,7 @@ export function useMetadataQuery() {
       ({
         trackNumbers,
         trackParts,
+        tilirataosanumerot,
         systems,
         fileTypes,
         fields,
@@ -26,6 +27,7 @@ export function useMetadataQuery() {
           reportTypes,
           trackNumbers,
           trackParts,
+          tilirataosanumerot,
           systems,
           fileTypes,
           latestInspection,
@@ -44,7 +46,9 @@ export function useMetadataQuery() {
 export function useSearch() {
   return useMutation((query: MsearchBody) => {
     console.assert(query, 'Given search query is invalid; %o', { query });
-    return apiClient.post<SearchResponse>('/files', query).then(res => res.data);
+    return apiClient
+      .post<SearchResponse>('/files', query)
+      .then(res => res.data);
   });
 }
 

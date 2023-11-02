@@ -23,6 +23,7 @@
   "reports_file_types": "Tiedostotyypit",
   "reports_report_types": "Raporttityypit",
   "reports_track_parts": "Raportointiosuudet",
+  "reports_tilirataosanumerot": "Tilirataosanumerot",
   "reports_systems": "Järjestelmät",
   "filters_none_added": "Ei suodattimia.",
   "pager_a11y_label": "Sivutuksen navigaatio",

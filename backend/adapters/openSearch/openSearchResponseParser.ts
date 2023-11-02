@@ -43,6 +43,11 @@ export class OpenSearchResponseParser {
         'track_parts',
         'value',
       ) as Array<{ value: string; count: 1 }>,
+      tilirataosanumerot: this.transformAggregationsResult(
+        aggregations,
+        'tilirataosanumerot',
+        'value',
+      ) as Array<{ value: string; count: 1 }>,
     };
   };
 
@@ -104,10 +109,11 @@ export class OpenSearchResponseParser {
       count: element.doc_count,
     }));
 
-    parseLatestEntryAggregation(res: any) {
-      const latestInspection = res?.body?.aggregations?.latest_inspection_date?.value_as_string || "n/a";
-      return {
-        latestInspection,
-      }
-    }
+  parseLatestEntryAggregation(res: any) {
+    const latestInspection =
+      res?.body?.aggregations?.latest_inspection_date?.value_as_string || 'n/a';
+    return {
+      latestInspection,
+    };
+  }
 }

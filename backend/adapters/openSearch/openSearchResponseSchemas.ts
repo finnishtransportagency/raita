@@ -48,6 +48,9 @@ export const AggregationsResponseSchema = z.object({
     track_parts: z.object({
       buckets: z.array(BucketElementSchema),
     }),
+    tilirataosanumerot: z.object({
+      buckets: z.array(BucketElementSchema),
+    }),
   }),
 });
 
