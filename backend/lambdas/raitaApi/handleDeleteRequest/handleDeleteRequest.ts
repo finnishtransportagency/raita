@@ -61,8 +61,6 @@ export async function handleDeleteRequest(
     if (!validPath) {
       throw new RaitaLambdaError('Invalid prefix length', 400);
     }
-    // TODO: validate that prefix is one of: single zip file or full folder name
-    // must define if some paths are forbidden (for example: /*)
 
     // can delete from three places: reception bucket, inspection bucket, metadata store
     // TODO: read these flags from input?
@@ -78,7 +76,6 @@ export async function handleDeleteRequest(
         receptionBucket,
         s3,
       );
-      log.info(`Deleted from reception bucket: ${receptionDeleteCount}`);
     }
 
     if (deleteFrom.inspection) {
@@ -88,7 +85,6 @@ export async function handleDeleteRequest(
         inspectionBucket,
         s3,
       );
-      log.info(`Deleted from inspection bucket: ${inspectionDeleteCount}`);
     }
 
     if (deleteFrom.metadata) {
@@ -98,7 +94,6 @@ export async function handleDeleteRequest(
         region,
         openSearchDomain,
       );
-      log.info(`Deleted from metadata: ${metadataDeleteCount}`);
     }
     if (
       deleteFrom.inspection &&
@@ -109,7 +104,13 @@ export async function handleDeleteRequest(
         `Mismatch with inspection bucket delete count (${inspectionDeleteCount}) and metadata delete count (${inspectionDeleteCount})`,
       );
     }
-
+    log.info({
+      deleteCounts: {
+        receptionDeleteCount,
+        inspectionDeleteCount,
+        metadataDeleteCount,
+      },
+    });
     return getRaitaSuccessResponse({
       receptionDeleteCount,
       inspectionDeleteCount,
@@ -173,13 +174,16 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     const responses = await Promise.all(deleteResponses);
     let deleteCount = 0;
     responses.forEach(response => {
-      if (response.Deleted) {
-        log.info({ keys: response.Deleted.map(d => d.Key) }, 'Deleted');
+      if (response.Deleted && response.Deleted.length) {
+        log.info(
+          { keys: response.Deleted.map(d => d.Key) },
+          `Deleted from ${bucket}`,
+        );
         deleteCount += response.Deleted.length;
       } else {
-        log.error('No keys deleted');
+        log.error(`No keys deleted from ${bucket}`);
       }
-      if (response.Errors) {
+      if (response.Errors && response.Errors.length) {
         log.error(
           { errors: response.Errors },
           'Errors with bucket delete request',
@@ -214,7 +218,7 @@ async function deleteFromMetadata(
     });
     const response = await metadata.deleteByKeyPrefix(prefix);
     // TODO: response does not contain which documents were deleted. Is this info needed?
-    if (response.errors) {
+    if (response.errors && response.errors.length) {
       log.error(
         { errors: response.errors },
         'Errors with metadata delete request',
