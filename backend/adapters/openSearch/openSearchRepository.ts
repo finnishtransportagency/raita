@@ -187,4 +187,16 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     });
     return this.#responseParser.parseLatestEntryAggregation(response);
   };
+
+  deleteByKeyPrefix = async (prefix: string) => {
+    const client = await this.#openSearchClient.getClient();
+    const queryBody = {
+      query: { prefix: { 'key.keyword': prefix } },
+    };
+    const response = await client.deleteByQuery({
+      index: this.#dataIndex,
+      body: queryBody,
+    });
+    return this.#responseParser.parseDeleteByKeyPrefix(response);
+  };
 }

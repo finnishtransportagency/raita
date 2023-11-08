@@ -116,4 +116,12 @@ export class OpenSearchResponseParser {
       latestInspection,
     };
   }
+
+  parseDeleteByKeyPrefix(res: any) {
+    return {
+      total: res?.body?.total,
+      deleted: res?.body?.deleted,
+      errors: res?.body?.failures,
+    };
+  }
 }

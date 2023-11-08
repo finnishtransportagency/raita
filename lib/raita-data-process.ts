@@ -50,6 +50,7 @@ interface DataProcessStackProps extends NestedStackProps {
 export class DataProcessStack extends NestedStack {
   public readonly dataProcessorLambdaServiceRole: iam.Role;
   public readonly inspectionDataBucket: Bucket;
+  public readonly dataReceptionBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
@@ -89,7 +90,7 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
     });
-    const dataReceptionBucket = createRaitaBucket({
+    this.dataReceptionBucket = createRaitaBucket({
       scope: this,
       name: 'data-reception',
       raitaEnv,
@@ -107,8 +108,8 @@ export class DataProcessStack extends NestedStack {
       policyAccountId: sftpPolicyAccountId,
       policyUserId: sftpPolicyUserId,
       resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+        this.dataReceptionBucket.bucketArn,
+        `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
       ],
       actions: [
         's3:GetObject',
@@ -121,15 +122,15 @@ export class DataProcessStack extends NestedStack {
         's3:DeleteObject',
       ],
     });
-    dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+    this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
     // Grant SOA-offices väylä role full access to data reception bucket
     const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
       policyAccountId: soaPolicyAccountId,
       policyUserId: vaylaPolicyUserId,
       resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+        this.dataReceptionBucket.bucketArn,
+        `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
       ],
       actions: [
         's3:GetObject',
@@ -142,15 +143,15 @@ export class DataProcessStack extends NestedStack {
         's3:DeleteObject',
       ],
     });
-    dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
+    this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
     // Grant SOA-offices loram role read access to data reception bucket
     const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
       policyAccountId: soaPolicyAccountId,
       policyUserId: loramPolicyUserId,
       resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+        this.dataReceptionBucket.bucketArn,
+        `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
       ],
       actions: [
         's3:ListBucket',
@@ -160,7 +161,7 @@ export class DataProcessStack extends NestedStack {
         's3:GetObjectAcl',
       ],
     });
-    dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+    this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
     // Create ECS cluster resources for zip extraction task
     const { ecsCluster, handleZipTask, handleZipContainer } =
@@ -170,7 +171,7 @@ export class DataProcessStack extends NestedStack {
         raitaEnv,
       });
 
-    dataReceptionBucket.grantRead(handleZipTask.taskRole);
+    this.dataReceptionBucket.grantRead(handleZipTask.taskRole);
     this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
 
     // Create zip handler lambda and grant permissions
@@ -185,7 +186,7 @@ export class DataProcessStack extends NestedStack {
       container: handleZipContainer,
     });
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
-    dataReceptionBucket.grantRead(handleReceptionFileEventFn);
+    this.dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
     const receptionAlarms = this.createReceptionHandlerAlarms(
       handleReceptionFileEventFn,
@@ -218,7 +219,7 @@ export class DataProcessStack extends NestedStack {
 
     // Handler is run for all the files types
     handleReceptionFileEventFn.addEventSource(
-      new S3EventSource(dataReceptionBucket, {
+      new S3EventSource(this.dataReceptionBucket, {
         events: [s3.EventType.OBJECT_CREATED],
         filters: [{ prefix: `${raitaSourceSystems.Meeri}/` }],
       }),
