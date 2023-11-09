@@ -1,8 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS raita;
+CREATE TYPE jarjestelma AS ENUM ('AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT');
 
-CREATE TYPE raita.jarjestelma AS ENUM ('AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT');
-
-CREATE TYPE raita.rataosoite AS (
+CREATE TYPE rataosoite AS (
     rataosuus_numero character varying(40), -- for example '006'
     rataosuus_nimi character varying(40), -- for example 'LHRP'
     raide_numero integer, -- for example 2
@@ -10,7 +8,7 @@ CREATE TYPE raita.rataosoite AS (
     rata_metrit DECIMAL -- for example 100.00
     );
 
-CREATE TABLE raita.raportti (
+CREATE TABLE raportti (
                                 id integer NOT NULL,
                                 running_date timestamp NOT NULL,
                                 jarjestelma jarjestelma,
@@ -20,7 +18,7 @@ CREATE TABLE raita.raportti (
                                 ajonopeus decimal -- ajonopeus
 );
 
-CREATE TABLE raita.ams_raportti(
+CREATE TABLE ams_raportti(
                                    oikea_pystysuuntainen_kiihtyvyys_c1 decimal,                    -- Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]
                                    vasen_pystysuuntainen_kiihtyvyys_c1 decimal,                    -- Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]
                                    oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu decimal,         -- Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]
@@ -44,9 +42,9 @@ CREATE TABLE raita.ams_raportti(
                                    poikittainen_kiihtyvyys_c3_suodatettu decimal,                  -- Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]
                                    transversal_acceleration_c3_mean_to_peak decimal,               -- Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]
                                    ams_ajonopeus integer                                           --Running Dynamics.Ajonopeus [Km/h]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.ohl_raportti(
+CREATE TABLE ohl_raportti(
                                    siksak_1 decimal,                                -- Over Head Line Geometry and Wear.Siksak 1 [mm]
                                    siksak_2 decimal,                                -- Over Head Line Geometry and Wear.Siksak 2 [mm]
                                    korkeus_1 decimal,                               -- Over Head Line Geometry and Wear.Korkeus 1 [mm]
@@ -75,9 +73,9 @@ CREATE TABLE raita.ohl_raportti(
                                    right_wire_wear_2 decimal,                       -- Over Head Line Geometry and Wear.Right Wire Wear 2 [mm]
                                    stagger_box_ohl decimal,                         -- Over Head Line Geometry and Wear.Stagger Box_OHL [mm]
                                    height_box_ohl decimal                           -- Over Head Line Geometry and Wear.Height Box_OHL [mm]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.pi_raportti(
+CREATE TABLE pi_raportti(
                                   accz_1_1 decimal,     -- Pantograph/Catenary Interaction.AccZ 1.1 [m/s^2]
                                   accz_1_2 decimal,     -- Pantograph/Catenary Interaction.AccZ 1.2 [m/s^2]
                                   accz_2_1 decimal,     -- Pantograph/Catenary Interaction.AccZ 2.1 [m/s^2]
@@ -91,9 +89,9 @@ CREATE TABLE raita.pi_raportti(
                                   fext decimal,         -- Pantograph/Catenary Interaction.FExt [N]
                                   stagger decimal,      -- Pantograph/Catenary Interaction.Stagger [mm]
                                   height_ws decimal            -- Pantograph/Catenary Interaction.Height WS [mm]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.rc_raportti(
+CREATE TABLE rc_raportti(
                                   oikea_raiteen_aallon_rms_10_30mm decimal,                    -- Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm [µm]
                                   vasen_raiteen_aallon_rms_10_30mm decimal,                    -- Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm [µm]
                                   oikea_raiteen_aallon_rms_30_100mm decimal,                   -- Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm [µm]
@@ -134,9 +132,9 @@ CREATE TABLE raita.rc_raportti(
                                   oikea_raiteen_aallonrms300_1000mm_kiintea_keskia decimal,    -- Rail Corrugation.Oikea Raiteen AallonRMS[300-1000]mm Kiinteä Keskia [µm]
                                   vasen_raiteen_aallonrms300_1000mm_kiintea_keskih decimal,    -- Rail Corrugation.Vasen Raiteen AallonRMS[300-1000]mm Kiinteä Keskih [µm]
                                   oikea_raiteen_aallonrms300_1000mm_kiintea_keskih decimal     -- Rail Corrugation.Oikea Raiteen AallonRMS[300-1000]mm Kiinteä Keskih [µm]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.rp_raportti(
+CREATE TABLE rp_raportti(
                                   vasen_pystysuora_kuluma decimal,                                   -- Rail Profile.Vasen Pystysuora Kuluma [mm]
                                   oikea_pystysuora_kuluma decimal,                                   -- Rail Profile.Oikea Pystysuora Kuluma [mm]
                                   vasen_pystysuora_kuluman_keskiarvo decimal,                        -- Rail Profile.Vasen Pystysuora Kuluman Keskiarvo [mm]
@@ -235,9 +233,9 @@ CREATE TABLE raita.rp_raportti(
                                   vasen_poikkipinta_alan_poikkeama decimal,                          -- Rail Profile.Vasen Poikkipinta-Alan Poikkeama [mm^2]
                                   oikea_poikkipinta_alan_poikkeama decimal,                          -- Rail Profile.Oikea Poikkipinta-Alan Poikkeama [mm^2]
                                   rp_ajonopeus decimal 											   -- Rail Profile.Ajonopeus [Km/h]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.tg_raportti(
+CREATE TABLE tg_raportti(
                                   raideleveyden_poikkeama decimal,                           -- TG Master.Raideleveyden Poikkeama [mm]
                                   kallistus decimal,                                         -- TG Master.Kallistus [mm]
                                   kallistuksen_poikkeama decimal,                            -- TG Master.Kallistuksen Poikkeama [mm]
@@ -270,9 +268,9 @@ CREATE TABLE raita.tg_raportti(
                                   oikea_korkeuspoikkema_d0 decimal,                          -- TG Master.Oikea Korkeuspoikkema D0 [mm]
                                   vasen_korkeuspoikkema_d0_keskihajonta decimal,             -- TG Master.Vasen Korkeuspoikkema D0 Keskihajonta [mm]
                                   oikea_korkeuspoikkema_d0_keskihajonta decimal              -- TG Master.Oikea Korkeuspoikkema D0 Keskihajonta [mm]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
-CREATE TABLE raita.tsight_raportti(
+CREATE TABLE tsight_raportti(
                                       ballast_slope_l decimal,                                 -- T-Sight 600.Ballast slope_L [°]
                                       ballast_width_l decimal,                                 -- T-Sight 600.Ballast width_L [mm]
                                       ballast_height_l decimal,                                -- T-Sight 600.Ballast height_L [mm]
@@ -299,5 +297,5 @@ CREATE TABLE raita.tsight_raportti(
                                       distance_adjacenttrack_left decimal,                     -- T-Sight 600.Distance_AdjacentTrack_Left [mm]
                                       gauge_adjacenttrack_right decimal,                       -- T-Sight 600.Gauge_AdjacentTrack_Right [mm]
                                       distance_adjacenttrack_right decimal                     -- T-Sight 600.Distance_AdjacentTrack_Right [mm]
-) INHERITS (raita.raportti);
+) INHERITS (raportti);
 
