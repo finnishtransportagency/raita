@@ -1,5 +1,4 @@
 import {
-  aws_codebuild,
   RemovalPolicy,
   SecretValue,
   Stack,
@@ -12,10 +11,6 @@ import {
   CodePipeline,
   CodePipelineSource,
   ShellStep,
-    Step,
-  ICodePipelineActionFactory,
-  ProduceActionOptions,
-  CodePipelineActionFactoryResult,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import {
@@ -26,49 +21,9 @@ import {
 import { RaitaStack } from './raita-stack';
 import { getPipelineConfig, RaitaEnvironment } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { Pipeline, IStage, Artifact } from 'aws-cdk-lib/aws-codepipeline';
+import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { isDevelopmentPreMainStack } from './utils';
-import { PipelineProject } from 'aws-cdk-lib/aws-codebuild';
-import {CodeBuildAction} from "aws-cdk-lib/aws-codepipeline-actions";
-
-
-
-class MyStep extends Step implements ICodePipelineActionFactory {
-  constructor(
-
-  ) {
-    super('MyStep');
-
-    // This is necessary if your step accepts parameters, like environment variables,
-    // that may contain outputs from other steps. It doesn't matter what the
-    // structure is, as long as it contains the values that may contain outputs.
-    this.discoverReferencedOutputs({
-      env: { /* ... */ }
-    });
-  }
-
-  public produceAction(stage: IStage, options: ProduceActionOptions): CodePipelineActionFactoryResult {
-
-    // This is where you control what type of Action gets added to the
-    // CodePipeline
-    stage.addAction(new cpactions.JenkinsAction({
-      // Copy 'actionName' and 'runOrder' from the options
-      actionName: options.actionName,
-      runOrder: options.runOrder,
-
-      // Jenkins-specific configuration
-      type: cpactions.JenkinsActionType.TEST,
-      jenkinsProvider: this.provider,
-      projectName: 'MyJenkinsProject',
-
-      // Translate the FileSet into a codepipeline.Artifact
-      inputs: [options.artifacts.toCodePipeline(this.input)],
-    }));
-
-    return { runOrdersConsumed: 1 };
-  }
-}
 
 /**
  * The stack that defines the application pipeline
@@ -118,36 +73,6 @@ export class RaitaPipelineStack extends Stack {
     )
       ? `/${config.stackId}`
       : '';
-
-    const codeBuildProject = new PipelineProject(this, 'MyProject', {
-      buildSpec: aws_codebuild.BuildSpec.fromObject({
-        version: '0.2',
-        phases: {
-          build: {
-            commands: ['echo "Hello, CodeBuild!"'],
-          },
-        },
-      }),
-    });
-
-    const deployInput = new Artifact();
-
-    new Pipeline(this, 'Pipeline', {
-      stages: [
-        // ...
-        {
-          stageName: 'Deploy',
-          actions: [
-            new CodeBuildAction({
-              actionName: 'InvalidateCache',
-              project: invalidateBuildProject,
-              input: deployInput,
-              runOrder: 2,
-            }),
-          ],
-        },
-      ],
-    });
 
     const codePipeline = new CodePipeline(
       this,
