@@ -21,11 +21,12 @@ import {
   LocalCacheMode,
 } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
-import { getPipelineConfig, RaitaEnvironment } from './config';
+import {getAccountVpcResourceConfig, getPipelineConfig, RaitaEnvironment} from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { isDevelopmentMainStack, isDevelopmentPreMainStack } from './utils';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 /**
  * The stack that defines the application pipeline
@@ -37,6 +38,9 @@ export class RaitaPipelineStack extends Stack {
       ...props,
       tags: config.tags,
     });
+
+    // Get config based on Raita environment
+    const vpcConfig = getAccountVpcResourceConfig(config.env);
 
     const artifactBucket = new Bucket(
       this,
@@ -59,6 +63,18 @@ export class RaitaPipelineStack extends Stack {
         actions: ['codebuild:StartBuild'],
         resources: ['*'],
       }),
+    );
+
+    // Get existing VPC based on predetermined attributes
+    const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'raita-vpc', {
+      ...vpcConfig.vpc,
+    });
+
+    // Get existing security group based on predetermined attributes
+    const raitaSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
+        this,
+        'raita-security-group',
+        vpcConfig.securityGroupId,
     );
 
     const githubSource = CodePipelineSource.gitHub(
@@ -129,6 +145,8 @@ export class RaitaPipelineStack extends Stack {
         post: [
           new CodeBuildStep('Flyway', {
             input: githubSource,
+            vpc: raitaVPC,
+            securityGroups: [raitaSecurityGroup],
             buildEnvironment: {
               environmentVariables: {
                 DB_PASSWORD: {
