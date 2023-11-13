@@ -25,7 +25,7 @@ import { getPipelineConfig, RaitaEnvironment } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { isDevelopmentPreMainStack } from './utils';
+import { isDevelopmentMainStack, isDevelopmentPreMainStack } from './utils';
 
 /**
  * The stack that defines the application pipeline
@@ -75,6 +75,12 @@ export class RaitaPipelineStack extends Stack {
     )
       ? `/${config.stackId}`
       : '';
+
+    const confFileDir = isDevelopmentPreMainStack(config.stackId, config.env)
+      ? `premain`
+      : isDevelopmentMainStack(config.stackId, config.env)
+      ? `main`
+      : 'prod';
 
     const codePipeline = new CodePipeline(
       this,
@@ -129,9 +135,17 @@ export class RaitaPipelineStack extends Stack {
                   type: BuildEnvironmentVariableType.SECRETS_MANAGER,
                   value: 'database_password',
                 },
+                CONF_FILE_DIR: {
+                  type: BuildEnvironmentVariableType.PLAINTEXT,
+                  value: 'confFileDir',
+                },
               },
             },
-            commands: ['printenv', 'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/premain:/flyway/conf flyway/flyway migrate'],
+            commands: [
+              'printenv',
+              'echo $DB_PASSWORD',
+              `docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD`,
+            ],
           }),
         ],
       },
