@@ -148,6 +148,7 @@ export class RaitaPipelineStack extends Stack {
             vpc: raitaVPC,
             securityGroups: [raitaSecurityGroup],
             buildEnvironment: {
+              privileged: true,
               environmentVariables: {
                 DB_PASSWORD: {
                   type: BuildEnvironmentVariableType.SECRETS_MANAGER,
