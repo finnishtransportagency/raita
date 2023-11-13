@@ -137,11 +137,11 @@ export class RaitaPipelineStack extends Stack {
                 },
                 DOCKER_PASSWORD: {
                   type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                  value: 'docker_passeword',
+                  value: 'docker_password',
                 },
                 CONF_FILE_DIR: {
                   type: BuildEnvironmentVariableType.PLAINTEXT,
-                  value: 'confFileDir',
+                  value: confFileDir,
                 },
               },
             },
