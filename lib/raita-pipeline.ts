@@ -118,6 +118,12 @@ export class RaitaPipelineStack extends Stack {
             commands: ['npm run test', 'npm run --prefix frontend test'],
           }),
         ],
+        post: [
+          new ShellStep('Flyway', {
+            input: githubSource,
+            commands: ['docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/premain:/flyway/conf flyway/flyway migrate'],
+          }),
+        ],
       },
     );
   }
