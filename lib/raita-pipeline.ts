@@ -8,12 +8,14 @@ import {
   Tags,
 } from 'aws-cdk-lib';
 import {
+  CodeBuildStep,
   CodePipeline,
   CodePipelineSource,
   ShellStep,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import {
+  BuildEnvironmentVariableType,
   Cache,
   LinuxBuildImage,
   LocalCacheMode,
@@ -119,9 +121,17 @@ export class RaitaPipelineStack extends Stack {
           }),
         ],
         post: [
-          new ShellStep('Flyway', {
+          new CodeBuildStep('Flyway', {
             input: githubSource,
-            commands: ['docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/premain:/flyway/conf flyway/flyway migrate'],
+            buildEnvironment: {
+              environmentVariables: {
+                DB_PASSWORD: {
+                  type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                  value: 'database_password',
+                },
+              },
+            },
+            commands: ['printenv', 'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/premain:/flyway/conf flyway/flyway migrate'],
           }),
         ],
       },
