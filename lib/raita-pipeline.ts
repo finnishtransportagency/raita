@@ -135,6 +135,10 @@ export class RaitaPipelineStack extends Stack {
                   type: BuildEnvironmentVariableType.SECRETS_MANAGER,
                   value: 'database_password',
                 },
+                DOCKER_PASSWORD: {
+                  type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                  value: 'docker_passeword',
+                },
                 CONF_FILE_DIR: {
                   type: BuildEnvironmentVariableType.PLAINTEXT,
                   value: 'confFileDir',
@@ -144,7 +148,11 @@ export class RaitaPipelineStack extends Stack {
             commands: [
               'printenv',
               'echo $DB_PASSWORD',
-              `docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD`,
+              'echo $DOCKER_PASSWORD',
+              'echo $CONF_FILE_DIR',
+              'echo Logging in to Docker hub...',
+              'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
+              'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD',
             ],
           }),
         ],
