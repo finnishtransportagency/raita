@@ -165,9 +165,6 @@ export class RaitaPipelineStack extends Stack {
               },
             },
             commands: [
-              'printenv',
-              'echo $DB_PASSWORD',
-              'echo $DOCKER_PASSWORD',
               'echo $CONF_FILE_DIR',
               'echo Logging in to Docker hub...',
               'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
