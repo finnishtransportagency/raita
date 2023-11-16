@@ -1,7 +1,7 @@
 import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
-  fileSuffixesToIncudeInMetadataParsing,
+  fileSuffixesToIncludeInMetadataParsing,
   KNOWN_IGNORED_FILE_SUFFIXES,
   KnownSuffix,
   SUBMISSION_REPORT_INDICATOR,
@@ -160,7 +160,7 @@ export function isZipParentPath(arg: Array<string>): boolean {
 }
 
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
-  return Object.values(fileSuffixesToIncudeInMetadataParsing).some(
+  return Object.values(fileSuffixesToIncludeInMetadataParsing).some(
     suffix => suffix === arg,
   );
 }
@@ -170,8 +170,8 @@ export function isKnownIgnoredSuffix(arg: string): boolean {
 
 export function isExcelSuffix(arg: string): arg is ExcelSuffix {
   return (
-    fileSuffixesToIncudeInMetadataParsing.XLSX_FILE === arg ||
-    fileSuffixesToIncudeInMetadataParsing.XLS_FILE === arg
+    fileSuffixesToIncludeInMetadataParsing.XLSX_FILE === arg ||
+    fileSuffixesToIncludeInMetadataParsing.XLS_FILE === arg
   );
 }
 

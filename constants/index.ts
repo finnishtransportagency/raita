@@ -1,11 +1,11 @@
 export type KnownSuffix =
-  (typeof fileSuffixesToIncudeInMetadataParsing)[keyof typeof fileSuffixesToIncudeInMetadataParsing];
+  (typeof fileSuffixesToIncludeInMetadataParsing)[keyof typeof fileSuffixesToIncludeInMetadataParsing];
 
 export type ExcelSuffix =
-  | (typeof fileSuffixesToIncudeInMetadataParsing)['XLSX_FILE']
-  | (typeof fileSuffixesToIncudeInMetadataParsing)['XLS_FILE'];
+  | (typeof fileSuffixesToIncludeInMetadataParsing)['XLSX_FILE']
+  | (typeof fileSuffixesToIncludeInMetadataParsing)['XLS_FILE'];
 
-export const fileSuffixesToIncudeInMetadataParsing = {
+export const fileSuffixesToIncludeInMetadataParsing = {
   TXT_FILE: 'txt',
   PDF_FILE: 'pdf',
   CSV_FILE: 'csv',
