@@ -1,6 +1,6 @@
 import { zcsv, parseCSVContent, parseCSV } from "zod-csv";
 import { z } from "zod";
-import {IFileResult} from "../../../../types";
+import {amsSchema} from "./amsCsvSchema";
 
 function tidyUpHeaderLine(cvsHeaderLine: string):string {
     return cvsHeaderLine.replace(' ','_').toLowerCase().replace(/\[.*\]/,'');
@@ -19,6 +19,7 @@ function tidyUpFileBody(csvFileBody: string) {
 
 export async function parseAMSCSVData(csvFileBody: string){
     const tidyedFileBody = tidyUpFileBody(csvFileBody);
+    parseCSV(tidyedFileBody, amsSchema);
 
 
 }
