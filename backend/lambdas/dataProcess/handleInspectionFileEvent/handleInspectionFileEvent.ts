@@ -15,6 +15,8 @@ import {
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
+import { parseCSVData } from './cvsDataParser/csvDataParser';
+import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 
@@ -87,6 +89,13 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           file,
           spec,
         });
+
+        //call here csv parsing  parseCsvData(); ?
+        if (
+          keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
+        ) {
+          parseCSVData(keyData.fileBaseName,  file);
+        }
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
