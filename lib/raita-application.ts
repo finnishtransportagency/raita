@@ -65,6 +65,7 @@ export class ApplicationStack extends NestedStack {
     const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
       raitaStackIdentifier: raitaStackIdentifier,
       raitaEnv,
+      stackId,
       vpc,
       openSearchDomain: openSearchDomain,
       openSearchMetadataIndex: openSearchMetadataIndex,

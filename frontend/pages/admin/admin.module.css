@@ -1,0 +1,32 @@
+.logHeaderTag {
+  border-radius: 10px;
+  padding: 2px 4px;
+  margin-left: 6px;
+}
+
+.error {
+  background-color: #e30202;
+  font-weight: bold;
+}
+.warn {
+  background-color: #e3e302;
+  font-weight: bold;
+}
+
+.logContainer {
+  overflow: scroll;
+  max-height: 500px;
+}
+.logBox {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min-content;
+}
+
+.logRow {
+  overflow: visible;
+  /* width: max-content; */
+  /* width: 100%; */
+  margin: 0;
+}

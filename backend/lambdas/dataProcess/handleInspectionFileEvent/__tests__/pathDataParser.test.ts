@@ -1,5 +1,5 @@
 import { IExtractionSpec } from '../../../../types';
-import { KeyData } from '../../../utils';
+import { KeyData, RaitaParseError } from '../../../utils';
 import { extractPathData } from '../pathDataParser';
 
 jest.mock('../../../../utils/logger', () => {
@@ -83,10 +83,8 @@ describe('extractPathData', () => {
       keyWithoutSuffix: 'test/path/test_123_456',
     };
 
-    const result = extractPathData(
-      keyData,
-      extractionSpec as any as IExtractionSpec,
-    );
-    expect(result).toEqual({});
+    expect(() =>
+      extractPathData(keyData, extractionSpec as any as IExtractionSpec),
+    ).toThrow(RaitaParseError);
   });
 });

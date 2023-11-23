@@ -6,6 +6,7 @@ import type { AppProps } from 'next/app';
 import nextI18nConfig from '../next-i18next.config';
 import 'normalize.css';
 import '../styles/globals.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const client = new QueryClient();
 

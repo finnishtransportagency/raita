@@ -12,6 +12,8 @@ import {
   RaitaLambdaError,
 } from '../../utils';
 import MetadataPort from '../../../ports/metadataPort';
+import { IAdminLogger } from '../../../utils/adminLogger';
+import { PostgresLogger } from '../../../utils/postgresLogger';
 
 function getLambdaConfigOrFail() {
   return {
@@ -22,6 +24,8 @@ function getLambdaConfigOrFail() {
     metadataIndex: getEnvOrFail('METADATA_INDEX', 'handleDeleteRequest'),
   };
 }
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 /**
  * Handle an incoming delete request
@@ -50,6 +54,11 @@ export async function handleDeleteRequest(
     }
     const { prefix } = requestBody;
     log.info({ prefix: prefix, user: user.uid }, 'Delete request received');
+
+    await adminLogger.init('delete-process', prefix);
+    await adminLogger.info(
+      `Poistopyynto vastaanotettu. Käyttäjä: ${user.uid}. Input: ${prefix}`,
+    );
 
     const { path, fileSuffix } = getKeyData(prefix);
 
@@ -111,6 +120,9 @@ export async function handleDeleteRequest(
         metadataDeleteCount,
       },
     });
+    await adminLogger.info(
+      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}`,
+    );
     return getRaitaSuccessResponse({
       receptionDeleteCount,
       inspectionDeleteCount,
@@ -118,6 +130,7 @@ export async function handleDeleteRequest(
     });
   } catch (err: any) {
     log.error(`Error in handleDeleteRequest: ${err.message}`);
+    await adminLogger.error('Tiedostojen poistamisessa tapahtui virhe');
     return getRaitaLambdaErrorResponse(err);
   }
 }
@@ -159,6 +172,14 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
         fetchMore = false;
       }
     }
+    // let logToAdminLog = true;
+    // if (keyBatches.length > 1) {
+    //   // more than 1000 files, don't log single files to admin log
+    //   logToAdminLog = false;
+    //   await adminLogger.info(
+    //     `Poistettavien tiedostojen määrä yli 1000, tarkka lista tiedostoista Cloudwatch lokeissa.`,
+    //   );
+    // }
     const deleteResponses = keyBatches.map(keys =>
       s3
         .deleteObjects({
@@ -173,23 +194,26 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     );
     const responses = await Promise.all(deleteResponses);
     let deleteCount = 0;
-    responses.forEach(response => {
-      if (response.Deleted && response.Deleted.length) {
-        log.info(
-          { keys: response.Deleted.map(d => d.Key) },
-          `Deleted from ${bucket}`,
-        );
-        deleteCount += response.Deleted.length;
-      } else {
-        log.error(`No keys deleted from ${bucket}`);
-      }
-      if (response.Errors && response.Errors.length) {
-        log.error(
-          { errors: response.Errors },
-          'Errors with bucket delete request',
-        );
-      }
-    });
+    Promise.all(
+      responses.map(async response => {
+        if (response.Deleted && response.Deleted.length) {
+          const deletedKeys = response.Deleted.map(d => d.Key);
+          log.info({ keys: deletedKeys }, `Deleted from ${bucket}`);
+          deleteCount += response.Deleted.length;
+          return await adminLogger.info(
+            `Poistettu:\n${deletedKeys.join('\n')}`,
+          );
+        } else {
+          log.error(`No keys deleted from ${bucket}`);
+        }
+        if (response.Errors && response.Errors.length) {
+          log.error(
+            { errors: response.Errors },
+            'Errors with bucket delete request',
+          );
+        }
+      }),
+    );
     return deleteCount;
   } catch (err: any) {
     throw new RaitaLambdaError(

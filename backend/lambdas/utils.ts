@@ -174,3 +174,10 @@ export function isExcelSuffix(arg: string): arg is ExcelSuffix {
     fileSuffixesToIncudeInMetadataParsing.XLS_FILE === arg
   );
 }
+
+export function getOriginalZipNameFromPath(path: string[]): string {
+  if (path.length < 5) {
+    return '';
+  }
+  return `${path.slice(0, 5).join('/')}.zip`;
+}

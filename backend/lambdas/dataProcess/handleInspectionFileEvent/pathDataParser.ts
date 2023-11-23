@@ -1,6 +1,5 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
-import { isSubmissionReport, KeyData } from '../../utils';
-import { logParsingException } from '../../../utils/logger';
+import { isSubmissionReport, KeyData, RaitaParseError } from '../../utils';
 import { parsePrimitive } from './parsePrimitives';
 
 /**
@@ -11,11 +10,11 @@ export const extractPathData = (keyData: KeyData, spec: IExtractionSpec) => {
   // For now, we have to offer support for both folder structures: Virtual run, and the old way.
   const folderParsingSpec = determineParsingSpec(keyData, spec);
   if (!folderParsingSpec) {
-    logParsingException.warn(
-      { errorType: 'WRONG_FOLDER_PATH_LENGTH' },
+    throw new RaitaParseError(
       `Unexpected folder path length ${path.length} for path ${path}. Folder path analysis not carried out`,
+      'WRONG_FOLDER_PATH_LENGTH',
+      keyData.fileName,
     );
-    return {};
   }
   // Exclude the filename
   const folderNames = path.slice(0, -1);

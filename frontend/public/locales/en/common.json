@@ -50,5 +50,7 @@
   "too_many_results": "Too many results, try filtering your search more",
   "big_compression": "Note! Compressing a lot of data might take several minutes",
   "latest_inspection": "Date of the most recent measurement: ",
-  "user_manual": "User manual"
+  "user_manual": "User manual",
+  "error": "Error",
+  "error_loading": "Error loading data"
 }
