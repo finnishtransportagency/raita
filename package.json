@@ -62,11 +62,13 @@
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "jwk-to-pem": "^2.0.5",
+    "lodash": "4.17.21",
     "opensearch": "^0.0.3",
     "pino": "^8.16.2",
     "postgres": "^3.4.3",
     "unzipper": "^0.10.14",
     "zod-csv": "^0.0.8",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "csv-string": "^4.1.1"
   }
 }
