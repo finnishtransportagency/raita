@@ -1,6 +1,6 @@
 import { ALBEvent, ALBEventHeaders } from 'aws-lambda';
 import { validateJwtToken } from './validateJwtToken';
-import { isPermanentStack } from '../../lib/utils';
+import { isDevelopmentPreMainStack, isPermanentStack } from '../../lib/utils';
 import { RaitaEnvironment } from '../../lib/config';
 import { log } from './logger';
 import { getSSMParameter } from './ssm';
@@ -17,7 +17,8 @@ const ENVIRONMENT = process.env.ENVIRONMENT || '';
 
 const STATIC_ROLES = {
   read: 'Raita_luku',
-  // admin: 'Raita_admin',
+  admin: 'Raita_admin',
+  extended: 'Raita_extended',
 };
 
 export type RaitaUser = {
@@ -110,13 +111,20 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
 };
 
 const isReadUser = (user: RaitaUser) => user.roles?.includes(STATIC_ROLES.read);
+const isExtendedUser = (user: RaitaUser) =>
+  user.roles?.includes(STATIC_ROLES.extended);
+const isAdminUser = (user: RaitaUser) =>
+  user.roles?.includes(STATIC_ROLES.admin);
 
 export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
   if (!STACK_ID || !ENVIRONMENT) {
     log.error('STACK_ID or ENVIRONMENT missing!');
     throw new RaitaLambdaError('Error', 500);
   }
-  if (!isPermanentStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
+  if (
+    !isPermanentStack(STACK_ID, ENVIRONMENT as RaitaEnvironment) &&
+    !isDevelopmentPreMainStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)
+  ) {
     return getMockUser();
   }
   return parseUserFromEvent(event);
@@ -129,6 +137,26 @@ export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
 export const validateReadUser = async (user: RaitaUser): Promise<void> => {
   if (!isReadUser(user)) {
     log.error(user, 'Forbidden: User is not a read user');
+    throw new RaitaLambdaError('Forbidden', 403);
+  }
+};
+/**
+ * Checks if the user has necessary role for extended access. Throws 403 Forbidden if not.
+ * @param user User being validated
+ */
+export const validateExtendedUser = async (user: RaitaUser): Promise<void> => {
+  if (!isExtendedUser(user)) {
+    log.error(user, 'Forbidden: User is not an extended user');
+    throw new RaitaLambdaError('Forbidden', 403);
+  }
+};
+/**
+ * Checks if the user has necessary role for extended access. Throws 403 Forbidden if not.
+ * @param user User being validated
+ */
+export const validateAdminUser = async (user: RaitaUser): Promise<void> => {
+  if (!isAdminUser(user)) {
+    log.error(user, 'Forbidden: User is not an admin user');
     throw new RaitaLambdaError('Forbidden', 403);
   }
 };
