@@ -1,25 +1,57 @@
-## Käyttöohjeet
+# RAITA-järjestelmän käyttöohje
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## RAITA järjestelmän yleiskuvaus
 
-### Väliotsikko
+RAITA on Väyläviraston suunnittelema koneellisen radantarkastuksen raporttien hakuun tehty tietojärjestelmä ja hakutyökalu. Järjestelmä sisältää radantarkastuksessa syntyneitä raportteja, jotka on tallennettu raporttien mukana tulevien metatietojen kanssa.
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+Raportteja voidaan hakea kaikkien metatietojen avulla ja löytyneitä raportteja voidaan tarkastella sekä yksittäin ja raportit voidaan myös ladata yhteiseksi ZIP-tiedostoksi.
 
-### Lista
+Järjestelmä on aktiivisessa kehitysvaiheessa ja uusia päivityksiä tulee kuukausittain.
 
-- item 1
-- item 2
-- item 3
+## Käytön aloittaminen
 
-### Väliotsikko 2
+Raporttien haku kannattaa aloittaa antamalla vain yksi tai kaksi hakukriteeriä pudotusvalikoiden takana oleviin kohtiin. Silloin saat listaukseen esimerkin siitä, minkälaisia tiedostoja ja mitä metatietoja raportteihin löytyy. Tämän jälkeen hakua on helppoa tarkentaa.
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+Käyttö kannattaa aloittaa kokeilevasti "yritä ja onnistu" -menetelmällä.
 
-### Väliotsikko 3
+## Tarjolla olevat hakutoiminnot
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+### Pudotusvalikot
 
-### Väliotsikko 4
+Pudotusvalikoista löytyy suodattimet sekä raporttien
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+- Sisällön osalta (järjestelmät ja raporttityypit)
+- Mittauspaikan perusteella (Raportointiosuudet ja tilirataosanumerot)
+  - Raportointiosuudet ovat lyhenteitä, esim KOKYV on väli Kokkola Ylivieska.
+  - Raportointiosuuksien tulkinta vaatii toistaiseksi lyhenteiden tuntemista, selkokieliset kuvaukset ovat kehitysjonossa
+  - Voit hakea myös tilirataosan perusteella.
+- Tiedostotyypin perusteella
+  - Txt- ja pdf -muotoiset raportit ovat välillä samansisältöisiä
+  - csv -tiedostot sisältävät tarkkaa mittausdataa
+    Voit etsiä raportteja joko raporttityyppien tai raportointijärjestelmien avulla.
+
+### Haku tiedostonimellä
+
+Tiedostonimellä haku toimii siten, että listaukseen palautetaan kaikki tiedostonimet, jotka sisältävät hakutekstin. Esimerkiksi hakutermi "CW_Kilometriyhteenveto" palauttaa kaikki raportit, joiden nimessä on kyseinen teksti
+
+### Tarkat hakukentät
+
+Hakua on mahdollista tehdä myös kaikilla metatiedoilla. Raporteista löytyvät metatiedot toimivat hakuavaimina ja vertailua on mahdollista seuraavilla vertailutyökaluilla.
+
+Hakuavaimet ovat tavallisesti tyyppiä tarkka osuma. Esimerkiksi järjestelmän nimi pitää kirjoittaa tarkasti, jotta hakutuloksia saadaan.
+
+Soveltuvissa kohdin on tarjolla myös loogisia hakuoperaatioita. Nämä vertailuperusteet ovat tarjolla esimerkiksi ratakilometrien perusteella tehtävään hakuun. Tarjolla olevia loogisia hakukriteereitä ovat:
+
+```
+= (yhtäsuuruusvertailu)
+> (suurempi kuin)
+>= (suurempi tai yhtä suuri kuin)
+< (pienempi kuin)
+<= (pienempi tai yhtäsuuri kuin)
+```
+
+Paras tapa selvittää hakukriteerien toimintoja on tehdä ensin yleisempi haku, jonka jälkeen on mahdollista tarkentaa hakua täsmällisemmillä hakukriteereillä.
+
+## Käyttöoikeusasiat, ongelmat ja kehitysehdotukset
+
+Kehitysehdotuksiin, käyttöoikeusasioihin ja ongelmatilanteisiin liittyen ole yhteydessä raide@vayla.fi
