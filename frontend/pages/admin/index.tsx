@@ -6,8 +6,15 @@ import { useState, useEffect } from 'react';
 import type { NextPage } from 'next';
 import { useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
-import Accordion from 'react-bootstrap/Accordion';
-import 'yet-another-react-lightbox/styles.css';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionItemHeading,
+  AccordionItemButton,
+  AccordionItemPanel,
+} from 'react-accessible-accordion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 import { AdminLogsResponse, Range } from 'shared/types';
 import { getAdminLogs } from 'shared/rest';
@@ -114,7 +121,7 @@ const AdminIndex: NextPage = () => {
           {logs.length === 0 ? (
             <div>Ei dataa</div>
           ) : (
-            <Accordion alwaysOpen>
+            <Accordion allowMultipleExpanded allowZeroExpanded>
               {logGroupIds.map(id => {
                 const logRows = groupedLogs[id];
                 const date = format(
@@ -159,28 +166,40 @@ const AdminIndex: NextPage = () => {
                     break;
                 }
                 return (
-                  <Accordion.Item
-                    eventKey={id}
+                  <AccordionItem
+                    className="border border-gray-300 rounded-lg p-2 my-2"
                     key={`${logRows[0].log_timestamp}${id}`}
                   >
-                    <Accordion.Header>
-                      {`${date} ${t(titleKey)}: ${logRows[0].invocation_id}`}
-                      {containsErrors && (
-                        <span className={clsx(css.logHeaderTag, css.error)}>
-                          {t('admin:log_contains_errors')}
-                        </span>
-                      )}
-                      {containsWarnings && (
-                        <span className={clsx(css.logHeaderTag, css.warn)}>
-                          {t('admin:log_contains_warnings')}
-                        </span>
-                      )}
-                    </Accordion.Header>
-                    <Accordion.Body className={clsx(css.logContainer)}>
+                    <AccordionItemHeading>
+                      <AccordionItemButton
+                        className={clsx(css.accordionButton)}
+                      >
+                        <FontAwesomeIcon
+                          className={`${clsx(css.downArrow)} mx-3`}
+                          icon={faChevronDown}
+                        />
+                        {`${date} ${t(titleKey)}: ${logRows[0].invocation_id}`}
+                        {containsErrors && (
+                          <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
+                            {t('admin:log_contains_errors')}
+                          </span>
+                        )}
+                        {containsWarnings && (
+                          <span className="px-1 py-1 m-1 rounded-xl bg-warn font-bold">
+                            {t('admin:log_contains_warnings')}
+                          </span>
+                        )}
+                      </AccordionItemButton>
+                    </AccordionItemHeading>
+                    <AccordionItemPanel
+                      className={`${clsx(css.logContainer)} bg-slate-100`}
+                    >
                       <div className={clsx(css.logBox)}>
                         {logRows.map(row => (
                           <pre
-                            className={clsx(css.logRow, css[row.log_level])}
+                            className={`${clsx(css.logRow)} bg-${
+                              row.log_level
+                            }`}
                             key={`${row.log_message}${row.log_timestamp}`}
                           >
                             {`[${format(
@@ -195,8 +214,8 @@ const AdminIndex: NextPage = () => {
                           </pre>
                         )}
                       </div>
-                    </Accordion.Body>
-                  </Accordion.Item>
+                    </AccordionItemPanel>
+                  </AccordionItem>
                 );
               })}
             </Accordion>
