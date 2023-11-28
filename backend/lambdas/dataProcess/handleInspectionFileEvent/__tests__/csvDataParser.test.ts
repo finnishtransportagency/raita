@@ -13,10 +13,8 @@ const amsCsv =
 describe('parseAMSCSV', () => {
   test('success: normal run', async () => {
     const result = await parseAMSCSVData(amsCsv);
-    expect(result).toEqual({
-      part1: 'test',
-      part2: 'path',
-      part3: '1',
-    });
+    expect(result.success).toBe(true);
+    expect(result.header[5]).toBe('hello');
+    expect(result.validRows.length).toBe(6);
   });
 });
