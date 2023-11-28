@@ -1,4 +1,4 @@
-import { parseAMSCSVData } from '../cvsDataParser/amsCsvDataParser';
+import { parseAMSCSVData } from '../csvDataParser/amsCsvDataParser';
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\n' +
