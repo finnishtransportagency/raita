@@ -32,6 +32,7 @@ import InfoBanner from 'components/infobanner';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import markdownCss from '../../styles/markdown.module.css';
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
@@ -606,9 +607,8 @@ const ReportsIndex: NextPage = () => {
         contentLabel={t('common:user_manual') || ''}
       >
         <div
-          className={clsx(css['info-content'])}
+          className={clsx(markdownCss['markdown-content'])}
           dangerouslySetInnerHTML={{
-            // TODO: do we need to sanitize?
             __html: marked.parse(manualData),
           }}
         ></div>

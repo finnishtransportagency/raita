@@ -4,5 +4,17 @@
   "log_title": "Adminloki",
   "log_search_description": "Oletuksena näytetään viimeisen viikon lokitiedot",
   "log_contains_errors": "Sisältää virheitä",
-  "log_contains_warnings": "Sisältää huomautuksia"
+  "log_contains_warnings": "Sisältää huomautuksia",
+  "delete_input_placeholder": "Syötä poistettava tiedostopolku",
+  "delete_page_title": "Tiedostojen poisto",
+  "delete_label": "Poista tiedostot",
+  "delete_counts": "Poistettavien tiedostojen määrä",
+  "delete_files_not_found": "Poistettavia tiedostoja ei löytynyt",
+  "delete_confirmation": "Haluatko varmasti poistaa tiedostot?",
+  "delete_result_heading": "Poisto valmis",
+  "delete_result": "Poistettu zip-tiedostoja: {{ zipCount }}. Poistettu tavallisia tiedostoja: {{ fileCount }}. Poistettu tiedostojen metatietoja: {{ metaDataCount }} tiedostoa.",
+  "delete_error": "Virhe tiedostoja poistaessa: ",
+  "delete_in_progress": "Poisto käynnissä...",
+  "delete_files_loading": "Ladataan tietoa poistettavien tiedostojen määrästä...",
+  "delete_confirm_heading": "Poiston varmistus"
 }

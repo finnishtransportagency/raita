@@ -56,6 +56,7 @@ export function makeQuery(
 
   const ranges = makeRangeQuery(byType.range || [], { keyFn });
   const match = makeMatchQuery(byType.match || [], { keyFn });
+  const prefix = makeMatchQuery(byType.prefix || [], { keyFn });
   const paging = pageOpts ? makePagedQuery(pageOpts) : {};
 
   // if ranges contain an inspection_datetime query, change it into an OR query checking for both inspection_datetime and inspection_date
@@ -82,6 +83,7 @@ export function makeQuery(
   const qs = [
     ...match.map(e => ({ match: e })),
     ...newRanges.map(e => ({ range: e })),
+    ...prefix.map(e => ({ prefix: e })),
     ...(textToSearch ? [{ wildcard: { file_name: `*${textToSearch}*` } }] : []),
     ...dateOrQueries,
   ];
@@ -218,7 +220,7 @@ export function makeFromMulti(
 
   // Turn the keys into filter objects that we'll use to create the OR query
   const filters = keys.map(
-    k => ({ field, type: 'match', rel: 'eq', value: k } as Entry),
+    k => ({ field, type: 'match', rel: 'eq', value: k }) as Entry,
   );
 
   // Create the query which can then be used whereever

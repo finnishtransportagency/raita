@@ -29,3 +29,9 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.modal-header-heading {
+  @apply text-4xl;
+  text-align: center;
+  margin: auto;
+}

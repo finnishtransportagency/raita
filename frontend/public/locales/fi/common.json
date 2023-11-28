@@ -55,5 +55,6 @@
   "latest_inspection": "Uusimman mittauksen ajankohta: ",
   "user_manual": "Käyttöohjeet",
   "error": "Virhe",
-  "error_loading": "Virhe tietojen lataamisessa"
+  "error_loading": "Virhe tietojen lataamisessa",
+  "next": "Seuraava"
 }

@@ -52,5 +52,6 @@
   "latest_inspection": "Date of the most recent measurement: ",
   "user_manual": "User manual",
   "error": "Error",
-  "error_loading": "Error loading data"
+  "error_loading": "Error loading data",
+  "next": "Next"
 }

@@ -203,7 +203,7 @@ export type Entry = {
   type: EntryType;
 };
 
-export type EntryType = 'match' | 'range';
+export type EntryType = 'match' | 'range' | 'prefix';
 
 export type ValueRel = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
 

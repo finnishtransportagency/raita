@@ -31,23 +31,3 @@
   @apply px-2 py-1;
   @apply checked:bg-primary checked:text-white;
 }
-
-.info-content {
-  text-align: left;
-}
-.info-content h1 {
-  @apply text-4xl font-bold;
-  @apply pb-4;
-}
-.info-content h2 {
-  @apply text-3xl font-bold;
-  @apply pt-3 pb-4;
-}
-.info-content h3 {
-  @apply text-2xl font-bold;
-  @apply pt-2 pb-3;
-}
-.info-content ul {
-  list-style: disc;
-  @apply pl-4;
-}
