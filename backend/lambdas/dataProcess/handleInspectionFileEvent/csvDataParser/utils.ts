@@ -12,7 +12,10 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
   return c;
 }
 
-export function tidyUpFileBody(csvFileBody: string) {
+export function tidyUpFileBody(
+  csvFileBody: string,
+  reportSpecificTidyHeaderFunction: ((headedLine: string) => string) | undefined,
+) {
   const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   console.log('firstNewLinePos: ' + firstNewLinePos);
 
@@ -24,11 +27,16 @@ export function tidyUpFileBody(csvFileBody: string) {
   const csvHeaderLine = bodyWithoutFirstLIne.slice(0, secondNewLinePos);
   console.log('csvHeaderLine: ' + csvHeaderLine);
 
+  var x= csvHeaderLine;
+  if (reportSpecificTidyHeaderFunction) {
+    x = reportSpecificTidyHeaderFunction(csvHeaderLine);
+  }
+
   const csvDataLines = bodyWithoutFirstLIne.slice(secondNewLinePos);
   console.log('csvDataLines: ' + csvDataLines);
 
-  var b = tidyUpHeaderLine(csvHeaderLine);
+  var b = tidyUpHeaderLine(x);
   console.log('tidyHeaderLine: ' + b);
 
-  return tidyUpHeaderLine(csvHeaderLine).concat(csvDataLines);
+  return tidyUpHeaderLine(x).concat(csvDataLines);
 }
