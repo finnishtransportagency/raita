@@ -4,7 +4,7 @@ import { tidyUpFileBody } from './utils';
 
 
 function tidyHeadersAMSSpecific(headerLine: string):string{
-  return headerLine.replace(/Running Dynamics\./g, '');
+  return headerLine.replace(/Running Dynamics\.Ajonopeus/, 'ams_ajonopeus').replace(/Running Dynamics\./g, '');
 }
 
 export async function parseAMSCSVData(csvFileBody: string) {

@@ -7,7 +7,9 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
     //remove square bracketed parts
     .replace(/\[.*?\]/g, '')
     //remove trailing underscores
-    .replace(/_\"/g, '"');
+    .replace(/_\"/g, '"')
+    //replace minus signs with underscore
+    .replace(/-/g, '_');
 
   return tidyedHeaderLine;
 }
