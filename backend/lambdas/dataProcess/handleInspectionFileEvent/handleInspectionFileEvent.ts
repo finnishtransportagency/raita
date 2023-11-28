@@ -15,7 +15,7 @@ import {
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
-import { parseCSVData } from './cvsDataParser/csvDataParser';
+import { parseCSVData } from './csvDataParser/csvDataParser';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
