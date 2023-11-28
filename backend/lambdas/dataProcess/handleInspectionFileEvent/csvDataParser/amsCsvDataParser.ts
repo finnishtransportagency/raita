@@ -3,18 +3,13 @@ import { amsSchema } from './amsCsvSchema';
 import { tidyUpFileBody } from './utils';
 
 function tidyHeadersAMSSpecific(headerLine: string):string{
-  var c = headerLine.replace('running_dynamics.', '');
-  console.log('c: ' + c);
-  return c;
+  return headerLine.replace(/Running Dynamics\./g, '');
 }
 
 export async function parseAMSCSVData(csvFileBody: string) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
-  console.log(tidyedFileBody);
 
-
-
-  var a = parseCSVContent(tidyedFileBody, amsSchema);
-  console.log('parsed data: ' + a);
-  console.log(a);
+  const parsedCSVContent = parseCSVContent(tidyedFileBody, amsSchema);
+  console.log('parsed data: ');
+  console.log(parsedCSVContent);
 }
