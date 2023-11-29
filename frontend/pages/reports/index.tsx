@@ -20,7 +20,7 @@ import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
-import { Button, TextInput, Modal } from 'components';
+import { Button, TextInput, Modal, Header } from 'components';
 import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
@@ -275,26 +275,20 @@ const ReportsIndex: NextPage = () => {
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
-      <Head>
-        <title>{t('common:reports_head_title')}</title>
-      </Head>
-
-      <div className="bg-primary text-white">
-        <div className="container mx-auto px-16 py-6">
-          <header>
-            <h1 className="text-4xl">{t('common:reports_heading')}</h1>{' '}
-            <div className="latestInspection">
-              {t('common:latest_inspection')}
-              {latestInspectionFormattedDate}
-            </div>
-            <div className="userManualLink">
-              <button onClick={() => setManualModalOpen(true)}>
-                {t('common:user_manual')}
-              </button>
-            </div>
-          </header>
+      <Header
+        title={t('common:reports_head_title')}
+        headerText={t('common:reports_heading')}
+      >
+        <div className="latestInspection">
+          {t('common:latest_inspection')}
+          {latestInspectionFormattedDate}
         </div>
-      </div>
+        <div className="userManualLink">
+          <button onClick={() => setManualModalOpen(true)}>
+            {t('common:user_manual')}
+          </button>
+        </div>
+      </Header>
 
       <InfoBanner
         bannerType={BannerType.INFO}

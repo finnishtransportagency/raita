@@ -4,3 +4,4 @@ export { default as TextInput } from './textinput';
 export { default as DateRange } from './daterange';
 export { default as Pager } from './pager';
 export { default as Modal } from './modal';
+export { default as Header } from './header';
