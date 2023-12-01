@@ -1,4 +1,17 @@
 {
+  "page_labels": {
+    "reports": "Raportit",
+    "admin": {
+      "logs": "Adminloki",
+      "delete": "Tietojen poisto"
+    }
+  },
+  "error": {
+    "user_info": "Virhe käyttäjätietojen hakemisessa",
+    "403": "Ei pääsyoikeutta",
+    "500": "Virhe palvelimella"
+  },
+  "raita_title": "Raita",
   "reports_head_title": "Raportit",
   "reports_heading": "Raportit",
   "reports_search": "Hae raporteista",

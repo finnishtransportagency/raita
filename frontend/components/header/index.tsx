@@ -1,26 +1,33 @@
-import { PropsWithChildren } from 'react';
+import Navigation from 'components/navigation';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { PropsWithChildren } from 'react';
+import { useTranslation } from 'react-i18next';
+import { PageDescription } from 'shared/pageRoutes';
 
 type Props = {
-  title: string;
-  headerText: string;
+  pages: PageDescription[];
 };
 /**
  * Header to display on all pages
  */
-const Header = ({ title, headerText, children }: PropsWithChildren<Props>) => {
+const Header = ({ pages, children }: PropsWithChildren<Props>) => {
+  const { t } = useTranslation(['common']);
+  const router = useRouter();
+  console.log(router);
+  const pathSplit = router.pathname.split('/');
+  const pageTitleKey = `page_labels${pathSplit.join('.')}`;
   return (
     <>
-      <Head>
-        <title>{title}</title>
-      </Head>
-      <div className="bg-primary text-white">
+      <header className="bg-primary text-white">
+        <Head>
+          <title>{`${t('raita_title')} - ${t(pageTitleKey)}`}</title>
+        </Head>
         <div className="container mx-auto px-16 py-6">
-          <header>
-            <h1 className="text-4xl">{headerText}</h1> {children}
-          </header>
+          <h1 className="text-4xl">{t('raita_title')}</h1> {children}
         </div>
-      </div>
+        <Navigation pages={pages} />
+      </header>
     </>
   );
 };

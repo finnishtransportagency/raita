@@ -88,9 +88,17 @@ const handleOidcRequest = async (
   const roles = parseRoles(jwt['custom:rooli']);
   const user: RaitaUser = {
     uid: jwt['custom:uid'],
-    roles,
+    roles: roles ? filterRaitaRoles(roles) : [],
   };
   return user;
+};
+
+/**
+ * Get only roles useful for Raita
+ */
+const filterRaitaRoles = (roles: string[]) => {
+  const raitaRoles = Object.values(STATIC_ROLES);
+  return roles.filter(role => raitaRoles.includes(role));
 };
 
 const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {

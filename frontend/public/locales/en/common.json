@@ -1,4 +1,17 @@
 {
+  "page_labels": {
+    "reports": "Reports",
+    "admin": {
+      "logs": "Admin log",
+      "delete": "Data deletion"
+    }
+  },
+  "error": {
+    "user_info": "Error fetching user information",
+    "403": "Forbidden",
+    "500": "Server error"
+  },
+  "raita_title": "Raita",
   "reports_head_title": "Reports",
   "reports_heading": "Reports",
   "reports_search": "Search reports",
