@@ -13,11 +13,11 @@ export const RaitaPages: PageDescription[] = [
     href: '/reports',
     requiredRole: RaitaRole.Read,
   },
-  // {
-  //   labelTranslationKey: 'page_labels.admin.logs',
-  //   href: '/admin/logs',
-  //   requiredRole: RaitaRole.Admin,
-  // },
+  {
+    labelTranslationKey: 'page_labels.admin.logs',
+    href: '/admin/logs',
+    requiredRole: RaitaRole.Admin,
+  },
   {
     labelTranslationKey: 'page_labels.admin.delete',
     href: '/admin/delete',

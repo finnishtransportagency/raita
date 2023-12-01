@@ -1,9 +1,4 @@
-/**
- * @todo Handle empty search queries
- * @todo Handle form data validation
- */
 import { useState, useEffect } from 'react';
-import type { NextPage } from 'next';
 import { useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import {
@@ -16,15 +11,16 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
-import { AdminLogsResponse, Range } from 'shared/types';
+import { AdminLogsResponse, RaitaNextPage, Range } from 'shared/types';
 import { getAdminLogs } from 'shared/rest';
 import { subDays } from 'date-fns';
 import format from 'date-fns/format';
 import { Button, DateRange } from 'components';
 import Head from 'next/head';
-import css from './admin.module.css';
+import css from './logs.module.css';
+import { RaitaRole } from 'shared/user';
 
-const AdminIndex: NextPage = () => {
+const AdminLogs: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
 
   const defaultStartDate = subDays(new Date(), 7);
@@ -92,18 +88,8 @@ const AdminIndex: NextPage = () => {
     ),
   );
   return (
-    <div>
-      {/* TODO: refactor header, footer into separate component and use here*/}
-      <Head>
-        <title>{t('admin:log_title')}</title>
-      </Head>
-      <div className="bg-primary text-white">
-        <div className="container mx-auto px-16 py-6">
-          <header>
-            <h1 className="text-4xl">{t('admin:log_title')}</h1>{' '}
-          </header>
-        </div>
-      </div>
+    <div className="container mx-auto px-16 py-6">
+      <h1 className="text-4xl font-bold">{t('admin:log_title')}</h1>
 
       <div>
         <p>{t('admin:log_search_description')}</p>
@@ -226,4 +212,6 @@ const AdminIndex: NextPage = () => {
   );
 };
 
-export default AdminIndex;
+AdminLogs.requiredRole = RaitaRole.Admin;
+
+export default AdminLogs;

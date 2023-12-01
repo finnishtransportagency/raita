@@ -7,6 +7,7 @@
     }
   },
   "error": {
+    "generic": "Virhe",
     "user_info": "Virhe käyttäjätietojen hakemisessa",
     "403": "Ei pääsyoikeutta",
     "500": "Virhe palvelimella"
@@ -67,7 +68,6 @@
   "big_compression": "Huom! Ison datamäärän pakkaaminen voi viedä useita minuutteja",
   "latest_inspection": "Uusimman mittauksen ajankohta: ",
   "user_manual": "Käyttöohjeet",
-  "error": "Virhe",
   "error_loading": "Virhe tietojen lataamisessa",
   "next": "Seuraava",
   "cancel": "Peruuta"

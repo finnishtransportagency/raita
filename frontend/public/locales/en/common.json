@@ -7,6 +7,7 @@
     }
   },
   "error": {
+    "generic": "Error",
     "user_info": "Error fetching user information",
     "403": "Forbidden",
     "500": "Server error"
@@ -64,7 +65,6 @@
   "big_compression": "Note! Compressing a lot of data might take several minutes",
   "latest_inspection": "Date of the most recent measurement: ",
   "user_manual": "User manual",
-  "error": "Error",
   "error_loading": "Error loading data",
   "next": "Next",
   "cancel": "Cancel"
