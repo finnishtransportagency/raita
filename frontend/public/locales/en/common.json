@@ -53,5 +53,6 @@
   "user_manual": "User manual",
   "error": "Error",
   "error_loading": "Error loading data",
-  "next": "Next"
+  "next": "Next",
+  "cancel": "Cancel"
 }

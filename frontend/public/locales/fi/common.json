@@ -56,5 +56,6 @@
   "user_manual": "Käyttöohjeet",
   "error": "Virhe",
   "error_loading": "Virhe tietojen lataamisessa",
-  "next": "Seuraava"
+  "next": "Seuraava",
+  "cancel": "Peruuta"
 }

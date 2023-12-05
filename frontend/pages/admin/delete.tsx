@@ -113,6 +113,10 @@ const DeleteIndex: NextPage = () => {
           disabled={!readyToDelete}
           label={t('admin:delete_label')}
         />
+        <Button
+          onClick={() => setConfirmModalOpen(false)}
+          label={t('common:cancel')}
+        />
         {deleteInProgress && <p>{t('admin:delete_in_progress')}</p>}
       </Modal>
       <Modal
