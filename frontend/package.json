@@ -24,6 +24,7 @@
     "i18next-chained-backend": "^4.2.0",
     "i18next-http-backend": "^2.2.0",
     "i18next-localstorage-backend": "^4.1.1",
+    "marked": "^9.1.2",
     "next": "13.4.1",
     "next-i18next": "^13.2.2",
     "normalize.css": "^8.0.1",
@@ -31,6 +32,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-i18next": "^12.2.2",
+    "react-modal": "^3.16.1",
     "yet-another-react-lightbox": "^3.6.0"
   },
   "devDependencies": {
@@ -41,6 +43,7 @@
     "@types/node": "20.1.1",
     "@types/react": "18.2.6",
     "@types/react-dom": "18.2.4",
+    "@types/react-modal": "^3.16.2",
     "autoprefixer": "^10.4.14",
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.1",

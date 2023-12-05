@@ -46,3 +46,8 @@ a {
 .latestInspection {
   text-align: right;
 }
+
+.userManualLink {
+  text-align: right;
+  text-decoration: underline;
+}

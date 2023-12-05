@@ -6,6 +6,13 @@ const nextConfig = {
     removeConsole: false,
   },
   basePath: process.env.NEXT_PUBLIC_RAITA_BASEURL || '',
+  webpack: config => {
+    config.module.rules.push({
+      test: /\.md/,
+      type: 'asset/source',
+    });
+    return config;
+  },
 };
 
 module.exports = nextConfig;

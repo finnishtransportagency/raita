@@ -83,7 +83,7 @@ interface AccountVpcResources {
   securityGroupId: string;
 }
 
-const getAccountVpcResourceConfig = (
+export const getAccountVpcResourceConfig = (
   raitaEnv: RaitaEnvironment,
 ): AccountVpcResources => {
   const vpcIds: Record<RaitaEnvironment, AccountVpcResources> = {

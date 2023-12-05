@@ -15,7 +15,7 @@ import { FilterPattern, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { raitaSourceSystems } from '../constants';
+import { EXTRACTION_SPEC_PATH, raitaSourceSystems } from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -31,6 +31,7 @@ import {
 } from 'aws-cdk-lib/aws-cloudwatch';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -94,6 +95,11 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
       versioned: true,
+    });
+
+    new BucketDeployment(this, 'ExtractionSpecDeployment', {
+      sources: [Source.asset(EXTRACTION_SPEC_PATH)],
+      destinationBucket: configurationBucket,
     });
 
     // Grant sftpUser access to data reception bucket
@@ -214,6 +220,7 @@ export class DataProcessStack extends NestedStack {
     handleReceptionFileEventFn.addEventSource(
       new S3EventSource(dataReceptionBucket, {
         events: [s3.EventType.OBJECT_CREATED],
+        filters: [{ prefix: `${raitaSourceSystems.Meeri}/` }],
       }),
     );
 
@@ -254,6 +261,9 @@ export class DataProcessStack extends NestedStack {
       'data-process-error-composite-alarm',
       {
         alarmRule: AlarmRule.anyOf(...allAlarms),
+        compositeAlarmName: `metadata-parsing-errors-composite-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm that goes off when parsing errors are encountered in metadata parsing',
       },
     );
 
@@ -340,7 +350,7 @@ export class DataProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
+      timeout: cdk.Duration.seconds(15),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
@@ -380,7 +390,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'parsing-error',
+        metricName: `parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-inspection',
         metricValue: '1',
       },
@@ -414,7 +424,7 @@ export class DataProcessStack extends NestedStack {
       'inspection-timeout-filter',
       {
         filterPattern: FilterPattern.literal('%Task timed out%'),
-        metricName: 'inspection-timout',
+        metricName: `inspection-timeout-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -429,7 +439,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'inspection-parsing-error',
+        metricName: `inspection-parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -444,7 +454,7 @@ export class DataProcessStack extends NestedStack {
             FilterPattern.stringValue('$.level', '=', 'error'),
           ),
         ),
-        metricName: 'inspection-other-error',
+        metricName: `inspection-other-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },

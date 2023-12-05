@@ -2,6 +2,7 @@ import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
   fileSuffixesToIncudeInMetadataParsing,
+  KNOWN_IGNORED_FILE_SUFFIXES,
   KnownSuffix,
   SUBMISSION_REPORT_INDICATOR,
 } from '../../constants';
@@ -23,10 +24,14 @@ export class RaitaLambdaError extends Error {
 
 export class RaitaParseError extends Error {
   errorType: string = 'GENERIC_PARSING_ERROR';
-  constructor(message: string, errorType?: string) {
+  fileName: string;
+  constructor(message: string, errorType?: string, fileName?: string) {
     super(message);
     if (errorType) {
       this.errorType = errorType;
+    }
+    if (fileName) {
+      this.fileName = fileName;
     }
   }
 }
@@ -148,6 +153,9 @@ export function isKnownSuffix(arg: string): arg is KnownSuffix {
   return Object.values(fileSuffixesToIncudeInMetadataParsing).some(
     suffix => suffix === arg,
   );
+}
+export function isKnownIgnoredSuffix(arg: string): boolean {
+  return KNOWN_IGNORED_FILE_SUFFIXES.includes(arg);
 }
 
 export function isExcelSuffix(arg: string): arg is ExcelSuffix {

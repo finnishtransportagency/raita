@@ -7,7 +7,12 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import { getDecodedS3ObjectKey, getKeyData, isKnownSuffix } from '../../utils';
+import {
+  getDecodedS3ObjectKey,
+  getKeyData,
+  isKnownIgnoredSuffix,
+  isKnownSuffix,
+} from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
 
 function getLambdaConfigOrFail() {
@@ -40,8 +45,9 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
       async eventRecord => {
-        const file = await backend.files.getFile(eventRecord);
         const key = getDecodedS3ObjectKey(eventRecord);
+        log.info({ fileName: key }, 'Start handler');
+        const file = await backend.files.getFile(eventRecord);
         const keyData = getKeyData(key);
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
@@ -50,9 +56,15 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           return null;
         }
         if (!isKnownSuffix(keyData.fileSuffix)) {
-          log.error(
-            `Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`,
-          );
+          if (isKnownIgnoredSuffix(keyData.fileSuffix)) {
+            log.info(
+              `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
+            );
+          } else {
+            log.error(
+              `Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`,
+            );
+          }
           return null;
         }
         const parseResults = await parseFileMetadata({

@@ -23,17 +23,28 @@ export const FieldExtractionSpecObject = z.object({
 // Note: Update ExtractionSpec to use ExtractionItem when there is more than one
 export const ExtractionSpec = z.object({
   fileNameExtractionSpec: z.object({
-    csv: z.record(z.string(), FieldExtractionSpecObject),
-    txt: z.record(z.string(), FieldExtractionSpecObject),
-    pdf: z.record(z.string(), FieldExtractionSpecObject),
-    xlsx: z.record(z.string(), FieldExtractionSpecObject),
-    xls: z.record(z.string(), FieldExtractionSpecObject),
+    csv: z.array(z.record(z.string(), FieldExtractionSpecObject)),
+    txt: z.array(z.record(z.string(), FieldExtractionSpecObject)),
+    pdf: z.array(z.record(z.string(), FieldExtractionSpecObject)),
+    xlsx: z.array(z.record(z.string(), FieldExtractionSpecObject)),
+    xls: z.array(z.record(z.string(), FieldExtractionSpecObject)),
   }),
+  // TODO change these too?
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   vRunFolderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
+  knownExceptions: z.object({
+    fileNameExtractionSpec: z.object({
+      containsUnderscore: z.array(
+        z.object({
+          name: z.string(),
+          value: z.string(),
+        }),
+      ),
+    }),
+  }),
 });
 
 export type IExtractionSpec = z.infer<typeof ExtractionSpec>;
 export type IExtractionSpecLabels =
-  IExtractionSpec['fileNameExtractionSpec'][keyof IExtractionSpec['fileNameExtractionSpec']];
+  IExtractionSpec['fileNameExtractionSpec'][keyof IExtractionSpec['fileNameExtractionSpec']][number];

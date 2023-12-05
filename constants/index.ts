@@ -13,8 +13,12 @@ export const fileSuffixesToIncudeInMetadataParsing = {
   XLS_FILE: 'xls',
 } as const;
 
+export const KNOWN_IGNORED_FILE_SUFFIXES = ['png'];
+
 export const ZIP_SUFFIX = 'zip';
 export const EMPTY_FILE_INDICATOR = 'EMPTY';
+
+export const DATA_TIME_ZONE = 'Europe/Helsinki';
 
 // Constant that is meant to be temporary to address Excel-parsing.
 // See Jira 242.
@@ -31,6 +35,8 @@ export const raitaSourceSystems = {
   Elli: 'Elli',
 } as const;
 
+export const EXTRACTION_SPEC_PATH =
+  'backend/lambdas/dataProcess/parsingConfiguration';
 export const RAITA_PARSING_EXCEPTION = '[RAITA PARSING EXCEPTION]';
 export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
   'raita-cloudfront-certificate-arn';

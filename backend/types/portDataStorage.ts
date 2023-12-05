@@ -23,6 +23,7 @@ export interface IMetadataStorageInterface {
     systems: Array<{ value: string; count: number }>;
     trackNumbers: Array<{ value: string; count: number }>;
     trackParts: Array<{ value: string; count: number }>;
+    tilirataosanumerot: Array<{ value: string; count: number }>;
   }>;
   getLatestEntryData: () => Promise<any>;
 }

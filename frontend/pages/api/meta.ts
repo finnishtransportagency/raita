@@ -188,6 +188,11 @@ const raw = {
       },
     },
     {
+      tilirataosanumero: {
+        type: 'text',
+      },
+    },
+    {
       track_number: {
         type: 'long',
       },
@@ -363,4 +368,5 @@ const raw = {
       count: 508,
     },
   ],
+  tilirataosanumerot: [],
 };

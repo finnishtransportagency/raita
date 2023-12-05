@@ -11,7 +11,11 @@ import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import Modal from 'react-modal';
+import { marked } from 'marked';
 
+// TODO: this could be loaded dynamically using filename from config
+import manualData from 'shared/doc/manual.md';
 import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
@@ -34,6 +38,7 @@ import { ZipDownload } from 'components/zip-download';
 
 import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
 import { format as formatDate } from 'date-fns/fp';
+import CloseIcon from 'components/icons/CloseIcon';
 
 //
 
@@ -77,7 +82,8 @@ const ReportsIndex: NextPage = () => {
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [open, setOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [manualModalOpen, setManualModalOpen] = useState(false);
 
   // #region Special extra filters
 
@@ -188,7 +194,7 @@ const ReportsIndex: NextPage = () => {
     const imageUrls = await handleImageUrlFetch(key);
     if (imageUrls?.length) {
       setImageUrls(imageUrls);
-      setOpen(true);
+      setLightboxOpen(true);
     }
   };
 
@@ -252,12 +258,12 @@ const ReportsIndex: NextPage = () => {
     try {
       const latestInspectionParsedDate = Date.parse(meta.data.latestInspection);
       latestInspectionFormattedDate = formatDate(
-          DATE_FMT_LATEST_MEASUREMENT,
-          latestInspectionParsedDate,
+        DATE_FMT_LATEST_MEASUREMENT,
+        latestInspectionParsedDate,
       );
     } catch (e) {
       console.warn(
-          'Error parsing or formatting latest inspection date ' +
+        'Error parsing or formatting latest inspection date ' +
           meta.data.latestInspection +
           ' ' +
           e,
@@ -280,6 +286,11 @@ const ReportsIndex: NextPage = () => {
             <div className="latestInspection">
               {t('common:latest_inspection')}
               {latestInspectionFormattedDate}
+            </div>
+            <div className="userManualLink">
+              <button onClick={() => setManualModalOpen(true)}>
+                {t('common:user_manual')}
+              </button>
             </div>
           </header>
         </div>
@@ -401,6 +412,29 @@ const ReportsIndex: NextPage = () => {
                         makeFromMulti(
                           takeOptionValues(e.target.selectedOptions),
                           'track_part',
+                        ),
+                      ),
+                    );
+                    setState(R.assoc('resetFilters', false));
+                  }}
+                />
+              </section>
+              <section className={clsx(css.subSection)}>
+                <header>{t('common:reports_tilirataosanumerot')}</header>
+
+                <MultiChoice
+                  items={(meta.data?.tilirataosanumerot || []).map(it => ({
+                    key: it.value,
+                    value: it.value,
+                  }))}
+                  resetFilters={state.resetFilters}
+                  onChange={e => {
+                    setState(
+                      R.assocPath(
+                        ['subQueries', 'tilirataosanumerot'],
+                        makeFromMulti(
+                          takeOptionValues(e.target.selectedOptions),
+                          'tilirataosanumero',
                         ),
                       ),
                     );
@@ -558,8 +592,8 @@ const ReportsIndex: NextPage = () => {
       </div>
 
       <Lightbox
-        open={open}
-        close={() => setOpen(false)}
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
         slides={imageUrls.map((imageUrl, idx) => {
           return {
             src: imageUrl,
@@ -567,6 +601,31 @@ const ReportsIndex: NextPage = () => {
           };
         })}
       />
+      <Modal
+        isOpen={manualModalOpen}
+        onRequestClose={() => setManualModalOpen(false)}
+        contentLabel={t('common:user_manual') || ''}
+        appElement={document.getElementById('__next') || undefined}
+        overlayClassName={clsx(css['info-modal-overlay'])}
+        bodyOpenClassName={clsx(css['info-modal-open'])}
+        className={clsx(css['info-modal'])}
+      >
+        <div className={clsx(css['info-header'])}>
+          <button
+            className={clsx(css['info-close-button'])}
+            onClick={() => setManualModalOpen(false)}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+        <div
+          className={clsx(css['info-content'])}
+          dangerouslySetInnerHTML={{
+            // TODO: do we need to sanitize?
+            __html: marked.parse(manualData),
+          }}
+        ></div>
+      </Modal>
 
       {isDebug && (
         <div className="container mx-auto px-16 pb-4">

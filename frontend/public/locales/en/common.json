@@ -22,6 +22,7 @@
   "reports_timespan": "Time span",
   "reports_file_types": "File types",
   "reports_report_types": "Report types",
+  "reports_tilirataosanumerot": "Track part numbers",
   "filters_none_added": "No filters added.",
   "pager_a11y_label": "Paging navigation",
   "pager_a11y_goto_page": "Go to page {{ page }}",
@@ -48,5 +49,6 @@
   "loading": "Loading...",
   "too_many_results": "Too many results, try filtering your search more",
   "big_compression": "Note! Compressing a lot of data might take several minutes",
-  "latest_inspection": "Date of the most recent measurement: "
+  "latest_inspection": "Date of the most recent measurement: ",
+  "user_manual": "User manual"
 }

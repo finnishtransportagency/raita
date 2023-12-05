@@ -21,6 +21,7 @@ export async function parseFileMetadata({
   const fileNameData = extractFileNameData(
     keyData,
     spec.fileNameExtractionSpec,
+    spec.knownExceptions.fileNameExtractionSpec,
   );
   const pathData = extractPathData(keyData, spec);
   const fileContentData =

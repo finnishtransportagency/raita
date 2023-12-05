@@ -8,22 +8,33 @@ import {
   Tags,
 } from 'aws-cdk-lib';
 import {
+  CodeBuildStep,
   CodePipeline,
   CodePipelineSource,
   ShellStep,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import {
+  BuildEnvironmentVariableType,
   Cache,
   LinuxBuildImage,
   LocalCacheMode,
 } from 'aws-cdk-lib/aws-codebuild';
 import { RaitaStack } from './raita-stack';
-import { getPipelineConfig, RaitaEnvironment } from './config';
+import {
+  getAccountVpcResourceConfig,
+  getPipelineConfig,
+  RaitaEnvironment,
+} from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { isDevelopmentPreMainStack } from './utils';
+import {
+  isDevelopmentMainStack,
+  isDevelopmentPreMainStack,
+  isProductionStack,
+} from './utils';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 
 /**
  * The stack that defines the application pipeline
@@ -35,6 +46,9 @@ export class RaitaPipelineStack extends Stack {
       ...props,
       tags: config.tags,
     });
+
+    // Get config based on Raita environment
+    const vpcConfig = getAccountVpcResourceConfig(config.env);
 
     const artifactBucket = new Bucket(
       this,
@@ -59,6 +73,18 @@ export class RaitaPipelineStack extends Stack {
       }),
     );
 
+    // Get existing VPC based on predetermined attributes
+    const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'raita-vpc', {
+      ...vpcConfig.vpc,
+    });
+
+    // Get existing security group based on predetermined attributes
+    const raitaSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
+      this,
+      'raita-security-group',
+      vpcConfig.securityGroupId,
+    );
+
     const githubSource = CodePipelineSource.gitHub(
       'finnishtransportagency/raita',
       config.branch,
@@ -73,6 +99,17 @@ export class RaitaPipelineStack extends Stack {
     )
       ? `/${config.stackId}`
       : '';
+
+    let confFileDir;
+    if (isDevelopmentPreMainStack(config.stackId, config.env)) {
+      confFileDir = 'premain';
+    }
+    if (isDevelopmentMainStack(config.stackId, config.env)) {
+      confFileDir = 'main';
+    }
+    if (isProductionStack(config.stackId, config.env)) {
+      confFileDir = 'prod';
+    }
 
     const codePipeline = new CodePipeline(
       this,
@@ -118,6 +155,38 @@ export class RaitaPipelineStack extends Stack {
             commands: ['npm run test', 'npm run --prefix frontend test'],
           }),
         ],
+        ...(confFileDir && {
+          post: [
+            new CodeBuildStep('Flyway', {
+              input: githubSource,
+              vpc: raitaVPC,
+              securityGroups: [raitaSecurityGroup],
+              buildEnvironment: {
+                privileged: true,
+                environmentVariables: {
+                  DB_PASSWORD: {
+                    type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                    value: 'database_password',
+                  },
+                  DOCKER_PASSWORD: {
+                    type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                    value: 'docker_password',
+                  },
+                  CONF_FILE_DIR: {
+                    type: BuildEnvironmentVariableType.PLAINTEXT,
+                    value: confFileDir,
+                  },
+                },
+              },
+              commands: [
+                'echo $CONF_FILE_DIR',
+                'echo Logging in to Docker hub...',
+                'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
+                'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD',
+              ],
+            }),
+          ],
+        }),
       },
     );
   }

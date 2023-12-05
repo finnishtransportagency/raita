@@ -1,7 +1,7 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
 import archiver, { Archiver } from 'archiver';
-import { getEnvOrFail, getGetEnvWithPreassignedContext } from '../../../../utils';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import {
   getRaitaLambdaErrorResponse,
@@ -35,6 +35,28 @@ function finalizeArchiveSafely(archive: Archiver): Promise<void> {
   });
 }
 
+/**
+ * map s3 file keys to filenames for zip file
+ * append _(1) etc to the name part for duplicates
+ */
+export function mapFileKeysToZipFileNames(keys: string[]) {
+  const existingFilenames: string[] = [];
+  const fileNames = keys.map(key => {
+    const splitKey = key.split('/');
+    // handle duplicate filenames
+    let fileName = splitKey[splitKey.length - 1];
+    if (existingFilenames.includes(fileName)) {
+      const fileNameSplit = fileName.split('.');
+      const suffix = fileNameSplit[fileNameSplit.length - 1];
+      const prefix = fileNameSplit.slice(0, fileNameSplit.length - 1).join('.');
+      fileName = `${prefix}_(${existingFilenames.length}).${suffix}`;
+    }
+    existingFilenames.push(fileName);
+    return fileName;
+  });
+  return fileNames;
+}
+
 export async function handleZipProcessing(event: ZipRequestBody) {
   const s3Client = new S3Client({});
   const s3 = new S3();
@@ -61,13 +83,20 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     );
 
     const totalKeys = keys.length;
+    // handle duplicate filenames
+    const fileNames = mapFileKeysToZipFileNames(keys);
     keys.forEach((key: string, index: number) => {
-      if (index === totalKeys -1) {
+      if (index === totalKeys - 1) {
         log.info(`Streaming the last of ${totalKeys} files`);
       }
-      const fileStream = createLazyDownloadStreamFrom(sourceBucket, key, s3Client);
-      archive.append(fileStream, { name: key});
-    })
+      const fileStream = createLazyDownloadStreamFrom(
+        sourceBucket,
+        key,
+        s3Client,
+      );
+      let fileName = fileNames[index];
+      archive.append(fileStream, { name: fileName });
+    });
 
     const destKey = `zip/raita-zip-${Date.now()}.zip`;
     await Promise.all([
@@ -100,10 +129,10 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     log.error(err);
     archive.abort();
     await updateProgressFailed(
-          getLambdaConfigOrFail().dataCollectionBucket,
-          event.pollingFileKey,
-          s3Client,
-        );
+      getLambdaConfigOrFail().dataCollectionBucket,
+      event.pollingFileKey,
+      s3Client,
+    );
     return getRaitaLambdaErrorResponse(err);
   }
 }

@@ -153,6 +153,12 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
               size: 1000,
             },
           },
+          tilirataosanumerot: {
+            terms: {
+              field: 'metadata.tilirataosanumero.keyword',
+              size: 1000,
+            },
+          },
         },
       },
     });
@@ -165,23 +171,20 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       index: this.#dataIndex,
       body: {
         aggs: {
-          "latest_inspection_date": {
+          latest_inspection_date: {
             max: {
-              field: "metadata.inspection_date",
-            }
-          }
+              field: 'metadata.inspection_date',
+            },
+          },
           //zip_reception__date on tekstikenttä joten siitä ei max-aggregaatio onnistu
-   /* ,      "latest_zip_date": {
+          /* ,      "latest_zip_date": {
             max: {
               field: "metadata.zip_reception__date.keyword",
             }
           }*/
-        }
+        },
       },
     });
     return this.#responseParser.parseLatestEntryAggregation(response);
   };
-
-
-
 }

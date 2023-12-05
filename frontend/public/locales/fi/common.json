@@ -23,6 +23,7 @@
   "reports_file_types": "Tiedostotyypit",
   "reports_report_types": "Raporttityypit",
   "reports_track_parts": "Raportointiosuudet",
+  "reports_tilirataosanumerot": "Tilirataosanumerot",
   "reports_systems": "Järjestelmät",
   "filters_none_added": "Ei suodattimia.",
   "pager_a11y_label": "Sivutuksen navigaatio",
@@ -51,5 +52,6 @@
   "loading": "Ladataan...",
   "too_many_results": "Haku tuotti yli 10k tulosta, rajaa hakua tarkemmin",
   "big_compression": "Huom! Ison datamäärän pakkaaminen voi viedä useita minuutteja",
-  "latest_inspection": "Uusimman mittauksen ajankohta: "
+  "latest_inspection": "Uusimman mittauksen ajankohta: ",
+  "user_manual": "Käyttöohjeet"
 }
