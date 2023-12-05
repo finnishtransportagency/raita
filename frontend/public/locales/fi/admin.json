@@ -1,0 +1,8 @@
+{
+  "log_header_data_process": "Zip-tiedoston vastaanotto",
+  "log_header_delete_process": "Tiedostojen poisto",
+  "log_title": "Adminloki",
+  "log_search_description": "Oletuksena näytetään viimeisen viikon lokitiedot",
+  "log_contains_errors": "Sisältää virheitä",
+  "log_contains_warnings": "Sisältää huomautuksia"
+}

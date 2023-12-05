@@ -35,11 +35,11 @@ const extractValue = (
     }
     return null;
   } catch (err) {
-    log.error(err);
     throw new RaitaParseError(
       `Parsing failed for the term: ${propertyKey}: ${
         err instanceof Error ? err.message : err
       }`,
+      'VALUE_PARSE_ERROR',
     );
   }
 };

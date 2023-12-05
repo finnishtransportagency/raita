@@ -1,5 +1,6 @@
 import { IExtractionSpec, IFileResult, ParseValueResult } from '../../../types';
-import { KeyData } from '../../utils';
+import { log, logParsingException } from '../../../utils/logger';
+import { KeyData, RaitaParseError } from '../../utils';
 import {
   calculateHash,
   extractFileContentData,
@@ -16,18 +17,58 @@ export async function parseFileMetadata({
   keyData: KeyData;
   file: IFileResult;
   spec: IExtractionSpec;
-}): Promise<{ metadata: ParseValueResult; hash: string }> {
+}): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean }> {
   const { fileBody } = file;
-  const fileNameData = extractFileNameData(
-    keyData,
-    spec.fileNameExtractionSpec,
-    spec.knownExceptions.fileNameExtractionSpec,
-  );
-  const pathData = extractPathData(keyData, spec);
-  const fileContentData =
-    shouldParseContent(keyData.fileSuffix) && fileBody
-      ? extractFileContentData(spec, fileBody)
-      : {};
+  let errorsFound = false;
+  let fileNameData: any = {};
+  try {
+    fileNameData = extractFileNameData(
+      keyData,
+      spec.fileNameExtractionSpec,
+      spec.knownExceptions.fileNameExtractionSpec,
+    );
+  } catch (error) {
+    errorsFound = true;
+    if (error instanceof RaitaParseError) {
+      logParsingException.error(
+        { errorType: error.errorType, fileName: error.fileName },
+        `${error.message}. File name extraction skipped.`,
+      );
+    } else {
+      log.error(error);
+    }
+  }
+  let pathData: any = {};
+  try {
+    pathData = extractPathData(keyData, spec);
+  } catch (error) {
+    errorsFound = true;
+    if (error instanceof RaitaParseError) {
+      logParsingException.error(
+        { errorType: error.errorType, fileName: error.fileName },
+        `${error.message}. Path extraction skipped.`,
+      );
+    } else {
+      log.error(error);
+    }
+  }
+  let fileContentData: any = {};
+  try {
+    fileContentData =
+      shouldParseContent(keyData.fileSuffix) && fileBody
+        ? extractFileContentData(spec, fileBody)
+        : {};
+  } catch (error) {
+    errorsFound = true;
+    if (error instanceof RaitaParseError) {
+      logParsingException.error(
+        { errorType: error.errorType, fileName: error.fileName },
+        `${error.message}. File content extraction skipped.`,
+      );
+    } else {
+      log.error(error);
+    }
+  }
   const hash = calculateHash(fileBody ?? '');
   return {
     metadata: {
@@ -36,5 +77,6 @@ export async function parseFileMetadata({
       ...fileNameData,
     },
     hash,
+    errors: errorsFound,
   };
 }

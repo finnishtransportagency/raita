@@ -12,6 +12,8 @@ module.exports = {
         'main-gray-75': '#333',
         'main-gray-50': '#999',
         'main-gray-10': '#f8f8f8',
+        error: '#e30202',
+        warn: '#e3e302',
       },
       fontFamily: {
         sans: ['"Exo 2"'],

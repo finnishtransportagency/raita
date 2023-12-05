@@ -95,6 +95,16 @@ export interface ImageKeyResponse {
   }[];
 }
 
+export interface AdminLogsResponse {
+  logs: {
+    source: string;
+    invocation_id: string;
+    log_timestamp: string;
+    log_message: string;
+    log_level: string;
+  }[];
+}
+
 export interface PollingProgress {
   progressData: {
     status: ProgressStatus;

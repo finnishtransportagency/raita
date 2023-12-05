@@ -136,6 +136,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: false,
       hash: testFileHash,
       metadata: {
         file_type: 'txt',
@@ -170,6 +171,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: true,
       hash: dummyHash,
       metadata: {
         // data from name missing
@@ -200,6 +202,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: true,
       hash: dummyHash,
       metadata: {
         // data from path missing
@@ -234,6 +237,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: true,
       hash: testFileHash,
       metadata: {
         // data from name missing
@@ -266,6 +270,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: true,
       hash: testFileHash,
       metadata: {
         // data form path missing
@@ -299,6 +304,7 @@ describe('parseFileMetadata', () => {
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
+      errors: false, // TODO: should this report errors if no metadata is found?
       hash: dummyHash,
       metadata: {
         // data from content missing

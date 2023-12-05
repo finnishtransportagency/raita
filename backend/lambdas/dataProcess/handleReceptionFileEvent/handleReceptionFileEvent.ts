@@ -11,6 +11,8 @@ import {
 } from '../../utils';
 import { ZIP_SUFFIX } from '../../../../constants';
 import { launchECSZipTask } from './utils';
+import { IAdminLogger } from '../../../utils/adminLogger';
+import { PostgresLogger } from '../../../utils/postgresLogger';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -23,12 +25,16 @@ function getLambdaConfigOrFail() {
   };
 }
 
+const adminLogger: IAdminLogger = new PostgresLogger();
+
 export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
   try {
     const recordResults = event.Records.map(async eventRecord => {
       const config = getLambdaConfigOrFail();
       const bucket = eventRecord.s3.bucket;
       const key = getDecodedS3ObjectKey(eventRecord);
+      await adminLogger.init('data-reception', key);
+      await adminLogger.info(`Zip vastaanotettu: ${key}`);
       const { path, fileSuffix } = getKeyData(key);
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
@@ -54,5 +60,6 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
     await Promise.all(recordResults);
   } catch (err) {
     log.error(`An error occured while processing zip events: ${err}`);
+    await adminLogger.error('Virhe zip-tiedoston käsittelyssä');
   }
 }

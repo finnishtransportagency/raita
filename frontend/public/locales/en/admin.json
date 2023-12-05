@@ -1,0 +1,8 @@
+{
+  "log_header_data_process": "Zip file received",
+  "log_header_delete_process": "Files deleted",
+  "log_title": "Admin log",
+  "log_search_description": "Logs from the last week are displayed by default",
+  "log_contains_errors": "Contains errors",
+  "log_contains_warnings": "Contains warnings"
+}

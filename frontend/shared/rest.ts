@@ -1,6 +1,11 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
-import { ImageKeyResponse, PollingProgress, SearchResponse } from './types';
+import {
+  AdminLogsResponse,
+  ImageKeyResponse,
+  PollingProgress,
+  SearchResponse,
+} from './types';
 
 /**
  * API client for use in calling the REST API endpoint
@@ -40,6 +45,14 @@ export const getImageKeysForFileKey = async (key: string) => {
     .post<ImageKeyResponse>('images', { key })
     .then(res => res.data.images)
     .then(images => images.map(image => image.key));
+};
+
+export const getAdminLogs = async (startDate: string, endDate: string) => {
+  return apiClient
+    .get<AdminLogsResponse>(
+      `admin/logs?startDate=${startDate}&endDate=${endDate}`,
+    )
+    .then(res => res.data.logs);
 };
 
 type GetFilesResult = {};

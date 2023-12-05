@@ -8,7 +8,11 @@ export async function middleware(request: NextRequest) {
   if (devApiUrl && devApiKey) {
     const path = request.nextUrl.pathname;
     const apiPart = `${path.slice(path.indexOf('/api') + 4)}`;
-    const newUrl = `${devApiUrl}${apiPart}`;
+    let newUrl = `${devApiUrl}${apiPart}`;
+    const queryParams = request.nextUrl.searchParams;
+    if (queryParams) {
+      newUrl = `${newUrl}?${queryParams.toString()}`;
+    }
     if (request.method === 'GET') {
       return fetch(newUrl, {
         method: 'GET',
