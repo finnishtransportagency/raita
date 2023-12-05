@@ -94,15 +94,18 @@ const DeleteIndex: NextPage = () => {
         headerText={t('admin:delete_confirm_heading') || ''}
       >
         <div>
+          <p>{t('admin:delete_path_info', { path: prefixInput })}</p>
           {filesToDeleteMutation.isLoading && t('admin:delete_files_loading')}
           {filesToDeleteMutation.data &&
             (filesToDeleteMutation.data.total === 0 ? (
               <p>{t('admin:delete_files_not_found')}</p>
             ) : (
               <>
-                <p>{`${t('admin:delete_counts')}: ${
-                  filesToDeleteMutation.data.total
-                }`}</p>
+                <p>
+                  {t('admin:delete_counts', {
+                    count: filesToDeleteMutation.data.total,
+                  })}
+                </p>
                 <p>{t('admin:delete_confirmation')}</p>
               </>
             ))}
