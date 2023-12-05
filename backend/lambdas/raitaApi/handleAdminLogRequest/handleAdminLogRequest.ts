@@ -1,6 +1,6 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { log } from '../../../utils/logger';
-import { getUser, validateReadUser } from '../../../utils/userService';
+import { getUser, validateAdminUser } from '../../../utils/userService';
 import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
@@ -24,7 +24,7 @@ export async function handleAdminLogsRequest(
   const { queryStringParameters } = event;
   try {
     const user = await getUser(event);
-    await validateReadUser(user); // TODO admin
+    await validateAdminUser(user);
 
     if (!queryStringParameters?.startDate || !queryStringParameters?.endDate) {
       throw new RaitaLambdaError(

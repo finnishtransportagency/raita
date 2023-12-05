@@ -46,7 +46,6 @@ export async function handleDeleteRequest(
       openSearchDomain,
     } = getLambdaConfigOrFail();
     const user = await getUser(event);
-    // TODO: permission check not implemented
     await validateAdminUser(user);
     const requestBody = body && JSON.parse(body);
     if (!requestBody?.prefix) {
