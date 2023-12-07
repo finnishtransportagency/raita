@@ -3,8 +3,6 @@
  * @todo Handle form data validation
  */
 import { useState, useMemo, Fragment, useEffect } from 'react';
-import type { NextPage } from 'next';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
@@ -16,13 +14,12 @@ import { marked } from 'marked';
 // TODO: this could be loaded dynamically using filename from config
 import manualData from 'shared/doc/manual.md';
 import * as cfg from 'shared/config';
-import { App, BannerType, ImageKeys, Range } from 'shared/types';
+import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
 import { Button, TextInput, Modal } from 'components';
 import { DateRange } from 'components';
-import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
 import MultiChoice from 'components/filters/multi-choice';
@@ -38,7 +35,7 @@ import { ZipDownload } from 'components/zip-download';
 
 import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
 import { format as formatDate } from 'date-fns/fp';
-import CloseIcon from 'components/icons/CloseIcon';
+import { RaitaRole } from 'shared/user';
 
 //
 
@@ -71,10 +68,9 @@ const initialState: ReportsState = {
 
 //
 
-const ReportsIndex: NextPage = () => {
+const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
   const meta = useMetadataQuery();
-
   const router = useRouter();
 
   const isDebug = !!(router.query['debug'] === '1');
@@ -275,31 +271,19 @@ const ReportsIndex: NextPage = () => {
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
-      <Head>
-        <title>{t('common:reports_head_title')}</title>
-      </Head>
-
-      <div className="bg-primary text-white">
-        <div className="container mx-auto px-16 py-6">
-          <header>
-            <h1 className="text-4xl">{t('common:reports_heading')}</h1>{' '}
-            <div className="latestInspection">
-              {t('common:latest_inspection')}
-              {latestInspectionFormattedDate}
-            </div>
-            <div className="userManualLink">
-              <button onClick={() => setManualModalOpen(true)}>
-                {t('common:user_manual')}
-              </button>
-            </div>
-          </header>
-        </div>
-      </div>
-
       <InfoBanner
         bannerType={BannerType.INFO}
         text={t<string>('common:rights_restriction_info')}
       />
+      <div className="latestInspection">
+        {t('common:latest_inspection')}
+        {latestInspectionFormattedDate}
+      </div>
+      <div className="userManualLink">
+        <button onClick={() => setManualModalOpen(true)}>
+          {t('common:user_manual')}
+        </button>
+      </div>
 
       <div className="container mx-auto px-16 py-6">
         <header className="mb-4"></header>
@@ -640,11 +624,11 @@ const ReportsIndex: NextPage = () => {
           </details>
         </div>
       )}
-
-      <Footer />
     </div>
   );
 };
+
+ReportsIndex.requiredRole = RaitaRole.Read;
 
 export default ReportsIndex;
 

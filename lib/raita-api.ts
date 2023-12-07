@@ -236,6 +236,15 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: dataCollectionBucket,
       vpc,
     });
+    const handleUserRequestFn = this.createUserRequestHandler({
+      name: 'api-handler-user',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      vpc,
+    });
 
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
@@ -307,6 +316,12 @@ export class RaitaApiStack extends NestedStack {
      * Keep list in order by priority. Don’t reuse priority numbers
      */
     const albLambdaTargets: ListenerTargetLambdas[] = [
+      {
+        lambda: handleUserRequestFn,
+        priority: 100,
+        path: [`${apiBaseUrl}/user`],
+        targetName: 'user',
+      },
       {
         lambda: handleFileRequestFn,
         priority: 200,
@@ -725,6 +740,50 @@ export class RaitaApiStack extends NestedStack {
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns a handler for user request
+   */
+  private createUserRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: 'handleUserRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleUserRequest/handleUserRequest.ts`,
+      ),
+      environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,

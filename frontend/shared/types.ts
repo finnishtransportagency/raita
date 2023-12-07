@@ -1,3 +1,8 @@
+import { NextPage } from 'next';
+import { AppProps } from 'next/app';
+import { ReactNode } from 'react';
+import { RaitaRole } from './user';
+
 /**
  * @deprecated
  */
@@ -128,3 +133,14 @@ export enum BannerType {
   INFO = 'INFO',
   WARNING = 'WARNING',
 }
+
+/**
+ * Extend NextPage type to contain required role
+ */
+export type RaitaNextPage<P = {}, IP = P> = NextPage<P, IP> & {
+  requiredRole: RaitaRole;
+};
+
+export type RaitaAppProps = AppProps & {
+  Component: RaitaNextPage;
+};

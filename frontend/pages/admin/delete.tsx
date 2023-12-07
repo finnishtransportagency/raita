@@ -11,9 +11,10 @@ import css from './delete.module.css';
 import markdownCss from '../../styles/markdown.module.css';
 import { useSearch } from 'shared/hooks';
 import { postDeleteRequest } from 'shared/rest';
-import { DeleteResponse } from 'shared/types';
+import { DeleteResponse, RaitaNextPage } from 'shared/types';
+import { RaitaRole } from 'shared/user';
 
-const DeleteIndex: NextPage = () => {
+const DeleteIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
 
   const [prefixInput, setPrefixInput] = useState('');
@@ -91,8 +92,7 @@ const DeleteIndex: NextPage = () => {
     filesToDeleteMutation.data.total > 0 &&
     !deleteInProgress;
   return (
-    <div>
-      <h1>{t('admin:delete_page_title')}</h1>
+    <div className="container mx-auto px-16 py-6">
       <div
         className={clsx(markdownCss['markdown-content'])}
         dangerouslySetInnerHTML={{
@@ -176,5 +176,7 @@ const DeleteIndex: NextPage = () => {
     </div>
   );
 };
+
+DeleteIndex.requiredRole = RaitaRole.Admin;
 
 export default DeleteIndex;

@@ -15,6 +15,8 @@ export const apiClient = A.create({ baseURL: baseURL });
 
 //
 
+export const getUser = () =>
+  apiClient.get<GetUserResult>('user').then(res => res.data);
 /**
  * Perform a search with the given OpenSearch `query` object
  * @param q
@@ -62,6 +64,10 @@ export const postDeleteRequest = async (keyPrefix: string) => {
 };
 
 type GetFilesResult = {};
+
+type GetUserResult = {
+  roles: string[];
+};
 
 type GetSignedUrlResult = {
   url: string;
