@@ -775,8 +775,8 @@ export class RaitaApiStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(10),
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
       runtime: lambda.Runtime.NODEJS_16_X,
       handler: 'handleUserRequest',
       entry: path.join(
