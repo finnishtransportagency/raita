@@ -6,7 +6,9 @@ export type PageDescription = {
   requiredRole: RaitaRole;
 };
 
-// TODO: these are defiend both here and through the file structure
+// The routing is defined by the file structure but also defined here for use by the navigation bar
+// requiredRole is also defined by page components
+// TODO: can this be simplified?
 export const RaitaPages: PageDescription[] = [
   {
     labelTranslationKey: 'page_labels.reports',

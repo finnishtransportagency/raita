@@ -22,7 +22,6 @@ function MyApp({ Component, pageProps }: RaitaAppProps) {
   if (user.loading) {
     return <LoadingOverlay />;
   }
-  // TODO: use custom error messages
   if (!user.loading && !user.user) {
     return <Error statusCode={500} title={t('error.user_info') || ''} />;
   }

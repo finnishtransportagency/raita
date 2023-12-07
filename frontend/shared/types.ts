@@ -135,7 +135,7 @@ export enum BannerType {
 }
 
 /**
- * Extend NextPage type with methods to show custom content in header per page
+ * Extend NextPage type to contain required role
  */
 export type RaitaNextPage<P = {}, IP = P> = NextPage<P, IP> & {
   requiredRole: RaitaRole;

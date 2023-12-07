@@ -19,7 +19,7 @@ export function useUser(): { loading: boolean; user: User | null } {
         setUser({ roles: response.roles as RaitaRole[] });
         setLoading(false);
       } else {
-        // handle error elsewhere?
+        // error should be handled by the caller
         setLoading(false);
         setUser(null);
       }
