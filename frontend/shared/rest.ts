@@ -2,6 +2,7 @@ import A from 'axios';
 import { baseURL } from 'shared/config';
 import {
   AdminLogsResponse,
+  DeleteResponse,
   ImageKeyResponse,
   PollingProgress,
   SearchResponse,
@@ -53,6 +54,11 @@ export const getAdminLogs = async (startDate: string, endDate: string) => {
       `admin/logs?startDate=${startDate}&endDate=${endDate}`,
     )
     .then(res => res.data.logs);
+};
+export const postDeleteRequest = async (keyPrefix: string) => {
+  return apiClient
+    .post<DeleteResponse>('delete', { prefix: keyPrefix })
+    .then(res => res.data);
 };
 
 type GetFilesResult = {};

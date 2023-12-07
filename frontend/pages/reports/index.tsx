@@ -11,7 +11,6 @@ import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
-import Modal from 'react-modal';
 import { marked } from 'marked';
 
 // TODO: this could be loaded dynamically using filename from config
@@ -21,7 +20,7 @@ import { App, BannerType, ImageKeys, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
-import { Button, TextInput } from 'components';
+import { Button, TextInput, Modal } from 'components';
 import { DateRange } from 'components';
 import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
@@ -33,6 +32,7 @@ import InfoBanner from 'components/infobanner';
 
 import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
 import css from './reports.module.css';
+import markdownCss from '../../styles/markdown.module.css';
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
@@ -605,23 +605,10 @@ const ReportsIndex: NextPage = () => {
         isOpen={manualModalOpen}
         onRequestClose={() => setManualModalOpen(false)}
         contentLabel={t('common:user_manual') || ''}
-        appElement={document.getElementById('__next') || undefined}
-        overlayClassName={clsx(css['info-modal-overlay'])}
-        bodyOpenClassName={clsx(css['info-modal-open'])}
-        className={clsx(css['info-modal'])}
       >
-        <div className={clsx(css['info-header'])}>
-          <button
-            className={clsx(css['info-close-button'])}
-            onClick={() => setManualModalOpen(false)}
-          >
-            <CloseIcon />
-          </button>
-        </div>
         <div
-          className={clsx(css['info-content'])}
+          className={clsx(markdownCss['markdown-content'])}
           dangerouslySetInnerHTML={{
-            // TODO: do we need to sanitize?
             __html: marked.parse(manualData),
           }}
         ></div>

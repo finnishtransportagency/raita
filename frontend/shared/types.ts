@@ -94,6 +94,11 @@ export interface ImageKeyResponse {
     size: number;
   }[];
 }
+export interface DeleteResponse {
+  receptionDeleteCount: number;
+  inspectionDeleteCount: number;
+  metadataDeleteCount: number;
+}
 
 export interface AdminLogsResponse {
   logs: {
