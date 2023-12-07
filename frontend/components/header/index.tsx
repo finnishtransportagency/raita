@@ -14,7 +14,6 @@ type Props = {
 const Header = ({ pages, children }: PropsWithChildren<Props>) => {
   const { t } = useTranslation(['common']);
   const router = useRouter();
-  console.log(router);
   const pathSplit = router.pathname.split('/');
   const pageTitleKey = `page_labels${pathSplit.join('.')}`;
   return (
