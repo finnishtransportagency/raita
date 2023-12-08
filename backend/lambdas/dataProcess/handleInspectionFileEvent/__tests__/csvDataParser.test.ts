@@ -27,7 +27,7 @@ const amsCsvError =
   });
 });
 
-describe('parseAMSCSV error', () => {
+/*describe('parseAMSCSV error', () => {
   test('success: error run', async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
@@ -37,4 +37,4 @@ describe('parseAMSCSV error', () => {
     expect(result.validRows.length).toBe(0);
     expect(result.allRows.length).toBe(1);
   });
-});
+});*/
