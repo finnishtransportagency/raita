@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { Options, extractHeadersFromContent as getHeadersFromContent, extractRows } from "./parse";
 
-const ERROR_CODES = {
+export const ERROR_CODES = {
     HEADER: {
         MISSING_HEADER: "MISSING_HEADER",
         MISSING_COLUMN: "MISSING_COLUMN",
@@ -30,7 +30,7 @@ const zodKeys = <T extends z.ZodTypeAny>(schema: T): string[] => {
         });
     }
     return [];
-}; 
+};
 
 const getHeadersFromSchema = <T extends z.ZodTypeAny>(schema: T): string[] => {
     return zodKeys(schema).map(header => header.trim());
