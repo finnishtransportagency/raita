@@ -36,7 +36,7 @@ export async function parseAMSCSVData(csvFileBody: string) {
     const dbRows: AmsDBSchema[] = [];
 
     parsedCSVContent.validRows.forEach((row: IAms) => dbRows.push(convertToDBRow(row)));
-    await writeRowsToDB(parsedCSVContent.header, dbRows);
+    await writeRowsToDB(dbRows);
   }
   return parsedCSVContent;
 }
