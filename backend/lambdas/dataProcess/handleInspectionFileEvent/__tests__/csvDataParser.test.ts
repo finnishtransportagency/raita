@@ -4,6 +4,7 @@ import {
   parseCSVData,
 } from '../csvDataParser/csvDataParser';
 import { undefined } from 'zod';
+import {amsSchema} from "../csvDataParser/amsCsvSchema";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\n' +
@@ -194,7 +195,7 @@ describe('handle tsight file success', () => {
 
 describe('parseAMSCSV success', () => {
   test('success: normal run', async () => {
-    const result = await parseAMSCSVData(amsCsv, 3);
+    const result = await parseAMSCSVData(amsCsv, 3, "ams_mittaus", amsSchema);
     expect(result.success).toBe(true);
     expect(result.header[6]).toBe('oikea_pystysuuntainen_kiihtyvyys_c1');
     expect(result.validRows[5].oikea_poikittainen_kiihtyvyys_c1).toBe(3.0163);

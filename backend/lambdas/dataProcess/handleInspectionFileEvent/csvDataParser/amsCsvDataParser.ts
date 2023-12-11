@@ -1,39 +1,40 @@
 import { parseCSVContent } from '../../../../utils/zod-csv/zcsv';
 import { amsSchema, IAms } from './amsCsvSchema';
-import { readRunningDate, tidyUpFileBody } from './utils';
+import { convertToDBRow, readRunningDate, tidyUpFileBody } from './utils';
 import { writeRowsToDB } from './dbUtil';
 import { AmsDBSchema } from './amsDBSchema';
-import {RaporttiDBSchema} from "./raporttiDBSchema";
-import postgres from "postgres";
+import postgres from 'postgres';
+import {ZodObject} from "zod";
 
 function tidyHeadersAMSSpecific(headerLine: string): string {
   return headerLine
     .replace(/Running Dynamics\.Ajonopeus/, 'ams_ajonopeus')
-    .replace(/Running Dynamics\./g, '');
+    .replace(/Running Dynamics\./g, '')
+    .replace(/Over Head Line Geometry and Wear\.Ajonopeus/, 'ohl_ajonopeus')
+    .replace(/Over Head Line Geometry and Wear\./g, '');
 }
 
-function convertToDBRow(
-  row: IAms,
-  runningDate: Date,
-  reportId: number,
-): AmsDBSchema {
-  return { ...row, raportti_id: reportId, running_date: runningDate };
-}
-
-export async function parseAMSCSVData(csvFileBody: string, reportId: number) {
+export async function parseAMSCSVData(csvFileBody: string, reportId: number, table: string, csvSchema: ZodObject<any>) {
   const runningDate = readRunningDate(csvFileBody);
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
+  console.log('tidyedFileBody');
+  console.log(tidyedFileBody);
 
-  const parsedCSVContent = parseCSVContent(tidyedFileBody, amsSchema);
+  const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
+  console.log('parsedCSVContent');
+  console.log(parsedCSVContent);
+  if (!(parsedCSVContent.success)) {
+    parsedCSVContent.errors.rows?.
+  }
 
   if (parsedCSVContent.success) {
     console.log('write to db');
-    const dbRows: AmsDBSchema[] = [];
+    const dbRows: any[] = [];
 
     parsedCSVContent.validRows.forEach((row: IAms) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId)),
     );
-    const result: postgres.Row = await writeRowsToDB(dbRows);
+    const result: postgres.Row = await writeRowsToDB(dbRows, table);
     console.log(result.id);
 
     return { ...parsedCSVContent, ...result };

@@ -61,11 +61,14 @@ export async function getDBConnection() {
   return { schema, sql };
 }
 
-export async function writeRowsToDB(parsedCSVRows: AmsDBSchema[]): Promise<postgres.Row> {
-  let { schema, sql } = await getDBConnection();
+export async function writeRowsToDB(
+  parsedCSVRows: AmsDBSchema[],
+  table: string,
+): Promise<postgres.Row> {
+  const { schema, sql } = await getDBConnection();
 
   try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(
+    const [id] = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning id`;
     console.log(id);
