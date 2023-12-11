@@ -8,7 +8,7 @@ let connection: postgres.Sql;
 //todo set false
 const localDevDB = true;
 
-export async function writeRowsToDB(header: string[], parsedCSVRows: AmsDBSchema[]) {
+export async function writeRowsToDB3(header: string[], parsedCSVRows: AmsDBSchema[]) {
   parsedCSVRows.forEach(row => writeRowToDB(row));
 
   const schema = 'public';
@@ -36,6 +36,30 @@ async function writeRowToDB(row: AmsDBSchema) {
 
   try {
     let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(row)} `;
+    console.log(a);
+    return a;
+  } catch (e) {
+    console.log('err');
+    console.log(e);
+    return null;
+  }
+}
+
+export async function writeRowsToDB(parsedCSVRows: AmsDBSchema[]) {
+  let schema;
+  let sql;
+  if (localDevDB) {
+    schema = 'public';
+    sql = await getConnectionLocalDev();
+  } else {
+    schema = getEnvOrFail('RAITA_PGSCHEMA');
+    sql = await getConnection();
+  }
+
+  const timestamp = new Date(Date.now()).toISOString();
+
+  try {
+    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(parsedCSVRows)} `;
     console.log(a);
     return a;
   } catch (e) {
