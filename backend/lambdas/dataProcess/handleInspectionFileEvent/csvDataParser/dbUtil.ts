@@ -2,12 +2,13 @@ import { IAms } from './amsCsvSchema';
 import postgres from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
+import {AmsDBSchema} from "./amsDBSchema";
 
 let connection: postgres.Sql;
 //todo set false
 const localDevDB = true;
 
-export async function writeRowsToDB(header: string[], parsedCSVRows: IAms[]) {
+export async function writeRowsToDB(header: string[], parsedCSVRows: AmsDBSchema[]) {
   parsedCSVRows.forEach(row => writeRowToDB(row));
 
   const schema = 'public';
@@ -20,10 +21,9 @@ export async function writeRowsToDB(header: string[], parsedCSVRows: IAms[]) {
     VALUES (19, 3, ${timestamp})`;
 }
 
-async function writeRowToDB(row: IAms) {
+async function writeRowToDB(row: AmsDBSchema) {
   let schema;
   let sql;
-
   if (localDevDB) {
     schema = 'public';
     sql = await getConnectionLocalDev();
@@ -35,7 +35,7 @@ async function writeRowToDB(row: IAms) {
   const timestamp = new Date(Date.now()).toISOString();
 
   try {
-    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(row)}`;
+    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(row)} `;
     console.log(a);
     return a;
   } catch (e) {
