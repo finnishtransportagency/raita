@@ -1,4 +1,6 @@
 import { parseAMSCSVData } from '../csvDataParser/amsCsvDataParser';
+import {insertRaporttiData, parseCSVData} from "../csvDataParser/csvDataParser";
+import {undefined} from "zod";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\n' +
@@ -16,9 +18,21 @@ const amsCsvError =
   '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985, 26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\n';
 
 
+describe('insert raportti success', () => {
+  test('success: normal run', async () => {
+    const result = await insertRaporttiData("hello","ams",{});
+  });
+});
+
+describe('handle ams file success', () => {
+  test('success: normal run', async () => {
+    const result = await parseCSVData("AMS_20221122_008_KOKOL_LR_630_630.csv", {contentType: "csv", fileBody: amsCsv, tags: {}},{});
+  });
+});
+
   describe('parseAMSCSV success', () => {
   test('success: normal run', async () => {
-    const result = await parseAMSCSVData(amsCsv);
+    const result = await parseAMSCSVData(amsCsv, 3);
     expect(result.success).toBe(true);
     expect(result.header[6]).toBe('oikea_pystysuuntainen_kiihtyvyys_c1');
     expect(result.validRows[5].oikea_poikittainen_kiihtyvyys_c1).toBe(3.0163);
