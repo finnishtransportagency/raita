@@ -42,4 +42,4 @@ export const ohlSchema = z.object({
   height_box_ohl: zcsv.number(),
 });
 
-export type IOh = z.infer<typeof ohlSchema>;
+export type IOhl = z.infer<typeof ohlSchema>;
