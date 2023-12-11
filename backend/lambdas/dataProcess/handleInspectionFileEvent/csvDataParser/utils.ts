@@ -1,5 +1,7 @@
 // tidy up csv header line so headers are correct form for validating
-import {log} from "../../../../utils/logger";
+import { log } from '../../../../utils/logger';
+import { IAms } from './amsCsvSchema';
+import { AmsDBSchema } from './amsDBSchema';
 
 function tidyUpHeaderLine(csvHeaderLine: string): string {
   var tidyedHeaderLine = csvHeaderLine
@@ -11,7 +13,10 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
     //remove trailing underscores
     .replace(/_\"/g, '"')
     //replace minus signs with underscore
-    .replace(/-/g, '_');
+    .replace(/-/g, '_')
+    //replace scandic
+    .replace(/ä/g, 'a')
+    .replace(/ö/g, 'o');
 
   return tidyedHeaderLine;
 }
@@ -19,14 +24,14 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
 export function readRunningDate(csvFileBody: string) {
   const lines = csvFileBody.split('\n');
   const firstLine = lines[0];
-  const found = firstLine.search("Running Date");
-  if (found == -1){
-    log.error("Running date not in file first line");
+  const found = firstLine.search('Running Date');
+  if (found == -1) {
+    log.error('Running date not in file first line');
     return new Date();
   }
   const firstLineSplitted = firstLine.split(',');
   const runningDateString = firstLineSplitted[1];
-  const runningDateStringDatePart = runningDateString.split(" ")[0];
+  const runningDateStringDatePart = runningDateString.split(' ')[0];
   const splitted = runningDateStringDatePart.split('/');
   const day = splitted[0].substring(1);
   const month = splitted[1];
@@ -34,7 +39,6 @@ export function readRunningDate(csvFileBody: string) {
   const runningDate = new Date(Number(year), Number(month), Number(day));
   console.log(runningDate);
   return runningDate;
-
 }
 
 export function tidyUpFileBody(
@@ -52,9 +56,14 @@ export function tidyUpFileBody(
 
   var headerLineTidiedReportSpecific = csvHeaderLine;
   if (reportSpecificTidyHeaderFunction) {
-    headerLineTidiedReportSpecific = reportSpecificTidyHeaderFunction(csvHeaderLine);
+    headerLineTidiedReportSpecific =
+      reportSpecificTidyHeaderFunction(csvHeaderLine);
   }
   const csvDataLines = bodyWithoutFirstLIne.slice(secondNewLinePos);
 
   return tidyUpHeaderLine(headerLineTidiedReportSpecific).concat(csvDataLines);
+}
+
+export function convertToDBRow(row: any, runningDate: Date, reportId: number) {
+  return { ...row, raportti_id: reportId, running_date: runningDate };
 }

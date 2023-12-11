@@ -3,13 +3,15 @@ import { log } from '../../../../utils/logger';
 import { parseAMSCSVData } from './amsCsvDataParser';
 import { RaporttiDBSchema } from './raporttiDBSchema';
 import { getDBConnection } from './dbUtil';
+import { ohlSchema } from './ohlCsvSchema';
+import { amsSchema } from './amsCsvSchema';
 
 //todo get all needed values from metadata
 export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
   metadata: ParseValueResult,
-):Promise<number> {
+): Promise<number> {
   const data: RaporttiDBSchema = {
     zip_tiedostonimi: fileBaseName,
     zip_vastaanotto_pvm: new Date(),
@@ -40,15 +42,30 @@ export async function parseCSVData(
 ) {
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[0];
+  const reportId: number = await insertRaporttiData(
+    fileBaseName,
+    fileNamePrefix,
+    metadata,
+  );
 
   switch (fileNamePrefix) {
     case 'AMS':
-      const reportId: number = await insertRaporttiData(
-        fileBaseName,
-        fileNamePrefix,
-        metadata,
-      );
-      file.fileBody && (await parseAMSCSVData(file.fileBody, reportId));
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          "ams_mittaus",
+          amsSchema,
+        ));
+      break;
+    case 'OHL':
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          "ohl_mittaus",
+          ohlSchema,
+        ));
       break;
     default:
       log.warn('Unknown csv file prefix: ' + fileNamePrefix);
