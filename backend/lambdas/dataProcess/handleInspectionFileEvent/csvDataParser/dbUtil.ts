@@ -2,13 +2,16 @@ import { IAms } from './amsCsvSchema';
 import postgres from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
-import {AmsDBSchema} from "./amsDBSchema";
+import { AmsDBSchema } from './amsDBSchema';
 
 let connection: postgres.Sql;
 //todo set false
 const localDevDB = true;
 
-export async function writeRowsToDB3(header: string[], parsedCSVRows: AmsDBSchema[]) {
+export async function writeRowsToDB3(
+  header: string[],
+  parsedCSVRows: AmsDBSchema[],
+) {
   parsedCSVRows.forEach(row => writeRowToDB(row));
 
   const schema = 'public';
@@ -45,7 +48,7 @@ async function writeRowToDB(row: AmsDBSchema) {
   }
 }
 
-export async function writeRowsToDB(parsedCSVRows: AmsDBSchema[]) {
+export async function getDBConnection() {
   let schema;
   let sql;
   if (localDevDB) {
@@ -55,17 +58,22 @@ export async function writeRowsToDB(parsedCSVRows: AmsDBSchema[]) {
     schema = getEnvOrFail('RAITA_PGSCHEMA');
     sql = await getConnection();
   }
+  return { schema, sql };
+}
 
-  const timestamp = new Date(Date.now()).toISOString();
+export async function writeRowsToDB(parsedCSVRows: AmsDBSchema[]) {
+  let { schema, sql } = await getDBConnection();
 
   try {
-    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(parsedCSVRows)} `;
+    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(
+      parsedCSVRows,
+    )} returning id`;
     console.log(a);
     return a;
   } catch (e) {
     console.log('err');
     console.log(e);
-    return null;
+    throw e;
   }
 }
 
