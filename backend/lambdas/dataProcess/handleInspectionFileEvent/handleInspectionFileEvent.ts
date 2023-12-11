@@ -90,18 +90,19 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           spec,
         });
 
-        //call here csv parsing  parseCsvData(); ?
-        if (
-          keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
-        ) {
-          parseCSVData(keyData.fileBaseName,  file);
-        }
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
           );
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
+
+          //call here csv parsing  parseCsvData(); ?
+          if (
+            keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
+          ) {
+            parseCSVData(keyData.fileBaseName,  file, parseResults.metadata);
+          }
         }
         return {
           // key is sent to be stored in url decoded format to db
