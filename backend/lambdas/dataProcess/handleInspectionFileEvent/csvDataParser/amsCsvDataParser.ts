@@ -3,6 +3,7 @@ import { amsSchema, IAms } from './amsCsvSchema';
 import { tidyUpFileBody } from './utils';
 import postgres from 'postgres';
 import { getConnectionLocalDev, writeRowsToDB } from './dbUtil';
+import {AmsDBSchema} from "./amsDBSchema";
 
 function tidyHeadersAMSSpecific(headerLine: string): string {
   return headerLine
@@ -21,6 +22,10 @@ async function writeRowsToDB2(header: string[], parsedCSVRows: IAms[]) {
     VALUES (19, 3, ${timestamp})`;
 }
 
+function convertToDBRow(row: IAms):AmsDBSchema {
+  return {...row, raportti_id: 3, running_date: new Date(Date.now()) } ;
+}
+
 export async function parseAMSCSVData(csvFileBody: string) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
 
@@ -28,7 +33,10 @@ export async function parseAMSCSVData(csvFileBody: string) {
 
   if (parsedCSVContent.success) {
     console.log('write to db');
-    await writeRowsToDB(parsedCSVContent.header, parsedCSVContent.validRows);
+    const dbRows: AmsDBSchema[] = [];
+
+    parsedCSVContent.validRows.forEach((row: IAms) => dbRows.push(convertToDBRow(row)));
+    await writeRowsToDB(parsedCSVContent.header, dbRows);
   }
   return parsedCSVContent;
 }
