@@ -3,6 +3,8 @@ import { amsSchema, IAms } from './amsCsvSchema';
 import { readRunningDate, tidyUpFileBody } from './utils';
 import { writeRowsToDB } from './dbUtil';
 import { AmsDBSchema } from './amsDBSchema';
+import {RaporttiDBSchema} from "./raporttiDBSchema";
+import postgres from "postgres";
 
 function tidyHeadersAMSSpecific(headerLine: string): string {
   return headerLine
@@ -10,11 +12,15 @@ function tidyHeadersAMSSpecific(headerLine: string): string {
     .replace(/Running Dynamics\./g, '');
 }
 
-function convertToDBRow(row: IAms, runningDate: Date): AmsDBSchema {
-  return { ...row, raportti_id: 3, running_date: runningDate };
+function convertToDBRow(
+  row: IAms,
+  runningDate: Date,
+  reportId: number,
+): AmsDBSchema {
+  return { ...row, raportti_id: reportId, running_date: runningDate };
 }
 
-export async function parseAMSCSVData(csvFileBody: string) {
+export async function parseAMSCSVData(csvFileBody: string, reportId: number) {
   const runningDate = readRunningDate(csvFileBody);
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
 
@@ -25,13 +31,12 @@ export async function parseAMSCSVData(csvFileBody: string) {
     const dbRows: AmsDBSchema[] = [];
 
     parsedCSVContent.validRows.forEach((row: IAms) =>
-      dbRows.push(convertToDBRow(row, runningDate)),
+      dbRows.push(convertToDBRow(row, runningDate, reportId)),
     );
-    const result = await writeRowsToDB(dbRows);
-    console.log(result);
-    console.log(result.pop());
+    const result: postgres.Row = await writeRowsToDB(dbRows);
+    console.log(result.id);
 
-    return {...parsedCSVContent, ...result};
+    return { ...parsedCSVContent, ...result };
   }
-  return {...parsedCSVContent};
+  return { ...parsedCSVContent };
 }
