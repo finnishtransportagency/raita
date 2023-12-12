@@ -5,7 +5,11 @@ import { RaporttiDBSchema } from './raporttiDBSchema';
 import { getDBConnection } from './dbUtil';
 import { ohlSchema } from './ohlCsvSchema';
 import { amsSchema } from './amsCsvSchema';
-import {piSchema} from "./piCsvSchema";
+import { piSchema } from './piCsvSchema';
+import {rcSchema} from "./rcCsvSchema";
+import {rpSchema} from "./rpCsvSchema";
+import {tgSchema} from "./tgCsvSchema";
+import {tsightSchema} from "./tsightCsvSchema";
 
 //todo get all needed values from metadata
 export async function insertRaporttiData(
@@ -55,7 +59,7 @@ export async function parseCSVData(
         (await parseAMSCSVData(
           file.fileBody,
           reportId,
-          "ams_mittaus",
+          'ams_mittaus',
           amsSchema,
         ));
       break;
@@ -64,19 +68,56 @@ export async function parseCSVData(
         (await parseAMSCSVData(
           file.fileBody,
           reportId,
-          "ohl_mittaus",
+          'ohl_mittaus',
           ohlSchema,
         ));
       break;
     case 'PI':
       file.fileBody &&
-      (await parseAMSCSVData(
-        file.fileBody,
-        reportId,
-        "pi_mittaus",
-        piSchema,
-      ));
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          'pi_mittaus',
+          piSchema,
+        ));
       break;
+    case 'RC':
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          'rc_mittaus',
+          rcSchema,
+        ));
+      break;
+    case 'RP':
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          'rp_mittaus',
+          rpSchema,
+        ));
+      break;
+    case 'TG':
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          'tg_mittaus',
+          tgSchema,
+        ));
+      break;
+    case 'TSIGHT':
+      file.fileBody &&
+        (await parseAMSCSVData(
+          file.fileBody,
+          reportId,
+          'tsight_mittaus',
+          tsightSchema,
+        ));
+      break;
+
     default:
       log.warn('Unknown csv file prefix: ' + fileNamePrefix);
       return 'fail';
