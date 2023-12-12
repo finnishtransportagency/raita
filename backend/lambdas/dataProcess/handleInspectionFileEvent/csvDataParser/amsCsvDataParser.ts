@@ -1,10 +1,9 @@
 import { parseCSVContent } from '../../../../utils/zod-csv/zcsv';
-import { amsSchema, IAms } from './amsCsvSchema';
+import { IAms } from './amsCsvSchema';
 import { convertToDBRow, readRunningDate, tidyUpFileBody } from './utils';
 import { writeRowsToDB } from './dbUtil';
-import { AmsDBSchema } from './amsDBSchema';
 import postgres from 'postgres';
-import {ZodObject} from "zod";
+import { ZodObject } from 'zod';
 
 function tidyHeadersAMSSpecific(headerLine: string): string {
   return headerLine
@@ -12,10 +11,21 @@ function tidyHeadersAMSSpecific(headerLine: string): string {
     .replace(/Running Dynamics\./g, '')
     .replace(/Pantograph\/Catenary Interaction\./g, '')
     .replace(/Over Head Line Geometry and Wear\.Ajonopeus/, 'ohl_ajonopeus')
+    .replace(/Over Head Line Geometry and Wear\./g, '')
+    .replace(/Rail Corrugation\./g, '')
+    .replace(/Rail Profile\.Ajonopeus/, 'rp_ajonopeus')
+    .replace(/Rail Profile\./g, '')
+    .replace(/TG Master\./g, '')
+    .replace(/T-Sight 600\./g, '')
     .replace(/Over Head Line Geometry and Wear\./g, '');
 }
 
-export async function parseAMSCSVData(csvFileBody: string, reportId: number, table: string, csvSchema: ZodObject<any>) {
+export async function parseAMSCSVData(
+  csvFileBody: string,
+  reportId: number,
+  table: string,
+  csvSchema: ZodObject<any>,
+) {
   const runningDate = readRunningDate(csvFileBody);
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
   console.log(tidyedFileBody);
