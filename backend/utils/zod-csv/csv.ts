@@ -135,6 +135,7 @@ export const parseCSVContent = <T extends z.ZodType>(csvContent: string, schema:
     const [validRows, errors] = getCSVErrorsAndValidRows(csvContent, schema, options);
 
     if (errors) {
+        console.log(errors);
         return {
             success: false,
             header: getHeadersFromContent(csvContent, options),

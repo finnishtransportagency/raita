@@ -17,15 +17,7 @@ function tidyHeadersAMSSpecific(headerLine: string): string {
 export async function parseAMSCSVData(csvFileBody: string, reportId: number, table: string, csvSchema: ZodObject<any>) {
   const runningDate = readRunningDate(csvFileBody);
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
-  console.log('tidyedFileBody');
-  console.log(tidyedFileBody);
-
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
-  console.log('parsedCSVContent');
-  console.log(parsedCSVContent);
-  if (!(parsedCSVContent.success)) {
-    parsedCSVContent.errors.rows?.
-  }
 
   if (parsedCSVContent.success) {
     console.log('write to db');
