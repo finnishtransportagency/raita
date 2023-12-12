@@ -21,7 +21,9 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
     .replace(/-/g, '_')
     //replace scandic
     .replace(/ä/g, 'a')
-    .replace(/ö/g, 'o');
+    .replace(/ö/g, 'o')
+    //remove degree signs
+    .replace(/°/g, '');
 
   return tidyedHeaderLine;
 }
