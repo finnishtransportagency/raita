@@ -10,8 +10,11 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
     //replace points with underscore
     .replace(/\./g, '_')
     .toLowerCase()
-    //remove square bracketed parts
-    .replace(/\[.*?\]/g, '')
+    //remove square bracketed parts at the end of column name
+    .replace(/\[[^\[\]]*?\]\"/g, '"')
+    //remove other square brackets
+    .replace(/\[/g, '')
+    .replace(/\]/g, '')
     //remove trailing underscores
     .replace(/_\"/g, '"')
     //replace minus signs with underscore
