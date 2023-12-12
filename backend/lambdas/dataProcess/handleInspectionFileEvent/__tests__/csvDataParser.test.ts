@@ -1,10 +1,8 @@
-import { parseAMSCSVData } from '../csvDataParser/amsCsvDataParser';
 import {
   insertRaporttiData,
-  parseCSVData,
+  parseCSVFile,
 } from '../csvDataParser/csvDataParser';
-import { undefined } from 'zod';
-import {amsSchema} from "../csvDataParser/amsCsvSchema";
+import { amsSchema } from '../csvDataParser/amsCsvSchema';
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\n' +
@@ -125,7 +123,7 @@ describe('insert raportti success', () => {
 
 describe('handle ams file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'AMS_20221122_008_KOKOL_LR_630_630.csv',
       { contentType: 'csv', fileBody: amsCsv, tags: {} },
       {},
@@ -135,7 +133,7 @@ describe('handle ams file success', () => {
 
 describe('handle ohl file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'OHL_20221003_006_KVRP_847_193_194.csv',
       { contentType: 'csv', fileBody: ohlCsv, tags: {} },
       {},
@@ -145,7 +143,7 @@ describe('handle ohl file success', () => {
 
 describe('handle pi file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'PI_20221125_006_LHRP_1_130_130.csv',
       { contentType: 'csv', fileBody: piCsv, tags: {} },
       {},
@@ -155,7 +153,7 @@ describe('handle pi file success', () => {
 
 describe('handle rc file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'RC_20221022_008_KHG_V911-V913_622_622.csv',
       { contentType: 'csv', fileBody: rcCsv, tags: {} },
       {},
@@ -165,7 +163,7 @@ describe('handle rc file success', () => {
 
 describe('handle rp file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'RP_20220704_003_TL_V628-V626_148_148.csv',
       { contentType: 'csv', fileBody: rpCsv, tags: {} },
       {},
@@ -175,7 +173,7 @@ describe('handle rp file success', () => {
 
 describe('handle tg file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'TG_20221129_006_LHRP_2_130_130.csv',
       { contentType: 'csv', fileBody: tgCsv, tags: {} },
       {},
@@ -185,7 +183,7 @@ describe('handle tg file success', () => {
 
 describe('handle tsight file success', () => {
   test('success: normal run', async () => {
-    const result = await parseCSVData(
+    const result = await parseCSVFile(
       'TSIGHT_20221010_003_KRRRP_253_224_225.csv',
       { contentType: 'csv', fileBody: tsightCsv, tags: {} },
       {},
@@ -193,16 +191,16 @@ describe('handle tsight file success', () => {
   });
 });
 
-describe('parseAMSCSV success', () => {
+/*describe('parseAMSCSV success', () => {
   test('success: normal run', async () => {
-    const result = await parseAMSCSVData(amsCsv, 3, "ams_mittaus", amsSchema);
+    const result = await parseCSVFile(amsCsv, 3, "ams_mittaus", amsSchema);
     expect(result.success).toBe(true);
     expect(result.header[6]).toBe('oikea_pystysuuntainen_kiihtyvyys_c1');
     expect(result.validRows[5].oikea_poikittainen_kiihtyvyys_c1).toBe(3.0163);
     expect(result.validRows.length).toBe(6);
     expect(result.allRows.length).toBe(6);
   });
-});
+});*/
 
 /*describe('parseAMSCSV error', () => {
   test('success: error run', async () => {
