@@ -10,6 +10,7 @@ function tidyHeadersAMSSpecific(headerLine: string): string {
   return headerLine
     .replace(/Running Dynamics\.Ajonopeus/, 'ams_ajonopeus')
     .replace(/Running Dynamics\./g, '')
+    .replace(/Pantograph\/Catenary Interaction\./g, '')
     .replace(/Over Head Line Geometry and Wear\.Ajonopeus/, 'ohl_ajonopeus')
     .replace(/Over Head Line Geometry and Wear\./g, '');
 }
@@ -17,6 +18,8 @@ function tidyHeadersAMSSpecific(headerLine: string): string {
 export async function parseAMSCSVData(csvFileBody: string, reportId: number, table: string, csvSchema: ZodObject<any>) {
   const runningDate = readRunningDate(csvFileBody);
   const tidyedFileBody = tidyUpFileBody(csvFileBody, tidyHeadersAMSSpecific);
+  console.log(tidyedFileBody);
+
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
 
   if (parsedCSVContent.success) {

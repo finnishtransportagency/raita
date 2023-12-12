@@ -5,6 +5,7 @@ import { RaporttiDBSchema } from './raporttiDBSchema';
 import { getDBConnection } from './dbUtil';
 import { ohlSchema } from './ohlCsvSchema';
 import { amsSchema } from './amsCsvSchema';
+import {piSchema} from "./piCsvSchema";
 
 //todo get all needed values from metadata
 export async function insertRaporttiData(
@@ -66,6 +67,15 @@ export async function parseCSVData(
           "ohl_mittaus",
           ohlSchema,
         ));
+      break;
+    case 'PI':
+      file.fileBody &&
+      (await parseAMSCSVData(
+        file.fileBody,
+        reportId,
+        "pi_mittaus",
+        piSchema,
+      ));
       break;
     default:
       log.warn('Unknown csv file prefix: ' + fileNamePrefix);
