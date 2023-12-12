@@ -1,4 +1,3 @@
-import { IAms } from './amsCsvSchema';
 import postgres from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
@@ -96,4 +95,8 @@ export async function getConnectionLocalDev() {
   const password = 'password';
   connection = postgres({ password, username: 'postgres', transform: { undefined: null } });
   return connection;
+}
+
+export function convertToDBRow(row: any, runningDate: Date, reportId: number) {
+  return { ...row, raportti_id: reportId, running_date: runningDate };
 }

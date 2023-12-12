@@ -1,15 +1,18 @@
 import { IFileResult, ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { parseAMSCSVData } from './amsCsvDataParser';
 import { RaporttiDBSchema } from './raporttiDBSchema';
-import { getDBConnection } from './dbUtil';
+import { convertToDBRow, getDBConnection, writeRowsToDB } from './dbUtil';
 import { ohlSchema } from './ohlCsvSchema';
 import { amsSchema } from './amsCsvSchema';
 import { piSchema } from './piCsvSchema';
-import {rcSchema} from "./rcCsvSchema";
-import {rpSchema} from "./rpCsvSchema";
-import {tgSchema} from "./tgCsvSchema";
-import {tsightSchema} from "./tsightCsvSchema";
+import { rcSchema } from './rcCsvSchema';
+import { rpSchema } from './rpCsvSchema';
+import { tgSchema } from './tgCsvSchema';
+import { tsightSchema } from './tsightCsvSchema';
+import { TypeOf, ZodObject } from 'zod';
+import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
+import { parseCSVContent } from '../../../../utils/zod-csv/csv';
+import postgres from 'postgres';
 
 //todo get all needed values from metadata
 export async function insertRaporttiData(
@@ -40,7 +43,62 @@ export async function insertRaporttiData(
   }
 }
 
-export async function parseCSVData(
+async function writeCsvContentToDb(
+  parsedCSVContent: {
+    success: true;
+    header: string[];
+    allRows: Record<string, string | undefined>[];
+    validRows: TypeOf<ZodObject<any>>[];
+  },
+  runningDate: Date,
+  reportId: number,
+  table: string,
+) {
+  console.log('write to db');
+  const dbRows: any[] = [];
+
+  parsedCSVContent.validRows.forEach((row: any) =>
+    dbRows.push(convertToDBRow(row, runningDate, reportId)),
+  );
+  const result: postgres.Row = await writeRowsToDB(dbRows, table);
+  console.log(result.id);
+
+  return result;
+}
+
+async function parseCsvData(
+  csvFileBody: string,
+  csvSchema: ZodObject<any>,
+) {
+  const tidyedFileBody = tidyUpFileBody(csvFileBody);
+  const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
+  return { ...parsedCSVContent };
+}
+
+async function parseCsvAndWriteToDb(
+  fileBody: string,
+  runningDate: Date,
+  reportId: number,
+  fileBaseName: string,
+  table: string,
+  csvSchema: ZodObject<any>,
+) {
+  const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
+  if (parsedCSVContent.success) {
+    return await writeCsvContentToDb(
+      parsedCSVContent,
+      runningDate,
+      reportId,
+      table,
+    );
+  } else {
+    throw Error(
+      'Error parsing CSV-file ' + fileBaseName + ' ' + parsedCSVContent.errors,
+    );
+  }
+}
+
+export async function parseCSVFile(
   fileBaseName: string,
   file: IFileResult,
   metadata: ParseValueResult,
@@ -53,74 +111,88 @@ export async function parseCSVData(
     metadata,
   );
 
-  switch (fileNamePrefix) {
-    case 'AMS':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'ams_mittaus',
-          amsSchema,
-        ));
-      break;
-    case 'OHL':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'ohl_mittaus',
-          ohlSchema,
-        ));
-      break;
-    case 'PI':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'pi_mittaus',
-          piSchema,
-        ));
-      break;
-    case 'RC':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'rc_mittaus',
-          rcSchema,
-        ));
-      break;
-    case 'RP':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'rp_mittaus',
-          rpSchema,
-        ));
-      break;
-    case 'TG':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'tg_mittaus',
-          tgSchema,
-        ));
-      break;
-    case 'TSIGHT':
-      file.fileBody &&
-        (await parseAMSCSVData(
-          file.fileBody,
-          reportId,
-          'tsight_mittaus',
-          tsightSchema,
-        ));
-      break;
+  if (file.fileBody) {
+    const fileBody: string = file.fileBody;
+    const runningDate = readRunningDate(file.fileBody);
 
-    default:
-      log.warn('Unknown csv file prefix: ' + fileNamePrefix);
-      return 'fail';
+    switch (fileNamePrefix) {
+      case 'AMS':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'ams_mittaus',
+          amsSchema
+        );
+        break;
+      case 'OHL':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'ohl_mittaus',
+          ohlSchema
+        );
+        break;
+      case 'PI':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'pi_mittaus',
+          piSchema
+        );
+        break;
+      case 'RC':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'rc_mittaus',
+          rcSchema
+        );
+        break;
+      case 'RP':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'rp_mittaus',
+          rpSchema
+        );
+        break;
+      case 'TG':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'tg_mittaus',
+          tgSchema
+        );
+        break;
+      case 'TSIGHT':
+        return await parseCsvAndWriteToDb(
+          fileBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'tsight_mittaus',
+          tsightSchema
+        );
+        break;
+
+      default:
+        log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+        throw new Error('Unknown csv file prefix:');
+    }
+    return 'success';
+  } else {
+    throw new Error('CVS file has no content');
   }
-  return 'success';
 }
