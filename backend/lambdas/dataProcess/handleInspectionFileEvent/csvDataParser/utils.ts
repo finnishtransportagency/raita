@@ -7,6 +7,8 @@ function tidyUpHeaderLine(csvHeaderLine: string): string {
   var tidyedHeaderLine = csvHeaderLine
     //replace spaces with underscore
     .replace(/ /g, '_')
+    //replace points with underscore
+    .replace(/\./g, '_')
     .toLowerCase()
     //remove square bracketed parts
     .replace(/\[.*?\]/g, '')
