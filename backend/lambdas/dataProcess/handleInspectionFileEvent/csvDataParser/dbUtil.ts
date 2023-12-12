@@ -85,7 +85,7 @@ async function getConnection() {
     return connection;
   }
   const password = await getSecretsManagerSecret('database_password');
-  connection = postgres({ password });
+  connection = postgres({ password, transform: { undefined: null } }, );
   return connection;
 }
 
@@ -94,6 +94,6 @@ export async function getConnectionLocalDev() {
     return connection;
   }
   const password = 'password';
-  connection = postgres({ password, username: 'postgres' });
+  connection = postgres({ password, username: 'postgres', transform: { undefined: null } });
   return connection;
 }
