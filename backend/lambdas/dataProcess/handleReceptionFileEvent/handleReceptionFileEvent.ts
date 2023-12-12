@@ -13,6 +13,10 @@ import { ZIP_SUFFIX } from '../../../../constants';
 import { launchECSZipTask } from './utils';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
+import {
+  DataProcessLockedError,
+  acquireDataProcessLockOrFail,
+} from '../../../utils/dataProcessLock';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -35,6 +39,16 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
       const key = getDecodedS3ObjectKey(eventRecord);
       await adminLogger.init('data-reception', key);
       await adminLogger.info(`Zip vastaanotettu: ${key}`);
+      try {
+        // note: currently this lock is never released
+        // pipeline can acquire lock only after all dataprocess locks have timed out
+        // TODO: release lock once all files inside zip have been fully handled
+        await getLock(key);
+        log.info('acquired lock');
+      } catch (error) {
+        log.error(error);
+        return;
+      }
       const { path, fileSuffix } = getKeyData(key);
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
@@ -63,3 +77,26 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
     await adminLogger.error('Virhe zip-tiedoston käsittelyssä');
   }
 }
+
+/**
+ * Wait until lock is acquired
+ */
+const getLock = async (key: string) => {
+  // TODO: don't naively wait here
+  const waitTime = 30 * 1000;
+  const timeout = 1000 * 60 * 15; // note: lambda timeout will hit first currently
+  let elapsed = 0;
+  while (elapsed < timeout) {
+    try {
+      return await acquireDataProcessLockOrFail(key);
+    } catch (error) {
+      if (error instanceof DataProcessLockedError) {
+        log.info('Data process locked, waiting to acquire lock');
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        elapsed += waitTime;
+      } else {
+        throw error;
+      }
+    }
+  }
+};
