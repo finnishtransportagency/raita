@@ -1,51 +1,11 @@
 import postgres from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
-import { AmsDBSchema } from './amsDBSchema';
+
 
 let connection: postgres.Sql;
 //todo set false
 const localDevDB = true;
-
-export async function writeRowsToDB3(
-  header: string[],
-  parsedCSVRows: AmsDBSchema[],
-) {
-  parsedCSVRows.forEach(row => writeRowToDB(row));
-
-  const schema = 'public';
-  const timestamp = new Date(Date.now()).toISOString();
-  const sql = await getConnectionLocalDev();
-
-  return await sql`
-    INSERT INTO ${sql(schema)}.ams_mittaus
-    (sscount, raportti_id, running_date)
-    VALUES (19, 3, ${timestamp})`;
-}
-
-async function writeRowToDB(row: AmsDBSchema) {
-  let schema;
-  let sql;
-  if (localDevDB) {
-    schema = 'public';
-    sql = await getConnectionLocalDev();
-  } else {
-    schema = getEnvOrFail('RAITA_PGSCHEMA');
-    sql = await getConnection();
-  }
-
-  const timestamp = new Date(Date.now()).toISOString();
-
-  try {
-    let a = await sql`INSERT INTO ${sql(schema)}.ams_mittaus ${sql(row)} `;
-    console.log(a);
-    return a;
-  } catch (e) {
-    console.log('err');
-    console.log(e);
-    return null;
-  }
-}
 
 export async function getDBConnection() {
   let schema;
@@ -61,7 +21,7 @@ export async function getDBConnection() {
 }
 
 export async function writeRowsToDB(
-  parsedCSVRows: AmsDBSchema[],
+  parsedCSVRows: any[],
   table: string,
 ): Promise<postgres.Row> {
   const { schema, sql } = await getDBConnection();
@@ -98,5 +58,6 @@ export async function getConnectionLocalDev() {
 }
 
 export function convertToDBRow(row: any, runningDate: Date, reportId: number) {
+
   return { ...row, raportti_id: reportId, running_date: runningDate };
 }
