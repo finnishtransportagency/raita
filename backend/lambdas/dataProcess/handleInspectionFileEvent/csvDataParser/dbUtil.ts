@@ -21,6 +21,42 @@ export async function getDBConnection() {
   return { schema, sql };
 }
 
+async function populateGisPoints(
+  rows: postgres.Row[] &
+    Iterable<NonNullable<postgres.Row[][number]>> &
+    postgres.ResultQueryMeta<
+      postgres.Row[]['length'],
+      keyof postgres.Row[][number]
+    >,
+  table: string,
+  sql: postgres.Sql<{}>,
+) {
+  var sqlString: string = '';
+
+  rows.forEach(row => {
+    const latitudeString: string = row.latitude;
+    const longitudeString: string = row.longitude;
+    const latitude = latitudeString.split('°')[0];
+    const longitude = longitudeString.split('°')[0];
+    const id: string = row.id;
+    console.log(latitude);
+
+    sqlString += 'update ';
+    sqlString += table;
+    sqlString += " set sijainti=st_geomfromtext('POINT(";
+    sqlString += latitude;
+    sqlString += ' ';
+    sqlString += longitude;
+    sqlString += ')';
+    sqlString += "', 4326) where id=";
+    sqlString += id;
+    sqlString += ';';
+  });
+  console.log(sqlString);
+  const a = await sql.unsafe(sqlString);
+  console.log(a);
+}
+
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
@@ -28,11 +64,13 @@ export async function writeRowsToDB(
   const { schema, sql } = await getDBConnection();
 
   try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
+    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
-    )} returning id`;
-    console.log(id);
-    return id;
+    )} returning latitude, longitude, id`;
+    await populateGisPoints(rows, table, sql);
+
+    return rows;
+
   } catch (e) {
     console.log('err');
     console.log(e);
@@ -111,3 +149,4 @@ export function convertToDBRow(
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
   return { ...row, raportti_id: reportId, running_date: runningDate , ...rataosoite};
 }
+

@@ -46,7 +46,8 @@ export async function insertRaporttiData(
 async function writeCsvContentToDb(dbRows: any[], table: string) {
   console.log('write to db');
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
-  console.log(result.id);
+
+
 
   return result;
 }
