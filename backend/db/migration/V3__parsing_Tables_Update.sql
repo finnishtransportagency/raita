@@ -2,8 +2,15 @@ ALTER TABLE mittaus ADD COLUMN track character varying(40);
 ALTER TABLE mittaus ADD COLUMN location character varying(40);
 ALTER TABLE mittaus ADD COLUMN latitude character varying(40);
 ALTER TABLE mittaus ADD COLUMN longitude character varying(40);
+ALTER TABLE mittaus ADD COLUMN rataosuus_numero character varying(40);
+ALTER TABLE mittaus ADD COLUMN rataosuus_nimi character varying(40);
+ALTER TABLE mittaus ADD COLUMN raide_numero character varying(40);
+ALTER TABLE mittaus ADD COLUMN rata_kilometri integer;
+ALTER TABLE mittaus ADD COLUMN rata_metrit DECIMAL;
+ALTER TABLE mittaus DROP COLUMN rataosoite;
 ALTER TABLE mittaus RENAME COLUMN ss_count to sscount;
 ALTER TABLE mittaus RENAME COLUMN ajonopeus to sscount;
+
 ALTER TABLE ohl_mittaus ADD COLUMN ohl_ajonopeus decimal;
 
 ALTER TABLE mittaus
