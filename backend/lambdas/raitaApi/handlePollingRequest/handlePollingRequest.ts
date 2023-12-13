@@ -15,11 +15,7 @@ function getLambdaConfigOrFail() {
   };
 }
 
-async function getProgressDataFromS3(
-  bucket: string,
-  key: string,
-  s3: S3,
-) {
+async function getProgressDataFromS3(bucket: string, key: string, s3: S3) {
   const command = {
     Bucket: bucket,
     Key: key,
@@ -47,16 +43,12 @@ export async function handlePollingRequest(
       throw new Error('Key not specified');
     }
     // Check if progress file exists
-    const progressData = await getProgressDataFromS3(
-      dataBucket,
-      queryKey,
-      s3,
-    );
+    const progressData = await getProgressDataFromS3(dataBucket, queryKey, s3);
     if (!progressData) {
       throw new RaitaLambdaError('Invalid input', 400);
     }
     return getRaitaSuccessResponse({ progressData });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

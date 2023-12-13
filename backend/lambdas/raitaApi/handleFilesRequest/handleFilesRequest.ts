@@ -51,7 +51,7 @@ export async function handleFilesRequest(
     });
     const result = await metadata.queryOpenSearchMetadata(queryObject);
     return getRaitaSuccessResponse({ ...result });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

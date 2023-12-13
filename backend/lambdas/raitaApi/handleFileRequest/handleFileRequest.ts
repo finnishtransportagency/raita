@@ -52,7 +52,7 @@ export async function handleFileRequest(
       Expires: 30,
     });
     return getRaitaSuccessResponse({ url });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

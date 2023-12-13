@@ -72,7 +72,7 @@ export async function handleZipRequest(
     return getRaitaSuccessResponse({
       message: 'Zip processing initiated succesfully',
     });
-  } catch (error) {
+  } catch (error: any) {
     log.error(error);
     return getRaitaLambdaErrorResponse(error);
   }

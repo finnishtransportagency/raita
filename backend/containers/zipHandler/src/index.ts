@@ -81,7 +81,7 @@ async function start() {
         });
     });
     readStream.pipe(writeStream);
-  } catch (err) {
+  } catch (err: any) {
     // TODO: Temporary logging
     log.error(err);
     // TODO: Possible recovery actions apart from logging

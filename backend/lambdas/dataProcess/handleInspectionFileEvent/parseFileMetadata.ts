@@ -27,7 +27,7 @@ export async function parseFileMetadata({
       spec.fileNameExtractionSpec,
       spec.knownExceptions.fileNameExtractionSpec,
     );
-  } catch (error) {
+  } catch (error: any) {
     errorsFound = true;
     if (error instanceof RaitaParseError) {
       logParsingException.error(
@@ -41,7 +41,7 @@ export async function parseFileMetadata({
   let pathData: any = {};
   try {
     pathData = extractPathData(keyData, spec);
-  } catch (error) {
+  } catch (error: any) {
     errorsFound = true;
     if (error instanceof RaitaParseError) {
       logParsingException.error(
@@ -58,7 +58,7 @@ export async function parseFileMetadata({
       shouldParseContent(keyData.fileSuffix) && fileBody
         ? extractFileContentData(spec, fileBody)
         : {};
-  } catch (error) {
+  } catch (error: any) {
     errorsFound = true;
     if (error instanceof RaitaParseError) {
       logParsingException.error(

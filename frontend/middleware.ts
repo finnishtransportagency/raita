@@ -10,18 +10,18 @@ export async function middleware(request: NextRequest) {
     const apiPart = `${path.slice(path.indexOf('/api') + 4)}`;
     let newUrl = `${devApiUrl}${apiPart}`;
     const queryParams = request.nextUrl.searchParams;
-    if (queryParams) {
+    if (queryParams && queryParams.size) {
       newUrl = `${newUrl}?${queryParams.toString()}`;
     }
     if (request.method === 'GET') {
-      return fetch(newUrl, {
+      return await fetch(newUrl, {
         method: 'GET',
         headers: { 'x-api-key': devApiKey },
       });
     }
     if (request.method === 'POST') {
       const newBody = await request.json();
-      return fetch(newUrl, {
+      return await fetch(newUrl, {
         method: 'POST',
         body: JSON.stringify(newBody),
         headers: { 'x-api-key': devApiKey },
