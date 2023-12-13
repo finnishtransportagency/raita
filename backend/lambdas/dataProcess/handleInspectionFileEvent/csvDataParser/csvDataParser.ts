@@ -43,33 +43,15 @@ export async function insertRaporttiData(
   }
 }
 
-async function writeCsvContentToDb(
-  parsedCSVContent: {
-    success: true;
-    header: string[];
-    allRows: Record<string, string | undefined>[];
-    validRows: TypeOf<ZodObject<any>>[];
-  },
-  runningDate: Date,
-  reportId: number,
-  table: string,
-) {
+async function writeCsvContentToDb(dbRows: any[], table: string) {
   console.log('write to db');
-  const dbRows: any[] = [];
-
-  parsedCSVContent.validRows.forEach((row: any) =>
-    dbRows.push(convertToDBRow(row, runningDate, reportId)),
-  );
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
   console.log(result.id);
 
   return result;
 }
 
-async function parseCsvData(
-  csvFileBody: string,
-  csvSchema: ZodObject<any>,
-) {
+async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
@@ -85,12 +67,11 @@ async function parseCsvAndWriteToDb(
 ) {
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
   if (parsedCSVContent.success) {
-    return await writeCsvContentToDb(
-      parsedCSVContent,
-      runningDate,
-      reportId,
-      table,
+    const dbRows: any[] = [];
+    parsedCSVContent.validRows.forEach((row: any) =>
+      dbRows.push(convertToDBRow(row, runningDate, reportId)),
     );
+    return await writeCsvContentToDb(dbRows, table);
   } else {
     throw Error(
       'Error parsing CSV-file ' + fileBaseName + ' ' + parsedCSVContent.errors,
@@ -123,7 +104,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'ams_mittaus',
-          amsSchema
+          amsSchema,
         );
         break;
       case 'OHL':
@@ -133,7 +114,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'ohl_mittaus',
-          ohlSchema
+          ohlSchema,
         );
         break;
       case 'PI':
@@ -143,7 +124,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'pi_mittaus',
-          piSchema
+          piSchema,
         );
         break;
       case 'RC':
@@ -153,7 +134,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rc_mittaus',
-          rcSchema
+          rcSchema,
         );
         break;
       case 'RP':
@@ -163,7 +144,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rp_mittaus',
-          rpSchema
+          rpSchema,
         );
         break;
       case 'TG':
@@ -173,7 +154,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tg_mittaus',
-          tgSchema
+          tgSchema,
         );
         break;
       case 'TSIGHT':
@@ -183,7 +164,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tsight_mittaus',
-          tsightSchema
+          tsightSchema,
         );
         break;
 
