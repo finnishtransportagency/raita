@@ -44,9 +44,9 @@ async function populateGisPoints(
     sqlString += 'update ';
     sqlString += table;
     sqlString += " set sijainti=st_geomfromtext('POINT(";
-    sqlString += latitude;
-    sqlString += ' ';
     sqlString += longitude;
+    sqlString += ' ';
+    sqlString += latitude;
     sqlString += ')';
     sqlString += "', 4326) where id=";
     sqlString += id;
