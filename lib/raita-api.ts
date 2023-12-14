@@ -537,7 +537,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: Duration.seconds(5),
-      runtime: Runtime.NODEJS_18_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleFileRequest',
       entry: path.join(
         __dirname,
@@ -584,7 +584,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleImagesRequest',
       entry: path.join(
         __dirname,
@@ -633,7 +633,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(15),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleZipRequest',
       entry: path.join(
         __dirname,
@@ -684,7 +684,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 3008,
       timeout: cdk.Duration.minutes(15),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleZipProcessing',
       entry: path.join(
         __dirname,
@@ -732,7 +732,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(10),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handlePollingRequest',
       entry: path.join(
         __dirname,
@@ -777,7 +777,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleUserRequest',
       entry: path.join(
         __dirname,
@@ -825,7 +825,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleFilesRequest',
       entry: path.join(
         __dirname,
@@ -876,7 +876,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleMetaRequest',
       entry: path.join(
         __dirname,
@@ -925,7 +925,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(60), // TODO
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleAdminLogsRequest',
       entry: path.join(
         __dirname,
@@ -969,7 +969,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 256,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleRequest',
       entry: path.join(
         __dirname,
@@ -1021,7 +1021,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(60), // TODO: how long is needed for *big* delete operations?
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleDeleteRequest',
       entry: path.join(
         __dirname,
