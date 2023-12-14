@@ -9,7 +9,17 @@ import { rcSchema } from './rcCsvSchema';
 import { rpSchema } from './rpCsvSchema';
 import { tgSchema } from './tgCsvSchema';
 import { tsightSchema } from './tsightCsvSchema';
-import { TypeOf, ZodObject } from 'zod';
+import {
+  baseObjectInputType,
+  baseObjectOutputType,
+  TypeOf,
+  undefined,
+  ZodEffects,
+  ZodNumber,
+  ZodObject,
+  ZodString,
+  ZodTypeAny,
+} from 'zod';
 import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
@@ -19,13 +29,38 @@ export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
   metadata: ParseValueResult,
+  aloitus_rata_kilometri: number | null,
+  kampanja: string | null,
+  lopetus_rata_kilometri: number | null,
+  raide_numero: number | null,
+  raportin_kategoria: string | null,
+  raportointiosuus: string | null,
+  rataosuus_numero: string | null,
+  tarkastusajon_tunniste: string | null,
+  tarkastusvaunu: string | null,
+  tiedoston_koko_kb: string | null,
+  tiedostonimi: string | null,
+  tiedostotyyppi: string | null,
 ): Promise<number> {
   const data: RaporttiDBSchema = {
+    aloitus_rata_kilometri,
+    kampanja,
+    lopetus_rata_kilometri,
+    raide_numero,
+    raportin_kategoria,
+    raportointiosuus,
+    rataosuus_numero,
+    tarkastusajon_tunniste,
+    tarkastusvaunu,
+    tiedoston_koko_kb,
+    tiedostonimi,
+    tiedostotyyppi,
     zip_tiedostonimi: fileBaseName,
     zip_vastaanotto_pvm: new Date(),
     zip_vastaanotto_vuosi: new Date(),
     pvm: new Date(),
     vuosi: new Date(),
+    jarjestelma: fileNamePrefix,
   };
 
   let { schema, sql } = await getDBConnection();
@@ -47,8 +82,6 @@ async function writeCsvContentToDb(dbRows: any[], table: string) {
   console.log('write to db');
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
 
-
-
   return result;
 }
 
@@ -65,12 +98,13 @@ async function parseCsvAndWriteToDb(
   fileBaseName: string,
   table: string,
   csvSchema: ZodObject<any>,
+  fileNamePrefix: string,
 ) {
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
   if (parsedCSVContent.success) {
     const dbRows: any[] = [];
     parsedCSVContent.validRows.forEach((row: any) =>
-      dbRows.push(convertToDBRow(row, runningDate, reportId)),
+      dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
     return await writeCsvContentToDb(dbRows, table);
   } else {
@@ -87,10 +121,23 @@ export async function parseCSVFile(
 ) {
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[0];
+  const jarjestelmä = fileNamePrefix.toUpperCase();
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
     metadata,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
   );
 
   if (file.fileBody) {
@@ -106,6 +153,7 @@ export async function parseCSVFile(
           fileBaseName,
           'ams_mittaus',
           amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'OHL':
@@ -115,7 +163,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'ohl_mittaus',
-          ohlSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'PI':
@@ -125,7 +174,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'pi_mittaus',
-          piSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'RC':
@@ -135,7 +185,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rc_mittaus',
-          rcSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'RP':
@@ -145,7 +196,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rp_mittaus',
-          rpSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'TG':
@@ -155,7 +207,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tg_mittaus',
-          tgSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
       case 'TSIGHT':
@@ -165,7 +218,8 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tsight_mittaus',
-          tsightSchema,
+          amsSchema,
+          fileNamePrefix,
         );
         break;
 

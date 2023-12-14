@@ -145,8 +145,15 @@ export function convertToDBRow(
   row: Mittaus,
   runningDate: Date,
   reportId: number,
+  fileNamePrefix: string,
 ) {
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
-  return { ...row, raportti_id: reportId, running_date: runningDate , ...rataosoite};
+  return {
+    ...row,
+    raportti_id: reportId,
+    running_date: runningDate,
+    jarjestelma: fileNamePrefix,
+    ...rataosoite,
+  };
 }
 
