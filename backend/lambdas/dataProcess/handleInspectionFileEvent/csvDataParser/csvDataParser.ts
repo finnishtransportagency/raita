@@ -163,7 +163,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'ohl_mittaus',
-          amsSchema,
+          ohlSchema,
           fileNamePrefix,
         );
         break;
@@ -174,7 +174,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'pi_mittaus',
-          amsSchema,
+          piSchema,
           fileNamePrefix,
         );
         break;
@@ -185,7 +185,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rc_mittaus',
-          amsSchema,
+          rcSchema,
           fileNamePrefix,
         );
         break;
@@ -196,7 +196,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'rp_mittaus',
-          amsSchema,
+          rpSchema,
           fileNamePrefix,
         );
         break;
@@ -207,7 +207,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tg_mittaus',
-          amsSchema,
+          tgSchema,
           fileNamePrefix,
         );
         break;
@@ -218,7 +218,7 @@ export async function parseCSVFile(
           reportId,
           fileBaseName,
           'tsight_mittaus',
-          amsSchema,
+          tsightSchema,
           fileNamePrefix,
         );
         break;
