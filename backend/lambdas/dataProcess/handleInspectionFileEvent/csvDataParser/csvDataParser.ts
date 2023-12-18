@@ -24,6 +24,24 @@ import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
 
+async function updateRaporttiStatus(
+  id: number,
+  status: string,
+  error: null | string,
+) {
+  let { schema, sql } = await getDBConnection();
+  try {
+    const a = await sql`UPDATE ${sql(
+      schema,
+    )}.raportti SET status = ${status}, error = ${error} WHERE id = ${id};`;
+    console.log(a);
+  } catch (e) {
+    console.log('err');
+    console.log(e);
+    throw e;
+  }
+}
+
 //todo get all needed values from metadata
 export async function insertRaporttiData(
   fileBaseName: string,
@@ -140,95 +158,103 @@ export async function parseCSVFile(
     null,
   );
 
-  if (file.fileBody) {
-    const fileBody: string = file.fileBody;
-    const runningDate = readRunningDate(file.fileBody);
+  try {
+    if (file.fileBody) {
+      const fileBody: string = file.fileBody;
+      const runningDate = readRunningDate(file.fileBody);
 
-    switch (fileNamePrefix) {
-      case 'AMS':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'ams_mittaus',
-          amsSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'OHL':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'ohl_mittaus',
-          ohlSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'PI':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'pi_mittaus',
-          piSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'RC':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'rc_mittaus',
-          rcSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'RP':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'rp_mittaus',
-          rpSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'TG':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'tg_mittaus',
-          tgSchema,
-          fileNamePrefix,
-        );
-        break;
-      case 'TSIGHT':
-        return await parseCsvAndWriteToDb(
-          fileBody,
-          runningDate,
-          reportId,
-          fileBaseName,
-          'tsight_mittaus',
-          tsightSchema,
-          fileNamePrefix,
-        );
-        break;
+      switch (fileNamePrefix) {
+        case 'AMS':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'ams_mittaus',
+            amsSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'OHL':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'ohl_mittaus',
+            ohlSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'PI':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'pi_mittaus',
+            piSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'RC':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'rc_mittaus',
+            rcSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'RP':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'rp_mittaus',
+            rpSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'TG':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'tg_mittaus',
+            tgSchema,
+            fileNamePrefix,
+          );
+          break;
+        case 'TSIGHT':
+          return await parseCsvAndWriteToDb(
+            fileBody,
+            runningDate,
+            reportId,
+            fileBaseName,
+            'tsight_mittaus',
+            tsightSchema,
+            fileNamePrefix,
+          );
+          break;
 
-      default:
-        log.warn('Unknown csv file prefix: ' + fileNamePrefix);
-        throw new Error('Unknown csv file prefix:');
+        default:
+          log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+          throw new Error('Unknown csv file prefix:');
+      }
+      console.log("HEllo suscses");
+      await updateRaporttiStatus(reportId, 'SUCCESS', null);
+      console.log("HEllo suscses done");
+      return 'success';
+    } else {
+      throw new Error('CVS file has no content');
     }
-    return 'success';
-  } else {
-    throw new Error('CVS file has no content');
+  } catch (e) {
+    await updateRaporttiStatus(reportId, 'ERROR', e.toString());
+    return 'error';
   }
 }
