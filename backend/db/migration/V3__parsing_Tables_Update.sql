@@ -11,6 +11,9 @@ ALTER TABLE mittaus DROP COLUMN rataosoite;
 ALTER TABLE mittaus RENAME COLUMN ss_count to sscount;
 ALTER TABLE mittaus RENAME COLUMN ajonopeus to sscount;
 
+ALTER TABLE raportti ADD COLUMN status character varying(20);
+ALTER TABLE raportti ADD COLUMN error character varying(20);
+
 ALTER TABLE ohl_mittaus ADD COLUMN ohl_ajonopeus decimal;
 
 ALTER TABLE mittaus

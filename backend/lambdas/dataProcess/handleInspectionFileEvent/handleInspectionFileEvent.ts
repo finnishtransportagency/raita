@@ -15,7 +15,7 @@ import {
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
-import { parseCSVData } from './csvDataParser/csvDataParser';
+import { parseCSVFile } from './csvDataParser/csvDataParser';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
@@ -101,7 +101,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           if (
             keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
           ) {
-            parseCSVData(keyData.fileBaseName,  file, parseResults.metadata);
+            parseCSVFile(keyData.fileBaseName,  file, parseResults.metadata);
           }
         }
         return {
