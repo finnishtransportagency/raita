@@ -24,6 +24,7 @@ import {
 import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
+import { stringify } from 'ts-jest';
 
 async function updateRaporttiStatus(
   id: number,
@@ -31,10 +32,14 @@ async function updateRaporttiStatus(
   error: null | string,
 ) {
   let { schema, sql } = await getDBConnection();
+  let errorSubstring = error;
+  if(error){
+    errorSubstring = error.substring(0,1000);
+  }
   try {
     const a = await sql`UPDATE ${sql(
       schema,
-    )}.raportti SET status = ${status}, error = ${error} WHERE id = ${id};`;
+    )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`;
     console.log(a);
   } catch (e) {
     console.log('err');
@@ -128,26 +133,23 @@ async function parseCsvAndWriteToDb(
     return await writeCsvContentToDb(dbRows, table);
   } else {
     const errors = parsedCSVContent.errors;
-    const re = errors.rows;
-    if (re) {
-      const k = Object.keys(re);
-      console.log(k);
+    let errorsOutString = '';
 
-      k.forEach(key=> console.log(re[key].[0]));
+    const headerErrors = errors.header;
+    errorsOutString += JSON.stringify(headerErrors);
 
-      const v = Object.values(re);
-      console.log(v[0]);
-      const i: IterableIterator<[number, unknown]> = v.entries();
-      for (const b in i) {
-        console.log(b);
-      }
+    const rowErrors = errors.rows;
+    if (rowErrors) {
+      const rowKeys = Object.keys(rowErrors);
+      console.log(rowKeys);
+      rowKeys.forEach(key => {
+        errorsOutString += key + ':';
+        errorsOutString += JSON.stringify(rowErrors[key].issues);
+      });
     }
 
-    const he = errors.header;
-
-    console.log(he);
     throw Error(
-      'Error parsing CSV-file ' + fileBaseName + ' ' + parsedCSVContent.errors,
+      'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString+ errorsOutString+ errorsOutString,
     );
   }
 }
