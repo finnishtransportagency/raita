@@ -165,7 +165,7 @@ export async function parseCSVFile(
 
       switch (fileNamePrefix) {
         case 'AMS':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -176,7 +176,7 @@ export async function parseCSVFile(
           );
           break;
         case 'OHL':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -187,7 +187,7 @@ export async function parseCSVFile(
           );
           break;
         case 'PI':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -198,7 +198,7 @@ export async function parseCSVFile(
           );
           break;
         case 'RC':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -209,7 +209,7 @@ export async function parseCSVFile(
           );
           break;
         case 'RP':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -220,7 +220,7 @@ export async function parseCSVFile(
           );
           break;
         case 'TG':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
@@ -231,7 +231,7 @@ export async function parseCSVFile(
           );
           break;
         case 'TSIGHT':
-          return await parseCsvAndWriteToDb(
+          await parseCsvAndWriteToDb(
             fileBody,
             runningDate,
             reportId,
