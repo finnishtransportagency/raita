@@ -7,4 +7,5 @@ module.exports = {
   },
   collectCoverage: true,
   coverageReporters: ['text'],
+  testPathIgnorePatterns: ['/node_modules/', 'csvDataParser', '/zod-csv/'],
 };
