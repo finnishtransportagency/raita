@@ -14,6 +14,7 @@ import {
   baseObjectOutputType,
   TypeOf,
   undefined,
+  z,
   ZodEffects,
   ZodNumber,
   ZodObject,
@@ -126,6 +127,25 @@ async function parseCsvAndWriteToDb(
     );
     return await writeCsvContentToDb(dbRows, table);
   } else {
+    const errors = parsedCSVContent.errors;
+    const re = errors.rows;
+    if (re) {
+      const k = Object.keys(re);
+      console.log(k);
+
+      k.forEach(key=> console.log(re[key].[0]));
+
+      const v = Object.values(re);
+      console.log(v[0]);
+      const i: IterableIterator<[number, unknown]> = v.entries();
+      for (const b in i) {
+        console.log(b);
+      }
+    }
+
+    const he = errors.header;
+
+    console.log(he);
     throw Error(
       'Error parsing CSV-file ' + fileBaseName + ' ' + parsedCSVContent.errors,
     );
@@ -246,9 +266,9 @@ export async function parseCSVFile(
           log.warn('Unknown csv file prefix: ' + fileNamePrefix);
           throw new Error('Unknown csv file prefix:');
       }
-      console.log("HEllo suscses");
+      console.log('HEllo suscses');
       await updateRaporttiStatus(reportId, 'SUCCESS', null);
-      console.log("HEllo suscses done");
+      console.log('HEllo suscses done');
       return 'success';
     } else {
       throw new Error('CVS file has no content');
