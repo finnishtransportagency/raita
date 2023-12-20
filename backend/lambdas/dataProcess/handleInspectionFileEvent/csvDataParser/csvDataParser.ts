@@ -1,14 +1,14 @@
 import { IFileResult, ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { RaporttiDBSchema } from './raporttiDBSchema';
-import { convertToDBRow, getDBConnection, writeRowsToDB } from './dbUtil';
-import { ohlSchema } from './ohlCsvSchema';
-import { amsSchema } from './amsCsvSchema';
-import { piSchema } from './piCsvSchema';
-import { rcSchema } from './rcCsvSchema';
-import { rpSchema } from './rpCsvSchema';
-import { tgSchema } from './tgCsvSchema';
-import { tsightSchema } from './tsightCsvSchema';
+import { Raportti } from './db/model/Raportti';
+import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
+import { ohlSchema } from './csvSchemas/ohlCsvSchema';
+import { amsSchema } from './csvSchemas/amsCsvSchema';
+import { piSchema } from './csvSchemas/piCsvSchema';
+import { rcSchema } from './csvSchemas/rcCsvSchema';
+import { rpSchema } from './csvSchemas/rpCsvSchema';
+import { tgSchema } from './csvSchemas/tgCsvSchema';
+import { tsightSchema } from './csvSchemas/tsightCsvSchema';
 import {
   baseObjectInputType,
   baseObjectOutputType,
@@ -66,7 +66,7 @@ export async function insertRaporttiData(
   tiedostonimi: string | null,
   tiedostotyyppi: string | null,
 ): Promise<number> {
-  const data: RaporttiDBSchema = {
+  const data: Raportti = {
     aloitus_rata_kilometri,
     kampanja,
     lopetus_rata_kilometri,
