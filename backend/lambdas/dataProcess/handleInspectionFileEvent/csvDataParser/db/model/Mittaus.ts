@@ -1,4 +1,4 @@
-import {Rataosoite} from "./rataosoite";
+import {Rataosoite} from "./Rataosoite";
 
 enum Jarjestelma {
   AMS = 'AMS',

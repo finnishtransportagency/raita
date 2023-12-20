@@ -1,8 +1,8 @@
 import postgres from 'postgres';
-import { getEnvOrFail } from '../../../../../utils';
-import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
-import { Mittaus } from './Mittaus';
-import { Rataosoite } from './rataosoite';
+import { getEnvOrFail } from '../../../../../../utils';
+import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
+import { Mittaus } from './model/Mittaus';
+import { Rataosoite } from './model/Rataosoite';
 
 let connection: postgres.Sql;
 //todo set false
@@ -41,6 +41,7 @@ async function populateGisPoints(
     const id: string = row.id;
     console.log(latitude);
 
+    //TODO is there nicer way to do this in the row insert?
     sqlString += 'update ';
     sqlString += table;
     sqlString += " set sijainti=st_geomfromtext('POINT(";

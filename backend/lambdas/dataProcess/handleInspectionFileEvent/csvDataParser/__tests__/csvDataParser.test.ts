@@ -1,8 +1,8 @@
 import {
   insertRaporttiData,
   parseCSVFile,
-} from '../csvDataParser/csvDataParser';
-import { amsSchema } from '../csvDataParser/amsCsvSchema';
+} from '../csvDataParser';
+import { amsSchema } from '../csvSchemas/amsCsvSchema';
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\n' +
