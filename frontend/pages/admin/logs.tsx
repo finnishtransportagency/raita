@@ -97,6 +97,8 @@ const AdminLogs: RaitaNextPage = () => {
           range={dateRange}
           onUpdate={setDateRange}
           resetDateRange={false}
+          className="max-w-md"
+          inputId="log-daterange"
         />
         <Button label={t('common:search')} onClick={fetchLogs} />
       </div>

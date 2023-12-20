@@ -5,6 +5,10 @@ const nextConfig = {
   compiler: {
     removeConsole: false,
   },
+  i18n: {
+    defaultLocale: 'fi',
+    locales: ['en', 'fi'],
+  },
   basePath: process.env.NEXT_PUBLIC_RAITA_BASEURL || '',
   webpack: config => {
     config.module.rules.push({
