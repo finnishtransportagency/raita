@@ -15,8 +15,6 @@ import {
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
-import { parseCSVFile } from './csvDataParser/csvDataParser';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 
@@ -89,20 +87,12 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           file,
           spec,
         });
-
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
           );
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
-
-          //call here csv parsing  parseCsvData(); ?
-          if (
-            keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
-          ) {
-            parseCSVFile(keyData.fileBaseName,  file, parseResults.metadata);
-          }
         }
         return {
           // key is sent to be stored in url decoded format to db
