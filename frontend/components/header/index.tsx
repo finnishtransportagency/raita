@@ -7,6 +7,7 @@ import Instructions from 'components/instructions';
 import Navigation from 'components/navigation';
 import { PageDescription } from 'shared/pageRoutes';
 import LatestInspectionDate from 'components/latest_inspection_date';
+import { assetURL } from 'shared/config';
 
 type Props = {
   pages: PageDescription[];
@@ -37,7 +38,7 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
           <div>
             <Image
               className="m-auto"
-              src="/vayla_sivussa_fi_sv_white.png"
+              src={`${assetURL}/vayla_sivussa_fi_sv_white.png`}
               alt="logo"
               height="64"
               width="179"
