@@ -17,7 +17,7 @@ export async function handleUserRequest(
     const user = await getUser(event);
     await validateReadUser(user);
     return getRaitaSuccessResponse({ roles: user.roles });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

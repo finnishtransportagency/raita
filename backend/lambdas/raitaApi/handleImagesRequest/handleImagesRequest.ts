@@ -47,7 +47,7 @@ export async function handleImagesRequest(
         size: image.Size,
       })) ?? [];
     return getRaitaSuccessResponse({ images });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

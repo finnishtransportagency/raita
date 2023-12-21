@@ -46,7 +46,7 @@ const FilterControl = (props: Props) => {
       return (
         <div className="grid grid-cols-3 gap-2">
           <select
-            aria-label={t<string>('common:rel_type')}
+            aria-label={t('common:rel_type')}
             className={clsx(css.root, 'input')}
             value={props.entry.rel || 'eq'}
             onChange={e => {

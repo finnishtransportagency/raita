@@ -47,7 +47,7 @@ export async function handleAdminLogsRequest(
 
     const logs = await getPostgresLogs(startTimestamp, endTimestamp);
     return getRaitaSuccessResponse({ logs });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

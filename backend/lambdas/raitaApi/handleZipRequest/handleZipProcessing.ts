@@ -125,7 +125,7 @@ export async function handleZipProcessing(event: ZipRequestBody) {
     );
 
     return getRaitaSuccessResponse({ message: 'Zipping completed' });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     archive.abort();
     await updateProgressFailed(

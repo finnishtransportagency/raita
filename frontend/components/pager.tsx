@@ -22,7 +22,7 @@ export function Pager(props: Props) {
       <nav
         className={clsx(css.root)}
         role="navigation"
-        aria-label={t<string>('common:pager_a11y_label')}
+        aria-label={t('common:pager_a11y_label')}
       >
         <ul className={clsx('flex items-center space-x-2', css.pager)}>
           {pageList.map(n => {
@@ -38,7 +38,7 @@ export function Pager(props: Props) {
                   {...{
                     className: css.pageButton,
                     onClick: () => onGotoPage && onGotoPage(n.page),
-                    'aria-label': t<string>('common:pager_a11y_goto_page', {
+                    'aria-label': t('common:pager_a11y_goto_page', {
                       page: n.page,
                     }),
 

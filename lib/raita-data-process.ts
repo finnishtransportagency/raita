@@ -320,7 +320,7 @@ export class DataProcessStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 8192,
       timeout: Duration.seconds(900),
-      runtime: Runtime.NODEJS_16_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleReceptionFileEvent',
       entry: path.join(
         __dirname,
@@ -373,7 +373,7 @@ export class DataProcessStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(15),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
         __dirname,

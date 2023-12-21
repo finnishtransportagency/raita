@@ -22,7 +22,7 @@ export async function handleRequest(event: ALBEvent, _context: Context) {
         'Set-Cookie': `Return=true${setCookieAttributes}`,
       },
     };
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

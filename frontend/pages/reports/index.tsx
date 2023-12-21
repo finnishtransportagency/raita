@@ -273,7 +273,7 @@ const ReportsIndex: RaitaNextPage = () => {
     <div className={clsx(css.root, isLoading && css.isLoading)}>
       <InfoBanner
         bannerType={BannerType.INFO}
-        text={t<string>('common:rights_restriction_info')}
+        text={t('common:rights_restriction_info')}
       />
       <div className="latestInspection">
         {t('common:latest_inspection')}
@@ -290,7 +290,7 @@ const ReportsIndex: RaitaNextPage = () => {
         {resultsData?.total && resultsData.total >= 10000 && (
           <InfoBanner
             bannerType={BannerType.WARNING}
-            text={t<string>('common:too_many_results')}
+            text={t('common:too_many_results')}
           />
         )}
 
@@ -303,7 +303,7 @@ const ReportsIndex: RaitaNextPage = () => {
             <TextInput
               onUpdate={updateSearchText}
               value={state.text}
-              placeholder={t<string>('common:search_by_filename')}
+              placeholder={t('common:search_by_filename')}
               resetSearchText={state.resetFilters}
             />
 
