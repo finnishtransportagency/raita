@@ -31,3 +31,10 @@
   @apply px-2 py-1;
   @apply checked:bg-primary checked:text-white;
 }
+
+.metadataGrid {
+  @apply grid grid-cols-4 gap-x-2 gap-y-1;
+  grid-template-columns:
+    minmax(127px, min-content) 1fr minmax(127px, min-content)
+    1fr;
+}

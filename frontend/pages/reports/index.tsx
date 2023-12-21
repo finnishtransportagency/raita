@@ -497,25 +497,35 @@ const ReportsIndex: RaitaNextPage = () => {
                                   </dd>
                                 </dl>
                               )}
-                              <dl className="grid grid-cols-12 gap-x-2 gap-y-1">
+                              <dl className={clsx(css.metadataGrid)}>
                                 {Object.entries(doc.metadata).map(
                                   ([k, v], mi) => (
                                     <Fragment key={mi}>
-                                      <dt className="col-span-2 truncate">
+                                      <dt
+                                        className="truncate"
+                                        title={t(`metadata:label_${k}`)}
+                                      >
                                         {t(`metadata:label_${k}`)}
                                       </dt>
-                                      <dd className="col-span-4 truncate">{`${v}`}</dd>
+                                      <dd
+                                        title={v}
+                                        className="truncate"
+                                      >{`${v}`}</dd>
                                     </Fragment>
                                   ),
                                 )}
                                 {doc.size && (
                                   <Fragment>
-                                    <dt className="col-span-2 truncate">
+                                    <dt
+                                      className="truncate"
+                                      title={t('metadata:label_size')}
+                                    >
                                       {t('metadata:label_size')}
                                     </dt>
-                                    <dd className="col-span-4 truncate">{`${sizeformatter(
-                                      doc.size,
-                                    )}`}</dd>
+                                    <dd
+                                      className="truncate"
+                                      title={`${sizeformatter(doc.size)}`}
+                                    >{`${sizeformatter(doc.size)}`}</dd>
                                   </Fragment>
                                 )}
                               </dl>

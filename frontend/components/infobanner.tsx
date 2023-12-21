@@ -21,7 +21,7 @@ export function InfoBanner(
   }
   const colors =
     bannerType === BannerType.INFO
-      ? 'bg-secondary text-black'
+      ? 'bg-tertiary bg-opacity-50 text-black'
       : 'bg-warn text-black';
   return (
     <div

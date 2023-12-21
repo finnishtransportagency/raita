@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { marked } from 'marked';
 import clsx from 'clsx';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 
 import manualData from '../../shared/doc/manual.md';
 import markdownCss from '../../styles/markdown.module.css';
@@ -22,7 +22,7 @@ const Instructions = (props: React.HTMLAttributes<HTMLDivElement>) => {
         <button onClick={() => setModalOpen(true)}>
           <FontAwesomeIcon
             className="w-6 h-6"
-            icon={faQuestion}
+            icon={faInfoCircle}
             title={t('common:user_manual') || ''}
           />
         </button>
