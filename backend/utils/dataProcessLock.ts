@@ -108,3 +108,17 @@ export function releasePipelineLock() {
 export function releaseDataProcessLock(filename: string) {
   return releaseLock(LockHolderType.DataProcess, filename);
 }
+
+/**
+ * This should only be used from the pipeline
+ */
+export async function lockTableExists() {
+  const sql = await getClient();
+  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const result = await sql`SELECT EXISTS (
+  SELECT FROM information_schema.tables
+  WHERE table_schema = ${schema}
+  AND table_name = 'data_process_lock'
+  );`;
+  return Boolean(result[0].exists);
+}
