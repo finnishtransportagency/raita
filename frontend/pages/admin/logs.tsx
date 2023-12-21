@@ -81,10 +81,10 @@ const AdminLogs: RaitaNextPage = () => {
     );
   });
   const logGroupIds = Object.keys(groupedLogs);
-  // sort by full timestamp of first log message
+  // sort by full timestamp of first log message, newest first
   logGroupIds.sort((a, b) =>
-    groupedLogs[a][0].log_timestamp.localeCompare(
-      groupedLogs[b][0].log_timestamp,
+    groupedLogs[b][0].log_timestamp.localeCompare(
+      groupedLogs[a][0].log_timestamp,
     ),
   );
   return (
@@ -110,9 +110,9 @@ const AdminLogs: RaitaNextPage = () => {
             <Accordion allowMultipleExpanded allowZeroExpanded>
               {logGroupIds.map(id => {
                 const logRows = groupedLogs[id];
-                const date = format(
+                const headerDateTime = format(
                   new Date(logRows[0].log_timestamp),
-                  'dd.MM.yyyy',
+                  'dd.MM.yyyy HH:mm',
                 );
                 const containsErrors = logRows.find(
                   row => row.log_level === 'error',
@@ -164,7 +164,9 @@ const AdminLogs: RaitaNextPage = () => {
                           className={`${clsx(css.downArrow)} mx-3`}
                           icon={faChevronDown}
                         />
-                        {`${date} ${t(titleKey)}: ${logRows[0].invocation_id}`}
+                        {`${headerDateTime} ${t(titleKey)}: ${
+                          logRows[0].invocation_id
+                        }`}
                         {containsErrors && (
                           <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
                             {t('admin:log_contains_errors')}

@@ -62,6 +62,13 @@ const handleApiKeyRequest = async (
   if (ssmApiKey !== requestApiKey) {
     throw new RaitaLambdaError('Forbidden', 403);
   }
+  if (isDevelopmentPreMainStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
+    // grant all roles to api key requests in premain env for development
+    return {
+      uid: RAITA_APIKEY_USER_UID,
+      roles: [STATIC_ROLES.read, STATIC_ROLES.extended, STATIC_ROLES.admin],
+    };
+  }
   return {
     uid: RAITA_APIKEY_USER_UID,
     roles: [STATIC_ROLES.read],
