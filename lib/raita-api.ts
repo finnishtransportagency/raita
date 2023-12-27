@@ -86,7 +86,7 @@ export class RaitaApiStack extends NestedStack {
     );
     // Create a bucket to hold the data of user made
     // collections as a zip. Set lifecycle policy to delete
-    // the objects in 30 days
+    // the objects in 7 days
     const dataCollectionBucket = createRaitaBucket({
       scope: this,
       name: 'data-collection',
@@ -94,7 +94,7 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
     dataCollectionBucket.addLifecycleRule({
-      expiration: cdk.Duration.days(30),
+      expiration: cdk.Duration.days(7),
     });
 
     // ZipProcesser needs rights to two buckets so it gets its
