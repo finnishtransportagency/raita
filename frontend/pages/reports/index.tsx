@@ -18,7 +18,7 @@ import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
-import { Button, TextInput, Modal } from 'components';
+import { Button, TextInput, Modal, CopyToClipboard } from 'components';
 import { DateRange } from 'components';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
@@ -35,7 +35,8 @@ import { ZipDownload } from 'components/zip-download';
 
 import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
 import { format as formatDate } from 'date-fns/fp';
-import { RaitaRole } from 'shared/user';
+import { RaitaRole, useUser } from 'shared/user';
+import { Tooltip } from 'react-tooltip';
 
 //
 
@@ -72,6 +73,8 @@ const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
   const meta = useMetadataQuery();
   const router = useRouter();
+
+  const user = useUser();
 
   const isDebug = !!(router.query['debug'] === '1');
 
@@ -268,6 +271,9 @@ const ReportsIndex: RaitaNextPage = () => {
   } else {
     console.warn('Latest inspection date missing');
   }
+
+  const showFullFilePath =
+    user.user && user.user.roles.includes(RaitaRole.Admin);
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -504,6 +510,25 @@ const ReportsIndex: RaitaNextPage = () => {
                             <header>{doc.file_name}</header>
 
                             <div className="text-xs">
+                              {showFullFilePath && (
+                                <dl className="grid grid-cols-12 gap-x-2 mb-2">
+                                  <dt className="col-span-2">
+                                    {t('common:file_key_label')}
+                                    <CopyToClipboard
+                                      tooltipId={doc.key}
+                                      textToCopy={doc.key}
+                                    />
+                                  </dt>
+                                  <dd
+                                    className="col-span-10 truncate"
+                                    data-tooltip-id={`${ix}-key`}
+                                    data-tooltip-content={doc.key}
+                                  >
+                                    {doc.key}
+                                    <Tooltip id={`${ix}-key`} />
+                                  </dd>
+                                </dl>
+                              )}
                               <dl className="grid grid-cols-12 gap-x-2 gap-y-1">
                                 {Object.entries(doc.metadata).map(
                                   ([k, v], mi) => (

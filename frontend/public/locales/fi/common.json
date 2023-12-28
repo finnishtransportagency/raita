@@ -70,5 +70,8 @@
   "user_manual": "Käyttöohjeet",
   "error_loading": "Virhe tietojen lataamisessa",
   "next": "Seuraava",
-  "cancel": "Peruuta"
+  "cancel": "Peruuta",
+  "copy_to_clipboard": "Kopioi leikepöydälle",
+  "copied": "Kopioitu",
+  "file_key_label": "Tiedostopolku"
 }

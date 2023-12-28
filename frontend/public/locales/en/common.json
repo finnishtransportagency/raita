@@ -67,5 +67,8 @@
   "user_manual": "User manual",
   "error_loading": "Error loading data",
   "next": "Next",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "copy_to_clipboard": "Copy to clipboard",
+  "copied": "Copied",
+  "file_key_label": "File path"
 }

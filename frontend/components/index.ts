@@ -6,3 +6,4 @@ export { default as Pager } from './pager';
 export { default as Modal } from './modal';
 export { default as Header } from './header';
 export { default as Navigation } from './navigation';
+export { default as CopyToClipboard } from './copy_to_clipboard';

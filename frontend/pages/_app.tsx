@@ -6,6 +6,7 @@ import { RaitaAppProps } from 'shared/types';
 import nextI18nConfig from '../next-i18next.config';
 import 'normalize.css';
 import '../styles/globals.css';
+import 'react-tooltip/dist/react-tooltip.css';
 import { Header } from 'components';
 import Footer from 'components/footer';
 import { useUser } from 'shared/user';
