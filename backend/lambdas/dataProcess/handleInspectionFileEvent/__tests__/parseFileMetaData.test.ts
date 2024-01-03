@@ -2,6 +2,9 @@ import { IExtractionSpec } from '../../../../types';
 import { KeyData } from '../../../utils';
 import { parseFileMetadata } from '../parseFileMetadata';
 
+const ISODateRegexp =
+  /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z/;
+
 jest.mock('../../../../utils/logger', () => {
   return {
     log: {
@@ -147,6 +150,7 @@ describe('parseFileMetadata', () => {
         contentOnly1: 'first value',
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
@@ -178,6 +182,7 @@ describe('parseFileMetadata', () => {
         overlapping: 'FROMPATH',
         pathOnly1: 'test',
         pathOnly2: 'path',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
@@ -210,6 +215,7 @@ describe('parseFileMetadata', () => {
         nameOnly1: 'TEST',
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
@@ -246,6 +252,7 @@ describe('parseFileMetadata', () => {
         contentOnly1: 'first value',
         contentOnly2: 123456,
         overlapping: 'FROMCONTENT',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
@@ -280,6 +287,7 @@ describe('parseFileMetadata', () => {
         contentOnly1: 'first value',
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
@@ -314,6 +322,7 @@ describe('parseFileMetadata', () => {
         nameOnly1: 'TEST',
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
       },
     });
   });
