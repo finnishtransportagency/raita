@@ -26,6 +26,7 @@
   "label_zip_reception__year": "ZIP vastaanottovuosi",
   "label_zip_reception__date": "ZIP vastaanotto pvm",
   "label_campaign": "Kampanja",
+  "label_parsed_at_datetime": "Tuontiaika RAITA:an",
   "AMS": "Kulkudynamiikan mittaus",
   "TG": "Raiteiden ja vaihteiden geometrian mittaus",
   "TGMS": "Raiteiden ja vaihteiden geometrian mittaus",

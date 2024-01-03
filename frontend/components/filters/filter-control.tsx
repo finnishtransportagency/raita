@@ -25,21 +25,47 @@ const FilterControl = (props: Props) => {
         </label>
       );
     case 'date':
+      // date only makes sense as range because it is stored as exact timestamp
       return (
-        <input
-          className={clsx(css.root, 'input', 'input--date', 'w-full')}
-          type="date"
-          defaultValue={props.entry.value as string}
-          onChange={e =>
-            props.onUpdate(
-              props.index,
-              props.entry.field,
-              new Date(e.target.value),
-              'eq',
-              'match',
-            )
-          }
-        />
+        <div className="grid grid-cols-3 gap-2 w-full">
+          <select
+            aria-label={t('common:rel_type')}
+            className={clsx(css.root, 'input')}
+            value={props.entry.rel || 'gte'}
+            onChange={e => {
+              props.onUpdate(
+                props.index,
+                props.entry.field,
+                props.entry.value,
+                e.target.value,
+                'range',
+              );
+            }}
+          >
+            <option value="gte">{t('common:relation_gte')}</option>
+            <option value="lt">{t('common:relation_lt')}</option>
+          </select>
+          <input
+            className={clsx(
+              css.root,
+              'input',
+              'input--date',
+              'flex-grow',
+              'col-span-2',
+            )}
+            type="date"
+            defaultValue={props.entry.value as string}
+            onChange={e =>
+              props.onUpdate(
+                props.index,
+                props.entry.field,
+                new Date(e.target.value),
+                props.entry.rel || 'gte',
+                'range',
+              )
+            }
+          />
+        </div>
       );
     case 'long':
     case 'float':
