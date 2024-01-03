@@ -6,6 +6,7 @@ import { RaitaAppProps } from 'shared/types';
 import nextI18nConfig from '../next-i18next.config';
 import 'normalize.css';
 import '../styles/globals.css';
+import 'react-tooltip/dist/react-tooltip.css';
 import { Header } from 'components';
 import Footer from 'components/footer';
 import { useUser } from 'shared/user';
@@ -15,7 +16,7 @@ import LoadingOverlay from 'components/loading-overlay';
 
 const client = new QueryClient();
 
-function MyApp({ Component, pageProps }: RaitaAppProps) {
+function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const { t } = useTranslation(['common']);
   const user = useUser();
 
@@ -37,15 +38,19 @@ function MyApp({ Component, pageProps }: RaitaAppProps) {
   );
 
   return (
-    <QueryClientProvider {...{ client }}>
-      <div className="min-h-screen flex flex-col">
-        <Header pages={pages} />
-        <main className="flex-1">{pageContent}</main>
-        <Footer />
-      </div>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <div className="min-h-screen flex flex-col">
+      <Header pages={pages} />
+      <main className="flex-1">{pageContent}</main>
+      <Footer />
+    </div>
   );
 }
 
-export default appWithTranslation(MyApp, nextI18nConfig);
+const RaitaAppWithQuery = (props: RaitaAppProps) => (
+  <QueryClientProvider {...{ client }}>
+    <RaitaApp {...props} />
+    <ReactQueryDevtools initialIsOpen={false} />
+  </QueryClientProvider>
+);
+
+export default appWithTranslation(RaitaAppWithQuery, nextI18nConfig);

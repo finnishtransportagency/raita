@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getUser } from './rest';
+import { useQuery } from '@tanstack/react-query';
 
 export enum RaitaRole {
   Read = 'Raita_luku',
@@ -11,19 +12,12 @@ export type User = {
   roles: RaitaRole[];
 };
 export function useUser(): { loading: boolean; user: User | null } {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    getUser().then(response => {
-      if (response.roles && response.roles.length) {
-        setUser({ roles: response.roles as RaitaRole[] });
-        setLoading(false);
-      } else {
-        // error should be handled by the caller
-        setLoading(false);
-        setUser(null);
-      }
-    });
-  }, []);
-  return { loading, user };
+  const query = useQuery({
+    queryKey: ['user'],
+    queryFn: getUser,
+    // avoid multiple requests on single page load
+    staleTime: 30 * 1000,
+  });
+
+  return { loading: query.isLoading, user: (query.data as User) ?? null };
 }
