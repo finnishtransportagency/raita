@@ -27,13 +27,14 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
           <title>{`${t('raita_title')} - ${t(pageTitleKey)}`}</title>
         </Head>
         <div className="container mx-auto px-16 grid grid-cols-3">
-          <div className="my-auto">
+          <div className="my-auto flex">
             <h1 className="flex font-semibold">
               <span className="text-2xl mr-1">{t('raita_title')}</span>
               <span className="text-l my-auto">{` – ${t(
                 'raita_subtitle',
               )}`}</span>
             </h1>
+            <Instructions className="ml-6 my-auto" />
           </div>
           <div>
             <Image
@@ -46,7 +47,6 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
           </div>
           <div className="flex flex-row justify-end">
             <LatestInspectionDate className="my-auto mr-4" />
-            <Instructions className="my-auto" />
           </div>
         </div>
       </header>

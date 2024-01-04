@@ -3,7 +3,9 @@
 }
 
 .markdown-content h1 {
-  @apply text-3xl mb-4 pb-2;
+  @apply text-3xl mb-4 pb-2 border-primary border-b-2;
+  min-width: 33.333%;
+  max-width: max-content;
 }
 
 .markdown-content h2 {

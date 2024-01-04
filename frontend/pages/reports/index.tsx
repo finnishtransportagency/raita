@@ -479,8 +479,8 @@ const ReportsIndex: RaitaNextPage = () => {
 
                             <div className="text-xs">
                               {showFullFilePath && (
-                                <dl className="grid grid-cols-12 gap-x-2 mb-2">
-                                  <dt className="col-span-2">
+                                <dl className={clsx(css.keyMetadataContainer)}>
+                                  <dt>
                                     {t('common:file_key_label')}
                                     <CopyToClipboard
                                       tooltipId={doc.key}
@@ -488,7 +488,7 @@ const ReportsIndex: RaitaNextPage = () => {
                                     />
                                   </dt>
                                   <dd
-                                    className="col-span-10 truncate"
+                                    className="truncate"
                                     data-tooltip-id={`${ix}-key`}
                                     data-tooltip-content={doc.key}
                                   >
@@ -499,18 +499,20 @@ const ReportsIndex: RaitaNextPage = () => {
                               )}
                               <dl className={clsx(css.metadataGrid)}>
                                 {Object.entries(doc.metadata).map(
-                                  ([k, v], mi) => (
-                                    <Fragment key={mi}>
-                                      <dt
-                                        className="truncate"
-                                        title={t(`metadata:label_${k}`)}
-                                      >
+                                  ([k, v], index) => (
+                                    <Fragment key={index}>
+                                      <dt className="truncate">
                                         {t(`metadata:label_${k}`)}
                                       </dt>
-                                      <dd
-                                        title={v}
-                                        className="truncate"
-                                      >{`${v}`}</dd>
+                                      <dd className="truncate">
+                                        <span
+                                          data-tooltip-id={`${doc.key}_val_${k}`}
+                                          data-tooltip-content={v}
+                                        >
+                                          {`${v}`}
+                                        </span>
+                                      </dd>
+                                      <Tooltip id={`${doc.key}_val_${k}`} />
                                     </Fragment>
                                   ),
                                 )}
@@ -525,7 +527,17 @@ const ReportsIndex: RaitaNextPage = () => {
                                     <dd
                                       className="truncate"
                                       title={`${sizeformatter(doc.size)}`}
-                                    >{`${sizeformatter(doc.size)}`}</dd>
+                                    >
+                                      <span
+                                        data-tooltip-id={`${doc.key}_val_size`}
+                                        data-tooltip-content={`${sizeformatter(
+                                          doc.size,
+                                        )}`}
+                                      >
+                                        {`${sizeformatter(doc.size)}`}
+                                      </span>
+                                      <Tooltip id={`${doc.key}_val_size`} />
+                                    </dd>
                                   </Fragment>
                                 )}
                               </dl>

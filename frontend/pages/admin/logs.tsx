@@ -89,7 +89,9 @@ const AdminLogs: RaitaNextPage = () => {
   );
   return (
     <div className="container mx-auto px-16 py-6">
-      <h1 className="text-3xl mb-4 pb-2 w-4/12">{t('admin:log_title')}</h1>
+      <h1 className="text-3xl mb-4 pb-2 w-4/12 border-primary border-b-2">
+        {t('admin:log_title')}
+      </h1>
 
       <div className="w-4/12">
         <p className="mb-2">{t('admin:log_search_description')}</p>
