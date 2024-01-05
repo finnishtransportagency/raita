@@ -19,6 +19,7 @@ import {
   SSM_DMZ_API_DOMAIN_NAME,
   SFTP_POLICY_ACCOUNT_ID,
   SFTP_POLICY_USER_ID,
+  SFTP_RAITA_DEVELOPER_POLICY_USER_ID,
 } from '../constants';
 import { Construct } from 'constructs';
 
@@ -128,7 +129,13 @@ export const getRaitaStackConfig = (
   cloudfrontDomainName: getSSMParameter(scope, SSM_CLOUDFRONT_DOMAIN_NAME),
   dmzApiEndpoint: getSSMParameter(scope, SSM_DMZ_API_DOMAIN_NAME),
   sftpPolicyAccountId: getSSMParameter(scope, SFTP_POLICY_ACCOUNT_ID),
+  // sftp user for data reception
   sftpPolicyUserId: getSSMParameter(scope, SFTP_POLICY_USER_ID),
+  // RAITA developer sftp user for testing
+  sftpRaitaDeveloperPolicyUserId: getSSMParameter(
+    scope,
+    SFTP_RAITA_DEVELOPER_POLICY_USER_ID,
+  ),
   soaPolicyAccountId: getSSMParameter(scope, SOA_POLICY_ACCOUNT_ID),
   vaylaPolicyUserId: getSSMParameter(scope, VAYLA_POLICY_USER_ID),
   loramPolicyUserId: getSSMParameter(scope, LORAM_POLICY_USER_ID),

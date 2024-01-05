@@ -24,6 +24,7 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
+  readonly sftpRaitaDeveloperPolicyUserId: string;
   readonly soaPolicyAccountId: string;
   readonly vaylaPolicyUserId: string;
   readonly loramPolicyUserId: string;
@@ -47,6 +48,7 @@ export class ApplicationStack extends NestedStack {
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
+      sftpRaitaDeveloperPolicyUserId,
       soaPolicyAccountId,
       vaylaPolicyUserId,
       loramPolicyUserId,
@@ -72,6 +74,7 @@ export class ApplicationStack extends NestedStack {
       parserConfigurationFile: parserConfigurationFile,
       sftpPolicyAccountId: sftpPolicyAccountId,
       sftpPolicyUserId: sftpPolicyUserId,
+      sftpRaitaDeveloperPolicyUserId: sftpRaitaDeveloperPolicyUserId,
       soaPolicyAccountId: soaPolicyAccountId,
       vaylaPolicyUserId: vaylaPolicyUserId,
       loramPolicyUserId: loramPolicyUserId,
