@@ -42,6 +42,7 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
+  readonly sftpRaitaDeveloperPolicyUserId: string;
   readonly soaPolicyAccountId: string;
   readonly vaylaPolicyUserId: string;
   readonly loramPolicyUserId: string;
@@ -63,6 +64,7 @@ export class DataProcessStack extends NestedStack {
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
+      sftpRaitaDeveloperPolicyUserId,
       soaPolicyAccountId,
       vaylaPolicyUserId,
       loramPolicyUserId,
@@ -102,45 +104,52 @@ export class DataProcessStack extends NestedStack {
       destinationBucket: configurationBucket,
     });
 
-    // Grant sftpUser access to data reception bucket
+    const receptionBucketResources = [
+      dataReceptionBucket.bucketArn,
+      `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.MeeriHotfix2023}/*`, // TODO: remove when not needed
+    ];
+    const fullAccessBucketActions = [
+      's3:GetObject',
+      's3:GetObjectVersion',
+      's3:GetObjectAcl',
+      's3:PutObject',
+      's3:PutObjectAcl',
+      's3:ListBucket',
+      's3:GetBucketLocation',
+      's3:DeleteObject',
+    ];
+    const readAccessBucketActions = [
+      's3:ListBucket',
+      's3:GetBucketLocation',
+      's3:GetObject',
+      's3:GetObjectVersion',
+      's3:GetObjectAcl',
+    ];
+    // Grant sftpUser full access to data reception bucket
     const sftpReceivePolicy = this.createBucketPolicy({
       policyAccountId: sftpPolicyAccountId,
       policyUserId: sftpPolicyUserId,
-      resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      ],
-      actions: [
-        's3:GetObject',
-        's3:GetObjectVersion',
-        's3:GetObjectAcl',
-        's3:PutObject',
-        's3:PutObjectAcl',
-        's3:ListBucket',
-        's3:GetBucketLocation',
-        's3:DeleteObject',
-      ],
+      resources: receptionBucketResources,
+      actions: fullAccessBucketActions,
     });
     dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+
+    // Grant RAITA developer SFTP user full access to the bucket
+    const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
+      policyAccountId: sftpPolicyAccountId,
+      policyUserId: sftpRaitaDeveloperPolicyUserId,
+      resources: receptionBucketResources,
+      actions: fullAccessBucketActions,
+    });
+    dataReceptionBucket.addToResourcePolicy(sftpRaitaDeveloperUserBucketPolicy);
 
     // Grant SOA-offices väylä role full access to data reception bucket
     const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
       policyAccountId: soaPolicyAccountId,
       policyUserId: vaylaPolicyUserId,
-      resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      ],
-      actions: [
-        's3:GetObject',
-        's3:GetObjectVersion',
-        's3:GetObjectAcl',
-        's3:PutObject',
-        's3:PutObjectAcl',
-        's3:ListBucket',
-        's3:GetBucketLocation',
-        's3:DeleteObject',
-      ],
+      resources: receptionBucketResources,
+      actions: fullAccessBucketActions,
     });
     dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
@@ -148,17 +157,8 @@ export class DataProcessStack extends NestedStack {
     const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
       policyAccountId: soaPolicyAccountId,
       policyUserId: loramPolicyUserId,
-      resources: [
-        dataReceptionBucket.bucketArn,
-        `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      ],
-      actions: [
-        's3:ListBucket',
-        's3:GetBucketLocation',
-        's3:GetObject',
-        's3:GetObjectVersion',
-        's3:GetObjectAcl',
-      ],
+      resources: receptionBucketResources,
+      actions: readAccessBucketActions,
     });
     dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
