@@ -9,7 +9,6 @@ ALTER TABLE mittaus ADD COLUMN rata_kilometri integer;
 ALTER TABLE mittaus ADD COLUMN rata_metrit DECIMAL;
 ALTER TABLE mittaus DROP COLUMN rataosoite;
 ALTER TABLE mittaus RENAME COLUMN ss_count to sscount;
-ALTER TABLE mittaus RENAME COLUMN ajonopeus to sscount;
 
 ALTER TABLE raportti ADD COLUMN status character varying(20);
 ALTER TABLE raportti ADD COLUMN error character varying(1000);
