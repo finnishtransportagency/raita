@@ -33,8 +33,8 @@ async function updateRaporttiStatus(
 ) {
   let { schema, sql } = await getDBConnection();
   let errorSubstring = error;
-  if(error){
-    errorSubstring = error.substring(0,1000);
+  if (error) {
+    errorSubstring = error.substring(0, 1000);
   }
   try {
     const a = await sql`UPDATE ${sql(
@@ -149,7 +149,7 @@ async function parseCsvAndWriteToDb(
     }
 
     throw Error(
-      'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString+ errorsOutString+ errorsOutString,
+      'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString,
     );
   }
 }
