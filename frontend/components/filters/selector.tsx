@@ -51,24 +51,24 @@ export default function Selector(props: Props) {
     rel?: any,
     type?: EntryType,
   ) => {
-    setState(s => {
+    setState(currentState => {
       const queryType = !!rel && rel !== 'eq' ? type : 'match';
 
-      /**
-       * This mess right here is for creating an object with keys not being in the object if
-       * they aren't defined.
-       */
-      const _field = [
-        { field },
-        value ? { value } : {},
-        rel ? { rel } : {},
-        { type: queryType },
-      ].reduce((o, a) => Object.assign({}, o, a), {});
-
+      const fieldData: any = { field, type: queryType };
+      if (value) {
+        fieldData.value = value;
+      }
+      if (rel) {
+        fieldData.rel = rel;
+      }
       return R.assoc(
         'filters',
-        R.adjust<Entry>(index, x => Object.assign({}, x, _field), s.filters),
-        s,
+        R.adjust<Entry>(
+          index,
+          x => Object.assign({}, x, fieldData),
+          currentState.filters,
+        ),
+        currentState,
       );
     });
   };

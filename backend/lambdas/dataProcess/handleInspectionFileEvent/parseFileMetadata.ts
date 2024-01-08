@@ -69,14 +69,25 @@ export async function parseFileMetadata({
       log.error(error);
     }
   }
+  const generatedMetadata = generateMetadata();
   const hash = calculateHash(fileBody ?? '');
   return {
     metadata: {
       ...pathData,
       ...fileContentData,
       ...fileNameData,
+      ...generatedMetadata,
     },
     hash,
     errors: errorsFound,
+  };
+}
+
+/**
+ * For any metadata that is generated rather than parsed from file
+ */
+function generateMetadata() {
+  return {
+    parsed_at_datetime: new Date().toISOString(),
   };
 }
