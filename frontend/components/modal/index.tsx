@@ -1,14 +1,18 @@
 import ReactModal from 'react-modal';
 import { clsx } from 'clsx';
-import CloseIcon from 'components/icons/CloseIcon';
+import { useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { useTranslation } from 'react-i18next';
 
 import css from './modal.module.css';
-import { useEffect } from 'react';
 
 /**
  * Wrapper around ReactModal component with some default props and header
  */
 const Modal = (props: ReactModal.Props & { headerText?: string }) => {
+  const { t } = useTranslation(['common']);
+
   useEffect(() => {
     const root = document.getElementById('__next');
     if (root) {
@@ -29,7 +33,11 @@ const Modal = (props: ReactModal.Props & { headerText?: string }) => {
           </h2>
         )}
         <button onClick={props.onRequestClose}>
-          <CloseIcon />
+          <FontAwesomeIcon
+            className="h-5 w-5"
+            icon={faXmark}
+            title={t('common:close') || ''}
+          />
         </button>
       </div>
       {props.children}

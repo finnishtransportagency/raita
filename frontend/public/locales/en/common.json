@@ -12,7 +12,8 @@
     "403": "Forbidden",
     "500": "Server error"
   },
-  "raita_title": "Raita",
+  "raita_title": "RAITA",
+  "raita_subtitle": "Mechanical track inspection",
   "reports_head_title": "Reports",
   "reports_heading": "Reports",
   "reports_search": "Search reports",
@@ -70,5 +71,7 @@
   "cancel": "Cancel",
   "copy_to_clipboard": "Copy to clipboard",
   "copied": "Copied",
-  "file_key_label": "File path"
+  "file_key_label": "File path",
+  "start_date": "Start date",
+  "end_date": "End date"
 }
