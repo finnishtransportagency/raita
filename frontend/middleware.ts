@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
     let newUrl = `${devApiUrl}${apiPart}`;
     const queryParams = request.nextUrl.searchParams;
     if (queryParams && queryParams.size) {
-      newUrl = `${newUrl}?${queryParams.toString()}`;
+      newUrl = `${newUrl}?${decodeURIComponent(queryParams.toString())}`;
     }
     if (request.method === 'GET') {
       return await fetch(newUrl, {
