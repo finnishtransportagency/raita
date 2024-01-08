@@ -6,14 +6,14 @@ import {
 import { ParseValueResult } from '../../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
-import { fileSuffixesToIncudeInMetadataParsing } from '../../../../constants';
+import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { RaitaParseError } from '../../utils';
 import { log } from '../../../utils/logger';
 /**
  * Resolves whether content data parsing is needed for the file
  */
 export const shouldParseContent = (suffix: string) =>
-  suffix === fileSuffixesToIncudeInMetadataParsing.TXT_FILE;
+  suffix === fileSuffixesToIncludeInMetadataParsing.TXT_FILE;
 
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
