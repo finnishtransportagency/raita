@@ -31,3 +31,15 @@
   @apply px-2 py-1;
   @apply checked:bg-primary checked:text-white;
 }
+
+.keyMetadataContainer {
+  @apply grid grid-cols-2 gap-x-2 mb-2;
+  grid-template-columns: minmax(127px, min-content) 1fr;
+}
+
+.metadataGrid {
+  @apply grid grid-cols-4 gap-x-2 gap-y-1;
+  grid-template-columns:
+    minmax(127px, min-content) 1fr minmax(127px, min-content)
+    1fr;
+}

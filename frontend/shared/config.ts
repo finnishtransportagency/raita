@@ -10,6 +10,7 @@ export const baseURL = process.env.NEXT_PUBLIC_RAITA_BASEURL
   ? `${process.env.NEXT_PUBLIC_RAITA_BASEURL}/api`
   : process.env.API_BASEURL || '/api';
 
+export const assetURL = process.env.NEXT_PUBLIC_RAITA_BASEURL || '';
 /**
  * Overwrite api requests for dev environment
  */

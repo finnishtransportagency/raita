@@ -10,7 +10,7 @@ export function MultiChoice(props: Props) {
   const ref = useRef<HTMLSelectElement>(null);
   const [searchValue, setSearchValue] = useState('');
 
-  const { items, onChange, resetFilters } = props;
+  const { items, onChange, resetFilters, label, inputId } = props;
 
   useEffect(() => {
     if (ref.current && resetFilters) {
@@ -20,16 +20,20 @@ export function MultiChoice(props: Props) {
   }, [resetFilters]);
 
   return (
-    <div className={clsx(css.root)}>
+    <div>
+      <label className="block text-lg mb-2" htmlFor={`${inputId}-multi-choice`}>
+        {label}
+      </label>
       <input
         type="text"
         className={clsx(css.search)}
         value={searchValue}
         onChange={e => setSearchValue(e.target.value.toLocaleLowerCase())}
         placeholder={t('common:filter_options') || ''}
+        aria-label={t('common:filter_options') || ''}
       />
       <select
-        id="multi-choice"
+        id={`${inputId}-multi-choice`}
         multiple={true}
         ref={ref}
         onChange={onChange}
@@ -62,6 +66,8 @@ export default MultiChoice;
 export type Props = {
   items: Item[];
   resetFilters: boolean;
+  label: string;
+  inputId: string;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
 };
 
