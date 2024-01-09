@@ -183,10 +183,11 @@ export async function parseCSVFile(
     null,
     null,
   );
-
+  log.info('reportId: ' + reportId);
   try {
     if (file.fileBody) {
       const fileBody: string = file.fileBody;
+      log.info('fileBody: ' + fileBody.substring(0,100));
       const runningDate = readRunningDate(file.fileBody);
       log.info('runningDate: ' + runningDate);
       switch (fileNamePrefix) {
