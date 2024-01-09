@@ -17,6 +17,8 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
+import { parseCSVFile } from './csvDataParser/csvDataParser';
+import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -93,6 +95,19 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           );
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
+          //call here csv parsing  parseCsvData(); ?
+          if (
+            keyData.fileSuffix ===
+            fileSuffixesToIncludeInMetadataParsing.CSV_FILE
+          ) {
+            log.info('csv parse file: ' + keyData.fileBaseName);
+            const result = await parseCSVFile(
+              keyData.fileBaseName,
+              file,
+              parseResults.metadata,
+            );
+            log.info('csv parsing result: ' + result);
+          }
         }
         return {
           // key is sent to be stored in url decoded format to db
