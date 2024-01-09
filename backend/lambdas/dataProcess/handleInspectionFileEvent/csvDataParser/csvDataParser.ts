@@ -40,10 +40,10 @@ async function updateRaporttiStatus(
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`;
-    console.log(a);
+    log.info(a);
   } catch (e) {
-    console.log('err');
-    console.log(e);
+    log.info('err');
+    log.info(e);
     throw e;
   }
 }
@@ -93,17 +93,17 @@ export async function insertRaporttiData(
     const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
       data,
     )} returning id`;
-    console.log(id);
+    log.info(id);
     return id.id;
   } catch (e) {
-    console.log('err');
-    console.log(e);
+    log.info('err');
+    log.info(e);
     throw e;
   }
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  console.log('write to db');
+  log.info('write to db');
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
 
   return result;
@@ -141,7 +141,7 @@ async function parseCsvAndWriteToDb(
     const rowErrors = errors.rows;
     if (rowErrors) {
       const rowKeys = Object.keys(rowErrors);
-      console.log(rowKeys);
+      log.info(rowKeys);
       rowKeys.forEach(key => {
         errorsOutString += key + ':';
         errorsOutString += JSON.stringify(rowErrors[key].issues);
@@ -268,9 +268,9 @@ export async function parseCSVFile(
           log.warn('Unknown csv file prefix: ' + fileNamePrefix);
           throw new Error('Unknown csv file prefix:');
       }
-      console.log('HEllo suscses');
+      log.info('HEllo suscses');
       await updateRaporttiStatus(reportId, 'SUCCESS', null);
-      console.log('HEllo suscses done');
+      log.info('HEllo suscses done');
       return 'success';
     } else {
       throw new Error('CVS file has no content');
