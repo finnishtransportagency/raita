@@ -159,9 +159,13 @@ export async function parseCSVFile(
   file: IFileResult,
   metadata: ParseValueResult,
 ) {
+  log.info('fileBaseName: ' + fileBaseName);
   const fileNameParts = fileBaseName.split('_');
+  log.info('fileNameParts: ' + fileNameParts);
   const fileNamePrefix = fileNameParts[0];
+  log.info('fileNamePrefix: ' + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
+  log.info('jarjestelmä: ' + jarjestelmä);
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
@@ -184,7 +188,7 @@ export async function parseCSVFile(
     if (file.fileBody) {
       const fileBody: string = file.fileBody;
       const runningDate = readRunningDate(file.fileBody);
-
+      log.info('runningDate: ' + runningDate);
       switch (fileNamePrefix) {
         case 'AMS':
           await parseCsvAndWriteToDb(
@@ -273,9 +277,11 @@ export async function parseCSVFile(
       log.info('HEllo suscses done');
       return 'success';
     } else {
+      log.warn('CVS file has no content');
       throw new Error('CVS file has no content');
     }
   } catch (e) {
+    log.warn('csv parsing error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
