@@ -111,6 +111,7 @@ async function writeCsvContentToDb(dbRows: any[], table: string) {
 
 async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
+  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0,600));
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
 }
