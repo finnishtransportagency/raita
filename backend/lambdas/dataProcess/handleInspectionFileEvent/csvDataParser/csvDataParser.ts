@@ -187,7 +187,8 @@ export async function parseCSVFile(
   log.info('reportId: ' + reportId);
   try {
     if (file.fileBody) {
-      const fileBody: string = file.fileBody;
+      //replace semicolons with commas; both styles in incoming csv files
+      const fileBody: string = file.fileBody.replace(/;/g, ',');
       log.info('fileBody: ' + fileBody.substring(0,100));
       const runningDate = readRunningDate(file.fileBody);
       log.info('runningDate: ' + runningDate);
