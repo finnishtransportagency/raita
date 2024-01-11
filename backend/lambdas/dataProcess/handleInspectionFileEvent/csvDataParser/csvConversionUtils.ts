@@ -1,6 +1,13 @@
 // tidy up csv header line so headers are correct form for validating
 import { log } from '../../../../utils/logger';
 
+function tidyUpDataLines(csvDataLines: string): string {
+  var tidyedLines= csvDataLines
+      .replace(/,NaN,/, ',,')
+  log.info("tidyedLines: " + tidyedLines);
+  return tidyedLines
+}
+
 function tidyUpHeaderLine(csvHeaderLine: string): string {
   var tidyedHeaderLine = csvHeaderLine
     //prefix second ajonopeus fields
@@ -70,5 +77,5 @@ export function tidyUpFileBody(csvFileBody: string) {
   log.info('csvHeaderLine: ' + csvHeaderLine);
   const csvDataLines = bodyWithoutFirstLIne.slice(secondNewLinePos);
 
-  return tidyUpHeaderLine(csvHeaderLine).concat(csvDataLines);
+  return tidyUpHeaderLine(csvHeaderLine).concat(tidyUpDataLines(csvDataLines));
 }
