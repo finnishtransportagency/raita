@@ -63,9 +63,10 @@ export function tidyUpFileBody(csvFileBody: string) {
   const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
 
   //trash first line; csv headears are on the second
-  const bodyWithoutFirstLIne = csvFileBody.slice(firstNewLinePos + 1);
+  const bodyWithoutFirstLIne = csvFileBody.slice(firstNewLinePos + 2);
   const secondNewLinePos = bodyWithoutFirstLIne.search(/\r\n|\r|\n/);
   const csvHeaderLine = bodyWithoutFirstLIne.slice(0, secondNewLinePos);
+  log.info('csvHeaderLine: ' + csvHeaderLine);
   const csvDataLines = bodyWithoutFirstLIne.slice(secondNewLinePos);
 
   return tidyUpHeaderLine(csvHeaderLine).concat(csvDataLines);
