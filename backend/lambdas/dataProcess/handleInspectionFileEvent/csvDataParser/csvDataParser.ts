@@ -40,10 +40,10 @@ async function updateRaporttiStatus(
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`;
-    console.log(a);
+    log.info(a);
   } catch (e) {
-    console.log('err');
-    console.log(e);
+    log.error('Error updating raportti status');
+    log.error(e);
     throw e;
   }
 }
@@ -93,17 +93,17 @@ export async function insertRaporttiData(
     const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
       data,
     )} returning id`;
-    console.log(id);
+    log.info(id);
     return id.id;
   } catch (e) {
-    console.log('err');
-    console.log(e);
+    log.error('Error inserting raportti data');
+    log.error(e);
     throw e;
   }
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  console.log('write to db');
+  log.info('write to db');
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
 
   return result;
@@ -111,6 +111,7 @@ async function writeCsvContentToDb(dbRows: any[], table: string) {
 
 async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
+  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0,600));
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
 }
@@ -141,7 +142,7 @@ async function parseCsvAndWriteToDb(
     const rowErrors = errors.rows;
     if (rowErrors) {
       const rowKeys = Object.keys(rowErrors);
-      console.log(rowKeys);
+      log.info(rowKeys);
       rowKeys.forEach(key => {
         errorsOutString += key + ':';
         errorsOutString += JSON.stringify(rowErrors[key].issues);
@@ -159,9 +160,13 @@ export async function parseCSVFile(
   file: IFileResult,
   metadata: ParseValueResult,
 ) {
+  log.info('fileBaseName: ' + fileBaseName);
   const fileNameParts = fileBaseName.split('_');
+  log.info('fileNameParts: ' + fileNameParts);
   const fileNamePrefix = fileNameParts[0];
+  log.info('fileNamePrefix: ' + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
+  log.info('jarjestelmä: ' + jarjestelmä);
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
@@ -179,12 +184,14 @@ export async function parseCSVFile(
     null,
     null,
   );
-
+  log.info('reportId: ' + reportId);
   try {
     if (file.fileBody) {
-      const fileBody: string = file.fileBody;
+      //replace semicolons with commas; both styles in incoming csv files
+      const fileBody: string = file.fileBody.replace(/;/g, ',');
+      log.info('fileBody: ' + fileBody.substring(0,100));
       const runningDate = readRunningDate(file.fileBody);
-
+      log.info('runningDate: ' + runningDate);
       switch (fileNamePrefix) {
         case 'AMS':
           await parseCsvAndWriteToDb(
@@ -268,14 +275,16 @@ export async function parseCSVFile(
           log.warn('Unknown csv file prefix: ' + fileNamePrefix);
           throw new Error('Unknown csv file prefix:');
       }
-      console.log('HEllo suscses');
+      log.info('HEllo suscses');
       await updateRaporttiStatus(reportId, 'SUCCESS', null);
-      console.log('HEllo suscses done');
+      log.info('HEllo suscses done');
       return 'success';
     } else {
+      log.warn('CVS file has no content');
       throw new Error('CVS file has no content');
     }
   } catch (e) {
+    log.warn('csv parsing error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
