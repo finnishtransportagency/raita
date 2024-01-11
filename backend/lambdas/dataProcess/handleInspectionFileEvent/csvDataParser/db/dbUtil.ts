@@ -3,6 +3,7 @@ import { getEnvOrFail } from '../../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
+import {log} from "../../../../../utils/logger";
 
 let connection: postgres.Sql;
 //todo set false
@@ -28,6 +29,7 @@ async function populateGisPoints(
       postgres.Row[]['length'],
       keyof postgres.Row[][number]
     >,
+  schema: string,
   table: string,
   sql: postgres.Sql<{}>,
 ) {
@@ -43,7 +45,7 @@ async function populateGisPoints(
 
     //TODO is there nicer way to do this in the row insert?
     sqlString += 'update ';
-    sqlString += table;
+    sqlString += schema +'.'+table;
     sqlString += " set sijainti=st_geomfromtext('POINT(";
     sqlString += longitude;
     sqlString += ' ';
@@ -68,13 +70,13 @@ export async function writeRowsToDB(
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`;
-    await populateGisPoints(rows, table, sql);
+    await populateGisPoints(rows, schema, table, sql);
 
     return rows;
 
   } catch (e) {
-    console.log('err');
-    console.log(e);
+    log.error('Error inserting measurement data: ' + table + ' ' + e);
+    log.error(e);
     throw e;
   }
 }

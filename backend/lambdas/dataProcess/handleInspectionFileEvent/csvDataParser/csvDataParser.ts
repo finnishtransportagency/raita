@@ -42,8 +42,8 @@ async function updateRaporttiStatus(
     )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`;
     log.info(a);
   } catch (e) {
-    log.info('err');
-    log.info(e);
+    log.error('Error updating raportti status');
+    log.error(e);
     throw e;
   }
 }
@@ -96,8 +96,8 @@ export async function insertRaporttiData(
     log.info(id);
     return id.id;
   } catch (e) {
-    log.info('err');
-    log.info(e);
+    log.error('Error inserting raportti data');
+    log.error(e);
     throw e;
   }
 }
