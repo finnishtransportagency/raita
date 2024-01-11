@@ -41,7 +41,6 @@ async function populateGisPoints(
     const latitude = latitudeString.split('°')[0];
     const longitude = longitudeString.split('°')[0];
     const id: string = row.id;
-    console.log(latitude);
 
     //TODO is there nicer way to do this in the row insert?
     sqlString += 'update ';
@@ -55,9 +54,7 @@ async function populateGisPoints(
     sqlString += id;
     sqlString += ';';
   });
-  console.log(sqlString);
-  const a = await sql.unsafe(sqlString);
-  console.log(a);
+  await sql.unsafe(sqlString);
 }
 
 export async function writeRowsToDB(
