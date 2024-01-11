@@ -68,7 +68,8 @@ export function readRunningDate(csvFileBody: string) {
 }
 
 export function tidyUpFileBody(csvFileBody: string) {
-  const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
+ // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
+  const firstNewLinePos = csvFileBody.search(/\r\n/);
 
   //trash first line; csv headears are on the second
   const bodyWithoutFirstLIne = csvFileBody.slice(firstNewLinePos + 2);
