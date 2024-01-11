@@ -3,7 +3,7 @@ import { log } from '../../../../utils/logger';
 
 function tidyUpDataLines(csvDataLines: string): string {
   var tidyedLines= csvDataLines
-      .replace(/,NaN,/, ',,')
+      .replace(/,NaN,/g, ',,')
   log.info("tidyedLines: " + tidyedLines);
   return tidyedLines
 }
