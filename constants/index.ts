@@ -30,6 +30,7 @@ export type RaitaSourceSystem =
   (typeof raitaSourceSystems)[keyof typeof raitaSourceSystems];
 
 export const raitaSourceSystems = {
+  MeeriHotfix2023: 'Meeri_FIX2023', // TODO: remove when not used anymore
   Meeri: 'Meeri',
   Emma: 'Emma',
   Elli: 'Elli',
@@ -45,6 +46,8 @@ export const SSM_DMZ_API_DOMAIN_NAME = 'raita-dmz-api-domain-name';
 export const SFTP_POLICY_ACCOUNT_ID = 'raita-sftp-policy-account-id';
 export const SOA_POLICY_ACCOUNT_ID = 'raita-soa-policy-account-id';
 export const SFTP_POLICY_USER_ID = 'raita-sftp-policy-user-id';
+export const SFTP_RAITA_DEVELOPER_POLICY_USER_ID =
+  'raita-sftp-raita-developer-policy-user-id';
 export const VAYLA_POLICY_USER_ID = 'raita-vayla-policy-user-id';
 export const LORAM_POLICY_USER_ID = 'raita-loram-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
