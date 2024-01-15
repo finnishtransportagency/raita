@@ -246,8 +246,9 @@ const ReportsIndex: RaitaNextPage = () => {
 
   if (meta.isError) return <div>Error</div>;
 
-  const showFullFilePath =
+  const showCopyableZipPath =
     user.user && user.user.roles.includes(RaitaRole.Admin);
+  const zipFileNameIndex = cfg.zipFileNameIndex;
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -468,6 +469,10 @@ const ReportsIndex: RaitaNextPage = () => {
                   <ul className="space-y-2 divide-y-2">
                     {resultsData?.hits.map((it, ix) => {
                       const { source: doc } = it;
+                      const zipPath = doc.key
+                        .split('/')
+                        .slice(0, zipFileNameIndex)
+                        .join('/');
 
                       // Bail out if we have nothing
                       if (!doc) return null;
@@ -478,22 +483,22 @@ const ReportsIndex: RaitaNextPage = () => {
                             <header>{doc.file_name}</header>
 
                             <div className="text-xs">
-                              {showFullFilePath && (
+                              {showCopyableZipPath && (
                                 <dl className={clsx(css.keyMetadataContainer)}>
                                   <dt>
-                                    {t('common:file_key_label')}
+                                    {t('common:zip_path_label')}
                                     <CopyToClipboard
-                                      tooltipId={doc.key}
-                                      textToCopy={doc.key}
+                                      tooltipId={`${doc.key}-zip-label`}
+                                      textToCopy={zipPath}
                                     />
                                   </dt>
                                   <dd
                                     className="truncate"
-                                    data-tooltip-id={`${ix}-key`}
-                                    data-tooltip-content={doc.key}
+                                    data-tooltip-id={`${ix}-zip-name`}
+                                    data-tooltip-content={zipPath}
                                   >
-                                    {doc.key}
-                                    <Tooltip id={`${ix}-key`} />
+                                    {zipPath}
+                                    <Tooltip id={`${ix}-zip-name`} />
                                   </dd>
                                 </dl>
                               )}

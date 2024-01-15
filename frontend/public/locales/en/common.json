@@ -71,7 +71,7 @@
   "cancel": "Cancel",
   "copy_to_clipboard": "Copy to clipboard",
   "copied": "Copied",
-  "file_key_label": "File path",
+  "zip_path_label": "Zip file path",
   "start_date": "Start date",
   "end_date": "End date"
 }
