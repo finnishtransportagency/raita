@@ -20,3 +20,6 @@ export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 export const paging = {
   pageSize: 10,
 } as const;
+
+// index of zip file name in file key
+export const zipFileNameIndex = 5;

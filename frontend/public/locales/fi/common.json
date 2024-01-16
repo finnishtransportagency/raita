@@ -74,7 +74,7 @@
   "cancel": "Peruuta",
   "copy_to_clipboard": "Kopioi leikepöydälle",
   "copied": "Kopioitu",
-  "file_key_label": "Tiedostopolku",
+  "zip_path_label": "Zipin tiedostopolku",
   "start_date": "Aloituspäivä",
   "end_date": "Lopetuspäivä"
 }
