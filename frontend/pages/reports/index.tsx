@@ -262,7 +262,7 @@ const ReportsIndex: RaitaNextPage = () => {
           <InfoBanner
             bannerType={BannerType.WARNING}
             text={t('common:too_many_results')}
-            className="object-right w-3/6 ml-auto rounded"
+            className="object-right w-4/6 ml-auto rounded"
           />
         )}
 
