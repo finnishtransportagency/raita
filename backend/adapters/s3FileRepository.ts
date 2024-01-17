@@ -19,7 +19,6 @@ export class S3FileRepository implements IFileInterface {
       .getObject({
         Bucket: bucket,
         Key: key,
-        Range: 'bytes=0-10000',
       })
       .promise();
     const tagsPromise = this.#s3
