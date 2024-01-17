@@ -1,5 +1,6 @@
 // tidy up csv header line so headers are correct form for validating
 import { log } from '../../../../utils/logger';
+import {ZodObject} from "zod";
 
 function tidyUpDataLines(csvDataLines: string): string {
   var tidyedLines= csvDataLines
@@ -75,7 +76,7 @@ export function readRunningDate(csvFileBody: string) {
 }
 
 export function tidyUpFileBody(csvFileBody: string) {
- // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
+  // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstNewLinePos = csvFileBody.search(/\r\n/);
 
   //trash first line; csv headears are on the second
@@ -84,6 +85,17 @@ export function tidyUpFileBody(csvFileBody: string) {
   const csvHeaderLine = bodyWithoutFirstLIne.slice(0, secondNewLinePos);
   log.info('csvHeaderLine: ' + csvHeaderLine);
   const csvDataLines = bodyWithoutFirstLIne.slice(secondNewLinePos);
+  let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
+  let tidyDataLines = tidyUpDataLines(csvDataLines);
+  //TODO make more generic to any missing colmumn?
+  log.info("tidyHeaderLine.substring(0,6)" + tidyHeaderLine.substring(0,6));
+  if(tidyHeaderLine.substring(0,6)!="sscount"){
+    tidyHeaderLine = "sscount," + tidyHeaderLine;
+    log.info("tidyHeaderLine.substring(0,6)" + tidyHeaderLine.substring(0,15));
+    tidyDataLines.replace(/\n/,'\n,');
+    log.info("tidyDataLines.substring(0,1000)" + tidyDataLines.substring(0,1000));
+  }
 
-  return tidyUpHeaderLine(csvHeaderLine).concat(tidyUpDataLines(csvDataLines));
+  return tidyHeaderLine.concat(tidyDataLines);
+
 }
