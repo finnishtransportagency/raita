@@ -91,10 +91,10 @@ export function tidyUpFileBody(csvFileBody: string) {
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
   //TODO make more generic to any missing colmumn?
-  log.info('tidyHeaderLine.substring(0,6)' + tidyHeaderLine.substring(0, 6));
-  if (tidyHeaderLine.substring(0, 6) != 'sscount') {
-    tidyHeaderLine = 'sscount,' + tidyHeaderLine;
-    log.info('tidyHeaderLine.substring(0,6)' + tidyHeaderLine.substring(0, 15));
+  log.info('tidyHeaderLine.substring(0,6)' + tidyHeaderLine.substring(0, 10));
+  if (tidyHeaderLine.substring(0, 10) != '\"sscount\"') {
+    tidyHeaderLine = '\"sscount\",' + tidyHeaderLine;
+    log.info('tidyHeaderLine new' + tidyHeaderLine.substring(0, 15));
     tidyDataLines.replace(/\n/, '\n,');
     log.info(
       'tidyDataLines.substring(0,1000)' + tidyDataLines.substring(0, 1000),
