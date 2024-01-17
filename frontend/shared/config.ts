@@ -10,6 +10,7 @@ export const baseURL = process.env.NEXT_PUBLIC_RAITA_BASEURL
   ? `${process.env.NEXT_PUBLIC_RAITA_BASEURL}/api`
   : process.env.API_BASEURL || '/api';
 
+export const assetURL = process.env.NEXT_PUBLIC_RAITA_BASEURL || '';
 /**
  * Overwrite api requests for dev environment
  */
@@ -19,3 +20,6 @@ export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 export const paging = {
   pageSize: 10,
 } as const;
+
+// index of zip file name in file key
+export const zipFileNameIndex = 5;

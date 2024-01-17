@@ -35,9 +35,9 @@ export async function handleMetaRequest(
     return getRaitaSuccessResponse({
       fields,
       ...aggregations,
-      ...latestEntryData
+      ...latestEntryData,
     });
-  } catch (err: unknown) {
+  } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
   }

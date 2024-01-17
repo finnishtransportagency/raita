@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Exo 2';
+  src: url('../public/fonts/exo2/Exo2-VariableFont_wght.ttf')
+    format('opentype-variations');
+  font-weight: 125 950;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Exo 2';
+  src: url('../public/fonts/exo2/Exo2-Italic-VariableFont_wght.ttf')
+    format('opentype-variations');
+  font-weight: 125 950;
+  font-style: italic;
+}
+
 :root {
   --color-text-primary: #242222;
   --color-text-secondary: #333333;
@@ -41,13 +56,4 @@ a {
 .input--bool,
 .input--boolean {
   @apply border-blue-500;
-}
-
-.latestInspection {
-  text-align: right;
-}
-
-.userManualLink {
-  text-align: right;
-  text-decoration: underline;
 }

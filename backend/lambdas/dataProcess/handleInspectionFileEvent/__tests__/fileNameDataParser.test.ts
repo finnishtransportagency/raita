@@ -1,5 +1,5 @@
 import { IExtractionSpec, IExtractionSpecLabels } from '../../../../types';
-import { KeyData } from '../../../utils';
+import { KeyData, RaitaParseError } from '../../../utils';
 import {
   extractFileNameData,
   parseFileNameParts,
@@ -96,7 +96,7 @@ describe('validateGenericFileNameStructureOrFail', () => {
         extractionSpecLabels,
         fileNameParts,
       ),
-    ).toThrow();
+    ).toThrow(RaitaParseError);
   });
   test('fail: too few name segments', () => {
     const extractionSpecLabels: IExtractionSpecLabels = {
@@ -112,7 +112,7 @@ describe('validateGenericFileNameStructureOrFail', () => {
         extractionSpecLabels,
         fileNameParts,
       ),
-    ).toThrow();
+    ).toThrow(RaitaParseError);
   });
   test('fail: too few name segments with EMPTY', () => {
     const extractionSpecLabels: IExtractionSpecLabels = {
@@ -128,7 +128,7 @@ describe('validateGenericFileNameStructureOrFail', () => {
         extractionSpecLabels,
         fileNameParts,
       ),
-    ).toThrow();
+    ).toThrow(RaitaParseError);
   });
 });
 describe('extractFileNameData', () => {
@@ -329,12 +329,13 @@ describe('extractFileNameData', () => {
     const fileNameExceptions = {
       containsUnderscore: [{ name: 'value2', value: 'UNDERSCORE_VALUE' }],
     };
-    const result = extractFileNameData(
-      keyData,
-      testExtractionSpec as any,
-      fileNameExceptions,
-    );
-    expect(result).toEqual({});
+    expect(() =>
+      extractFileNameData(
+        keyData,
+        testExtractionSpec as any,
+        fileNameExceptions,
+      ),
+    ).toThrow(RaitaParseError);
   });
   test('fail: too many file name segments', () => {
     const keyData: KeyData = {
@@ -345,8 +346,10 @@ describe('extractFileNameData', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456_789',
     };
-    const result = extractFileNameData(keyData, extractionSpec);
-    expect(result).toEqual({});
+
+    expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
+      RaitaParseError,
+    );
   });
   test('fail: missing keydata fields', () => {
     const keyData1 = {
@@ -363,12 +366,12 @@ describe('extractFileNameData', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456_789',
     };
-    expect(extractFileNameData(keyData1 as KeyData, extractionSpec)).toEqual(
-      {},
-    );
-    expect(extractFileNameData(keyData2 as KeyData, extractionSpec)).toEqual(
-      {},
-    );
+    expect(() =>
+      extractFileNameData(keyData1 as KeyData, extractionSpec),
+    ).toThrow(RaitaParseError);
+    expect(() =>
+      extractFileNameData(keyData2 as KeyData, extractionSpec),
+    ).toThrow(RaitaParseError);
   });
   test('fail: wrong file type', () => {
     const keyData: KeyData = {
@@ -379,6 +382,8 @@ describe('extractFileNameData', () => {
       fileSuffix: 'exe',
       keyWithoutSuffix: 'test/path/test_123_456_789',
     };
-    expect(extractFileNameData(keyData, extractionSpec)).toEqual({});
+    expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
+      RaitaParseError,
+    );
   });
 });

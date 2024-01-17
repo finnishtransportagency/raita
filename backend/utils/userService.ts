@@ -62,6 +62,13 @@ const handleApiKeyRequest = async (
   if (ssmApiKey !== requestApiKey) {
     throw new RaitaLambdaError('Forbidden', 403);
   }
+  if (isDevelopmentPreMainStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)) {
+    // grant all roles to api key requests in premain env for development
+    return {
+      uid: RAITA_APIKEY_USER_UID,
+      roles: [STATIC_ROLES.read, STATIC_ROLES.extended, STATIC_ROLES.admin],
+    };
+  }
   return {
     uid: RAITA_APIKEY_USER_UID,
     roles: [STATIC_ROLES.read],
@@ -88,9 +95,17 @@ const handleOidcRequest = async (
   const roles = parseRoles(jwt['custom:rooli']);
   const user: RaitaUser = {
     uid: jwt['custom:uid'],
-    roles,
+    roles: roles ? filterRaitaRoles(roles) : [],
   };
   return user;
+};
+
+/**
+ * Get only roles useful for Raita
+ */
+const filterRaitaRoles = (roles: string[]) => {
+  const raitaRoles = Object.values(STATIC_ROLES);
+  return roles.filter(role => raitaRoles.includes(role));
 };
 
 const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {

@@ -1,10 +1,13 @@
 import { clsx } from 'clsx';
-import React, { useEffect, useRef } from 'react';
+import { InputHTMLAttributes, useEffect, useRef } from 'react';
 
 import css from './textinput.module.css';
 
-export function TextInput(props: Props) {
-  const { value, placeholder, onUpdate, resetSearchText } = props;
+export function TextInput(
+  props: Props & InputHTMLAttributes<HTMLInputElement>,
+) {
+  const { value, placeholder, onUpdate, resetSearchText, ...otherProps } =
+    props;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,6 +24,7 @@ export function TextInput(props: Props) {
     <input
       className={clsx(css.root)}
       {...{ value, placeholder, onChange: handleChange }}
+      {...otherProps}
     />
   );
 }

@@ -10,9 +10,12 @@ module.exports = {
         // version: '', use a hash of translation files here if cache is enabled
       },
       {
-        /* loadPath: 'https:// somewhere else' */
+        loadPath: (locale, namespace) =>
+          `${
+            process.env.NEXT_PUBLIC_RAITA_BASEURL || ''
+          }/locales/${locale}/${namespace}.json`,
       },
-    ], // 1 hour
+    ],
     backends:
       typeof window !== 'undefined' ? [LocalStorageBackend, HttpBackend] : [],
   },

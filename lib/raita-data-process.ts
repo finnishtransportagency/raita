@@ -14,13 +14,13 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { FilterPattern, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
-import { RaitaEnvironment } from './config';
+import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
 import { EXTRACTION_SPEC_PATH, raitaSourceSystems } from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
-import { getRemovalPolicy } from './utils';
+import { getDatabaseEnvironmentVariables, getRemovalPolicy } from './utils';
 import {
   Alarm,
   AlarmRule,
@@ -36,6 +36,7 @@ import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
+  readonly stackId: string;
   readonly vpc: IVpc;
   readonly openSearchDomain: Domain;
   readonly openSearchMetadataIndex: string;
@@ -51,6 +52,7 @@ interface DataProcessStackProps extends NestedStackProps {
 export class DataProcessStack extends NestedStack {
   public readonly dataProcessorLambdaServiceRole: iam.Role;
   public readonly inspectionDataBucket: Bucket;
+  public readonly dataReceptionBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
@@ -58,6 +60,7 @@ export class DataProcessStack extends NestedStack {
     const {
       raitaStackIdentifier,
       raitaEnv,
+      stackId,
       vpc,
       openSearchDomain,
       openSearchMetadataIndex,
@@ -69,6 +72,11 @@ export class DataProcessStack extends NestedStack {
       vaylaPolicyUserId,
       loramPolicyUserId,
     } = props;
+
+    const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
+      stackId,
+      raitaEnv,
+    );
 
     this.dataProcessorLambdaServiceRole = createRaitaServiceRole({
       scope: this,
@@ -91,7 +99,7 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
     });
-    const dataReceptionBucket = createRaitaBucket({
+    this.dataReceptionBucket = createRaitaBucket({
       scope: this,
       name: 'data-reception',
       raitaEnv,
@@ -105,9 +113,9 @@ export class DataProcessStack extends NestedStack {
     });
 
     const receptionBucketResources = [
-      dataReceptionBucket.bucketArn,
-      `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      `${dataReceptionBucket.bucketArn}/${raitaSourceSystems.MeeriHotfix2023}/*`, // TODO: remove when not needed
+      this.dataReceptionBucket.bucketArn,
+      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
+      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.MeeriHotfix2023}/*`, // TODO: remove when not needed
     ];
     const fullAccessBucketActions = [
       's3:GetObject',
@@ -133,7 +141,7 @@ export class DataProcessStack extends NestedStack {
       resources: receptionBucketResources,
       actions: fullAccessBucketActions,
     });
-    dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+    this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
     // Grant RAITA developer SFTP user full access to the bucket
     const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
@@ -142,7 +150,9 @@ export class DataProcessStack extends NestedStack {
       resources: receptionBucketResources,
       actions: fullAccessBucketActions,
     });
-    dataReceptionBucket.addToResourcePolicy(sftpRaitaDeveloperUserBucketPolicy);
+    this.dataReceptionBucket.addToResourcePolicy(
+      sftpRaitaDeveloperUserBucketPolicy,
+    );
 
     // Grant SOA-offices väylä role full access to data reception bucket
     const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
@@ -151,7 +161,7 @@ export class DataProcessStack extends NestedStack {
       resources: receptionBucketResources,
       actions: fullAccessBucketActions,
     });
-    dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
+    this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
     // Grant SOA-offices loram role read access to data reception bucket
     const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
@@ -160,7 +170,7 @@ export class DataProcessStack extends NestedStack {
       resources: receptionBucketResources,
       actions: readAccessBucketActions,
     });
-    dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+    this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
     // Create ECS cluster resources for zip extraction task
     const { ecsCluster, handleZipTask, handleZipContainer } =
@@ -170,7 +180,7 @@ export class DataProcessStack extends NestedStack {
         raitaEnv,
       });
 
-    dataReceptionBucket.grantRead(handleZipTask.taskRole);
+    this.dataReceptionBucket.grantRead(handleZipTask.taskRole);
     this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
 
     // Create zip handler lambda and grant permissions
@@ -183,9 +193,10 @@ export class DataProcessStack extends NestedStack {
       cluster: ecsCluster,
       task: handleZipTask,
       container: handleZipContainer,
+      databaseEnvironmentVariables,
     });
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
-    dataReceptionBucket.grantRead(handleReceptionFileEventFn);
+    this.dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
     const receptionAlarms = this.createReceptionHandlerAlarms(
       handleReceptionFileEventFn,
@@ -197,6 +208,13 @@ export class DataProcessStack extends NestedStack {
         effect: iam.Effect.ALLOW,
         resources: [handleZipTask.taskDefinitionArn],
         actions: ['ecs:RunTask'],
+      }),
+    );
+    this.dataProcessorLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO: specify keys?
       }),
     );
     // Dataprocessor lambda role needs PassRole permissions to both a) zip task
@@ -218,7 +236,7 @@ export class DataProcessStack extends NestedStack {
 
     // Handler is run for all the files types
     handleReceptionFileEventFn.addEventSource(
-      new S3EventSource(dataReceptionBucket, {
+      new S3EventSource(this.dataReceptionBucket, {
         events: [s3.EventType.OBJECT_CREATED],
         filters: [{ prefix: `${raitaSourceSystems.Meeri}/` }],
       }),
@@ -234,6 +252,7 @@ export class DataProcessStack extends NestedStack {
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
+      databaseEnvironmentVariables,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
       this.handleInspectionFileEventFn,
@@ -287,6 +306,7 @@ export class DataProcessStack extends NestedStack {
     cluster,
     task,
     container,
+    databaseEnvironmentVariables,
   }: {
     name: string;
     targetBucket: s3.Bucket;
@@ -296,12 +316,13 @@ export class DataProcessStack extends NestedStack {
     cluster: cdk.aws_ecs.Cluster;
     task: cdk.aws_ecs.FargateTaskDefinition;
     container: cdk.aws_ecs.ContainerDefinition;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 8192,
       timeout: Duration.seconds(900),
-      runtime: Runtime.NODEJS_16_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleReceptionFileEvent',
       entry: path.join(
         __dirname,
@@ -313,6 +334,7 @@ export class DataProcessStack extends NestedStack {
         CONTAINER_NAME: container.containerName,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
         SUBNET_IDS: vpc.privateSubnets.map(sn => sn.subnetId).join(','),
+        ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
       vpc,
@@ -337,6 +359,7 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    databaseEnvironmentVariables,
   }: {
     name: string;
     openSearchDomainEndpoint: string;
@@ -346,12 +369,13 @@ export class DataProcessStack extends NestedStack {
     openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(15),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
         __dirname,
@@ -363,6 +387,7 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
+        ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
       vpc,

@@ -67,6 +67,7 @@ export class ApplicationStack extends NestedStack {
     const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
       raitaStackIdentifier: raitaStackIdentifier,
       raitaEnv,
+      stackId,
       vpc,
       openSearchDomain: openSearchDomain,
       openSearchMetadataIndex: openSearchMetadataIndex,
@@ -82,6 +83,7 @@ export class ApplicationStack extends NestedStack {
     // Create API Gateway
     const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+      dataReceptionBucket: dataProcessStack.dataReceptionBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
       stackId,
@@ -131,7 +133,11 @@ export class ApplicationStack extends NestedStack {
     this.createManagedPolicy({
       name: 'ApiParameterStorePolicy',
       raitaStackIdentifier,
-      serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
+      serviceRoles: [
+        raitaApiStack.raitaApiLambdaServiceRole,
+        raitaApiStack.raitaApiDeleteRequestLambdaServiceRole,
+        raitaApiStack.raitaApiZipRequestLambdaServiceRole,
+      ],
       resources: [
         `arn:aws:ssm:${this.region}:${this.account}:parameter/${SSM_API_KEY}`,
       ],
@@ -143,7 +149,10 @@ export class ApplicationStack extends NestedStack {
     this.createManagedPolicy({
       name: 'ApiOpenSearchHttpPolicy',
       raitaStackIdentifier,
-      serviceRoles: [raitaApiStack.raitaApiLambdaServiceRole],
+      serviceRoles: [
+        raitaApiStack.raitaApiLambdaServiceRole,
+        raitaApiStack.raitaApiDeleteRequestLambdaServiceRole,
+      ],
       resources: [openSearchDomain.domainArn],
       actions: ['es:ESHttpGet', 'es:ESHttpPost', 'es:ESHttpPut'],
     });
@@ -183,6 +192,11 @@ export class ApplicationStack extends NestedStack {
       raitaApiStack.handleMetaRequestFn,
       Port.allTraffic(),
       'Allows meta endpoint handler lambda to connect to Opensearch.',
+    );
+    openSearchDomain.connections.allowFrom(
+      raitaApiStack.handleDeleteRequestFn,
+      Port.allTraffic(),
+      'Allows delete endpoint handler lambda to connect to Opensearch.',
     );
   }
 

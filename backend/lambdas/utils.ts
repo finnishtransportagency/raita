@@ -1,7 +1,7 @@
 import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
-  fileSuffixesToIncudeInMetadataParsing,
+  fileSuffixesToIncludeInMetadataParsing,
   KNOWN_IGNORED_FILE_SUFFIXES,
   KnownSuffix,
   SUBMISSION_REPORT_INDICATOR,
@@ -149,8 +149,18 @@ export function isZipPath(arg: Array<string>): arg is ZipPath {
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
 }
 
+/**
+ * Check if arg file path references either 'system', 'year', 'campaign' or 'date' in the predefined file structure
+ */
+export function isZipParentPath(arg: Array<string>): boolean {
+  const [system] = arg;
+  return (
+    arg.length > 0 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
+  );
+}
+
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
-  return Object.values(fileSuffixesToIncudeInMetadataParsing).some(
+  return Object.values(fileSuffixesToIncludeInMetadataParsing).some(
     suffix => suffix === arg,
   );
 }
@@ -160,7 +170,14 @@ export function isKnownIgnoredSuffix(arg: string): boolean {
 
 export function isExcelSuffix(arg: string): arg is ExcelSuffix {
   return (
-    fileSuffixesToIncudeInMetadataParsing.XLSX_FILE === arg ||
-    fileSuffixesToIncudeInMetadataParsing.XLS_FILE === arg
+    fileSuffixesToIncludeInMetadataParsing.XLSX_FILE === arg ||
+    fileSuffixesToIncludeInMetadataParsing.XLS_FILE === arg
   );
+}
+
+export function getOriginalZipNameFromPath(path: string[]): string {
+  if (path.length < 5) {
+    return '';
+  }
+  return `${path.slice(0, 5).join('/')}.zip`;
 }

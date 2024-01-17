@@ -34,7 +34,7 @@ export const parsePrimitive = (
   };
   try {
     return { key, value: parsers[target](data) };
-  } catch (error) {
+  } catch (error: any) {
     log.error(error);
     return { key: `nonparsed_${key}`, value: data };
   }

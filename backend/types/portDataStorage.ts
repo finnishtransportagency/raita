@@ -26,4 +26,9 @@ export interface IMetadataStorageInterface {
     tilirataosanumerot: Array<{ value: string; count: number }>;
   }>;
   getLatestEntryData: () => Promise<any>;
+  deleteByKeyPrefix: (prefix: string) => Promise<{
+    deleted: number;
+    total: number;
+    errors: string[];
+  }>;
 }

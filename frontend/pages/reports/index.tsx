@@ -3,27 +3,21 @@
  * @todo Handle form data validation
  */
 import { useState, useMemo, Fragment, useEffect } from 'react';
-import type { NextPage } from 'next';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
-import Modal from 'react-modal';
-import { marked } from 'marked';
 
 // TODO: this could be loaded dynamically using filename from config
-import manualData from 'shared/doc/manual.md';
 import * as cfg from 'shared/config';
-import { App, BannerType, ImageKeys, Range } from 'shared/types';
+import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { makeFromMulti, makeQuery } from 'shared/query-builder';
-import { Button, TextInput } from 'components';
+import { Button, TextInput, CopyToClipboard } from 'components';
 import { DateRange } from 'components';
-import Footer from 'components/footer';
 import FilterSelector from 'components/filters';
 import { Entry } from 'components/filters/selector';
 import MultiChoice from 'components/filters/multi-choice';
@@ -36,9 +30,8 @@ import css from './reports.module.css';
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
-import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
-import { format as formatDate } from 'date-fns/fp';
-import CloseIcon from 'components/icons/CloseIcon';
+import { RaitaRole, useUser } from 'shared/user';
+import { Tooltip } from 'react-tooltip';
 
 //
 
@@ -71,11 +64,12 @@ const initialState: ReportsState = {
 
 //
 
-const ReportsIndex: NextPage = () => {
+const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
   const meta = useMetadataQuery();
-
   const router = useRouter();
+
+  const user = useUser();
 
   const isDebug = !!(router.query['debug'] === '1');
 
@@ -83,7 +77,6 @@ const ReportsIndex: NextPage = () => {
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [manualModalOpen, setManualModalOpen] = useState(false);
 
   // #region Special extra filters
 
@@ -253,64 +246,27 @@ const ReportsIndex: NextPage = () => {
 
   if (meta.isError) return <div>Error</div>;
 
-  let latestInspectionFormattedDate = '';
-  if (meta.data?.latestInspection) {
-    try {
-      const latestInspectionParsedDate = Date.parse(meta.data.latestInspection);
-      latestInspectionFormattedDate = formatDate(
-        DATE_FMT_LATEST_MEASUREMENT,
-        latestInspectionParsedDate,
-      );
-    } catch (e) {
-      console.warn(
-        'Error parsing or formatting latest inspection date ' +
-          meta.data.latestInspection +
-          ' ' +
-          e,
-      );
-    }
-  } else {
-    console.warn('Latest inspection date missing');
-  }
+  const showCopyableZipPath =
+    user.user && user.user.roles.includes(RaitaRole.Admin);
+  const zipFileNameIndex = cfg.zipFileNameIndex;
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
-      <Head>
-        <title>{t('common:reports_head_title')}</title>
-      </Head>
-
-      <div className="bg-primary text-white">
-        <div className="container mx-auto px-16 py-6">
-          <header>
-            <h1 className="text-4xl">{t('common:reports_heading')}</h1>{' '}
-            <div className="latestInspection">
-              {t('common:latest_inspection')}
-              {latestInspectionFormattedDate}
-            </div>
-            <div className="userManualLink">
-              <button onClick={() => setManualModalOpen(true)}>
-                {t('common:user_manual')}
-              </button>
-            </div>
-          </header>
-        </div>
-      </div>
-
       <InfoBanner
         bannerType={BannerType.INFO}
-        text={t<string>('common:rights_restriction_info')}
+        text={t('common:rights_restriction_info')}
       />
 
       <div className="container mx-auto px-16 py-6">
-        <header className="mb-4"></header>
         {resultsData?.total && resultsData.total >= 10000 && (
           <InfoBanner
             bannerType={BannerType.WARNING}
-            text={t<string>('common:too_many_results')}
+            text={t('common:too_many_results')}
+            className="object-right w-4/6 ml-auto rounded"
           />
         )}
 
-        <div className="grid grid-cols-2 gap-12">
+        <div className="grid grid-cols-3 gap-12">
           <section className="space-y-4">
             <header className="text-3xl border-primary border-b-2 mb-4 pb-2">
               {t('common:reports_search')}
@@ -319,7 +275,7 @@ const ReportsIndex: NextPage = () => {
             <TextInput
               onUpdate={updateSearchText}
               value={state.text}
-              placeholder={t<string>('common:search_by_filename')}
+              placeholder={t('common:search_by_filename')}
               resetSearchText={state.resetFilters}
             />
 
@@ -343,13 +299,14 @@ const ReportsIndex: NextPage = () => {
                   range={state.special.dateRange}
                   onUpdate={updateDateRange}
                   resetDateRange={state.resetFilters}
+                  inputId="reports-daterange"
                 />
               </section>
 
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_report_types')}</header>
-
                 <MultiChoice
+                  label={t('common:reports_report_types')}
+                  inputId="report-type"
                   items={(meta.data?.reportTypes || []).map(it => ({
                     key: it.reportType,
                     value: it.reportType,
@@ -371,9 +328,9 @@ const ReportsIndex: NextPage = () => {
               </section>
 
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_systems')}</header>
-
                 <MultiChoice
+                  label={t('common:reports_systems')}
+                  inputId="report-system"
                   items={(meta.data?.systems || []).map(x => ({
                     key: i18n?.exists(`metadata:${x.value}`)
                       ? `${x.value} / ${t(`metadata:${x.value}`)}`
@@ -397,9 +354,9 @@ const ReportsIndex: NextPage = () => {
               </section>
 
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_track_parts')}</header>
-
                 <MultiChoice
+                  label={t('common:reports_track_parts')}
+                  inputId="report-track-part"
                   items={(meta.data?.trackParts || []).map(it => ({
                     key: it.value,
                     value: it.value,
@@ -420,9 +377,9 @@ const ReportsIndex: NextPage = () => {
                 />
               </section>
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_tilirataosanumerot')}</header>
-
                 <MultiChoice
+                  label={t('common:reports_tilirataosanumerot')}
+                  inputId="report-tilirataosanumero"
                   items={(meta.data?.tilirataosanumerot || []).map(it => ({
                     key: it.value,
                     value: it.value,
@@ -445,9 +402,11 @@ const ReportsIndex: NextPage = () => {
 
               {/* Search file types */}
               <section className={clsx(css.subSection)}>
-                <header>{t('common:reports_file_types')}</header>
+                <header></header>
 
                 <MultiChoice
+                  label={t('common:reports_file_types')}
+                  inputId="report-file-type"
                   items={(meta.data?.fileTypes || []).map(x => ({
                     key: x.fileType,
                     value: x.fileType,
@@ -478,7 +437,7 @@ const ReportsIndex: NextPage = () => {
             </div>
           </section>
 
-          <section>
+          <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
               {!mutation.data && t('no_search_results')}
 
@@ -510,6 +469,10 @@ const ReportsIndex: NextPage = () => {
                   <ul className="space-y-2 divide-y-2">
                     {resultsData?.hits.map((it, ix) => {
                       const { source: doc } = it;
+                      const zipPath = doc.key
+                        .split('/')
+                        .slice(0, zipFileNameIndex)
+                        .join('/');
 
                       // Bail out if we have nothing
                       if (!doc) return null;
@@ -520,25 +483,66 @@ const ReportsIndex: NextPage = () => {
                             <header>{doc.file_name}</header>
 
                             <div className="text-xs">
-                              <dl className="grid grid-cols-12 gap-x-2 gap-y-1">
+                              {showCopyableZipPath && (
+                                <dl className={clsx(css.keyMetadataContainer)}>
+                                  <dt>
+                                    {t('common:zip_path_label')}
+                                    <CopyToClipboard
+                                      tooltipId={`${doc.key}-zip-label`}
+                                      textToCopy={zipPath}
+                                    />
+                                  </dt>
+                                  <dd
+                                    className="truncate"
+                                    data-tooltip-id={`${ix}-zip-name`}
+                                    data-tooltip-content={zipPath}
+                                  >
+                                    {zipPath}
+                                    <Tooltip id={`${ix}-zip-name`} />
+                                  </dd>
+                                </dl>
+                              )}
+                              <dl className={clsx(css.metadataGrid)}>
                                 {Object.entries(doc.metadata).map(
-                                  ([k, v], mi) => (
-                                    <Fragment key={mi}>
-                                      <dt className="col-span-2 truncate">
+                                  ([k, v], index) => (
+                                    <Fragment key={index}>
+                                      <dt className="truncate">
                                         {t(`metadata:label_${k}`)}
                                       </dt>
-                                      <dd className="col-span-4 truncate">{`${v}`}</dd>
+                                      <dd className="truncate">
+                                        <span
+                                          data-tooltip-id={`${doc.key}_val_${k}`}
+                                          data-tooltip-content={v}
+                                        >
+                                          {`${v}`}
+                                        </span>
+                                      </dd>
+                                      <Tooltip id={`${doc.key}_val_${k}`} />
                                     </Fragment>
                                   ),
                                 )}
                                 {doc.size && (
                                   <Fragment>
-                                    <dt className="col-span-2 truncate">
+                                    <dt
+                                      className="truncate"
+                                      title={t('metadata:label_size')}
+                                    >
                                       {t('metadata:label_size')}
                                     </dt>
-                                    <dd className="col-span-4 truncate">{`${sizeformatter(
-                                      doc.size,
-                                    )}`}</dd>
+                                    <dd
+                                      className="truncate"
+                                      title={`${sizeformatter(doc.size)}`}
+                                    >
+                                      <span
+                                        data-tooltip-id={`${doc.key}_val_size`}
+                                        data-tooltip-content={`${sizeformatter(
+                                          doc.size,
+                                        )}`}
+                                      >
+                                        {`${sizeformatter(doc.size)}`}
+                                      </span>
+                                      <Tooltip id={`${doc.key}_val_size`} />
+                                    </dd>
                                   </Fragment>
                                 )}
                               </dl>
@@ -601,31 +605,6 @@ const ReportsIndex: NextPage = () => {
           };
         })}
       />
-      <Modal
-        isOpen={manualModalOpen}
-        onRequestClose={() => setManualModalOpen(false)}
-        contentLabel={t('common:user_manual') || ''}
-        appElement={document.getElementById('__next') || undefined}
-        overlayClassName={clsx(css['info-modal-overlay'])}
-        bodyOpenClassName={clsx(css['info-modal-open'])}
-        className={clsx(css['info-modal'])}
-      >
-        <div className={clsx(css['info-header'])}>
-          <button
-            className={clsx(css['info-close-button'])}
-            onClick={() => setManualModalOpen(false)}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-        <div
-          className={clsx(css['info-content'])}
-          dangerouslySetInnerHTML={{
-            // TODO: do we need to sanitize?
-            __html: marked.parse(manualData),
-          }}
-        ></div>
-      </Modal>
 
       {isDebug && (
         <div className="container mx-auto px-16 pb-4">
@@ -653,11 +632,11 @@ const ReportsIndex: NextPage = () => {
           </details>
         </div>
       )}
-
-      <Footer />
     </div>
   );
 };
+
+ReportsIndex.requiredRole = RaitaRole.Read;
 
 export default ReportsIndex;
 

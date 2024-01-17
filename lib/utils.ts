@@ -1,13 +1,15 @@
 import { RemovalPolicy } from 'aws-cdk-lib';
 import { EbsDeviceVolumeType, ISubnet } from 'aws-cdk-lib/aws-ec2';
 import { DomainProps } from 'aws-cdk-lib/aws-opensearchservice';
+import * as path from 'path';
+import { readFileSync } from 'fs';
 import {
   DEVELOPMENT_MAIN_STACK_ID,
   DEVELOPMENT_PREMAIN_STACK_ID,
   ENVIRONMENTS,
   PRODUCTION_STACK_ID,
 } from '../constants';
-import { RaitaEnvironment } from './config';
+import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
@@ -100,4 +102,36 @@ export const getEnvDependentOsConfiguration = (
     },
   };
   return envDependentProperties[env];
+};
+
+/**
+ * Get environment variables needed to log into the database.
+ * Password is not returned here and should be retrieved from secrets manager
+ */
+export const getDatabaseEnvironmentVariables = (
+  stackId: string,
+  raitaEnv: RaitaEnvironment,
+): DatabaseEnvironmentVariables => {
+  // TODO: use same method as flyway conf
+
+  if (
+    !isProductionStack(stackId, raitaEnv) &&
+    !isDevelopmentMainStack(stackId, raitaEnv) &&
+    !isDevelopmentPreMainStack(stackId, raitaEnv)
+  ) {
+    // return a dummy for other branches
+    // TODO: test if premain db works for other branches
+    return {
+      PGUSER: 'INVALID',
+      PGHOST: 'INVALID',
+      PGDATABASE: 'INVALID',
+      PGPORT: 'INVALID',
+      RAITA_PGSCHEMA: 'INVALID',
+    };
+  }
+  const file = readFileSync(
+    path.join(__dirname, `../backend/db/conf/${stackId}/env.json`),
+    'utf8',
+  );
+  return JSON.parse(file);
 };

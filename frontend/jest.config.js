@@ -12,6 +12,9 @@ const jestConfig = {
   moduleDirectories: ['node_modules', __dirname],
   collectCoverage: true,
   coverageReporters: ['text'],
+  moduleNameMapper: {
+    '.*.md$': '<rootDir>/mocks/markdown.js',
+  },
 };
 
 module.exports = createJestConfig(jestConfig);
