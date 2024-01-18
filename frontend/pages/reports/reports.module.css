@@ -32,53 +32,14 @@
   @apply checked:bg-primary checked:text-white;
 }
 
-.info-modal {
-  position: absolute;
-  top: 40px;
-  left: 20%;
-  right: 20%;
-  border: 1px solid #ccc;
-  background: #fff;
-  overflow: auto;
-  border-radius: 4px;
-  outline: none;
-  padding: 30px;
+.keyMetadataContainer {
+  @apply grid grid-cols-2 gap-x-2 mb-2;
+  grid-template-columns: minmax(127px, min-content) 1fr;
 }
 
-.info-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.75);
-  overflow: auto;
-}
-
-.info-modal-open {
-  overflow: hidden;
-}
-
-.info-header {
-  display: flex;
-  justify-content: flex-end;
-}
-.info-content {
-  text-align: left;
-}
-.info-content h1 {
-  @apply text-4xl font-bold;
-  @apply pb-4;
-}
-.info-content h2 {
-  @apply text-3xl font-bold;
-  @apply pt-3 pb-4;
-}
-.info-content h3 {
-  @apply text-2xl font-bold;
-  @apply pt-2 pb-3;
-}
-.info-content ul {
-  list-style: disc;
-  @apply pl-4;
+.metadataGrid {
+  @apply grid grid-cols-4 gap-x-2 gap-y-1;
+  grid-template-columns:
+    minmax(127px, min-content) 1fr minmax(127px, min-content)
+    1fr;
 }

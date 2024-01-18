@@ -1,0 +1,103 @@
+ALTER TABLE mittaus ADD COLUMN track character varying(40);
+ALTER TABLE mittaus ADD COLUMN location character varying(40);
+ALTER TABLE mittaus ADD COLUMN latitude character varying(40);
+ALTER TABLE mittaus ADD COLUMN longitude character varying(40);
+ALTER TABLE mittaus ADD COLUMN rataosuus_numero character varying(40);
+ALTER TABLE mittaus ADD COLUMN rataosuus_nimi character varying(40);
+ALTER TABLE mittaus ADD COLUMN raide_numero character varying(40);
+ALTER TABLE mittaus ADD COLUMN rata_kilometri integer;
+ALTER TABLE mittaus ADD COLUMN rata_metrit DECIMAL;
+ALTER TABLE mittaus DROP COLUMN rataosoite;
+ALTER TABLE mittaus RENAME COLUMN ss_count to sscount;
+
+ALTER TABLE raportti ADD COLUMN status character varying(20);
+ALTER TABLE raportti ADD COLUMN error character varying(1000);
+
+ALTER TABLE ohl_mittaus ADD COLUMN ohl_ajonopeus decimal;
+
+ALTER TABLE mittaus
+  ADD CONSTRAINT mittaus_pkey PRIMARY KEY (id);
+
+ALTER TABLE raportti ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME raportti_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE ams_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME ams_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE ohl_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME ohl_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE pi_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME pi_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE rc_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME rc_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE rp_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME rp_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE tg_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME tg_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+ALTER TABLE tsight_mittaus ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+  SEQUENCE NAME tsight_mittaus_id_seq
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1
+  );
+
+
+

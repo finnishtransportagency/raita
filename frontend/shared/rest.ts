@@ -1,6 +1,12 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
-import { ImageKeyResponse, PollingProgress, SearchResponse } from './types';
+import {
+  AdminLogsResponse,
+  DeleteResponse,
+  ImageKeyResponse,
+  PollingProgress,
+  SearchResponse,
+} from './types';
 
 /**
  * API client for use in calling the REST API endpoint
@@ -9,6 +15,8 @@ export const apiClient = A.create({ baseURL: baseURL });
 
 //
 
+export const getUser = () =>
+  apiClient.get<GetUserResult>('user').then(res => res.data);
 /**
  * Perform a search with the given OpenSearch `query` object
  * @param q
@@ -42,7 +50,24 @@ export const getImageKeysForFileKey = async (key: string) => {
     .then(images => images.map(image => image.key));
 };
 
+export const getAdminLogs = async (startDate: string, endDate: string) => {
+  return apiClient
+    .get<AdminLogsResponse>(
+      `admin/logs?startDate=${startDate}&endDate=${endDate}`,
+    )
+    .then(res => res.data.logs);
+};
+export const postDeleteRequest = async (keyPrefix: string) => {
+  return apiClient
+    .post<DeleteResponse>('delete', { prefix: keyPrefix })
+    .then(res => res.data);
+};
+
 type GetFilesResult = {};
+
+type GetUserResult = {
+  roles: string[];
+};
 
 type GetSignedUrlResult = {
   url: string;

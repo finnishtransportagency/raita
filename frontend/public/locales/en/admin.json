@@ -1,0 +1,23 @@
+{
+  "log_header_data_process": "Zip file received",
+  "log_header_delete_process": "Files deleted",
+  "log_title": "Admin log",
+  "log_search_description": "Logs from the last week are displayed by default",
+  "log_contains_errors": "Contains errors",
+  "log_contains_warnings": "Contains warnings",
+  "delete_input_placeholder": "Input path of files to delete",
+  "delete_page_title": "Delete files",
+  "delete_label": "Delete files",
+  "delete_path_info": "You are about to delete all files from path: {{ path }}",
+  "delete_counts": "File count to be deleted is {{ count }}",
+  "delete_files_not_found": "No files were found",
+  "delete_files_fetch_error": "Error fetching files to delete",
+  "delete_confirmation": "To confirm deletion, please input the amount of files to be deleted that is displayed above and click Delete files",
+  "delete_confirm_placeholder": "Please input the amount of files to be deleted",
+  "delete_result_heading": "Delete successful",
+  "delete_result": "Deleted zip files: {{ zipCount }}. Deleted regular files: {{ fileCount }}. Deleted file metadata: {{ metaDataCount }} files.",
+  "delete_error": "Error deleting files: ",
+  "delete_in_progress": "Delete in progress...",
+  "delete_files_loading": "Loading data on files to delete...",
+  "delete_confirm_heading": "Delete confirmation"
+}

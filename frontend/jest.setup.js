@@ -11,3 +11,12 @@ jest.mock('react-i18next', () => ({
     };
   },
 }));
+
+const useRouter = jest.fn();
+jest.mock('next/router', () => ({
+  useRouter,
+}));
+useRouter.mockReturnValue({
+  query: {},
+  push: jest.fn(),
+});

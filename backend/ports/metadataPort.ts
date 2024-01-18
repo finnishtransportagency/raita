@@ -48,6 +48,9 @@ export default class MetadataPort implements IMetadataStorageInterface {
   queryOpenSearchMetadata = (query: any) => {
     return this.#backend.queryOpenSearchMetadata(query);
   };
+  deleteByKeyPrefix = (prefix: string) => {
+    return this.#backend.deleteByKeyPrefix(prefix);
+  };
   getMetadataFields = () => {
     return this.#backend.getMetadataFields();
   };

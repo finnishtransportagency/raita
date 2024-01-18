@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { HTMLAttributes, useEffect, useMemo, useState } from 'react';
 import { clsx } from 'clsx';
 import { format as formatDate } from 'date-fns/fp';
 import { add, isValid } from 'date-fns';
@@ -11,10 +11,18 @@ import { DATE_FMT } from 'shared/constants';
 import { assoc } from 'rambda';
 import { useTranslation } from 'next-i18next';
 
-export function DateRange(props: Props) {
+export function DateRange(props: Props & HTMLAttributes<HTMLDivElement>) {
   const { t } = useTranslation(['common']);
 
-  const { range, format, disabled = false, onUpdate, resetDateRange } = props;
+  const {
+    range,
+    format,
+    disabled = false,
+    onUpdate,
+    resetDateRange,
+    inputId,
+    ...otherProps
+  } = props;
 
   const [state, setState] = useState({
     start: range?.start,
@@ -58,10 +66,14 @@ export function DateRange(props: Props) {
 
   return (
     <>
-      <div className={clsx(css.root)}>
+      <div {...otherProps}>
         <div className={clsx(css.group)}>
+          <label className="text-lg my-auto" htmlFor={`${inputId}-start`}>
+            {t('common:start_date')}
+          </label>
           <input
             {...{ disabled }}
+            id={`${inputId}-start`}
             type={'date'}
             value={rangeValues[0]}
             className={clsx(css.input)}
@@ -76,7 +88,6 @@ export function DateRange(props: Props) {
               setState(assoc('start', newStartDate));
             }}
           />
-
           <Button
             {...{ disabled }}
             label={t('common:clear')}
@@ -84,11 +95,13 @@ export function DateRange(props: Props) {
             size={'sm'}
             onClick={() => setState(assoc('start', undefined))}
           />
-        </div>
 
-        <div className={clsx(css.group)}>
+          <label className="text-lg my-auto" htmlFor={`${inputId}-end`}>
+            {t('common:end_date')}
+          </label>
           <input
             {...{ disabled }}
+            id={`${inputId}-end`}
             type={'date'}
             value={rangeValues[1]}
             min={rangeValues[0] ? rangeValues[0] : undefined}
@@ -101,7 +114,6 @@ export function DateRange(props: Props) {
               setState(assoc('end', endDate));
             }}
           />
-
           <Button
             {...{ disabled }}
             label={t('common:clear')}
@@ -110,6 +122,8 @@ export function DateRange(props: Props) {
             onClick={() => setState(assoc('end', undefined))}
           />
         </div>
+
+        <div className={clsx(css.group)}></div>
       </div>
     </>
   );
@@ -124,5 +138,6 @@ export type Props = {
   format?: Range<string>;
   disabled?: boolean;
   resetDateRange: boolean;
+  inputId: string;
   onUpdate: (range: Range<Date>) => void;
 };

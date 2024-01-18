@@ -23,7 +23,7 @@ import {
 } from '../constants';
 import { Construct } from 'constructs';
 
-export type RaitaEnvironment = typeof ENVIRONMENTS[keyof typeof ENVIRONMENTS];
+export type RaitaEnvironment = (typeof ENVIRONMENTS)[keyof typeof ENVIRONMENTS];
 
 function isRaitaEnvironment(arg: string | undefined): arg is RaitaEnvironment {
   return !!arg && Object.values(ENVIRONMENTS).includes(arg as any);
@@ -142,3 +142,11 @@ export const getRaitaStackConfig = (
   jwtTokenIssuer: getSSMParameter(scope, SSM_JWT_TOKEN_ISSUER),
   ...getAccountVpcResourceConfig(raitaEnv),
 });
+
+export type DatabaseEnvironmentVariables = {
+  PGUSER: string;
+  PGHOST: string;
+  PGDATABASE: string;
+  PGPORT: string;
+  RAITA_PGSCHEMA: string;
+};

@@ -1,4 +1,19 @@
 {
+  "page_labels": {
+    "reports": "Reports",
+    "admin": {
+      "logs": "Admin log",
+      "delete": "Data deletion"
+    }
+  },
+  "error": {
+    "generic": "Error",
+    "user_info": "Error fetching user information",
+    "403": "Forbidden",
+    "500": "Server error"
+  },
+  "raita_title": "RAITA",
+  "raita_subtitle": "Mechanical track inspection",
   "reports_head_title": "Reports",
   "reports_heading": "Reports",
   "reports_search": "Search reports",
@@ -50,5 +65,13 @@
   "too_many_results": "Too many results, try filtering your search more",
   "big_compression": "Note! Compressing a lot of data might take several minutes",
   "latest_inspection": "Date of the most recent measurement: ",
-  "user_manual": "User manual"
+  "user_manual": "User manual",
+  "error_loading": "Error loading data",
+  "next": "Next",
+  "cancel": "Cancel",
+  "copy_to_clipboard": "Copy to clipboard",
+  "copied": "Copied",
+  "zip_path_label": "Zip file path",
+  "start_date": "Start date",
+  "end_date": "End date"
 }

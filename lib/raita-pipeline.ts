@@ -12,6 +12,7 @@ import {
   CodePipeline,
   CodePipelineSource,
   ShellStep,
+  Step,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import {
@@ -32,9 +33,11 @@ import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import {
   isDevelopmentMainStack,
   isDevelopmentPreMainStack,
+  isPermanentStack,
   isProductionStack,
 } from './utils';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { RaitaPipelineLockStack } from './raita-pipeline-lock';
 
 /**
  * The stack that defines the application pipeline
@@ -111,6 +114,14 @@ export class RaitaPipelineStack extends Stack {
       confFileDir = 'prod';
     }
 
+    const pipelineLockStack = new RaitaPipelineLockStack(
+      this,
+      'PipelineLockStack',
+      {
+        vpc: raitaVPC,
+      },
+    );
+
     const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
@@ -141,6 +152,52 @@ export class RaitaPipelineStack extends Stack {
         },
       },
     );
+    const preSteps: Step[] = [
+      new ShellStep('UnitTest', {
+        input: githubSource,
+        installCommands: ['npm ci', 'npm --prefix frontend ci'],
+        commands: ['npm run test', 'npm run --prefix frontend test'],
+      }),
+    ];
+    const postSteps: Step[] = [];
+    if (
+      isPermanentStack(config.stackId, config.env) ||
+      isDevelopmentPreMainStack(config.stackId, config.env)
+    ) {
+      preSteps.push(pipelineLockStack.acquireLockStep);
+      postSteps.push(
+        new CodeBuildStep('Flyway', {
+          input: githubSource,
+          vpc: raitaVPC,
+          securityGroups: [raitaSecurityGroup],
+          buildEnvironment: {
+            privileged: true,
+            environmentVariables: {
+              DB_PASSWORD: {
+                type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                value: 'database_password',
+              },
+              DOCKER_PASSWORD: {
+                type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                value: 'docker_password',
+              },
+              CONF_FILE_DIR: {
+                type: BuildEnvironmentVariableType.PLAINTEXT,
+                value: confFileDir,
+              },
+            },
+          },
+          commands: [
+            'echo $CONF_FILE_DIR',
+            'echo Logging in to Docker hub...',
+            'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
+            'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD',
+          ],
+        }),
+      );
+      postSteps.push(pipelineLockStack.releaseLockStep);
+    }
+
     codePipeline.addStage(
       new RaitaApplicationStage(this, `Raita`, {
         stackId: config.stackId,
@@ -148,45 +205,9 @@ export class RaitaPipelineStack extends Stack {
         tags: config.tags,
       }),
       {
-        pre: [
-          new ShellStep('UnitTest', {
-            input: githubSource,
-            installCommands: ['npm ci', 'npm --prefix frontend ci'],
-            commands: ['npm run test', 'npm run --prefix frontend test'],
-          }),
-        ],
-        ...(confFileDir && {
-          post: [
-            new CodeBuildStep('Flyway', {
-              input: githubSource,
-              vpc: raitaVPC,
-              securityGroups: [raitaSecurityGroup],
-              buildEnvironment: {
-                privileged: true,
-                environmentVariables: {
-                  DB_PASSWORD: {
-                    type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                    value: 'database_password',
-                  },
-                  DOCKER_PASSWORD: {
-                    type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                    value: 'docker_password',
-                  },
-                  CONF_FILE_DIR: {
-                    type: BuildEnvironmentVariableType.PLAINTEXT,
-                    value: confFileDir,
-                  },
-                },
-              },
-              commands: [
-                'echo $CONF_FILE_DIR',
-                'echo Logging in to Docker hub...',
-                'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
-                'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD',
-              ],
-            }),
-          ],
-        }),
+        // ensure steps are ran in correct order
+        pre: Step.sequence(preSteps),
+        post: Step.sequence(postSteps),
       },
     );
   }

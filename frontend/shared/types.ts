@@ -1,3 +1,8 @@
+import { NextPage } from 'next';
+import { AppProps } from 'next/app';
+import { ReactNode } from 'react';
+import { RaitaRole } from './user';
+
 /**
  * @deprecated
  */
@@ -94,6 +99,21 @@ export interface ImageKeyResponse {
     size: number;
   }[];
 }
+export interface DeleteResponse {
+  receptionDeleteCount: number;
+  inspectionDeleteCount: number;
+  metadataDeleteCount: number;
+}
+
+export interface AdminLogsResponse {
+  logs: {
+    source: string;
+    invocation_id: string;
+    log_timestamp: string;
+    log_message: string;
+    log_level: string;
+  }[];
+}
 
 export interface PollingProgress {
   progressData: {
@@ -113,3 +133,14 @@ export enum BannerType {
   INFO = 'INFO',
   WARNING = 'WARNING',
 }
+
+/**
+ * Extend NextPage type to contain required role
+ */
+export type RaitaNextPage<P = {}, IP = P> = NextPage<P, IP> & {
+  requiredRole: RaitaRole;
+};
+
+export type RaitaAppProps = AppProps & {
+  Component: RaitaNextPage;
+};

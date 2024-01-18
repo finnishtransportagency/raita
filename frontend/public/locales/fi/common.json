@@ -1,4 +1,19 @@
 {
+  "page_labels": {
+    "reports": "Raportit",
+    "admin": {
+      "logs": "Adminloki",
+      "delete": "Tietojen poisto"
+    }
+  },
+  "error": {
+    "generic": "Virhe",
+    "user_info": "Virhe käyttäjätietojen hakemisessa",
+    "403": "Ei pääsyoikeutta",
+    "500": "Virhe palvelimella"
+  },
+  "raita_title": "RAITA",
+  "raita_subtitle": "Koneellinen radantarkastus",
   "reports_head_title": "Raportit",
   "reports_heading": "Raportit",
   "reports_search": "Hae raporteista",
@@ -19,7 +34,7 @@
   "preview": "Esikatsele",
   "download": "Lataa",
   "download_all": "Lataa kaikki",
-  "reports_timespan": "Aikajakso",
+  "reports_timespan": "Aikajakso (tarkastusajankohta)",
   "reports_file_types": "Tiedostotyypit",
   "reports_report_types": "Raporttityypit",
   "reports_track_parts": "Raportointiosuudet",
@@ -53,5 +68,13 @@
   "too_many_results": "Haku tuotti yli 10k tulosta, rajaa hakua tarkemmin",
   "big_compression": "Huom! Ison datamäärän pakkaaminen voi viedä useita minuutteja",
   "latest_inspection": "Uusimman mittauksen ajankohta: ",
-  "user_manual": "Käyttöohjeet"
+  "user_manual": "Käyttöohjeet",
+  "error_loading": "Virhe tietojen lataamisessa",
+  "next": "Seuraava",
+  "cancel": "Peruuta",
+  "copy_to_clipboard": "Kopioi leikepöydälle",
+  "copied": "Kopioitu",
+  "zip_path_label": "Zipin tiedostopolku",
+  "start_date": "Aloituspäivä",
+  "end_date": "Lopetuspäivä"
 }

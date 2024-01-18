@@ -10,10 +10,13 @@ import {
 import {
   getDecodedS3ObjectKey,
   getKeyData,
+  getOriginalZipNameFromPath,
   isKnownIgnoredSuffix,
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
+import { IAdminLogger } from '../../../utils/adminLogger';
+import { PostgresLogger } from '../../../utils/postgresLogger';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -25,6 +28,8 @@ function getLambdaConfigOrFail() {
     metadataIndex: getEnv('METADATA_INDEX'),
   };
 }
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
@@ -41,18 +46,25 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
+  let currentKey: string = ''; // for logging in case of errors
   try {
     const spec = await backend.specs.getSpecification();
     const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
       async eventRecord => {
         const key = getDecodedS3ObjectKey(eventRecord);
+        currentKey = key;
         log.info({ fileName: key }, 'Start handler');
         const file = await backend.files.getFile(eventRecord);
         const keyData = getKeyData(key);
+        const zipFile = getOriginalZipNameFromPath(keyData.path);
+        await adminLogger.init('data-inspection', zipFile);
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
         if (!isRaitaSourceSystem(keyData.rootFolder)) {
           log.warn(`Ignoring file ${key} outside Raita source system folders.`);
+          await adminLogger.error(
+            `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
+          );
           return null;
         }
         if (!isKnownSuffix(keyData.fileSuffix)) {
@@ -65,6 +77,9 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
               `Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`,
             );
           }
+          await adminLogger.warn(
+            `Tiedosto ${key} sisältää tuntemattoman tiedostopäätteen ja sitä ei käsitellä`,
+          );
           return null;
         }
         const parseResults = await parseFileMetadata({
@@ -72,6 +87,13 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           file,
           spec,
         });
+        if (parseResults.errors) {
+          await adminLogger.error(
+            `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
+          );
+        } else {
+          await adminLogger.info(`Tiedosto parsittu: ${key}`);
+        }
         return {
           // key is sent to be stored in url decoded format to db
           key,
@@ -79,7 +101,8 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           bucket_arn: eventRecord.s3.bucket.arn,
           bucket_name: eventRecord.s3.bucket.name,
           size: eventRecord.s3.object.size,
-          ...parseResults,
+          metadata: parseResults.metadata,
+          hash: parseResults.hash,
           tags: file.tags,
         };
       },
@@ -96,5 +119,8 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   } catch (err) {
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
+    await adminLogger.error(
+      `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
+    );
   }
 }

@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Role } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -10,14 +11,18 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { LambdaTarget } from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as path from 'path';
-import { RaitaEnvironment } from './config';
+import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
-import { isDevelopmentMainStack, isDevelopmentPreMainStack } from './utils';
+import {
+  getDatabaseEnvironmentVariables,
+  isDevelopmentMainStack,
+  isDevelopmentPreMainStack,
+} from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 interface RaitaApiStackProps extends NestedStackProps {
@@ -26,6 +31,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly stackId: string;
   readonly jwtTokenIssuer: string;
   readonly inspectionDataBucket: Bucket;
+  readonly dataReceptionBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
@@ -48,9 +54,12 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
   public readonly raitaApiZipProcessLambdaServiceRole: Role;
   public readonly raitaApiZipRequestLambdaServiceRole: Role;
+  public readonly raitaApiDeleteRequestLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
   public readonly handleZipProcessFn: NodejsFunction;
+  public readonly handleDeleteRequestFn: NodejsFunction;
+  public readonly handleAdminLogsRequestFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
@@ -65,14 +74,19 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
       inspectionDataBucket,
+      dataReceptionBucket,
       openSearchDomain,
       cloudfrontDomainName,
       raitaSecurityGroup,
     } = props;
 
+    const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
+      stackId,
+      raitaEnv,
+    );
     // Create a bucket to hold the data of user made
     // collections as a zip. Set lifecycle policy to delete
-    // the objects in 30 days
+    // the objects in 7 days
     const dataCollectionBucket = createRaitaBucket({
       scope: this,
       name: 'data-collection',
@@ -80,7 +94,7 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
     dataCollectionBucket.addLifecycleRule({
-      expiration: cdk.Duration.days(30),
+      expiration: cdk.Duration.days(7),
     });
 
     // ZipProcesser needs rights to two buckets so it gets its
@@ -117,6 +131,7 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
+
     // Write permission is needed here (the Write part in ReadWrite) as it adds POST permissions to
     // the metadata index. RaitaApiLambdaServiceRole does not need to make any
     // data modifications to metadata index but under the hood the client from
@@ -127,6 +142,42 @@ export class RaitaApiStack extends NestedStack {
     );
     inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
     dataCollectionBucket.grantRead(this.raitaApiLambdaServiceRole);
+
+    // TODO: this is not needed on all resources
+    this.raitaApiLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
+
+    this.raitaApiDeleteRequestLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiDeleteRequestLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+    openSearchDomain.grantIndexReadWrite(
+      openSearchMetadataIndex,
+      this.raitaApiDeleteRequestLambdaServiceRole,
+    );
+    inspectionDataBucket.grantRead(this.raitaApiDeleteRequestLambdaServiceRole);
+    inspectionDataBucket.grantDelete(
+      this.raitaApiDeleteRequestLambdaServiceRole,
+    );
+    dataReceptionBucket.grantRead(this.raitaApiDeleteRequestLambdaServiceRole);
+    dataReceptionBucket.grantDelete(
+      this.raitaApiDeleteRequestLambdaServiceRole,
+    );
+    this.raitaApiDeleteRequestLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
 
     // Create handler lambdas
     const handleFileRequestFn = this.createFileRequestHandler({
@@ -185,6 +236,15 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: dataCollectionBucket,
       vpc,
     });
+    const handleUserRequestFn = this.createUserRequestHandler({
+      name: 'api-handler-user',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      vpc,
+    });
 
     this.handleFilesRequestFn = this.createFilesRequestHandler({
       name: 'api-handler-files',
@@ -209,6 +269,31 @@ export class RaitaApiStack extends NestedStack {
       openSearchMetadataIndex,
       vpc,
     });
+    this.handleDeleteRequestFn = this.createDeleteRequestHandler({
+      name: 'api-handler-delete',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiDeleteRequestLambdaServiceRole,
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+      openSearchMetadataIndex,
+      vpc,
+      receptionBucket: dataReceptionBucket,
+      inspectionBucket: inspectionDataBucket,
+      databaseEnvironmentVariables,
+    });
+
+    this.handleAdminLogsRequestFn = this.createAdminLogsRequestHandler({
+      name: 'api-handler-admin-logs',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      vpc,
+      databaseEnvironmentVariables,
+    });
 
     const handleReturnLogin = this.createReturnLoginHandler({
       name: 'api-handler-return-login',
@@ -231,6 +316,12 @@ export class RaitaApiStack extends NestedStack {
      * Keep list in order by priority. Don’t reuse priority numbers
      */
     const albLambdaTargets: ListenerTargetLambdas[] = [
+      {
+        lambda: handleUserRequestFn,
+        priority: 100,
+        path: [`${apiBaseUrl}/user`],
+        targetName: 'user',
+      },
       {
         lambda: handleFileRequestFn,
         priority: 200,
@@ -266,6 +357,18 @@ export class RaitaApiStack extends NestedStack {
         priority: 310,
         path: [`${apiBaseUrl}/meta`],
         targetName: 'meta',
+      },
+      {
+        lambda: this.handleDeleteRequestFn,
+        priority: 320,
+        path: [`${apiBaseUrl}/delete`],
+        targetName: 'delete',
+      },
+      {
+        lambda: this.handleAdminLogsRequestFn,
+        priority: 350,
+        path: [`${apiBaseUrl}/admin/logs`],
+        targetName: 'admin-logs',
       },
       {
         lambda: handleReturnLogin,
@@ -310,6 +413,7 @@ export class RaitaApiStack extends NestedStack {
         path: [`${apiBaseUrl}/ext/meta`],
         targetName: 'ext-meta',
       },
+      // Note: delete request is missing from ext on purpose
     ];
 
     let importedListener: elbv2.IApplicationListener | null = null;
@@ -433,7 +537,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: Duration.seconds(5),
-      runtime: Runtime.NODEJS_16_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleFileRequest',
       entry: path.join(
         __dirname,
@@ -480,7 +584,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleImagesRequest',
       entry: path.join(
         __dirname,
@@ -529,7 +633,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(15),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleZipRequest',
       entry: path.join(
         __dirname,
@@ -580,7 +684,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 3008,
       timeout: cdk.Duration.minutes(15),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleZipProcessing',
       entry: path.join(
         __dirname,
@@ -628,7 +732,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(10),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handlePollingRequest',
       entry: path.join(
         __dirname,
@@ -636,6 +740,50 @@ export class RaitaApiStack extends NestedStack {
       ),
       environment: {
         DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns a handler for user request
+   */
+  private createUserRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(5),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleUserRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleUserRequest/handleUserRequest.ts`,
+      ),
+      environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
@@ -677,7 +825,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleFilesRequest',
       entry: path.join(
         __dirname,
@@ -728,7 +876,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleMetaRequest',
       entry: path.join(
         __dirname,
@@ -750,6 +898,54 @@ export class RaitaApiStack extends NestedStack {
       logRetention: RetentionDays.SIX_MONTHS,
     });
   }
+
+  /**
+   * Creates and returns handler for admin log request
+   */
+  private createAdminLogsRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(60), // TODO
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleAdminLogsRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleAdminLogRequest/handleAdminLogRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
   private createReturnLoginHandler({
     name,
     raitaStackIdentifier,
@@ -773,7 +969,7 @@ export class RaitaApiStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 256,
       timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleRequest',
       entry: path.join(
         __dirname,
@@ -791,6 +987,62 @@ export class RaitaApiStack extends NestedStack {
         subnets: vpc.privateSubnets,
       },
       logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  private createDeleteRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    openSearchDomainEndpoint,
+    openSearchMetadataIndex,
+    receptionBucket,
+    inspectionBucket,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    openSearchDomainEndpoint: string;
+    openSearchMetadataIndex: string;
+    receptionBucket: Bucket;
+    inspectionBucket: Bucket;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(60), // TODO: how long is needed for *big* delete operations?
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleDeleteRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleDeleteRequest/handleDeleteRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        REGION: this.region,
+        RECEPTION_BUCKET: receptionBucket.bucketName,
+        INSPECTION_BUCKET: inspectionBucket.bucketName,
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        METADATA_INDEX: openSearchMetadataIndex,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
     });
   }
 }
