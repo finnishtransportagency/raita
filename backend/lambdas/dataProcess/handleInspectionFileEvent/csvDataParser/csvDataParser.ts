@@ -155,6 +155,35 @@ async function parseCsvAndWriteToDb(
   }
 }
 
+function isSemicolonSeparator(fileBody: string) {
+  //we have to find out what is the csv separator; we look at third line (first or second data line) and count if many semicolons
+
+  //no splitting whole body to save memory
+  let temp = fileBody.replace(/\r\n|\r|\n/, '');
+  const secondNewLinePos = temp.search(/\r\n/);
+  temp = temp.replace(/\r\n|\r|\n/, '');
+  const thirdNewLinePos = temp.search(/\r\n/);
+  const thirdLine = temp.slice(secondNewLinePos, thirdNewLinePos);
+
+  const semicolonCount = (thirdLine.match(/;/g) || []).length;
+  const commaCount = (thirdLine.match(/,/g) || []).length;
+  return semicolonCount > commaCount;
+}
+
+function replaceSeparators(fileBody: string) {
+  const isSemicolonSeparated =  isSemicolonSeparator(fileBody);
+  if(isSemicolonSeparated){
+    //replace decimal commas with points; both styles in incoming csv files
+    let resultFileBody: string = fileBody.replace(/,/g, '.');
+
+    //replace semicolons with commas; both styles in incoming csv files
+    resultFileBody = resultFileBody.replace(/;/g, ',');
+    return resultFileBody;
+  }
+
+  return fileBody;
+}
+
 export async function parseCSVFile(
   fileBaseName: string,
   file: IFileResult,
@@ -187,10 +216,9 @@ export async function parseCSVFile(
   log.info('reportId: ' + reportId);
   try {
     if (file.fileBody) {
-      //replace semicolons with commas; both styles in incoming csv files
-      const fileBody: string = file.fileBody.replace(/;/g, ',');
-      log.info('fileBody: ' + fileBody.substring(0,100));
-      const runningDate = readRunningDate(file.fileBody);
+      const fileBody = replaceSeparators(file.fileBody);
+      log.info('fileBody: ' + fileBody.substring(0, 100));
+      const runningDate = readRunningDate(fileBody);
       log.info('runningDate: ' + runningDate);
       switch (fileNamePrefix) {
         case 'AMS':
