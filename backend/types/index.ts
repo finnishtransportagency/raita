@@ -1,3 +1,5 @@
+import { Readable } from 'stream';
+
 export * from './specification';
 export * from './portDataStorage';
 export * from './portFile';
@@ -18,5 +20,10 @@ export interface FileMetadataEntry {
 export interface IFileResult {
   fileBody: string | undefined;
   contentType: string | undefined;
+  tags: Record<string, string>;
+}
+export interface IFileStreamResult {
+  fileStream: Readable | undefined;
+  // contentType: removed because it is not used and more complicated to get with streams. Add back if needed
   tags: Record<string, string>;
 }

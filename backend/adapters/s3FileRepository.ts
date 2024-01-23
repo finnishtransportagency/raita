@@ -1,6 +1,6 @@
 import { S3EventRecord } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
-import { IFileResult } from '../types';
+import { IFileResult, IFileStreamResult } from '../types';
 import { IFileInterface } from '../types/portFile';
 
 export class S3FileRepository implements IFileInterface {
@@ -28,13 +28,49 @@ export class S3FileRepository implements IFileInterface {
       })
       .promise();
     const [file, tagSet] = await Promise.all([filePromise, tagsPromise]);
-    const tags = tagSet.TagSet.reduce((acc, cur) => {
-      acc[cur.Key] = cur.Value;
-      return acc;
-    }, {} as Record<string, string>);
+    const tags = tagSet.TagSet.reduce(
+      (acc, cur) => {
+        acc[cur.Key] = cur.Value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
     return {
       fileBody: file.Body?.toString(),
       contentType: file.ContentType,
+      tags,
+    };
+  };
+
+  getFileStream = async (
+    eventRecord: S3EventRecord,
+  ): Promise<IFileStreamResult> => {
+    const bucket = eventRecord.s3.bucket.name;
+    const key = decodeURIComponent(
+      eventRecord.s3.object.key.replace(/\+/g, ' '),
+    );
+    const fileStream = this.#s3
+      .getObject({
+        Bucket: bucket,
+        Key: key,
+      })
+      .createReadStream();
+    const tagsPromise = this.#s3
+      .getObjectTagging({
+        Bucket: bucket,
+        Key: key,
+      })
+      .promise();
+    const tagSet = await tagsPromise;
+    const tags = tagSet.TagSet.reduce(
+      (acc, cur) => {
+        acc[cur.Key] = cur.Value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+    return {
+      fileStream,
       tags,
     };
   };

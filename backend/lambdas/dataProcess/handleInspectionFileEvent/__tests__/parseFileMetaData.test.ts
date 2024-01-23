@@ -1,6 +1,7 @@
 import { IExtractionSpec } from '../../../../types';
 import { KeyData } from '../../../utils';
 import { parseFileMetadata } from '../parseFileMetadata';
+import { stringToStream } from './testUtils';
 
 const ISODateRegexp =
   /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z/;
@@ -128,8 +129,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
     const fileData = {
-      fileBody: testFileBody,
-      contentType: 'text/plain',
+      fileStream: stringToStream(testFileBody),
       tags: {}, // TODO what is this
     };
     const params = {
@@ -164,8 +164,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
     const fileData = {
-      fileBody: 'dummy',
-      contentType: 'text/csv',
+      fileStream: stringToStream('dummy'),
       tags: {}, // TODO what is this
     };
     const params = {
@@ -196,8 +195,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
     const fileData = {
-      fileBody: 'dummy',
-      contentType: 'text/csv',
+      fileStream: stringToStream('dummy'),
       tags: {}, // TODO what is this
     };
     const params = {
@@ -232,8 +230,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
     const fileData = {
-      fileBody: testFileBody,
-      contentType: 'text/plain',
+      fileStream: stringToStream(testFileBody),
       tags: {}, // TODO what is this
     };
     const params = {
@@ -266,8 +263,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
     const fileData = {
-      fileBody: testFileBody,
-      contentType: 'text/plain',
+      fileStream: stringToStream(testFileBody),
       tags: {}, // TODO what is this
     };
     const params = {
@@ -301,8 +297,7 @@ describe('parseFileMetadata', () => {
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
     const fileData = {
-      fileBody: 'dummy',
-      contentType: 'text/plain',
+      fileStream: stringToStream('dummy'),
       tags: {}, // TODO what is this
     };
     const params = {
