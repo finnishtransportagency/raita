@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { PassThrough, Readable } from 'stream';
+import cloneable from 'cloneable-readable';
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
@@ -9,7 +10,7 @@ import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData, RaitaParseError } from '../../utils';
-import { log } from '../../../utils/logger';
+
 /**
  * Resolves whether content data parsing is needed for the file
  */
@@ -109,19 +110,16 @@ export const parseFileContent = async (
 ): Promise<{ contentData: ParseValueResult; hash: string }> => {
   let contentPromise: Promise<ParseValueResult>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
-  const fileStreamToHash = new PassThrough();
-  fileStream.pause();
-  fileStream.pipe(fileStreamToHash);
-  const hashPromise = calculateHashFromStream(fileStreamToHash);
-
+  const originalStream = cloneable(fileStream);
+  originalStream.pause();
+  const hashPromise = calculateHashFromStream(originalStream);
   if (shouldParseContent(keyData.fileSuffix)) {
-    const fileStreamToParse = new PassThrough();
-    fileStream.pipe(fileStreamToParse);
+    const fileStreamToParse = originalStream.clone();
     contentPromise = extractFileContentDataFromStream(spec, fileStreamToParse);
   } else {
     contentPromise = Promise.resolve({});
   }
-  fileStream.resume();
+  originalStream.resume();
   const [hash, contentData] = await Promise.all([hashPromise, contentPromise]);
   return {
     contentData,
