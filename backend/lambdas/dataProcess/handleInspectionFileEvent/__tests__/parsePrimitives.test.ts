@@ -95,4 +95,41 @@ describe('parsePrimitive', () => {
       value: '2023-06-02T00:00:00.000Z',
     });
   });
+  test('success: multiple dates in format d/M/y h:m:s a', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = '03/01/2023 8:00:00 am';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'test',
+      value: '2023-01-02T06:00:00.000Z',
+    });
+    const date3 = '04/01/2023 8:00:00 am';
+    const result2 = parsePrimitive(
+      'test',
+      `${date1} ${date2} ${date3}`,
+      'date',
+    );
+    expect(result2).toEqual({
+      key: 'test',
+      value: '2023-01-02T06:00:00.000Z',
+    });
+  });
+  test('fail: date in format d/M/y h:m:s a followed by invalid date', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = '123/01/2023 8:00:00 am';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'nonparsed_test',
+      value: `${date1} ${date2}`,
+    });
+  });
+  test('fail: date in format d/M/y h:m:s a followed by non date', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = 'other data goes here';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'nonparsed_test',
+      value: `${date1} ${date2}`,
+    });
+  });
 });
