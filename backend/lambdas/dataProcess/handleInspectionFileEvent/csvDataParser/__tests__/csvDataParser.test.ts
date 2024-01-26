@@ -156,7 +156,11 @@ describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'AMS_20221122_008_KOKOL_LR_630_630.csv',
-      { contentType: 'csv', fileBody: amsCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: amsCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -166,7 +170,11 @@ describe('handle ams file success MissingSSCount', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'AMS_20221122_008_KOKOL_LR_630_630.csv',
-      { contentType: 'csv', fileBody: amsCsvMissingSSCount, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: amsCsvMissingSSCount,
+        tags: {},
+      },
       {},
     );
   });
@@ -175,9 +183,13 @@ describe('handle ams file success MissingSSCount', () => {
 describe('handle ams file success different separator', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
-        'AMS_20221122_008_KOKOL_LR_630_630.csv',
-        { contentType: 'csv', fileBody: amsCsvDifferentSeparator, tags: {} },
-        {},
+      'AMS_20221122_008_KOKOL_LR_630_630.csv',
+      {
+        contentType: 'csv',
+        fileBody: amsCsvDifferentSeparator,
+        tags: {},
+      },
+      {},
     );
   });
 });
@@ -185,9 +197,13 @@ describe('handle ams file success different separator', () => {
 describe('handle ams file success different separator and decimal comma', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
-        'AMS_20221122_008_KOKOL_LR_630_630.csv',
-        { contentType: 'csv', fileBody: amsCsvDifferentSeparatorAndDecimal, tags: {} },
-        {},
+      'AMS_20221122_008_KOKOL_LR_630_630.csv',
+      {
+        contentType: 'csv',
+        fileBody: amsCsvDifferentSeparatorAndDecimal,
+        tags: {},
+      },
+      {},
     );
   });
 });
@@ -196,7 +212,11 @@ describe('handle ams file error', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'AMS_20231122_008_KOKOL_LR_630_630.csv',
-      { contentType: 'csv', fileBody: amsCsvError, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: amsCsvError,
+        tags: {},
+      },
       {},
     );
   });
@@ -206,7 +226,11 @@ describe('handle ohl file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'OHL_20221003_006_KVRP_847_193_194.csv',
-      { contentType: 'csv', fileBody: ohlCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: ohlCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -216,7 +240,11 @@ describe('handle pi file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'PI_20221125_006_LHRP_1_130_130.csv',
-      { contentType: 'csv', fileBody: piCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: piCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -226,7 +254,11 @@ describe('handle rc file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'RC_20221022_008_KHG_V911-V913_622_622.csv',
-      { contentType: 'csv', fileBody: rcCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: rcCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -236,7 +268,11 @@ describe('handle rp file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'RP_20220704_003_TL_V628-V626_148_148.csv',
-      { contentType: 'csv', fileBody: rpCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: rpCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -246,7 +282,11 @@ describe('handle tg file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'TG_20221129_006_LHRP_2_130_130.csv',
-      { contentType: 'csv', fileBody: tgCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: tgCsv,
+        tags: {},
+      },
       {},
     );
   });
@@ -256,7 +296,11 @@ describe('handle tsight file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFile(
       'TSIGHT_20221010_003_KRRRP_253_224_225.csv',
-      { contentType: 'csv', fileBody: tsightCsv, tags: {} },
+      {
+        contentType: 'csv',
+        fileBody: tsightCsv,
+        tags: {},
+      },
       {},
     );
   });

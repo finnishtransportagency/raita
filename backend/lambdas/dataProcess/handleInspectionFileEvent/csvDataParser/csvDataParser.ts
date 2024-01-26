@@ -1,4 +1,4 @@
-import { IFileResult, ParseValueResult } from '../../../../types';
+import {IFileResult, IFileStreamResult, ParseValueResult} from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
 import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
@@ -25,6 +25,7 @@ import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
 import { stringify } from 'ts-jest';
+import {Readable} from "stream";
 
 async function updateRaporttiStatus(
   id: number,
@@ -186,7 +187,7 @@ function replaceSeparators(fileBody: string) {
 
 export async function parseCSVFile(
   fileBaseName: string,
-  file: IFileResult,
+  fileStream: Readable,
   metadata: ParseValueResult,
 ) {
   log.info('fileBaseName: ' + fileBaseName);
@@ -215,8 +216,10 @@ export async function parseCSVFile(
   );
   log.info('reportId: ' + reportId);
   try {
-    if (file.fileBody) {
-      const fileBody = replaceSeparators(file.fileBody);
+    fileStream.read(1000);
+    fileStream.
+    if (fileStream.fileBody) {
+      const fileBody = replaceSeparators(fileStream.fileBody);
       log.info('fileBody: ' + fileBody.substring(0, 100));
       const runningDate = readRunningDate(fileBody);
       log.info('runningDate: ' + runningDate);

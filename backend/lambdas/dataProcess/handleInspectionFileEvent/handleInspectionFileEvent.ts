@@ -19,6 +19,7 @@ import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import { parseCSVFile } from './csvDataParser/csvDataParser';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
+import cloneable from 'cloneable-readable';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -56,7 +57,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start handler');
-        const file = await backend.files.getFileStream(eventRecord);
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);
         await adminLogger.init('data-inspection', zipFile);
@@ -84,42 +85,50 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           );
           return null;
         }
-        const parseResults = await parseFileMetadata({
-          keyData,
-          file,
-          spec,
-        });
-        if (parseResults.errors) {
-          await adminLogger.error(
-            `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
-          );
-        } else {
-          await adminLogger.info(`Tiedosto parsittu: ${key}`);
-          //call here csv parsing  parseCsvData(); ?
-          if (
-            keyData.fileSuffix ===
-            fileSuffixesToIncludeInMetadataParsing.CSV_FILE
-          ) {
-            log.info('csv parse file: ' + keyData.fileBaseName);
-            const result = await parseCSVFile(
-              keyData.fileBaseName,
-              file,
-              parseResults.metadata,
+
+        if (fileStreamResult && fileStreamResult.fileStream) {
+          const originalStream = cloneable(fileStreamResult.fileStream);
+          const fileStreamToCsvParse = originalStream.clone();
+
+          const parseResults = await parseFileMetadata({
+            keyData,
+            file: fileStreamResult,
+            spec,
+          });
+
+          if (parseResults.errors) {
+            await adminLogger.error(
+              `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
             );
-            log.info('csv parsing result: ' + result);
+          } else {
+            await adminLogger.info(`Tiedosto parsittu: ${key}`);
+            //call here csv parsing  parseCsvData(); ?
+            if (
+              keyData.fileSuffix ===
+              fileSuffixesToIncludeInMetadataParsing.CSV_FILE
+            ) {
+              log.info('csv parse file: ' + keyData.fileBaseName);
+              const result = await parseCSVFile(
+                keyData.fileBaseName,
+                fileStreamToCsvParse,
+                parseResults.metadata,
+              );
+              log.info('csv parsing result: ' + result);
+            }
           }
-        }
-        return {
-          // key is sent to be stored in url decoded format to db
-          key,
-          file_name: keyData.fileName,
-          bucket_arn: eventRecord.s3.bucket.arn,
-          bucket_name: eventRecord.s3.bucket.name,
-          size: eventRecord.s3.object.size,
-          metadata: parseResults.metadata,
-          hash: parseResults.hash,
-          tags: file.tags,
-        };
+
+          return {
+            // key is sent to be stored in url decoded format to db
+            key,
+            file_name: keyData.fileName,
+            bucket_arn: eventRecord.s3.bucket.arn,
+            bucket_name: eventRecord.s3.bucket.name,
+            size: eventRecord.s3.object.size,
+            metadata: parseResults.metadata,
+            hash: parseResults.hash,
+            tags: fileStreamResult.tags,
+          };
+        } else return null;
       },
     );
     // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
