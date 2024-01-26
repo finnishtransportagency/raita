@@ -16,9 +16,10 @@ import { getAdminLogs } from 'shared/rest';
 import { subDays } from 'date-fns';
 import format from 'date-fns/format';
 import { Button, DateRange } from 'components';
-import Head from 'next/head';
 import css from './logs.module.css';
 import { RaitaRole } from 'shared/user';
+import ResultsPager from 'components/results-pager';
+import { ADMIN_LOG_PAGE_SIZE } from 'shared/constants';
 
 const AdminLogs: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
@@ -26,7 +27,13 @@ const AdminLogs: RaitaNextPage = () => {
   const defaultStartDate = subDays(new Date(), 7);
   const defaultEndDate = new Date();
 
-  const [logs, setLogs] = useState<AdminLogsResponse['logs']>([]);
+  const [logs, setLogs] = useState<AdminLogsResponse>({
+    totalSize: 0,
+    pageIndex: 0,
+    pageSize: 0,
+    logs: [],
+  });
+  const [logPageIndex, setLogPageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dateRange, setDateRange] = useState<Range<Date>>({
     start: defaultStartDate,
@@ -36,7 +43,15 @@ const AdminLogs: RaitaNextPage = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [logPageIndex]);
+
+  const fetchNew = () => {
+    if (logPageIndex === 0) {
+      fetchLogs();
+    } else {
+      setLogPageIndex(0);
+    }
+  };
 
   const fetchLogs = async () => {
     if (!dateRange.start) {
@@ -50,7 +65,12 @@ const AdminLogs: RaitaNextPage = () => {
     const startDate = format(dateRange.start, 'yyyy-MM-dd');
     const endDate = format(dateRange.end, 'yyyy-MM-dd');
     try {
-      await getAdminLogs(startDate, endDate).then(receivedLogs => {
+      await getAdminLogs(
+        startDate,
+        endDate,
+        logPageIndex,
+        ADMIN_LOG_PAGE_SIZE,
+      ).then(receivedLogs => {
         setLogs(receivedLogs);
         setIsLoading(false);
         setErrorMessage('');
@@ -65,7 +85,7 @@ const AdminLogs: RaitaNextPage = () => {
   const groupedLogs: {
     [constructedId: string]: AdminLogsResponse['logs'];
   } = {};
-  logs.forEach(logRow => {
+  logs.logs.forEach(logRow => {
     const date = format(new Date(logRow.log_timestamp), 'yyyy-MM-dd');
     const constructedId = `${date}-${logRow.invocation_id}`;
     if (groupedLogs[constructedId]) {
@@ -81,12 +101,6 @@ const AdminLogs: RaitaNextPage = () => {
     );
   });
   const logGroupIds = Object.keys(groupedLogs);
-  // sort by full timestamp of first log message, newest first
-  logGroupIds.sort((a, b) =>
-    groupedLogs[b][0].log_timestamp.localeCompare(
-      groupedLogs[a][0].log_timestamp,
-    ),
-  );
   return (
     <div className="container mx-auto px-16 py-6">
       <h1 className="text-3xl mb-4 pb-2 w-4/12 border-primary border-b-2">
@@ -102,13 +116,13 @@ const AdminLogs: RaitaNextPage = () => {
           className="max-w-md"
           inputId="log-daterange"
         />
-        <Button label={t('common:search')} onClick={fetchLogs} />
+        <Button label={t('common:search')} onClick={fetchNew} />
       </div>
       {errorMessage && <p>{errorMessage}</p>}
       {!errorMessage && isLoading && <p>{t('common:loading')}</p>}
       {!isLoading && !errorMessage && (
         <div>
-          {logs.length === 0 ? (
+          {logs.logs.length === 0 ? (
             <div>Ei dataa</div>
           ) : (
             <Accordion allowMultipleExpanded allowZeroExpanded>
@@ -212,6 +226,12 @@ const AdminLogs: RaitaNextPage = () => {
               })}
             </Accordion>
           )}
+          <ResultsPager
+            currentPage={logPageIndex + 1}
+            itemCount={logs.totalSize}
+            pageSize={ADMIN_LOG_PAGE_SIZE}
+            onGotoPage={i => setLogPageIndex(i - 1)}
+          />
         </div>
       )}
     </div>
