@@ -26,6 +26,7 @@
   "devDependencies": {
     "@types/archiver": "^6.0.2",
     "@types/aws-lambda": "^8.10.130",
+    "@types/cloneable-readable": "^2.0.3",
     "@types/jest": "^29.5.11",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/jwk-to-pem": "^2.0.3",
@@ -56,7 +57,9 @@
     "aws-lambda": "^1.0.7",
     "aws-opensearch-connector": "^1.1.0",
     "axios": "^1.6.2",
+    "cloneable-readable": "^3.0.0",
     "constructs": "^10.3.0",
+    "csv-string": "^4.1.1",
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
@@ -67,7 +70,6 @@
     "postgres": "^3.4.3",
     "unzipper": "^0.10.14",
     "zod": "^3.22.4",
-    "csv-string": "^4.1.1",
     "zod-csv": "^0.0.8"
   }
 }

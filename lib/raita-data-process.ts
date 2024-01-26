@@ -484,12 +484,31 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
+    const crashErrorMetricFilter = logGroup.addMetricFilter(
+      'inspection-crash-error-filter',
+      {
+        filterPattern: FilterPattern.literal('%Runtime exited%'),
+        metricName: `inspection-crash-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'inspection-all-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `inspection-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
     const timeoutAlarm = new Alarm(this, 'inspection-timeout-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
       evaluationPeriods: 1,
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `inspection-timeout-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching timeout errors in metadata parser',
       metric: timeoutMetricFilter.metric({
         label: `Inspection timeout ${raitaStackIdentifier}`,
         period: Duration.days(1),
@@ -506,6 +525,8 @@ export class DataProcessStack extends NestedStack {
         evaluationPeriods: 1,
         treatMissingData: TreatMissingData.NOT_BREACHING,
         alarmName: `inspection-parsing-errors-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm for catching parsing errors in metadata parser',
         metric: parsingErrorMetricFilter.metric({
           label: `Inspection parsing errors ${raitaStackIdentifier}`,
           period: Duration.days(1),
@@ -519,13 +540,48 @@ export class DataProcessStack extends NestedStack {
       evaluationPeriods: 1,
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `inspection-other-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Alarm for catching code errors other than known parsing errors in metadata parser',
       metric: otherErrorMetricFilter.metric({
         label: `Inspection other errors ${raitaStackIdentifier}`,
         period: Duration.days(1),
         statistic: Stats.SUM,
       }),
     });
-    return [timeoutAlarm, parsingErrorAlarm, otherErrorAlarm];
+    const crashErrorAlarm = new Alarm(this, 'inspection-crash-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `inspection-crash-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching crashes of metadata parser',
+      metric: crashErrorMetricFilter.metric({
+        label: `Inspection crash errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const anyErrorAlarm = new Alarm(this, 'inspection-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `inspection-any-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Failsafe alarm for catching all errors in metadata parser, including those missed by other alarms',
+      metric: anyErrorMetricFilter.metric({
+        label: `Inspection any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [
+      timeoutAlarm,
+      parsingErrorAlarm,
+      otherErrorAlarm,
+      crashErrorAlarm,
+      anyErrorAlarm,
+    ];
   }
 
   /**

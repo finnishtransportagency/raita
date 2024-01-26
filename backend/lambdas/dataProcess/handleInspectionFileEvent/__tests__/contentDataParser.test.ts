@@ -1,8 +1,10 @@
-import { ExtractionSpec, IExtractionSpec } from '../../../../types';
+import { IExtractionSpec } from '../../../../types';
 import {
   extractFileContentData,
+  extractFileContentDataFromStream,
   shouldParseContent,
 } from '../contentDataParser';
+import { stringToStream, stringToStreamWithDelay } from './testUtils';
 
 jest.mock('../../../../utils/logger', () => {
   return {
@@ -132,6 +134,44 @@ data here
     expect(result).toEqual({
       contentVal1: 'value_1',
       // missing contentVal2
+      contentVal3: 332211,
+    });
+  });
+});
+describe('extractFileContentDataFromStream', () => {
+  test('success: txt file', async () => {
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL2: value number 2
+VAL3: 332211
+
+data here
+`;
+    const result = await extractFileContentDataFromStream(
+      extractionSpec as any as IExtractionSpec,
+      stringToStream(fileBody),
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      contentVal2: 'value number 2',
+      contentVal3: 332211,
+    });
+  });
+  test('success: txt file with arbitrary delay in stream', async () => {
+    const fileBody = `ver. 5.67.53
+VAL1: value_1
+VAL2: value number 2
+VAL3: 332211
+
+data here
+`;
+    const result = await extractFileContentDataFromStream(
+      extractionSpec as any as IExtractionSpec,
+      stringToStreamWithDelay(fileBody, 1000),
+    );
+    expect(result).toEqual({
+      contentVal1: 'value_1',
+      contentVal2: 'value number 2',
       contentVal3: 332211,
     });
   });
