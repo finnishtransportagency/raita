@@ -17,7 +17,7 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
-import { parseCSVFile } from './csvDataParser/csvDataParser';
+import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import cloneable from 'cloneable-readable';
 
@@ -108,7 +108,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
               fileSuffixesToIncludeInMetadataParsing.CSV_FILE
             ) {
               log.info('csv parse file: ' + keyData.fileBaseName);
-              const result = await parseCSVFile(
+              const result = await parseCSVFileStream(
                 keyData.fileBaseName,
                 fileStreamToCsvParse,
                 parseResults.metadata,

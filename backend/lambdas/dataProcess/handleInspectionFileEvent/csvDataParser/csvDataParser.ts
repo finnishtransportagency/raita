@@ -1,4 +1,8 @@
-import {IFileResult, IFileStreamResult, ParseValueResult} from '../../../../types';
+import {
+  IFileResult,
+  IFileStreamResult,
+  ParseValueResult,
+} from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
 import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
@@ -21,11 +25,20 @@ import {
   ZodString,
   ZodTypeAny,
 } from 'zod';
-import { readRunningDate, tidyUpFileBody } from './csvConversionUtils';
+import {
+  readRunningDate,
+  readRunningDateFromLine,
+  readRunningDateFromStream,
+  tidyUpFileBody,
+  tidyUpHeaderLine,
+} from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
 import { stringify } from 'ts-jest';
-import {Readable} from "stream";
+import { Readable } from 'stream';
+import { ReadLine } from 'readline';
+import * as readline from 'readline';
+import * as events from 'events';
 
 async function updateRaporttiStatus(
   id: number,
@@ -112,7 +125,7 @@ async function writeCsvContentToDb(dbRows: any[], table: string) {
 
 async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
-  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0,600));
+  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
 }
@@ -172,8 +185,8 @@ function isSemicolonSeparator(fileBody: string) {
 }
 
 function replaceSeparators(fileBody: string) {
-  const isSemicolonSeparated =  isSemicolonSeparator(fileBody);
-  if(isSemicolonSeparated){
+  const isSemicolonSeparated = isSemicolonSeparator(fileBody);
+  if (isSemicolonSeparated) {
     //replace decimal commas with points; both styles in incoming csv files
     let resultFileBody: string = fileBody.replace(/,/g, '.');
 
@@ -185,7 +198,106 @@ function replaceSeparators(fileBody: string) {
   return fileBody;
 }
 
-export async function parseCSVFile(
+enum ReadState {
+  READING_HEADER = 'READING_HEADER',
+  READING_BODY = 'READING_BODY',
+}
+
+async function handleBufferedLines(
+  inputFileChunkBody: string,
+  fileNamePrefix: string,
+  runningDate: Date,
+  reportId: number,
+  fileBaseName: string,
+) {
+  const fileChunkBody = replaceSeparators(inputFileChunkBody);
+  console.log('fileChunkBody: ' + fileChunkBody);
+  switch (fileNamePrefix) {
+    case 'AMS':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'ams_mittaus',
+        amsSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'OHL':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'ohl_mittaus',
+        ohlSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'PI':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'pi_mittaus',
+        piSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'RC':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'rc_mittaus',
+        rcSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'RP':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'rp_mittaus',
+        rpSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'TG':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'tg_mittaus',
+        tgSchema,
+        fileNamePrefix,
+      );
+      break;
+    case 'TSIGHT':
+      await parseCsvAndWriteToDb(
+        fileChunkBody,
+        runningDate,
+        reportId,
+        fileBaseName,
+        'tsight_mittaus',
+        tsightSchema,
+        fileNamePrefix,
+      );
+      break;
+
+    default:
+      log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+      throw new Error('Unknown csv file prefix:');
+  }
+}
+
+export async function parseCSVFileStream(
   fileBaseName: string,
   fileStream: Readable,
   metadata: ParseValueResult,
@@ -216,104 +328,87 @@ export async function parseCSVFile(
   );
   log.info('reportId: ' + reportId);
   try {
-    fileStream.read(1000);
-    fileStream.
-    if (fileStream.fileBody) {
-      const fileBody = replaceSeparators(fileStream.fileBody);
-      log.info('fileBody: ' + fileBody.substring(0, 100));
-      const runningDate = readRunningDate(fileBody);
-      log.info('runningDate: ' + runningDate);
-      switch (fileNamePrefix) {
-        case 'AMS':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'ams_mittaus',
-            amsSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'OHL':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'ohl_mittaus',
-            ohlSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'PI':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'pi_mittaus',
-            piSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'RC':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'rc_mittaus',
-            rcSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'RP':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'rp_mittaus',
-            rpSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'TG':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'tg_mittaus',
-            tgSchema,
-            fileNamePrefix,
-          );
-          break;
-        case 'TSIGHT':
-          await parseCsvAndWriteToDb(
-            fileBody,
-            runningDate,
-            reportId,
-            fileBaseName,
-            'tsight_mittaus',
-            tsightSchema,
-            fileNamePrefix,
-          );
-          break;
+    try {
+      let runningDate = new Date();
+      let csvHeaderLine = '';
 
-        default:
-          log.warn('Unknown csv file prefix: ' + fileNamePrefix);
-          throw new Error('Unknown csv file prefix:');
+      const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity,
+      });
+
+      let lineBuffer: string[] = [];
+      const maxBufferSize = 1000;
+
+      let state = ReadState.READING_HEADER as ReadState;
+
+      rl.on('line', line => {
+        lineBuffer.push(line);
+        console.log("lineBuffer: " + lineBuffer);
+        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
+          if (lineBuffer[0].search('Running Date') != -1) {
+            runningDate = readRunningDateFromLine(lineBuffer[0]);
+            console.log("runningdate set: " + runningDate);
+          } else {
+            csvHeaderLine = tidyUpHeaderLine(lineBuffer[0]);
+            state = ReadState.READING_BODY;
+            lineBuffer = [];
+            console.log("csvHeaderLine set 0: " + csvHeaderLine);
+          }
+        }
+
+        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
+          console.log("lineBuffer[1]: " + lineBuffer[1]);
+          console.log("tidyUpHeaderLine(lineBuffer[1]): " + tidyUpHeaderLine(lineBuffer[1]));
+          csvHeaderLine = tidyUpHeaderLine(lineBuffer[1]);
+          state = ReadState.READING_BODY;
+          lineBuffer = [];
+          console.log("csvHeaderLine set: " + csvHeaderLine);
+        }
+
+        if (state == ReadState.READING_BODY) {
+          if (lineBuffer.length > maxBufferSize) {
+            handleBufferedLines(
+              csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+              fileNamePrefix,
+              runningDate,
+              reportId,
+              fileBaseName,
+            );
+            lineBuffer = [];
+          }
+        }
+      });
+
+      if (state == ReadState.READING_BODY) {
+        if (lineBuffer.length > maxBufferSize) {
+          handleBufferedLines(
+            csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+            fileNamePrefix,
+            runningDate,
+            reportId,
+            fileBaseName,
+          );
+          lineBuffer = [];
+        }
       }
-      log.info('HEllo suscses');
-      await updateRaporttiStatus(reportId, 'SUCCESS', null);
-      log.info('HEllo suscses done');
-      return 'success';
-    } else {
-      log.warn('CVS file has no content');
-      throw new Error('CVS file has no content');
+
+
+      await events.EventEmitter.once(rl, 'close');
+
+      console.log('Reading file line by line with readline done.');
+      const used = process.memoryUsage().heapUsed / 1024 / 1024;
+      console.log(
+        `The script uses approximately ${Math.round(used * 100) / 100} MB`,
+      );
+    } catch (err) {
+      console.error(err);
     }
+
+    log.info('HEllo suscses');
+    await updateRaporttiStatus(reportId, 'SUCCESS', null);
+    log.info('HEllo suscses done');
+    return 'success';
   } catch (e) {
     log.warn('csv parsing error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
