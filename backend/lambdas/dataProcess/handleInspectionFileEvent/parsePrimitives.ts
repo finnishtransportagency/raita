@@ -1,7 +1,7 @@
 import parse from 'date-fns/parse';
 import { zonedTimeToUtc } from 'date-fns-tz';
 import { format, isMatch } from 'date-fns';
-import { log } from '../../../utils/logger';
+import { logParsingException } from '../../../utils/logger';
 import { DATA_TIME_ZONE } from '../../../../constants';
 
 const parseDate = (date: string) => {
@@ -61,7 +61,12 @@ export const parsePrimitive = (
   try {
     return { key, value: parsers[target](data) };
   } catch (error: any) {
-    log.error(error);
+    logParsingException.error(
+      { errorType: 'VALUE_PARSE_ERROR' },
+      `Parsing failed for the term: ${key}: ${
+        error instanceof Error ? error.message : error
+      }`,
+    );
     return { key: `nonparsed_${key}`, value: data };
   }
 };
