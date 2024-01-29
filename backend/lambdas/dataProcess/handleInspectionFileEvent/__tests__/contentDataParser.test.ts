@@ -98,7 +98,7 @@ data here
     );
     expect(result).toEqual({
       contentVal1: 'value_1',
-      // currentVal2 missing
+      contentVal2: '',
       contentVal3: 332211,
     });
   });
