@@ -113,14 +113,15 @@ export class RaitaPipelineStack extends Stack {
     if (isProductionStack(config.stackId, config.env)) {
       confFileDir = 'prod';
     }
+    const doPermanentSteps =
+      isPermanentStack(config.stackId, config.env) ||
+      isDevelopmentPreMainStack(config.stackId, config.env);
 
-    const pipelineLockStack = new RaitaPipelineLockStack(
-      this,
-      'PipelineLockStack',
-      {
-        vpc: raitaVPC,
-      },
-    );
+    const pipelineLockStack: RaitaPipelineLockStack | null = doPermanentSteps
+      ? new RaitaPipelineLockStack(this, 'PipelineLockStack', {
+          vpc: raitaVPC,
+        })
+      : null;
 
     const codePipeline = new CodePipeline(
       this,
@@ -160,11 +161,10 @@ export class RaitaPipelineStack extends Stack {
       }),
     ];
     const postSteps: Step[] = [];
-    if (
-      isPermanentStack(config.stackId, config.env) ||
-      isDevelopmentPreMainStack(config.stackId, config.env)
-    ) {
-      preSteps.push(pipelineLockStack.acquireLockStep);
+    if (doPermanentSteps) {
+      if (pipelineLockStack) {
+        preSteps.push(pipelineLockStack.acquireLockStep);
+      }
       postSteps.push(
         new CodeBuildStep('Flyway', {
           input: githubSource,
@@ -195,7 +195,9 @@ export class RaitaPipelineStack extends Stack {
           ],
         }),
       );
-      postSteps.push(pipelineLockStack.releaseLockStep);
+      if (pipelineLockStack) {
+        postSteps.push(pipelineLockStack.releaseLockStep);
+      }
     }
 
     codePipeline.addStage(
