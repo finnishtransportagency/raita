@@ -296,9 +296,10 @@ export async function parseCSVFileStream(
     let state = ReadState.READING_HEADER as ReadState;
 
     rl.on('line', async line => {
+      log.info("line: " + line);
       lineBuffer.push(line);
 
-      //running date on the firstine unless it's missing; then csv column headers on the first line
+      //running date on the firstline unless it's missing; then csv column headers on the first line
       if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
         if (lineBuffer[0].search('Running Date') != -1) {
           runningDate = readRunningDateFromLine(lineBuffer[0]);
