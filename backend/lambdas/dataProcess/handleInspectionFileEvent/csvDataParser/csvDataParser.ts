@@ -304,7 +304,7 @@ export async function parseCSVFileStream(
             runningDate = readRunningDateFromLine(lineBuffer[0]);
             console.log('runningdate set: ' + runningDate);
           } else {
-            csvHeaderLine = tidyUpHeaderLine(replaceSeparatorsInHeaderLine(lineBuffer[0]));
+            csvHeaderLine = lineBuffer[0];
             state = ReadState.READING_BODY;
             lineBuffer = [];
             console.log('csvHeaderLine set 0: ' + csvHeaderLine);
@@ -313,12 +313,7 @@ export async function parseCSVFileStream(
 
         //csv column headers on the second line when running date was found on the first
         if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          console.log('lineBuffer[1]: ' + lineBuffer[1]);
-          console.log(
-            'tidyUpHeaderLine(lineBuffer[1]): ' +
-              tidyUpHeaderLine(lineBuffer[1]),
-          );
-          csvHeaderLine = tidyUpHeaderLine(replaceSeparatorsInHeaderLine(lineBuffer[1]));
+          csvHeaderLine = lineBuffer[1];
           state = ReadState.READING_BODY;
           lineBuffer = [];
           console.log('csvHeaderLine set: ' + csvHeaderLine);
