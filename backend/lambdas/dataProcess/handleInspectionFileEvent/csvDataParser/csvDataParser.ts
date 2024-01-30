@@ -338,34 +338,40 @@ export async function parseCSVFileStream(
       });
 
       let lineBuffer: string[] = [];
-      const maxBufferSize = 1000;
+      const maxBufferSize = 4;
 
       let state = ReadState.READING_HEADER as ReadState;
 
       rl.on('line', line => {
         lineBuffer.push(line);
-        console.log("lineBuffer: " + lineBuffer);
+
+        //running date on the firstine unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
           if (lineBuffer[0].search('Running Date') != -1) {
             runningDate = readRunningDateFromLine(lineBuffer[0]);
-            console.log("runningdate set: " + runningDate);
+            console.log('runningdate set: ' + runningDate);
           } else {
             csvHeaderLine = tidyUpHeaderLine(lineBuffer[0]);
             state = ReadState.READING_BODY;
             lineBuffer = [];
-            console.log("csvHeaderLine set 0: " + csvHeaderLine);
+            console.log('csvHeaderLine set 0: ' + csvHeaderLine);
           }
         }
 
+        //csv column headers on the second line when running date was found on the first
         if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          console.log("lineBuffer[1]: " + lineBuffer[1]);
-          console.log("tidyUpHeaderLine(lineBuffer[1]): " + tidyUpHeaderLine(lineBuffer[1]));
+          console.log('lineBuffer[1]: ' + lineBuffer[1]);
+          console.log(
+            'tidyUpHeaderLine(lineBuffer[1]): ' +
+              tidyUpHeaderLine(lineBuffer[1]),
+          );
           csvHeaderLine = tidyUpHeaderLine(lineBuffer[1]);
           state = ReadState.READING_BODY;
           lineBuffer = [];
-          console.log("csvHeaderLine set: " + csvHeaderLine);
+          console.log('csvHeaderLine set: ' + csvHeaderLine);
         }
 
+        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
         if (state == ReadState.READING_BODY) {
           if (lineBuffer.length > maxBufferSize) {
             handleBufferedLines(
@@ -380,23 +386,24 @@ export async function parseCSVFileStream(
         }
       });
 
-      if (state == ReadState.READING_BODY) {
-        if (lineBuffer.length > maxBufferSize) {
-          handleBufferedLines(
-            csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-            fileNamePrefix,
-            runningDate,
-            reportId,
-            fileBaseName,
-          );
-          lineBuffer = [];
-        }
+      await events.EventEmitter.once(rl, 'close');
+      console.log('Reading file line by line with readline done.');
+
+
+      // Last content of lineBuffer not handled yet
+      console.log("state now: " + state);
+      console.log("file now: " +  csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')));
+      if (state == ReadState.READING_BODY && lineBuffer.length) {
+        handleBufferedLines(
+          csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+          fileNamePrefix,
+          runningDate,
+          reportId,
+          fileBaseName,
+        );
       }
 
 
-      await events.EventEmitter.once(rl, 'close');
-
-      console.log('Reading file line by line with readline done.');
       const used = process.memoryUsage().heapUsed / 1024 / 1024;
       console.log(
         `The script uses approximately ${Math.round(used * 100) / 100} MB`,
