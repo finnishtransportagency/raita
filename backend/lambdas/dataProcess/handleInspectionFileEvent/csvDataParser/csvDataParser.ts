@@ -1,8 +1,4 @@
-import {
-  IFileResult,
-  IFileStreamResult,
-  ParseValueResult,
-} from '../../../../types';
+import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
 import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
@@ -13,30 +9,16 @@ import { rcSchema } from './csvSchemas/rcCsvSchema';
 import { rpSchema } from './csvSchemas/rpCsvSchema';
 import { tgSchema } from './csvSchemas/tgCsvSchema';
 import { tsightSchema } from './csvSchemas/tsightCsvSchema';
+import { ZodObject } from 'zod';
 import {
-  baseObjectInputType,
-  baseObjectOutputType,
-  TypeOf,
-  undefined,
-  z,
-  ZodEffects,
-  ZodNumber,
-  ZodObject,
-  ZodString,
-  ZodTypeAny,
-} from 'zod';
-import {
-  readRunningDate,
   readRunningDateFromLine,
-  readRunningDateFromStream,
+  replaceSeparators, replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from './csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import postgres from 'postgres';
-import { stringify } from 'ts-jest';
 import { Readable } from 'stream';
-import { ReadLine } from 'readline';
 import * as readline from 'readline';
 import * as events from 'events';
 
@@ -167,35 +149,6 @@ async function parseCsvAndWriteToDb(
       'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString,
     );
   }
-}
-
-function isSemicolonSeparator(fileBody: string) {
-  //we have to find out what is the csv separator; we look at third line (first or second data line) and count if many semicolons
-
-  //no splitting whole body to save memory
-  let temp = fileBody.replace(/\r\n|\r|\n/, '');
-  const secondNewLinePos = temp.search(/\r\n/);
-  temp = temp.replace(/\r\n|\r|\n/, '');
-  const thirdNewLinePos = temp.search(/\r\n/);
-  const thirdLine = temp.slice(secondNewLinePos, thirdNewLinePos);
-
-  const semicolonCount = (thirdLine.match(/;/g) || []).length;
-  const commaCount = (thirdLine.match(/,/g) || []).length;
-  return semicolonCount > commaCount;
-}
-
-function replaceSeparators(fileBody: string) {
-  const isSemicolonSeparated = isSemicolonSeparator(fileBody);
-  if (isSemicolonSeparated) {
-    //replace decimal commas with points; both styles in incoming csv files
-    let resultFileBody: string = fileBody.replace(/,/g, '.');
-
-    //replace semicolons with commas; both styles in incoming csv files
-    resultFileBody = resultFileBody.replace(/;/g, ',');
-    return resultFileBody;
-  }
-
-  return fileBody;
 }
 
 enum ReadState {
@@ -351,7 +304,7 @@ export async function parseCSVFileStream(
             runningDate = readRunningDateFromLine(lineBuffer[0]);
             console.log('runningdate set: ' + runningDate);
           } else {
-            csvHeaderLine = tidyUpHeaderLine(lineBuffer[0]);
+            csvHeaderLine = tidyUpHeaderLine(replaceSeparatorsInHeaderLine(lineBuffer[0]));
             state = ReadState.READING_BODY;
             lineBuffer = [];
             console.log('csvHeaderLine set 0: ' + csvHeaderLine);
@@ -365,7 +318,7 @@ export async function parseCSVFileStream(
             'tidyUpHeaderLine(lineBuffer[1]): ' +
               tidyUpHeaderLine(lineBuffer[1]),
           );
-          csvHeaderLine = tidyUpHeaderLine(lineBuffer[1]);
+          csvHeaderLine = tidyUpHeaderLine(replaceSeparatorsInHeaderLine(lineBuffer[1]));
           state = ReadState.READING_BODY;
           lineBuffer = [];
           console.log('csvHeaderLine set: ' + csvHeaderLine);
