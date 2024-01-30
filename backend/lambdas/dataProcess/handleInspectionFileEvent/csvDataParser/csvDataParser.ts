@@ -12,7 +12,8 @@ import { tsightSchema } from './csvSchemas/tsightCsvSchema';
 import { ZodObject } from 'zod';
 import {
   readRunningDateFromLine,
-  replaceSeparators, replaceSeparatorsInHeaderLine,
+  replaceSeparators,
+  replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from './csvConversionUtils';
@@ -164,7 +165,7 @@ async function handleBufferedLines(
   fileBaseName: string,
 ) {
   const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  console.log('fileChunkBody: ' + fileChunkBody);
+  log.info('fileChunkBody: ' + fileChunkBody);
   switch (fileNamePrefix) {
     case 'AMS':
       await parseCsvAndWriteToDb(
@@ -281,84 +282,81 @@ export async function parseCSVFileStream(
   );
   log.info('reportId: ' + reportId);
   try {
-    try {
-      let runningDate = new Date();
-      let csvHeaderLine = '';
+    let runningDate = new Date();
+    let csvHeaderLine = '';
 
-      const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity,
-      });
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity,
+    });
 
-      let lineBuffer: string[] = [];
-      const maxBufferSize = 4;
+    let lineBuffer: string[] = [];
+    const maxBufferSize = 4;
 
-      let state = ReadState.READING_HEADER as ReadState;
+    let state = ReadState.READING_HEADER as ReadState;
 
-      rl.on('line', line => {
-        lineBuffer.push(line);
+    rl.on('line', async line => {
+      lineBuffer.push(line);
 
-        //running date on the firstine unless it's missing; then csv column headers on the first line
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
-          if (lineBuffer[0].search('Running Date') != -1) {
-            runningDate = readRunningDateFromLine(lineBuffer[0]);
-            console.log('runningdate set: ' + runningDate);
-          } else {
-            csvHeaderLine = lineBuffer[0];
-            state = ReadState.READING_BODY;
-            lineBuffer = [];
-            console.log('csvHeaderLine set 0: ' + csvHeaderLine);
-          }
-        }
-
-        //csv column headers on the second line when running date was found on the first
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          csvHeaderLine = lineBuffer[1];
+      //running date on the firstine unless it's missing; then csv column headers on the first line
+      if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
+        if (lineBuffer[0].search('Running Date') != -1) {
+          runningDate = readRunningDateFromLine(lineBuffer[0]);
+          log.info('runningdate set: ' + runningDate);
+        } else {
+          csvHeaderLine = lineBuffer[0];
           state = ReadState.READING_BODY;
           lineBuffer = [];
-          console.log('csvHeaderLine set: ' + csvHeaderLine);
+          log.info('csvHeaderLine set 0: ' + csvHeaderLine);
         }
-
-        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
-        if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
-            handleBufferedLines(
-              csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-              fileNamePrefix,
-              runningDate,
-              reportId,
-              fileBaseName,
-            );
-            lineBuffer = [];
-          }
-        }
-      });
-
-      await events.EventEmitter.once(rl, 'close');
-      console.log('Reading file line by line with readline done.');
-
-
-      // Last content of lineBuffer not handled yet
-      console.log("state now: " + state);
-      console.log("file now: " +  csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')));
-      if (state == ReadState.READING_BODY && lineBuffer.length) {
-        handleBufferedLines(
-          csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-          fileNamePrefix,
-          runningDate,
-          reportId,
-          fileBaseName,
-        );
       }
 
+      //csv column headers on the second line when running date was found on the first
+      if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
+        csvHeaderLine = lineBuffer[1];
+        state = ReadState.READING_BODY;
+        lineBuffer = [];
+        log.info('csvHeaderLine set: ' + csvHeaderLine);
+      }
 
-      const used = process.memoryUsage().heapUsed / 1024 / 1024;
-      console.log(
-        `The script uses approximately ${Math.round(used * 100) / 100} MB`,
+      //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
+      if (state == ReadState.READING_BODY) {
+        if (lineBuffer.length > maxBufferSize) {
+          await handleBufferedLines(
+            csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+            fileNamePrefix,
+            runningDate,
+            reportId,
+            fileBaseName,
+          );
+          lineBuffer = [];
+        }
+      }
+    });
+
+    await events.EventEmitter.once(rl, 'close');
+    log.info('Reading file line by line with readline done.');
+
+    // Last content of lineBuffer not handled yet
+    log.info('state now: ' + state);
+    log.info(
+      'file now: ' +
+        csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+    );
+    if (state == ReadState.READING_BODY && lineBuffer.length) {
+      handleBufferedLines(
+        csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+        fileNamePrefix,
+        runningDate,
+        reportId,
+        fileBaseName,
       );
-    } catch (err) {
-      console.error(err);
     }
+
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    log.info(
+      `The script uses approximately ${Math.round(used * 100) / 100} MB`,
+    );
 
     log.info('HEllo suscses');
     await updateRaporttiStatus(reportId, 'SUCCESS', null);
