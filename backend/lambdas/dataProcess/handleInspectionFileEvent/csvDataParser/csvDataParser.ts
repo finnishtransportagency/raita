@@ -291,7 +291,7 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 4;
+    const maxBufferSize = 1000;
 
     let state = ReadState.READING_HEADER as ReadState;
 
@@ -322,6 +322,7 @@ export async function parseCSVFileStream(
       //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
       if (state == ReadState.READING_BODY) {
         if (lineBuffer.length > maxBufferSize) {
+          log.info("buffer full handling");
           await handleBufferedLines(
             csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
             fileNamePrefix,
@@ -334,6 +335,8 @@ export async function parseCSVFileStream(
       }
     });
 
+
+    log.info('Reading file line by line with readline starting.');
     await events.EventEmitter.once(rl, 'close');
     log.info('Reading file line by line with readline done.');
 
