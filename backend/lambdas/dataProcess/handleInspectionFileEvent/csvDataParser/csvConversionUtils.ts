@@ -131,7 +131,7 @@ export function readRunningDate(csvFileBody: string) {
 
 export function tidyUpFileBody(csvFileBody: string) {
   // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
-  const firstNewLinePos = csvFileBody.search(/\r\n/);
+  const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstLine = csvFileBody.slice(0, firstNewLinePos);
   let fileBody = csvFileBody;
   if (firstLine.search('Running Date') != -1) {
@@ -144,9 +144,10 @@ export function tidyUpFileBody(csvFileBody: string) {
   log.info('csvHeaderLine: ' + csvHeaderLine);
   const csvDataLines = fileBody.slice(secondNewLinePos);
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
+  log.info('tidyHeaderLine: ' + tidyHeaderLine);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
   //TODO make more generic to any missing column?
-  log.info('tidyHeaderLine.substring(0,6)' + tidyHeaderLine);
+
   if (tidyHeaderLine.search(/sscount/) == -1) {
     tidyHeaderLine = '"sscount",' + tidyHeaderLine;
     log.info('tidyHeaderLine new' + tidyHeaderLine.substring(0, 15));
@@ -168,9 +169,9 @@ export function isSemicolonSeparatorLine(line: string) {
 
 export function isSemicolonSeparator(fileBody: string) {
   //we have to find out what is the csv separator; we look at second line (first data line) and count if many semicolons
-  const firstNewLinePos = fileBody.search(/\r\n/);
+  const firstNewLinePos = fileBody.search(/\r\n|\r|\n/);
   let temp = fileBody.replace(/\r\n|\r|\n/, '');
-  const secondNewLinePos = temp.search(/\r\n/);
+  const secondNewLinePos = temp.search(/\r\n|\r|\n/);
   const secondLine = temp.slice(firstNewLinePos, secondNewLinePos);
 
   return isSemicolonSeparatorLine(secondLine);
