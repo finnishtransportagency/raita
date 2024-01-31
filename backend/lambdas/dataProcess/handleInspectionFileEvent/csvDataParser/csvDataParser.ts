@@ -285,10 +285,23 @@ export async function parseCSVFileStream(
     let runningDate = new Date();
     let csvHeaderLine = '';
 
+    log.info('createInterface ');
+
     const rl = readline.createInterface({
       input: fileStream,
       crlfDelay: Infinity,
     });
+
+    log.info('created');
+
+
+    for await (const line of rl) {
+      // Each line in input.txt will be successively available here as `line`.
+      log.info(`Line from file: ${line}`);
+
+    }
+
+    log.info('logged all lines');
 
     let lineBuffer: string[] = [];
     const maxBufferSize = 1000;
@@ -347,7 +360,7 @@ export async function parseCSVFileStream(
 
     try { await myReadPromise; }
     catch(err) {
-      console.log('an error has occurred');
+      log.warn('an error has occurred ' + err);
     }
 
 
