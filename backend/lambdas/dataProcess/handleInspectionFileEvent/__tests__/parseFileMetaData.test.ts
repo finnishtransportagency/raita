@@ -128,6 +128,7 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
+    console.log("moi");
     const fileData = {
       fileStream: stringToStream(testFileBody),
       tags: {}, // TODO what is this

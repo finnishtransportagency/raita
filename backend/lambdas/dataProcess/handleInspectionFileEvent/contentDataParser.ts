@@ -10,6 +10,8 @@ import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData, RaitaParseError } from '../../utils';
+import { log } from '../../../utils/logger';
+import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -107,20 +109,35 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-): Promise<{ contentData: ParseValueResult; hash: string }> => {
-  let contentPromise: Promise<ParseValueResult>;
+): Promise<{ contentData: string; hash: string }> => {
+  console.log('parseFileContent');
+  //let contentPromise: Promise<ParseValueResult>;
+  let csvPromise: Promise<string>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
-  if (shouldParseContent(keyData.fileSuffix)) {
+  if (keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
+    log.info('csv parse file: ' + keyData.fileBaseName);
+    const fileStreamToParse = originalStream.clone();
+    csvPromise = parseCSVFileStream(
+      keyData.fileBaseName,
+      fileStreamToParse,
+      null,
+    );
+    log.info('csv parsing result: ' + csvPromise);
+  } else {
+    csvPromise = Promise.resolve("");
+  }
+
+  /*if (shouldParseContent(keyData.fileSuffix)) {
     const fileStreamToParse = originalStream.clone();
     contentPromise = extractFileContentDataFromStream(spec, fileStreamToParse);
   } else {
     contentPromise = Promise.resolve({});
-  }
+  }*/
   originalStream.resume();
-  const [hash, contentData] = await Promise.all([hashPromise, contentPromise]);
+  const [hash, contentData] = await Promise.all([hashPromise, csvPromise]);
   return {
     contentData,
     hash,

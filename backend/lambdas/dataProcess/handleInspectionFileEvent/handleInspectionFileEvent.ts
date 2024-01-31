@@ -88,6 +88,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
 
         if (fileStreamResult && fileStreamResult.fileStream) {
           const originalStream = cloneable(fileStreamResult.fileStream);
+          originalStream.pause();
           const fileStreamToCsvParse = originalStream.clone();
 
           const parseResults = await parseFileMetadata({
@@ -103,7 +104,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           } else {
             await adminLogger.info(`Tiedosto parsittu: ${key}`);
             //call here csv parsing  parseCsvData(); ?
-            if (
+      /*      if (
               keyData.fileSuffix ===
               fileSuffixesToIncludeInMetadataParsing.CSV_FILE
             ) {
@@ -114,7 +115,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
                 parseResults.metadata,
               );
               log.info('csv parsing result: ' + result);
-            }
+            }*/
           }
 
           return {

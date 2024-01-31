@@ -49,7 +49,7 @@ async function updateRaporttiStatus(
 export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
-  metadata: ParseValueResult,
+  metadata: ParseValueResult|null,
   aloitus_rata_kilometri: number | null,
   kampanja: string | null,
   lopetus_rata_kilometri: number | null,
@@ -254,7 +254,7 @@ async function handleBufferedLines(
 export async function parseCSVFileStream(
   fileBaseName: string,
   fileStream: Readable,
-  metadata: ParseValueResult,
+  metadata: ParseValueResult|null,
 ) {
   log.info('fileBaseName: ' + fileBaseName);
   const fileNameParts = fileBaseName.split('_');
@@ -286,6 +286,7 @@ export async function parseCSVFileStream(
     let csvHeaderLine = '';
 
     log.info('createInterface ');
+    log.info(fileStream);
 
     const rl = readline.createInterface({
       input: fileStream,
