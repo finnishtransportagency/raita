@@ -30,8 +30,9 @@ export function tidyUpHeaderLine(csvHeaderLine: string): string {
     //replace points with underscore
     .replace(/\./g, '_')
     .toLowerCase()
-    //remove square bracketed parts at the end of column name
+    //remove square bracketed parts at the end of column name;
     .replace(/\[[^\[\]]*?\]\"/g, '"')
+    .replace(/\[[^\[\]]*?\],/g, ',')
     //remove other square brackets
     .replace(/\[/g, '')
     .replace(/\]/g, '')
