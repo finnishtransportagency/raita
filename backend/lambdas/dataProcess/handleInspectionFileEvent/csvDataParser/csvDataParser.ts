@@ -303,7 +303,6 @@ export async function parseCSVFileStream(
 
     let myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
-        log.info("line: " + line);
         lineBuffer.push(line);
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
