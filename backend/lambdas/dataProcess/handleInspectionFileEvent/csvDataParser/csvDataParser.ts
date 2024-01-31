@@ -295,14 +295,6 @@ export async function parseCSVFileStream(
     log.info('created');
 
 
-    for await (const line of rl) {
-      // Each line in input.txt will be successively available here as `line`.
-      log.info(`Line from file: ${line}`);
-
-    }
-
-    log.info('logged all lines');
-
     let lineBuffer: string[] = [];
     const maxBufferSize = 1000;
 
@@ -350,10 +342,10 @@ export async function parseCSVFileStream(
         }
       });
       rl.on('error', () => {
-        console.log('error');
+        log.warn('error ');
       });
       rl.on('close', function () {
-        console.log('closed');
+        log.info('closed');
         resolve();
       });
     });
