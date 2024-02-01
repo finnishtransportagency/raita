@@ -84,8 +84,7 @@ data here
       contentVal3: 332211,
     });
   });
-  test.skip('error: empty value', () => {
-    // TODO: fix this, currently parses VAL2 value as "VAL3: 332211"
+  test('success: empty value in txt file', () => {
     const fileBody = `ver. 5.67.53
 VAL1: value_1
 VAL2:
@@ -99,6 +98,7 @@ data here
     );
     expect(result).toEqual({
       contentVal1: 'value_1',
+      contentVal2: '',
       contentVal3: 332211,
     });
   });

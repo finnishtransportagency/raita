@@ -29,8 +29,12 @@ const extractValue = (
   );
   try {
     const res = regr.exec(fileBody);
-    const val = res?.[1];
-    if (val) {
+    if (!res) {
+      return null;
+    }
+    const found = res[0];
+    const val = res[1];
+    if (found) {
       return parseAs
         ? parsePrimitive(propertyKey, val, parseAs)
         : { key: propertyKey, value: val };
