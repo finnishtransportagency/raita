@@ -11,6 +11,11 @@ import { format } from 'date-fns';
 import { parseISO } from 'date-fns';
 
 /**
+ * Size in rows
+ */
+const MAXIMUM_LOG_PAGE_SIZE = 1000;
+
+/**
  * Handle request to view admin logs
  *
  * Expects the following params in request body:
@@ -32,6 +37,9 @@ export async function handleAdminLogsRequest(
         400,
       );
     }
+    if (!queryStringParameters?.pageIndex) {
+      throw new RaitaLambdaError('pageIndex must be specified', 400);
+    }
     // validate
     const parsedStartDate = parseISO(queryStringParameters?.startDate);
     if (isNaN(parsedStartDate.getTime())) {
@@ -45,8 +53,23 @@ export async function handleAdminLogsRequest(
     const startTimestamp = `${format(parsedStartDate, 'yyyy-MM-dd')}T00:00:00Z`;
     const endTimestamp = `${format(parsedEndDate, 'yyyy-MM-dd')}T23:59:59Z`;
 
-    const logs = await getPostgresLogs(startTimestamp, endTimestamp);
-    return getRaitaSuccessResponse({ logs });
+    const defaultPageSize = MAXIMUM_LOG_PAGE_SIZE;
+    const pageSize = Number(queryStringParameters?.pageSize ?? defaultPageSize);
+    if (isNaN(pageSize) || pageSize > MAXIMUM_LOG_PAGE_SIZE) {
+      throw new RaitaLambdaError('Invalid pageSize', 400);
+    }
+    const pageIndex = Number(queryStringParameters.pageIndex);
+    if (isNaN(pageIndex)) {
+      throw new RaitaLambdaError('Invalid pageIndex', 400);
+    }
+
+    const logResult = await getPostgresLogs(
+      startTimestamp,
+      endTimestamp,
+      pageIndex,
+      pageSize,
+    );
+    return getRaitaSuccessResponse(logResult);
   } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
