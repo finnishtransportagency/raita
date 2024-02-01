@@ -9,7 +9,8 @@ import { ParseValueResult } from '../../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
-import { KeyData, RaitaParseError } from '../../utils';
+import { KeyData } from '../../utils';
+import { log } from '../../../utils/logger';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -40,13 +41,9 @@ const extractValue = (
         : { key: propertyKey, value: val };
     }
     return null;
-  } catch (err) {
-    throw new RaitaParseError(
-      `Parsing failed for the term: ${propertyKey}: ${
-        err instanceof Error ? err.message : err
-      }`,
-      'VALUE_PARSE_ERROR',
-    );
+  } catch (error: any) {
+    log.error(error);
+    return null;
   }
 };
 

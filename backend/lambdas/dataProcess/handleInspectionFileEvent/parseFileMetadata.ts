@@ -81,13 +81,22 @@ export async function parseFileMetadata({
     }
   }
   const generatedMetadata = generateMetadata();
+  const allMetadata = {
+    ...pathData,
+    ...fileContentData,
+    ...fileNameData,
+    ...generatedMetadata,
+  };
+
+  // find any key that is marked at non parsed
+  const nonParsedKeys = Object.keys(allMetadata).filter(key =>
+    key.match(/^nonparsed_/),
+  );
+  if (nonParsedKeys.length) {
+    errorsFound = true;
+  }
   return {
-    metadata: {
-      ...pathData,
-      ...fileContentData,
-      ...fileNameData,
-      ...generatedMetadata,
-    },
+    metadata: allMetadata,
     hash,
     errors: errorsFound,
   };
