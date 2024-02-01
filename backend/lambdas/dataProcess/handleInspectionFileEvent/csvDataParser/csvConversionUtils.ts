@@ -4,8 +4,9 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 
 function tidyUpDataLines(csvDataLines: string): string {
-  var tidyedLines = csvDataLines.replace(/NaN/g, '');
-  log.info('tidyedLines: ' + tidyedLines);
+  log.info('csvDataLines: ' + csvDataLines.length);
+  const tidyedLines = csvDataLines.replace(/NaN/g, '');
+  log.info('tidyedLines: ' + tidyedLines.length);
   return tidyedLines;
 }
 
@@ -134,6 +135,7 @@ export function tidyUpFileBody(csvFileBody: string) {
   // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstLine = csvFileBody.slice(0, firstNewLinePos);
+
   let fileBody = csvFileBody;
   if (firstLine.search('Running Date') != -1) {
     //trash first line; csv headears are on the second
@@ -142,10 +144,10 @@ export function tidyUpFileBody(csvFileBody: string) {
 
   const secondNewLinePos = fileBody.search(/\r\n|\r|\n/);
   const csvHeaderLine = fileBody.slice(0, secondNewLinePos);
-  log.info('csvHeaderLine: ' + csvHeaderLine);
+  log.info('secondNewLinePos: ' + secondNewLinePos);
   const csvDataLines = fileBody.slice(secondNewLinePos);
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
-  log.info('tidyHeaderLine: ' + tidyHeaderLine);
+  log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
   //TODO make more generic to any missing column?
 
@@ -154,7 +156,7 @@ export function tidyUpFileBody(csvFileBody: string) {
     log.info('tidyHeaderLine new' + tidyHeaderLine.substring(0, 15));
     tidyDataLines = tidyDataLines.replace(/\n/g, '\n,');
     log.info(
-      'tidyDataLines.substring(0,10000)' + tidyDataLines.substring(0, 10000),
+      'tidyDataLines.substring(0,10000)' + tidyDataLines.substring(0, 100),
     );
   }
 

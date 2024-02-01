@@ -49,7 +49,7 @@ async function updateRaporttiStatus(
 export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
-  metadata: ParseValueResult|null,
+  metadata: ParseValueResult | null,
   aloitus_rata_kilometri: number | null,
   kampanja: string | null,
   lopetus_rata_kilometri: number | null,
@@ -100,7 +100,7 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  log.info('write to db');
+  log.info('xwrite to db ' + dbRows.length);
   const result: postgres.Row = await writeRowsToDB(dbRows, table);
 
   return result;
@@ -108,7 +108,7 @@ async function writeCsvContentToDb(dbRows: any[], table: string) {
 
 async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
-  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
+  //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
 }
@@ -139,13 +139,14 @@ async function parseCsvAndWriteToDb(
     const rowErrors = errors.rows;
     if (rowErrors) {
       const rowKeys = Object.keys(rowErrors);
-      log.info(rowKeys);
+      // log.info(rowKeys);
       rowKeys.forEach(key => {
         errorsOutString += key + ':';
         errorsOutString += JSON.stringify(rowErrors[key].issues);
       });
     }
 
+    log.warn(errorsOutString);
     throw Error(
       'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString,
     );
@@ -165,7 +166,7 @@ async function handleBufferedLines(
   fileBaseName: string,
 ) {
   const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  log.info('fileChunkBody: ' + fileChunkBody);
+  log.info('fileChunkBody: ' + fileChunkBody.length);
   switch (fileNamePrefix) {
     case 'AMS':
       await parseCsvAndWriteToDb(
@@ -254,7 +255,7 @@ async function handleBufferedLines(
 export async function parseCSVFileStream(
   fileBaseName: string,
   fileStream: Readable,
-  metadata: ParseValueResult|null,
+  metadata: ParseValueResult | null,
 ) {
   log.info('fileBaseName: ' + fileBaseName);
   const fileNameParts = fileBaseName.split('_');
@@ -285,25 +286,23 @@ export async function parseCSVFileStream(
     let runningDate = new Date();
     let csvHeaderLine = '';
 
-    log.info('createInterface ');
-    log.info(fileStream);
-
     const rl = readline.createInterface({
       input: fileStream,
       crlfDelay: Infinity,
     });
-
-    log.info('created');
-
 
     let lineBuffer: string[] = [];
     const maxBufferSize = 1000;
 
     let state = ReadState.READING_HEADER as ReadState;
 
+    let lineCounter = 0;
+    let handleCounter = 0;
+
     let myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
         lineBuffer.push(line);
+        lineCounter++;
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
@@ -329,15 +328,21 @@ export async function parseCSVFileStream(
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
         if (state == ReadState.READING_BODY) {
           if (lineBuffer.length > maxBufferSize) {
-            log.info("buffer full handling");
+            rl.pause();
+
+            handleCounter++;
+            log.info("handle: " + handleCounter);
+            const bufferCopy = lineBuffer.slice();
+            lineBuffer = [];
             await handleBufferedLines(
-              csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+              csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
               runningDate,
               reportId,
               fileBaseName,
             );
-            lineBuffer = [];
+            rl.resume();
+
           }
         }
       });
@@ -350,24 +355,19 @@ export async function parseCSVFileStream(
       });
     });
 
-    try { await myReadPromise; }
-    catch(err) {
+    try {
+      await myReadPromise;
+    } catch (err) {
       log.warn('an error has occurred ' + err);
     }
 
+    log.info('Reading file line by line with readline done.' + lineCounter);
 
-
-
-    log.info('Reading file line by line with readline done.');
 
     // Last content of lineBuffer not handled yet
-    log.info('state now: ' + state);
-    log.info(
-      'file now: ' +
-        csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-    );
+    log.info('buffer lines to write: ' + lineBuffer.length);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
-      handleBufferedLines(
+     await handleBufferedLines(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
         fileNamePrefix,
         runningDate,
