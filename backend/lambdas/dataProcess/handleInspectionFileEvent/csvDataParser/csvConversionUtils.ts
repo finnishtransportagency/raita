@@ -4,9 +4,9 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 
 function tidyUpDataLines(csvDataLines: string): string {
-  log.info('csvDataLines: ' + csvDataLines.length);
+  //log.info('csvDataLines: ' + csvDataLines.length);
   const tidyedLines = csvDataLines.replace(/NaN/g, '');
-  log.info('tidyedLines: ' + tidyedLines.length);
+  //log.info('tidyedLines: ' + tidyedLines.length);
   return tidyedLines;
 }
 
@@ -144,10 +144,10 @@ export function tidyUpFileBody(csvFileBody: string) {
 
   const secondNewLinePos = fileBody.search(/\r\n|\r|\n/);
   const csvHeaderLine = fileBody.slice(0, secondNewLinePos);
-  log.info('secondNewLinePos: ' + secondNewLinePos);
+  //log.info('secondNewLinePos: ' + secondNewLinePos);
   const csvDataLines = fileBody.slice(secondNewLinePos);
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
-  log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
+  //log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
   //TODO make more generic to any missing column?
 

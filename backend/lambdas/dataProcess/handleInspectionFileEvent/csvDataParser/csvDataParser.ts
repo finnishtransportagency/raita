@@ -100,9 +100,9 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  log.info('xwrite to db ' + dbRows.length);
-  const result: postgres.Row = await writeRowsToDB(dbRows, table);
-
+  log.info('write to db ' + dbRows.length);
+  const result: number = await writeRowsToDB(dbRows, table);
+  log.info('wrote to db ' + result);
   return result;
 }
 
@@ -166,7 +166,7 @@ async function handleBufferedLines(
   fileBaseName: string,
 ) {
   const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  log.info('fileChunkBody: ' + fileChunkBody.length);
+  //log.info('fileChunkBody: ' + fileChunkBody.length);
   switch (fileNamePrefix) {
     case 'AMS':
       await parseCsvAndWriteToDb(
@@ -292,7 +292,7 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 1000;
+    const maxBufferSize = 500;
 
     let state = ReadState.READING_HEADER as ReadState;
 
@@ -331,17 +331,18 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-            log.info("handle: " + handleCounter);
+            log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
-            await handleBufferedLines(
+            rl.resume();
+            handleBufferedLines(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
               runningDate,
               reportId,
               fileBaseName,
             );
-            rl.resume();
+            log.info("handled bufferd: " + handleCounter);
 
           }
         }
@@ -356,6 +357,7 @@ export async function parseCSVFileStream(
     });
 
     try {
+      await myReadPromise;
       await myReadPromise;
     } catch (err) {
       log.warn('an error has occurred ' + err);
