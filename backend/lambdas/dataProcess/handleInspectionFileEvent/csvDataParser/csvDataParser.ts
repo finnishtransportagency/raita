@@ -100,9 +100,9 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  log.info('write to db ' + dbRows.length);
+  //log.info('write to db ' + dbRows.length);
   const result: number = await writeRowsToDB(dbRows, table);
-  log.info('wrote to db ' + result);
+  //log.info('wrote to db ' + result);
   return result;
 }
 
@@ -331,7 +331,7 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-            log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+            //log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
@@ -342,7 +342,7 @@ export async function parseCSVFileStream(
               reportId,
               fileBaseName,
             );
-            log.info("handled bufferd: " + handleCounter);
+            //log.info("handled bufferd: " + handleCounter);
 
           }
         }
@@ -367,7 +367,7 @@ export async function parseCSVFileStream(
 
 
     // Last content of lineBuffer not handled yet
-    log.info('buffer lines to write: ' + lineBuffer.length);
+    log.info('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
      await handleBufferedLines(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
