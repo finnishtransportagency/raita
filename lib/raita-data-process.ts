@@ -32,6 +32,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -653,20 +654,13 @@ export class DataProcessStack extends NestedStack {
         },
       },
     );
-    // Repository for storing docker images
-    const raitaEcrRepository = new ecr.Repository(this, 'repository-raita', {
-      repositoryName: `repository-${raitaStackIdentifier}-zip-handler`,
-      lifecycleRules: [{ maxImageCount: 3 }],
-      imageScanOnPush: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
+    const image = new DockerImageAsset(this, 'zip-handler-image', {
+      directory: path.join(__dirname, '../backend/containers/zipHandler'),
     });
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
-        image: ecs.ContainerImage.fromEcrRepository(
-          raitaEcrRepository,
-          'latest',
-        ),
+        image: ecs.ContainerImage.fromDockerImageAsset(image),
         logging: new ecs.AwsLogDriver({
           streamPrefix: 'FargateHandleZip',
           logRetention: RetentionDays.SIX_MONTHS,
