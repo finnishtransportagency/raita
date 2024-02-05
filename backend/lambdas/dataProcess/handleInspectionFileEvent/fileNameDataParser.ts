@@ -10,12 +10,12 @@ import {
   KeyData,
   RaitaParseError,
 } from '../../utils';
-import { log, logParsingException } from '../../../utils/logger';
-import { parsePrimitive } from './parsePrimitives';
+import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 
 export const parseFileNameParts = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) =>
   fileBaseNameParts.reduce<ParseValueResult>((acc, cur, index) => {
     // Handle the empty file indicator as special case.
@@ -27,9 +27,12 @@ export const parseFileNameParts = (
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
     const { name, parseAs } = labels[index + 1];
     if (name) {
-      const { key, value } = parseAs
-        ? parsePrimitive(name, cur, parseAs)
-        : { key: name, value: cur };
+      const { key, value } = parsePrimitiveWithSubstitution(
+        name,
+        cur,
+        parseAs,
+        substituteValues,
+      );
       acc[key] = value;
     }
     return acc;
@@ -58,18 +61,24 @@ export const validateGenericFileNameStructureOrFail = (
 const parseSubmissionReportExcelFileNameData = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   // Only process two first segments of file name, ignore others
-  return parseFileNameParts(labels, fileBaseNameParts.slice(0, 2));
+  return parseFileNameParts(
+    labels,
+    fileBaseNameParts.slice(0, 2),
+    substituteValues,
+  );
 };
 
 const parseGenericFileNameData = (
   fileName: string,
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   validateGenericFileNameStructureOrFail(fileName, labels, fileBaseNameParts);
-  return parseFileNameParts(labels, fileBaseNameParts);
+  return parseFileNameParts(labels, fileBaseNameParts, substituteValues);
 };
 
 /**
@@ -77,9 +86,11 @@ const parseGenericFileNameData = (
  */
 export const extractFileNameData = (
   keyData: KeyData,
-  fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
-  fileNameExceptions?: IExtractionSpec['knownExceptions']['fileNameExtractionSpec'],
+  spec: IExtractionSpec,
 ) => {
+  const fileNamePartLabels = spec.fileNameExtractionSpec;
+  const fileNameExceptions = spec.knownExceptions.fileNameExtractionSpec;
+  const substituteValues = spec.knownExceptions.substituteValues;
   const { fileName, fileBaseName, fileSuffix } = keyData;
   if (!fileBaseName || !fileSuffix) {
     throw new RaitaParseError(
@@ -131,8 +142,17 @@ export const extractFileNameData = (
         fileBaseName,
         fileSuffix,
       })
-        ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
-        : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
+        ? parseSubmissionReportExcelFileNameData(
+            labels,
+            fileBaseNameParts,
+            substituteValues,
+          )
+        : parseGenericFileNameData(
+            fileName,
+            labels,
+            fileBaseNameParts,
+            substituteValues,
+          );
       if (
         foundWithUnderscore &&
         fileNameMetadata[foundWithUnderscore.name] !== foundWithUnderscore.value
