@@ -119,15 +119,13 @@ export const getDatabaseEnvironmentVariables = (
     !isDevelopmentMainStack(stackId, raitaEnv) &&
     !isDevelopmentPreMainStack(stackId, raitaEnv)
   ) {
-    // return a dummy for other branches
-    // TODO: test if premain db works for other branches
-    return {
-      PGUSER: 'INVALID',
-      PGHOST: 'INVALID',
-      PGDATABASE: 'INVALID',
-      PGPORT: 'INVALID',
-      RAITA_PGSCHEMA: 'INVALID',
-    };
+    // for non-permanent stacks use _template_ config file and stackid as schema name
+    const file = readFileSync(
+      path.join(__dirname, `../backend/db/conf/_template_/env.json`),
+      'utf8',
+    );
+    const replaced = file.replace('_schema_', stackId);
+    return JSON.parse(replaced);
   }
   const file = readFileSync(
     path.join(__dirname, `../backend/db/conf/${stackId}/env.json`),
