@@ -1,6 +1,6 @@
 import { IExtractionSpec, ParseValueResult } from '../../../types';
 import { isSubmissionReport, KeyData, RaitaParseError } from '../../utils';
-import { parsePrimitive } from './parsePrimitives';
+import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 
 /**
  * Extract meta data from the file path
@@ -23,9 +23,12 @@ export const extractPathData = (keyData: KeyData, spec: IExtractionSpec) => {
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
     const { name, parseAs } = folderParsingSpec[index + 1];
     if (name) {
-      const { key, value } = parseAs
-        ? parsePrimitive(name, cur, parseAs)
-        : { key: name, value: cur };
+      const { key, value } = parsePrimitiveWithSubstitution(
+        name,
+        cur,
+        parseAs,
+        spec.knownExceptions.substituteValues,
+      );
       acc[key] = value;
     }
     return acc;

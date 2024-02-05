@@ -101,6 +101,7 @@ const extractionSpec: IExtractionSpec = {
     fileNameExtractionSpec: {
       containsUnderscore: [],
     },
+    substituteValues: [],
   },
 };
 
