@@ -3,7 +3,7 @@ import { getEnvOrFail } from '../../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
-import {log} from "../../../../../utils/logger";
+import { log } from '../../../../../utils/logger';
 
 let connection: postgres.Sql;
 //todo set false
@@ -20,6 +20,22 @@ export async function getDBConnection() {
     sql = await getConnection();
   }
   return { schema, sql };
+}
+//UPDATE yourtable SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
+
+async function populateGisPointsForTable(
+  schema: string,
+  table: string,
+  sql: postgres.Sql<{}>,
+) {
+  var sqlString: string = '';
+  sqlString += 'update ';
+  sqlString += schema + '.' + table;
+  sqlString +=
+    ' set sijainti=ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)';
+  sqlString += ' where sijainti IS NULL';
+
+  await sql.unsafe(sqlString);
 }
 
 async function populateGisPoints(
@@ -44,7 +60,7 @@ async function populateGisPoints(
 
     //TODO is there nicer way to do this in the row insert?
     sqlString += 'update ';
-    sqlString += schema +'.'+table;
+    sqlString += schema + '.' + table;
     sqlString += " set sijainti=st_geomfromtext('POINT(";
     sqlString += longitude;
     sqlString += ' ';
@@ -61,19 +77,17 @@ export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
 ): Promise<number> {
-  log.info("rows: " + table);
   const { schema, sql } = await getDBConnection();
-  log.info("got conn: " + table);
+
   try {
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`;
-    log.info("inserted rows: " + rows.length);
-  //  await populateGisPoints(rows, schema, table, sql);
-  //  log.info("populatedGisPoints ");
+
+    //  await populateGisPoints(rows, schema, table, sql);
+    //  log.info("populatedGisPoints ");
 
     return rows.length;
-
   } catch (e) {
     log.error('Error inserting measurement data: ' + table + ' ' + e);
     log.error(e);
@@ -120,18 +134,17 @@ function constructRataosoite(track: string, location: string): Rataosoite {
   if (splittedTrack.length == 3) {
     rataosuusNumero = splittedTrack[0];
     rataosuusNimi = splittedTrack[1];
-    raideNumero =  splittedTrack[2];
+    raideNumero = splittedTrack[2];
   }
 
   const splittedLocation = location.split('+');
   let rataKilometri = null;
   let rataMetrit = null;
-  try{
-    rataKilometri =  Number(splittedLocation[0]);
+  try {
+    rataKilometri = Number(splittedLocation[0]);
     rataMetrit = Number(splittedLocation[1]);
-  }
-  catch (e) {
-    throw Error("Illegal location: " + location);
+  } catch (e) {
+    throw Error('Illegal location: ' + location);
   }
 
   const rataosoite: Rataosoite = {
@@ -159,4 +172,3 @@ export function convertToDBRow(
     ...rataosoite,
   };
 }
-

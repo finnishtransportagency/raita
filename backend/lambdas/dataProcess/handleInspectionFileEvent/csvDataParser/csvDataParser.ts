@@ -100,9 +100,9 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  log.info('Fwrite to db ' + dbRows.length);
+
   const result: number = await writeRowsToDB(dbRows, table);
-  log.info('wrote to db ' + result);
+
   return result;
 }
 
