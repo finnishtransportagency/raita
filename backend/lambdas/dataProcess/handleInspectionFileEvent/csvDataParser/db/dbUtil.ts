@@ -60,16 +60,19 @@ async function populateGisPoints(
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
-): Promise<postgres.Row> {
+): Promise<number> {
+  log.info("rows: " + table);
   const { schema, sql } = await getDBConnection();
-
+  log.info("got conn: " + table);
   try {
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`;
-    await populateGisPoints(rows, schema, table, sql);
+    log.info("inserted rows: " + rows.length);
+  //  await populateGisPoints(rows, schema, table, sql);
+  //  log.info("populatedGisPoints ");
 
-    return rows;
+    return rows.length;
 
   } catch (e) {
     log.error('Error inserting measurement data: ' + table + ' ' + e);

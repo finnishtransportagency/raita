@@ -100,9 +100,9 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  //log.info('write to db ' + dbRows.length);
+  log.info('Fwrite to db ' + dbRows.length);
   const result: number = await writeRowsToDB(dbRows, table);
-  //log.info('wrote to db ' + result);
+  log.info('wrote to db ' + result);
   return result;
 }
 
@@ -335,7 +335,7 @@ export async function parseCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            handleBufferedLines(
+            await handleBufferedLines(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
               runningDate,
