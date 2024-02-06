@@ -128,7 +128,8 @@ async function parseCsvAndWriteToDb(
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
-    return await writeCsvContentToDb(dbRows, table);
+    //return await writeCsvContentToDb(dbRows, table);
+    return
   } else {
     const errors = parsedCSVContent.errors;
     let errorsOutString = '';
@@ -292,7 +293,7 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 500;
+    const maxBufferSize = 3000;
 
     let state = ReadState.READING_HEADER as ReadState;
 
