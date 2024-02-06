@@ -128,8 +128,8 @@ async function parseCsvAndWriteToDb(
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
-   // return await writeCsvContentToDb(dbRows, table);
-    return
+   return await writeCsvContentToDb(dbRows, table);
+
   } else {
     const errors = parsedCSVContent.errors;
     let errorsOutString = '';
@@ -302,8 +302,10 @@ export async function parseCSVFileStream(
 
     let myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
+
         lineBuffer.push(line);
         lineCounter++;
+
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
@@ -332,7 +334,7 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-            log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+          //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
@@ -343,7 +345,8 @@ export async function parseCSVFileStream(
               reportId,
               fileBaseName,
             );
-            log.info("handled bufferd: " + handleCounter);
+          //  log.info("handled bufferd: " + handleCounter);
+
 
           }
         }
@@ -358,7 +361,6 @@ export async function parseCSVFileStream(
     });
 
     try {
-      await myReadPromise;
       await myReadPromise;
     } catch (err) {
       log.warn('an error has occurred ' + err);
