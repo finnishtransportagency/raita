@@ -106,6 +106,9 @@ export interface DeleteResponse {
 }
 
 export interface AdminLogsResponse {
+  totalSize: number;
+  pageIndex: number;
+  pageSize: number;
   logs: {
     source: string;
     invocation_id: string;

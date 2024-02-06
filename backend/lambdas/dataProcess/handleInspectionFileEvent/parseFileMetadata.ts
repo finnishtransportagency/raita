@@ -1,11 +1,11 @@
-import { IExtractionSpec, IFileResult, ParseValueResult } from '../../../types';
+import {
+  IExtractionSpec,
+  IFileStreamResult,
+  ParseValueResult,
+} from '../../../types';
 import { log, logParsingException } from '../../../utils/logger';
 import { KeyData, RaitaParseError } from '../../utils';
-import {
-  calculateHash,
-  extractFileContentData,
-  shouldParseContent,
-} from './contentDataParser';
+import { parseFileContent } from './contentDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import { extractPathData } from './pathDataParser';
 
@@ -15,10 +15,9 @@ export async function parseFileMetadata({
   spec,
 }: {
   keyData: KeyData;
-  file: IFileResult;
+  file: IFileStreamResult;
   spec: IExtractionSpec;
 }): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean }> {
-  const { fileBody } = file;
   let errorsFound = false;
   let fileNameData: any = {};
   try {
@@ -53,11 +52,23 @@ export async function parseFileMetadata({
     }
   }
   let fileContentData: any = {};
+  let hash = '';
   try {
-    fileContentData =
-      shouldParseContent(keyData.fileSuffix) && fileBody
-        ? extractFileContentData(spec, fileBody)
-        : {};
+    if (file.fileStream) {
+      const contentResult = await parseFileContent(
+        spec,
+        keyData,
+        file.fileStream,
+      );
+      fileContentData = contentResult.contentData;
+      hash = contentResult.hash;
+    } else {
+      throw new RaitaParseError(
+        'No fileStream',
+        'FILE_READ_ERROR',
+        keyData.fileName,
+      );
+    }
   } catch (error: any) {
     errorsFound = true;
     if (error instanceof RaitaParseError) {
@@ -70,14 +81,22 @@ export async function parseFileMetadata({
     }
   }
   const generatedMetadata = generateMetadata();
-  const hash = calculateHash(fileBody ?? '');
+  const allMetadata = {
+    ...pathData,
+    ...fileContentData,
+    ...fileNameData,
+    ...generatedMetadata,
+  };
+
+  // find any key that is marked at non parsed
+  const nonParsedKeys = Object.keys(allMetadata).filter(key =>
+    key.match(/^nonparsed_/),
+  );
+  if (nonParsedKeys.length) {
+    errorsFound = true;
+  }
   return {
-    metadata: {
-      ...pathData,
-      ...fileContentData,
-      ...fileNameData,
-      ...generatedMetadata,
-    },
+    metadata: allMetadata,
     hash,
     errors: errorsFound,
   };

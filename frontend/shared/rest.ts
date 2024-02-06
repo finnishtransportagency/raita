@@ -50,12 +50,17 @@ export const getImageKeysForFileKey = async (key: string) => {
     .then(images => images.map(image => image.key));
 };
 
-export const getAdminLogs = async (startDate: string, endDate: string) => {
+export const getAdminLogs = async (
+  startDate: string,
+  endDate: string,
+  pageIndex: number,
+  pageSize: number,
+): Promise<AdminLogsResponse> => {
   return apiClient
     .get<AdminLogsResponse>(
-      `admin/logs?startDate=${startDate}&endDate=${endDate}`,
+      `admin/logs?startDate=${startDate}&endDate=${endDate}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
     )
-    .then(res => res.data.logs);
+    .then(res => res.data);
 };
 export const postDeleteRequest = async (keyPrefix: string) => {
   return apiClient

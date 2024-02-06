@@ -1,4 +1,6 @@
 import { createHash } from 'crypto';
+import { PassThrough, Readable } from 'stream';
+import cloneable from 'cloneable-readable';
 import {
   IColonSeparatedKeyValuePairDefinition,
   IExtractionSpec,
@@ -7,8 +9,9 @@ import { ParseValueResult } from '../../../types';
 import { parsePrimitive } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
-import { RaitaParseError } from '../../utils';
+import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
+
 /**
  * Resolves whether content data parsing is needed for the file
  */
@@ -27,20 +30,20 @@ const extractValue = (
   );
   try {
     const res = regr.exec(fileBody);
-    const val = res?.[1];
-    if (val) {
+    if (!res) {
+      return null;
+    }
+    const found = res[0];
+    const val = res[1];
+    if (found) {
       return parseAs
         ? parsePrimitive(propertyKey, val, parseAs)
         : { key: propertyKey, value: val };
     }
     return null;
-  } catch (err) {
-    throw new RaitaParseError(
-      `Parsing failed for the term: ${propertyKey}: ${
-        err instanceof Error ? err.message : err
-      }`,
-      'VALUE_PARSE_ERROR',
-    );
+  } catch (error: any) {
+    log.error(error);
+    return null;
   }
 };
 
@@ -58,10 +61,69 @@ export const extractFileContentData = (
     }, {});
 
 /**
- * Returns hex encoded hash for given file input
+ * Read entire file to memory and parse with extractFileContentData
  */
-export const calculateHash = (fileBody: string): string => {
-  log.debug(`Calculating hash for ${fileBody}`);
-  const hash = createHash('sha256');
-  return hash.update(fileBody).digest('hex');
+export const extractFileContentDataFromStream = (
+  spec: IExtractionSpec,
+  fileStream: Readable,
+): Promise<ParseValueResult> => {
+  return new Promise((resolve, reject) => {
+    const chunks: string[] = [];
+    fileStream.setEncoding('utf8');
+    fileStream.on('readable', () => {
+      // read whole stream to string
+      // note: dangerously assume here that file is small enough to fit to memory
+      // will cause problems if files are big
+      let chunk: string; // encoding set, this will be string
+      while (null !== (chunk = fileStream.read())) {
+        chunks.push(chunk);
+      }
+    });
+    fileStream.on('end', () => {
+      const fileBody = chunks.join('');
+      resolve(extractFileContentData(spec, fileBody));
+    });
+  });
+};
+
+/**
+ * Returns hex encoded hash calculated from a readable stream
+ */
+const calculateHashFromStream = (fileStream: Readable): Promise<string> => {
+  const hashStream = createHash('sha256');
+  fileStream.pipe(hashStream);
+  return new Promise((resolve, reject) => {
+    hashStream.on('readable', () => {
+      const hashData = hashStream.read();
+      if (hashData) {
+        resolve(hashData.toString('hex'));
+      } else {
+        reject('Error calculating hash');
+      }
+    });
+  });
+};
+
+export const parseFileContent = async (
+  spec: IExtractionSpec,
+  keyData: KeyData,
+  fileStream: Readable,
+): Promise<{ contentData: ParseValueResult; hash: string }> => {
+  let contentPromise: Promise<ParseValueResult>;
+  // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
+  const originalStream = cloneable(fileStream);
+  originalStream.pause();
+  const hashPromise = calculateHashFromStream(originalStream);
+  if (shouldParseContent(keyData.fileSuffix)) {
+    const fileStreamToParse = originalStream.clone();
+    contentPromise = extractFileContentDataFromStream(spec, fileStreamToParse);
+  } else {
+    contentPromise = Promise.resolve({});
+  }
+  originalStream.resume();
+  const [hash, contentData] = await Promise.all([hashPromise, contentPromise]);
+  return {
+    contentData,
+    hash,
+  };
 };

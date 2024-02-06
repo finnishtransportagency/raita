@@ -2,7 +2,7 @@
   "log_header_data_process": "Zip-tiedoston vastaanotto",
   "log_header_delete_process": "Tiedostojen poisto",
   "log_title": "Adminloki",
-  "log_search_description": "Oletuksena näytetään viimeisen viikon lokitiedot",
+  "log_search_description": "Oletuksena näytetään viimeisen viikon lokitiedot. Yhdellä sivulla näytetään 1000 lokiriviä kerrallaan, ja on mahdollista että yhden tapahtuman lokitiedot jatkuvat useammalla sivulla",
   "log_contains_errors": "Sisältää virheitä",
   "log_contains_warnings": "Sisältää huomautuksia",
   "delete_input_placeholder": "Syötä poistettava tiedostopolku",
