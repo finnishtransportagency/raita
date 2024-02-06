@@ -128,7 +128,7 @@ async function parseCsvAndWriteToDb(
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
-    //return await writeCsvContentToDb(dbRows, table);
+    return await writeCsvContentToDb(dbRows, table);
     return
   } else {
     const errors = parsedCSVContent.errors;
@@ -293,7 +293,7 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 3000;
+    const maxBufferSize = 500;
 
     let state = ReadState.READING_HEADER as ReadState;
 
@@ -332,7 +332,7 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-            //log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+            log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
@@ -343,7 +343,7 @@ export async function parseCSVFileStream(
               reportId,
               fileBaseName,
             );
-            //log.info("handled bufferd: " + handleCounter);
+            log.info("handled bufferd: " + handleCounter);
 
           }
         }
