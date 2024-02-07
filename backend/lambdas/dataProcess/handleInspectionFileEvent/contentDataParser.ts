@@ -11,7 +11,7 @@ import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData, RaitaParseError } from '../../utils';
 import { log } from '../../../utils/logger';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
+import { parseCSVFileStream } from './csvDataParser/csvDataChopper';
 
 /**
  * Resolves whether content data parsing is needed for the file
