@@ -76,7 +76,7 @@ export async function parseFileMetadata({
       log.error(error);
     }
   }
-  const generatedMetadata = generateMetadata();
+  const generatedMetadata = generateMetadata(spec);
   const allMetadata = {
     ...pathData,
     ...fileContentData,
@@ -101,8 +101,9 @@ export async function parseFileMetadata({
 /**
  * For any metadata that is generated rather than parsed from file
  */
-function generateMetadata() {
+export function generateMetadata(spec: IExtractionSpec) {
   return {
+    parser_version: spec.parserVersion,
     parsed_at_datetime: new Date().toISOString(),
   };
 }

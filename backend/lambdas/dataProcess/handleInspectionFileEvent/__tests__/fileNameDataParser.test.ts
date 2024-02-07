@@ -133,6 +133,7 @@ describe('validateGenericFileNameStructureOrFail', () => {
 });
 describe('extractFileNameData', () => {
   const testExtractionSpec: IExtractionSpec = {
+    parserVersion: '0.0.1',
     fileContentExtractionSpec: [],
     folderTreeExtractionSpec: {},
     vRunFolderTreeExtractionSpec: {},

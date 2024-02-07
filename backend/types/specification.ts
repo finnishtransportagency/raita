@@ -22,6 +22,7 @@ export const FieldExtractionSpecObject = z.object({
 
 // Note: Update ExtractionSpec to use ExtractionItem when there is more than one
 export const ExtractionSpec = z.object({
+  parserVersion: z.string(),
   fileNameExtractionSpec: z.object({
     csv: z.array(z.record(z.string(), FieldExtractionSpecObject)),
     txt: z.array(z.record(z.string(), FieldExtractionSpecObject)),
