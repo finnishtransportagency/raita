@@ -17,8 +17,6 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import cloneable from 'cloneable-readable';
 
 function getLambdaConfigOrFail() {

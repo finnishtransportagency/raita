@@ -120,7 +120,7 @@ export const parseFileContent = async (
     log.info('csv parse file: ' + keyData.fileBaseName);
     const fileStreamToParse = originalStream.clone();
     csvPromise = parseCSVFileStream(
-      keyData.fileBaseName,
+      keyData,
       fileStreamToParse,
       null,
     );

@@ -22,6 +22,7 @@ import postgres from 'postgres';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import * as events from 'events';
+import {KeyData} from "../../../utils";
 
 async function updateRaporttiStatus(
   id: number,
@@ -100,17 +101,41 @@ export async function insertRaporttiData(
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-
   const result: number = await writeRowsToDB(dbRows, table);
 
   return result;
 }
 
+let tidyCumu = 0;
+let parseCumu = 0;
+let dbCumu = 0;
+
 async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
+  const tidyBegin = Date.now();
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
+  const tidyEnd = Date.now();
+  tidyCumu += tidyEnd - tidyBegin;
   //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
+  const parseBegin = Date.now();
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
+  const parseEnd = Date.now();
+  parseCumu += parseEnd - parseBegin;
+  console.log('tidy: ' + tidyCumu);
+  console.log('parse: ' + parseCumu);
   return { ...parsedCSVContent };
+}
+
+async function writeFileChunkToQueueS3(
+  inputFileChunkBody: string,
+  runningDate: Date,
+  reportId: number,
+  key: string,
+  chunkNumber: number,
+) {
+  console.log('writeFileChunkToQueueS3 key ' + key);
+  console.log('writeFileChunkToQueueS3 report id ' + reportId);
+  console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
+  return;
 }
 
 async function parseCsvAndWriteToDb(
@@ -128,8 +153,12 @@ async function parseCsvAndWriteToDb(
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
-   return await writeCsvContentToDb(dbRows, table);
-
+    const dbBegin = Date.now();
+    const a = await writeCsvContentToDb(dbRows, table);
+    const dbEnd = Date.now();
+    dbCumu += dbEnd - dbBegin;
+    log.info('dbcumu ' + dbCumu);
+    return a;
   } else {
     const errors = parsedCSVContent.errors;
     let errorsOutString = '';
@@ -254,17 +283,14 @@ async function handleBufferedLines(
 }
 
 export async function parseCSVFileStream(
-  fileBaseName: string,
+  keyData: KeyData,
   fileStream: Readable,
   metadata: ParseValueResult | null,
 ) {
-  log.info('fileBaseName: ' + fileBaseName);
+  const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
-  log.info('fileNameParts: ' + fileNameParts);
   const fileNamePrefix = fileNameParts[0];
-  log.info('fileNamePrefix: ' + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
-  log.info('jarjestelmä: ' + jarjestelmä);
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
@@ -302,10 +328,8 @@ export async function parseCSVFileStream(
 
     let myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
-
         lineBuffer.push(line);
         lineCounter++;
-
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
@@ -334,20 +358,18 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-          //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+            //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            await handleBufferedLines(
+            await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-              fileNamePrefix,
               runningDate,
               reportId,
-              fileBaseName,
+              keyData.key,
+              handleCounter,
             );
-          //  log.info("handled bufferd: " + handleCounter);
-
-
+            //  log.info("handled bufferd: " + handleCounter);
           }
         }
       });
@@ -368,11 +390,10 @@ export async function parseCSVFileStream(
 
     log.info('Reading file line by line with readline done.' + lineCounter);
 
-
     // Last content of lineBuffer not handled yet
     log.info('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
-     await handleBufferedLines(
+      await handleBufferedLines(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
         fileNamePrefix,
         runningDate,
