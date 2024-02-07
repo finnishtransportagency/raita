@@ -247,6 +247,7 @@ export class DataProcessStack extends NestedStack {
       name: 'dp-handler-inspection-file',
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
+      inspectionBucketName: this.inspectionDataBucket.bucketName,
       openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
       lambdaRole: this.dataProcessorLambdaServiceRole,
@@ -260,7 +261,7 @@ export class DataProcessStack extends NestedStack {
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
-    this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
+    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
@@ -354,6 +355,7 @@ export class DataProcessStack extends NestedStack {
     name,
     openSearchDomainEndpoint,
     configurationBucketName,
+    inspectionBucketName,
     configurationFile,
     openSearchMetadataIndex,
     lambdaRole,
@@ -364,6 +366,7 @@ export class DataProcessStack extends NestedStack {
     name: string;
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
+    inspectionBucketName: string;
     configurationFile: string;
     lambdaRole: iam.Role;
     openSearchMetadataIndex: string;
@@ -374,7 +377,7 @@ export class DataProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 10240,
-      timeout: cdk.Duration.seconds(15*60),
+      timeout: cdk.Duration.seconds(15 * 60),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
@@ -384,6 +387,7 @@ export class DataProcessStack extends NestedStack {
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
+        INSCPECTION_BUCKET: inspectionBucketName,
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,

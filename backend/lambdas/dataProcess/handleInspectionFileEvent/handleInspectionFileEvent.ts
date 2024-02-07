@@ -24,6 +24,7 @@ export function getLambdaConfigOrFail() {
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    inspectionBucket: getEnv('INSPECTION_BUCKET'),
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),

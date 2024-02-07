@@ -144,10 +144,10 @@ async function writeFileChunkToQueueS3(
 
   const config = getLambdaConfigOrFail();
 
-  log.info('config.targetBucketName'+config.configurationBucket);
+  log.info('config.targetBucketName'+config.inspectionBucket);
 
   const command = new PutObjectCommand({
-    Bucket: config.configurationBucket,
+    Bucket: config.inspectionBucket,
     Key: outFileName,
     ContentType: 'txt',
     Body: Buffer.from(inputFileChunkBody),
