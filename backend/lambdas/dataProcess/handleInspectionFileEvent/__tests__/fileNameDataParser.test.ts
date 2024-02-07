@@ -177,6 +177,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456',
+      key: 'Meeri/test/path/test_123_456',
     };
     const result = extractFileNameData(keyData, extractionSpec);
     expect(result).toEqual({
@@ -194,6 +195,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456',
+      key: 'Meeri/test/path/test_123_456',
     };
     const testExtractionSpec = {
       txt: [
@@ -228,6 +230,7 @@ describe('extractFileNameData', () => {
       fileSuffix: 'xlsx',
       keyWithoutSuffix:
         'test/path/P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
+      key: 'Meeri/test/path/test_123_456',
     };
     const testExtractionSpec = {
       xlsx: [
@@ -252,6 +255,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_part1_part2_test2',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_part1_part2_test2',
+      key: 'Meeri/test/path/test_123_456',
     };
     const testExtractionSpec = {
       txt: [
@@ -288,6 +292,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'one_field_only',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/one_field_only',
+      key: 'Meeri/test/path/test_123_456',
     };
     const testExtractionSpec = {
       txt: [
@@ -317,6 +322,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'UNDERSCORE_VALUE_test',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/UNDERSCORE_VALUE_test',
+      key: 'Meeri/test/path/test_123_456',
     };
     const testExtractionSpec = {
       txt: [
@@ -345,6 +351,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456_789',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456_789',
+      key: 'Meeri/test/path/test_123_456',
     };
 
     expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
@@ -381,6 +388,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456_789',
       fileSuffix: 'exe',
       keyWithoutSuffix: 'test/path/test_123_456_789',
+      key: 'Meeri/test/path/test_123_456',
     };
     expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
       RaitaParseError,
