@@ -19,7 +19,7 @@ import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
 
-function getLambdaConfigOrFail() {
+export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),

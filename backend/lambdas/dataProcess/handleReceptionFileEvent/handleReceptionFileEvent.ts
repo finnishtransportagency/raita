@@ -18,7 +18,7 @@ import {
   acquireDataProcessLockOrFail,
 } from '../../../utils/dataProcessLock';
 
-export function getLambdaConfigOrFail() {
+function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     clusterArn: getEnv('ECS_CLUSTER_ARN'),

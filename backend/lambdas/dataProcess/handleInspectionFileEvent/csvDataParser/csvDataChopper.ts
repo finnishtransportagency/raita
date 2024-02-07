@@ -24,7 +24,7 @@ import * as readline from 'readline';
 import * as events from 'events';
 import {KeyData} from "../../../utils";
 import {CopyObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
-import {getLambdaConfigOrFail} from "../../handleReceptionFileEvent/handleReceptionFileEvent";
+import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
 
 async function updateRaporttiStatus(
   id: number,
@@ -144,10 +144,10 @@ async function writeFileChunkToQueueS3(
 
   const config = getLambdaConfigOrFail();
 
-  log.info('config.targetBucketName'+config.targetBucketName);
+  log.info('config.targetBucketName'+config.configurationBucket);
 
   const command = new PutObjectCommand({
-    Bucket: config.targetBucketName,
+    Bucket: config.configurationBucket,
     Key: outFileName,
     ContentType: 'txt',
     Body: Buffer.from(inputFileChunkBody),
