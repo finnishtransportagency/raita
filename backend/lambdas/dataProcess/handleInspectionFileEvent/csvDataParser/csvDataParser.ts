@@ -362,6 +362,7 @@ export async function parseCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
+            log.info("keyData.keyWithoutSuffix: " + keyData.keyWithoutSuffix);
             await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               runningDate,
