@@ -12,6 +12,7 @@
   "label_measurement_end_location": "Measurement end location",
   "label_measurement_start_location": "Measurement start location",
   "label_nonparsed_inspection_datetime": "Nonparsed inspection datetime",
+  "label_parser_version": "Parser version",
   "label_report_category": "Report category",
   "label_report_type": "Report type",
   "label_source_system": "Source system",

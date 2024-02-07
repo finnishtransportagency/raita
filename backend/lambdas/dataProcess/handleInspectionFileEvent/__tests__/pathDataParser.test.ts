@@ -20,6 +20,7 @@ jest.mock('../../../../utils/logger', () => {
 });
 
 const extractionSpec = {
+  parserVersion: '0.0.1',
   fileNameExtractionSpec: {},
   folderTreeExtractionSpec: {
     '1': { name: 'part1' },

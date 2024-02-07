@@ -1,6 +1,6 @@
 import { IExtractionSpec } from '../../../../types';
 import { KeyData } from '../../../utils';
-import { parseFileMetadata } from '../parseFileMetadata';
+import { generateMetadata, parseFileMetadata } from '../parseFileMetadata';
 import { stringToStream } from './testUtils';
 
 const ISODateRegexp =
@@ -26,6 +26,7 @@ jest.mock('../../../../utils/logger', () => {
 });
 
 const extractionSpec: IExtractionSpec = {
+  parserVersion: '0.0.1',
   fileNameExtractionSpec: {
     txt: [
       {
@@ -151,6 +152,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
     });
   });
@@ -182,6 +184,7 @@ describe('parseFileMetadata', () => {
         pathOnly1: 'test',
         pathOnly2: 'path',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
     });
   });
@@ -214,6 +217,7 @@ describe('parseFileMetadata', () => {
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
     });
   });
@@ -250,6 +254,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMCONTENT',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
     });
   });
@@ -284,6 +289,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
     });
   });
@@ -318,7 +324,20 @@ describe('parseFileMetadata', () => {
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
       },
+    });
+  });
+});
+describe('generateMetadata', () => {
+  test('success: correct format', async () => {
+    const testSpec = {
+      parserVersion: '0.0.1',
+    };
+    const result = generateMetadata(testSpec as any as IExtractionSpec);
+    expect(result).toEqual({
+      parser_version: '0.0.1',
+      parsed_at_datetime: expect.stringMatching(ISODateRegexp),
     });
   });
 });
