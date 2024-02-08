@@ -9,7 +9,7 @@ import {
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
-import { ZIP_SUFFIX } from '../../../../constants';
+import { FILEPART_SUFFIX, ZIP_SUFFIX } from '../../../../constants';
 import { launchECSZipTask } from './utils';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
@@ -38,7 +38,7 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
       const bucket = eventRecord.s3.bucket;
       const key = getDecodedS3ObjectKey(eventRecord);
       await adminLogger.init('data-reception', key);
-      await adminLogger.info(`Zip vastaanotettu: ${key}`);
+      await adminLogger.info(`Tiedosto vastaanotettu: ${key}`);
       try {
         // note: currently this lock is never released
         // pipeline can acquire lock only after all dataprocess locks have timed out
@@ -50,6 +50,14 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
         return;
       }
       const { path, fileSuffix } = getKeyData(key);
+      if (!fileSuffix) {
+        await adminLogger.warn(`Ei tiedostopäätettä, ei käsitellä.`);
+        return;
+      }
+      if (fileSuffix === FILEPART_SUFFIX) {
+        await adminLogger.warn(`Filepart tiedosto, ei käsitellä.`);
+        return;
+      }
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
       }
@@ -69,6 +77,8 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
         });
         const s3Client = new S3Client({});
         return s3Client.send(command);
+      } else {
+        throw new RaitaLambdaError(`Unexpected file suffix: ${path}`, 400);
       }
     });
     await Promise.all(recordResults);
