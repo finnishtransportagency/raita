@@ -146,14 +146,14 @@ async function writeFileChunkToQueueS3(
 
   log.info('config.targetBucketName'+config.inspectionBucket);
 
-  const command = new PutObjectCommand({
+  /*const command = new PutObjectCommand({
     Bucket: config.inspectionBucket,
     Key: outFileName,
     ContentType: 'txt',
     Body: Buffer.from(inputFileChunkBody),
   });
   const s3Client = new S3Client({});
-  await s3Client.send(command);
+  await s3Client.send(command);*/
 
   return;
 }
