@@ -387,7 +387,7 @@ export class DataProcessStack extends NestedStack {
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
-        INSCPECTION_BUCKET: inspectionBucketName,
+        INSPECTION_BUCKET: inspectionBucketName,
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
