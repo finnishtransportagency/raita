@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { log } from './logger';
-import { AdminLogSource, IAdminLogger } from './adminLogger';
+import { AdminLogLevel, AdminLogSource, IAdminLogger } from './adminLogger';
 import { getEnvOrFail } from '../../utils';
 import { getSecretsManagerSecret } from './secretsManager';
 
@@ -18,13 +18,16 @@ export class PostgresLogger implements IAdminLogger {
   }
 
   async info(message: string) {
-    return this.logToPostgres(message, 'info');
+    return this.logToPostgres([message], 'info');
   }
   async error(message: string) {
-    return this.logToPostgres(message, 'error');
+    return this.logToPostgres([message], 'error');
   }
   async warn(message: string) {
-    return this.logToPostgres(message, 'warn');
+    return this.logToPostgres([message], 'warn');
+  }
+  async batch(messages: string[], level: AdminLogLevel) {
+    return this.logToPostgres(messages, level);
   }
 
   private async getConnection() {
@@ -38,10 +41,7 @@ export class PostgresLogger implements IAdminLogger {
     return this.connection;
   }
 
-  private async logToPostgres(
-    message: string,
-    level: 'info' | 'warn' | 'error',
-  ) {
+  private async logToPostgres(messages: string[], level: AdminLogLevel) {
     if (!this.source || !this.invocationId) {
       log.warn('Trying to log with PostgresLogger before initialization;');
       return;
@@ -49,11 +49,15 @@ export class PostgresLogger implements IAdminLogger {
     const schema = getEnvOrFail('RAITA_PGSCHEMA');
     const timestamp = new Date(Date.now()).toISOString();
     const sql = await this.getConnection();
+    const rows = messages.map(message => ({
+      source: this.source,
+      log_timestamp: timestamp,
+      invocation_id: this.invocationId,
+      log_message: message,
+      log_level: level,
+    }));
     return await sql`
     INSERT INTO ${sql(schema)}.logging
-    (source, log_timestamp, invocation_id, log_message, log_level)
-    VALUES (${this.source}, ${timestamp}, ${
-      this.invocationId
-    }, ${message}, ${level})`;
+    ${sql(rows)}`;
   }
 }
