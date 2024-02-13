@@ -171,14 +171,6 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
         fetchMore = false;
       }
     }
-    // let logToAdminLog = true;
-    // if (keyBatches.length > 1) {
-    //   // more than 1000 files, don't log single files to admin log
-    //   logToAdminLog = false;
-    //   await adminLogger.info(
-    //     `Poistettavien tiedostojen määrä yli 1000, tarkka lista tiedostoista Cloudwatch lokeissa.`,
-    //   );
-    // }
     const deleteResponses = keyBatches.map(keys =>
       s3
         .deleteObjects({
@@ -199,8 +191,9 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
           const deletedKeys = response.Deleted.map(d => d.Key);
           log.info({ keys: deletedKeys }, `Deleted from ${bucket}`);
           deleteCount += response.Deleted.length;
-          return await adminLogger.info(
-            `Poistettu:\n${deletedKeys.join('\n')}`,
+          return await adminLogger.batch(
+            deletedKeys.map(key => `Poistettu ${key}`),
+            'info',
           );
         } else {
           log.error(`No keys deleted from ${bucket}`);
