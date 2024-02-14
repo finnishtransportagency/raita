@@ -1,4 +1,5 @@
 {
+  "parserVersion": "1.0.0",
   "fileNameExtractionSpec": {
     "csv": [
       {
