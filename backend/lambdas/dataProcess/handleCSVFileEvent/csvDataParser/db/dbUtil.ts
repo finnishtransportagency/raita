@@ -4,10 +4,11 @@ import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../../utils/logger';
+import { joinWithCommas } from 'aws-cdk-lib/aws-ecs/lib/log-drivers/utils';
 
 let connection: postgres.Sql;
 //todo set false
-const localDevDB = false;
+const localDevDB = true;
 
 export async function getDBConnection() {
   let schema;
@@ -84,7 +85,7 @@ export async function writeRowsToDB(
       parsedCSVRows,
     )} returning latitude, longitude, id`;
 
-    //  await populateGisPoints(rows, schema, table, sql);
+    //  await populateGisPointsForTable(schema, table, sql);
     //  log.info("populatedGisPoints ");
 
     return rows.length;

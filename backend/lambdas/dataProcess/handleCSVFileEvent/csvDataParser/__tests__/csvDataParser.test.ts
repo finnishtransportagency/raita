@@ -1,4 +1,4 @@
-import { insertRaporttiData, parseCSVFileStream } from '../csvDataChopper';
+import { insertRaporttiData, parseCSVFileStream } from '../csvDataParser';
 import { amsSchema } from '../csvSchemas/amsCsvSchema';
 import {stringToStream} from "../../__tests__/testUtils";
 import * as fs from "fs";

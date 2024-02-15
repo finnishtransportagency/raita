@@ -11,7 +11,7 @@ import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData, RaitaParseError } from '../../utils';
 import { log } from '../../../utils/logger';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
+import { parseCSVFileStream } from './csvDataParser/csvDataChopper';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -120,7 +120,7 @@ export const parseFileContent = async (
     log.info('csv parse file: ' + keyData.fileBaseName);
     const fileStreamToParse = originalStream.clone();
     csvPromise = parseCSVFileStream(
-      keyData.fileBaseName,
+      keyData,
       fileStreamToParse,
       null,
     );

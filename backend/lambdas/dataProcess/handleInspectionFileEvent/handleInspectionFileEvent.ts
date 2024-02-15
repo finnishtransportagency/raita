@@ -17,15 +17,14 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import cloneable from 'cloneable-readable';
 
-function getLambdaConfigOrFail() {
+export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    inspectionBucket: getEnv('INSPECTION_BUCKET'),
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),

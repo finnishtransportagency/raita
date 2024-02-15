@@ -78,9 +78,11 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
   }
 }
 
+
 /**
  * Wait until lock is acquired
  */
+// @ts-ignore
 const getLock = async (key: string) => {
   // TODO: don't naively wait here
   const waitTime = 30 * 1000;
