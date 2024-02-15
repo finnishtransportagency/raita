@@ -34,12 +34,15 @@ export function tidyUpHeaderLine(csvHeaderLine: string): string {
     //remove square bracketed parts at the end of column name;
     .replace(/\[[^\[\]]*?\]\"/g, '"')
     .replace(/\[[^\[\]]*?\],/g, ',')
+    .replace(/\[[^\[\]]*?\]$/, '')
     //remove other square brackets
     .replace(/\[/g, '')
     .replace(/\]/g, '')
     //remove trailing underscores
     .replace(/_\"/g, '"')
-    //replace minus signs with underscore
+    .replace(/_,/g, ',')
+    .replace(/_$/, '')
+        //replace minus signs with underscore
     .replace(/-/g, '_')
     //replace scandic
     .replace(/ä/g, 'a')
