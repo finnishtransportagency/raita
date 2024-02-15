@@ -3,6 +3,7 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import { format, isMatch } from 'date-fns';
 import { logParsingException } from '../../../utils/logger';
 import { DATA_TIME_ZONE } from '../../../../constants';
+import { IExtractionSpec } from '../../../types';
 
 const parseDate = (date: string) => {
   // Try three different patterns, if all fail, let error bubble up
@@ -69,4 +70,28 @@ export const parsePrimitive = (
     );
     return { key: `nonparsed_${key}`, value: data };
   }
+};
+
+/**
+ * Parse value and possibly substitute it with another value if match for both key and value is found in spec.knownExceptions.substituteValues
+ */
+export const parsePrimitiveWithSubstitution = (
+  key: string,
+  data: string,
+  target: 'integer' | 'float' | 'date' | undefined, // if undefined, leave as string
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
+) => {
+  let substituted = data;
+  const substitutionMatch = substituteValues.filter(
+    substitution => key === substitution.key && data === substitution.oldValue,
+  );
+  if (substitutionMatch.length) {
+    substituted = substitutionMatch[0].newValue;
+  }
+
+  const result = target
+    ? parsePrimitive(key, substituted, target)
+    : { key: key, value: substituted };
+
+  return result;
 };

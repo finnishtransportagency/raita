@@ -21,11 +21,7 @@ export async function parseFileMetadata({
   let errorsFound = false;
   let fileNameData: any = {};
   try {
-    fileNameData = extractFileNameData(
-      keyData,
-      spec.fileNameExtractionSpec,
-      spec.knownExceptions.fileNameExtractionSpec,
-    );
+    fileNameData = extractFileNameData(keyData, spec);
   } catch (error: any) {
     errorsFound = true;
     if (error instanceof RaitaParseError) {

@@ -43,6 +43,14 @@ export const ExtractionSpec = z.object({
         }),
       ),
     }),
+    substituteValues: z.array(
+      z.object({
+        // if metadata field key is found with value oldValue (exact match), substitute with newValue
+        key: z.string(),
+        oldValue: z.string(),
+        newValue: z.string(), // Value as string. Type parsing is done after substitution
+      }),
+    ),
   }),
 });
 
