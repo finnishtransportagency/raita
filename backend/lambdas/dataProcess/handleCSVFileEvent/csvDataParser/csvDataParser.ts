@@ -115,12 +115,12 @@ async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const tidyEnd = Date.now();
   tidyCumu += tidyEnd - tidyBegin;
-  //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
+  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
   const parseBegin = Date.now();
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   const parseEnd = Date.now();
   parseCumu += parseEnd - parseBegin;
-  console.log('tidy: ' + tidyCumu);
+  console.log('Bidy: ' + tidyCumu);
   console.log('parse: ' + parseCumu);
   return { ...parsedCSVContent };
 }

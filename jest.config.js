@@ -11,7 +11,6 @@ module.exports = {
   //TODO some smart way to do db writing tests in dev
   testPathIgnorePatterns: [
     '/node_modules/',
-    'csvDataParser',
     'contentDataParser',
     'parseFileMetaData',
     '/zod-csv/',
