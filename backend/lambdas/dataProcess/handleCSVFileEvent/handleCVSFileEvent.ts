@@ -59,17 +59,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info({ fileName: key }, 'Start handler');
         const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
-        const zipFile = getOriginalZipNameFromPath(keyData.path);
-        await adminLogger.init('data-inspection', zipFile);
-        // Return empty null result if the top level folder does not match any of the names
-        // of the designated source systems.
-        if (!isRaitaSourceSystem(keyData.rootFolder)) {
-          log.warn(`Ignoring file ${key} outside Raita source system folders.`);
-          await adminLogger.error(
-            `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
-          );
-          return null;
-        }
+
         if (!isKnownSuffix(keyData.fileSuffix)) {
           if (isKnownIgnoredSuffix(keyData.fileSuffix)) {
             log.info(
@@ -98,9 +88,9 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
             ) {
               log.info('csv parse file: ' + keyData.fileBaseName);
               const result = await parseCSVFileStream(
-                keyData.fileBaseName,
+                keyData,
                 fileStreamToCsvParse,
-                parseResults.metadata,
+                null,
               );
               log.info('csv parsing result: ' + result);
             }
