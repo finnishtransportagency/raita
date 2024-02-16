@@ -22,8 +22,12 @@ import postgres from 'postgres';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import * as events from 'events';
-import {KeyData} from "../../../utils";
-import {CopyObjectCommand, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import { KeyData } from '../../../utils';
+import {
+  CopyObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
 
 async function updateRaporttiStatus(
@@ -48,7 +52,7 @@ async function updateRaporttiStatus(
   }
 }
 
-//todo get all needed values from metadata
+//metadata isn't inserterd yet; metadata is available only after streaming thu file; todo insert metadata in backend/lambdas/dataProcess/handleCSVFileEvent
 export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
@@ -138,13 +142,13 @@ async function writeFileChunkToQueueS3(
   console.log('writeFileChunkToQueueS3 report id ' + reportId);
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
-  const outFileName = 'chunkTestFile' + key.fileBaseName + chunkNumber +'.sql';
+  const outFileName = 'chunkTestFile' + key.fileBaseName + chunkNumber + '.sql';
 
-  log.info('outFileName '+outFileName);
+  log.info('outFileName ' + outFileName);
 
   const config = getLambdaConfigOrFail();
 
-  log.info('config.targetBucketName'+config.inspectionBucket);
+  log.info('config.targetBucketName' + config.inspectionBucket);
 
   /*const command = new PutObjectCommand({
     Bucket: config.inspectionBucket,
@@ -207,102 +211,18 @@ enum ReadState {
   READING_HEADER = 'READING_HEADER',
   READING_BODY = 'READING_BODY',
 }
+const allowedPrefixes = ['AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT'];
 
-async function handleBufferedLines(
-  inputFileChunkBody: string,
-  fileNamePrefix: string,
-  runningDate: Date,
-  reportId: number,
-  fileBaseName: string,
-) {
-  const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  //log.info('fileChunkBody: ' + fileChunkBody.length);
-  switch (fileNamePrefix) {
-    case 'AMS':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'ams_mittaus',
-        amsSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'OHL':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'ohl_mittaus',
-        ohlSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'PI':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'pi_mittaus',
-        piSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'RC':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'rc_mittaus',
-        rcSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'RP':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'rp_mittaus',
-        rpSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'TG':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'tg_mittaus',
-        tgSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'TSIGHT':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'tsight_mittaus',
-        tsightSchema,
-        fileNamePrefix,
-      );
-      break;
-
-    default:
-      log.warn('Unknown csv file prefix: ' + fileNamePrefix);
-      throw new Error('Unknown csv file prefix:');
+async function checkFilenamePrefix(fileNamePrefix: string) {
+  if (allowedPrefixes.find(s => s === fileNamePrefix)) {
+  } else {
+    log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+    throw new Error('Unknown csv file prefix:');
   }
 }
 
-export async function parseCSVFileStream(
+//chop csv file into 50000 row chunks; add header line to each chunk; write each chunk as a file in CSV S3 bucket
+export async function chopCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
   metadata: ParseValueResult | null,
@@ -339,14 +259,14 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 500;
+    const maxBufferSize = 50000;
 
     let state = ReadState.READING_HEADER as ReadState;
 
     let lineCounter = 0;
     let handleCounter = 0;
 
-    let myReadPromise = new Promise<void>((resolve, reject) => {
+    const myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
@@ -372,7 +292,7 @@ export async function parseCSVFileStream(
           log.info('csvHeaderLine set: ' + csvHeaderLine);
         }
 
-        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
+        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
           if (lineBuffer.length > maxBufferSize) {
             rl.pause();
@@ -382,7 +302,7 @@ export async function parseCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            log.info("keyData.keyWithoutSuffix: " + keyData.keyWithoutSuffix);
+            log.info('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
             await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               runningDate,
@@ -414,12 +334,12 @@ export async function parseCSVFileStream(
     // Last content of lineBuffer not handled yet
     log.info('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
-      await handleBufferedLines(
+      await writeFileChunkToQueueS3(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-        fileNamePrefix,
         runningDate,
         reportId,
-        fileBaseName,
+        keyData,
+        handleCounter,
       );
     }
 
@@ -428,7 +348,7 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    log.info('HEllo suscses');
+    log.info('Wrote files to csv bucket ' + fileBaseName + ' ' + handleCounter);
     await updateRaporttiStatus(reportId, 'SUCCESS', null);
     log.info('HEllo suscses done');
     return 'success';
