@@ -1,34 +1,18 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
-import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
-import { ohlSchema } from './csvSchemas/ohlCsvSchema';
-import { amsSchema } from './csvSchemas/amsCsvSchema';
-import { piSchema } from './csvSchemas/piCsvSchema';
-import { rcSchema } from './csvSchemas/rcCsvSchema';
-import { rpSchema } from './csvSchemas/rpCsvSchema';
-import { tgSchema } from './csvSchemas/tgCsvSchema';
-import { tsightSchema } from './csvSchemas/tsightCsvSchema';
-import { ZodObject } from 'zod';
+import { getDBConnection } from './db/dbUtil';
+import { Readable } from 'stream';
+import * as readline from 'readline';
+import { KeyData } from '../../../utils';
+import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
 import {
   readRunningDateFromLine,
   replaceSeparators,
   replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
   tidyUpHeaderLine,
-} from './csvConversionUtils';
-import { parseCSVContent } from '../../../../utils/zod-csv/csv';
-import postgres from 'postgres';
-import { Readable } from 'stream';
-import * as readline from 'readline';
-import * as events from 'events';
-import { KeyData } from '../../../utils';
-import {
-  CopyObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
-import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
+} from '../../csvUtils/csvConversionUtils';
 
 async function updateRaporttiStatus(
   id: number,
@@ -106,30 +90,6 @@ export async function insertRaporttiData(
   }
 }
 
-async function writeCsvContentToDb(dbRows: any[], table: string) {
-  const result: number = await writeRowsToDB(dbRows, table);
-
-  return result;
-}
-
-let tidyCumu = 0;
-let parseCumu = 0;
-let dbCumu = 0;
-
-async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
-  const tidyBegin = Date.now();
-  const tidyedFileBody = tidyUpFileBody(csvFileBody);
-  const tidyEnd = Date.now();
-  tidyCumu += tidyEnd - tidyBegin;
-  //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
-  const parseBegin = Date.now();
-  const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
-  const parseEnd = Date.now();
-  parseCumu += parseEnd - parseBegin;
-  console.log('tidy: ' + tidyCumu);
-  console.log('parse: ' + parseCumu);
-  return { ...parsedCSVContent };
-}
 
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,
@@ -162,50 +122,6 @@ async function writeFileChunkToQueueS3(
   return;
 }
 
-async function parseCsvAndWriteToDb(
-  fileBody: string,
-  runningDate: Date,
-  reportId: number,
-  fileBaseName: string,
-  table: string,
-  csvSchema: ZodObject<any>,
-  fileNamePrefix: string,
-) {
-  const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
-  if (parsedCSVContent.success) {
-    const dbRows: any[] = [];
-    parsedCSVContent.validRows.forEach((row: any) =>
-      dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
-    );
-    const dbBegin = Date.now();
-    const a = await writeCsvContentToDb(dbRows, table);
-    const dbEnd = Date.now();
-    dbCumu += dbEnd - dbBegin;
-    log.info('dbcumu ' + dbCumu);
-    return a;
-  } else {
-    const errors = parsedCSVContent.errors;
-    let errorsOutString = '';
-
-    const headerErrors = errors.header;
-    errorsOutString += JSON.stringify(headerErrors);
-
-    const rowErrors = errors.rows;
-    if (rowErrors) {
-      const rowKeys = Object.keys(rowErrors);
-      // log.info(rowKeys);
-      rowKeys.forEach(key => {
-        errorsOutString += key + ':';
-        errorsOutString += JSON.stringify(rowErrors[key].issues);
-      });
-    }
-
-    log.warn(errorsOutString);
-    throw Error(
-      'Error parsing CSV-file ' + fileBaseName + ' ' + errorsOutString,
-    );
-  }
-}
 
 enum ReadState {
   READING_HEADER = 'READING_HEADER',
@@ -230,7 +146,7 @@ export async function chopCSVFileStream(
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[0];
-  const jarjestelmä = fileNamePrefix.toUpperCase();
+  const jarjestelma = fileNamePrefix.toUpperCase();
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
@@ -249,6 +165,8 @@ export async function chopCSVFileStream(
     null,
   );
   log.info('reportId: ' + reportId);
+  checkFilenamePrefix(jarjestelma);
+
   try {
     let runningDate = new Date();
     let csvHeaderLine = '';
@@ -270,6 +188,9 @@ export async function chopCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
+
+
+        //TODO validate fist chunk or smaller so we dont chop invalid file
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {

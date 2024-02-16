@@ -1,7 +1,5 @@
 // tidy up csv header line so headers are correct form for validating
 import { log } from '../../../../utils/logger';
-import { Readable } from 'stream';
-import * as readline from 'readline';
 
 function tidyUpDataLines(csvDataLines: string): string {
   //log.info('csvDataLines: ' + csvDataLines.length);
@@ -72,37 +70,6 @@ export function readRunningDateFromLine(inputFirstLine: string) {
 }
 
 
-export function tidyUpFileBody(csvFileBody: string) {
-  // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
-  const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
-  const firstLine = csvFileBody.slice(0, firstNewLinePos);
-
-  let fileBody = csvFileBody;
-  if (firstLine.search('Running Date') != -1) {
-    //trash first line; csv headears are on the second
-    fileBody = csvFileBody.slice(firstNewLinePos + 2);
-  }
-
-  const secondNewLinePos = fileBody.search(/\r\n|\r|\n/);
-  const csvHeaderLine = fileBody.slice(0, secondNewLinePos);
-  //log.info('secondNewLinePos: ' + secondNewLinePos);
-  const csvDataLines = fileBody.slice(secondNewLinePos);
-  let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
-  //log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
-  let tidyDataLines = tidyUpDataLines(csvDataLines);
-  //TODO make more generic to any missing column?
-
-  if (tidyHeaderLine.search(/sscount/) == -1) {
-    tidyHeaderLine = '"sscount",' + tidyHeaderLine;
-    log.info('tidyHeaderLine new' + tidyHeaderLine.substring(0, 15));
-    tidyDataLines = tidyDataLines.replace(/\n/g, '\n,');
-    log.info(
-      'tidyDataLines.substring(0,10000)' + tidyDataLines.substring(0, 100),
-    );
-  }
-
-  return tidyHeaderLine.concat(tidyDataLines);
-}
 
 export function isSemicolonSeparatorLine(line: string) {
   const semicolonCount = (line.match(/;/g) || []).length;

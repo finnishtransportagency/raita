@@ -13,16 +13,12 @@ import { ZodObject } from 'zod';
 import {
   readRunningDateFromLine,
   replaceSeparators,
-  replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
-  tidyUpHeaderLine,
-} from './csvConversionUtils';
+} from '../../csvUtils/csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
-import postgres from 'postgres';
 import { Readable } from 'stream';
 import * as readline from 'readline';
-import * as events from 'events';
-import {KeyData} from "../../../utils";
+import { KeyData } from '../../../utils';
 
 async function updateRaporttiStatus(
   id: number,
