@@ -14,10 +14,11 @@ import {
   isKnownIgnoredSuffix,
   isKnownSuffix,
 } from '../../utils';
-import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
+import { parseCSVFileStream } from './csvDataParser/csvDataParser';
+import {fileSuffixesToIncludeInMetadataParsing} from "../../../../constants";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -90,20 +91,8 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           originalStream.pause();
           const fileStreamToCsvParse = originalStream.clone();
 
-          const parseResults = await parseFileMetadata({
-            keyData,
-            file: fileStreamResult,
-            spec,
-          });
-
-          if (parseResults.errors) {
-            await adminLogger.error(
-              `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
-            );
-          } else {
-            await adminLogger.info(`Tiedosto parsittu: ${key}`);
-            //call here csv parsing  parseCsvData(); ?
-      /*      if (
+          await adminLogger.info(`Tiedosto parsittu: ${key}`);
+          if (
               keyData.fileSuffix ===
               fileSuffixesToIncludeInMetadataParsing.CSV_FILE
             ) {
@@ -114,8 +103,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
                 parseResults.metadata,
               );
               log.info('csv parsing result: ' + result);
-            }*/
-          }
+            }
 
           return {
             // key is sent to be stored in url decoded format to db

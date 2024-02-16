@@ -54,6 +54,8 @@ export class DataProcessStack extends NestedStack {
   public readonly inspectionDataBucket: Bucket;
   public readonly dataReceptionBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
+  public readonly handleCSVFileEventFn: NodejsFunction;
+  public readonly csvDataBucket: Bucket;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -105,6 +107,12 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
       versioned: true,
+    });
+    this.csvDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'csv-data',
+      raitaEnv,
+      raitaStackIdentifier,
     });
 
     new BucketDeployment(this, 'ExtractionSpecDeployment', {
@@ -261,7 +269,8 @@ export class DataProcessStack extends NestedStack {
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
-    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
+    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn)
+    this.csvDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
@@ -274,6 +283,28 @@ export class DataProcessStack extends NestedStack {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
+
+    // Create csv data parser lambda, grant permissions and create event sources
+    this.handleCSVFileEventFn = this.createCsvFileEventHandler({
+      name: 'dp-handler-csv-file',
+      csvBucketName: this.csvDataBucket.bucketName,
+      configurationFile: parserConfigurationFile,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
+      raitaStackIdentifier,
+      vpc,
+      databaseEnvironmentVariables,
+    });
+
+    // Grant lambda permissions to bucket
+    this.csvDataBucket.grantRead(this.handleCSVFileEventFn);
+
+    // Add s3 event source for any added file
+    this.handleCSVFileEventFn.addEventSource(
+      new S3EventSource(this.csvDataBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
+    );
+
     const allAlarms = [...receptionAlarms, ...inspectionAlarms];
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
@@ -390,6 +421,51 @@ export class DataProcessStack extends NestedStack {
         INSPECTION_BUCKET: inspectionBucketName,
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
+        REGION: this.region,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  /**
+   * Creates the csv parser lambda and add csv S3 bucket as event sources,
+   * granting lambda read access to the bucket
+   */
+  private createCsvFileEventHandler({
+    name,
+    csvBucketName,
+    configurationFile,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    csvBucketName: string;
+    configurationFile: string;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 10240,
+      timeout: cdk.Duration.seconds(15 * 60),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCsvFileEvent',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
+      ),
+      environment: {
+        CSV_BUCKET: csvBucketName,
+        CONFIGURATION_FILE: configurationFile,
         REGION: this.region,
         ...databaseEnvironmentVariables,
       },
