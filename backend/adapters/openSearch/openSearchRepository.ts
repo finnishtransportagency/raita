@@ -80,7 +80,9 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     // Double check, as opensearch can sometimes give "relevant" results even
     // if they are not complete matches. This way we can be sure to only
     // update documents that we are supposed to.
+
     const docToUpdate =
+      // @ts-ignore
       exists && exists.hits.find(doc => doc._source.key === key);
     if (!exists || !docToUpdate) {
       await this.addDoc(client, entry);

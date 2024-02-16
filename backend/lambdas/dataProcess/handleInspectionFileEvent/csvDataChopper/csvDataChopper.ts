@@ -102,7 +102,7 @@ async function writeFileChunkToQueueS3(
   console.log('writeFileChunkToQueueS3 report id ' + reportId);
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
-  const outFileName = 'chunkTestFile' + key.fileBaseName + chunkNumber + '.sql';
+  const outFileName = 'chunkFile_'+ reportId + '_'+ chunkNumber + '_'+ key.fileBaseName;
 
   log.info('outFileName ' + outFileName);
 
@@ -131,6 +131,7 @@ const allowedPrefixes = ['AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT'];
 
 async function checkFilenamePrefix(fileNamePrefix: string) {
   if (allowedPrefixes.find(s => s === fileNamePrefix)) {
+    log.info("prefix ok " + fileNamePrefix);
   } else {
     log.warn('Unknown csv file prefix: ' + fileNamePrefix);
     throw new Error('Unknown csv file prefix:');
@@ -177,7 +178,7 @@ export async function chopCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 50000;
+    const maxBufferSize = 500;
 
     let state = ReadState.READING_HEADER as ReadState;
 
@@ -245,7 +246,9 @@ export async function chopCSVFileStream(
     });
 
     try {
+      log.info('await myReadPromise' );
       await myReadPromise;
+      log.info('awaited myReadPromise' );
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
