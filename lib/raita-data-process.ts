@@ -32,7 +32,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
-import {handleCSVFileEvent} from "../backend/lambdas/dataProcess/handleCSVFileEvent/handleCVSFileEvent";
+import {handleCSVFileEvent} from "../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent";
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
