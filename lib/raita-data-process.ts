@@ -32,6 +32,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import {handleCSVFileEvent} from "../backend/lambdas/dataProcess/handleCSVFileEvent/handleCVSFileEvent";
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -461,7 +462,7 @@ export class DataProcessStack extends NestedStack {
       handler: 'handleCsvFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
       ),
       environment: {
         CSV_BUCKET: csvBucketName,

@@ -13,6 +13,7 @@ import {
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from '../../csvUtils/csvConversionUtils';
+import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
 async function updateRaporttiStatus(
   id: number,
@@ -110,14 +111,14 @@ async function writeFileChunkToQueueS3(
 
   log.info('config.targetBucketName' + config.inspectionBucket);
 
-  /*const command = new PutObjectCommand({
-    Bucket: config.inspectionBucket,
+  const command = new PutObjectCommand({
+    Bucket: config.csvBucket,
     Key: outFileName,
     ContentType: 'txt',
     Body: Buffer.from(inputFileChunkBody),
   });
   const s3Client = new S3Client({});
-  await s3Client.send(command);*/
+  await s3Client.send(command);
 
   return;
 }
