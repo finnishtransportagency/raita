@@ -2,6 +2,7 @@ import { S3EventRecord } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { IFileResult, IFileStreamResult } from '../types';
 import { IFileInterface } from '../types/portFile';
+import { log } from '../utils/logger';
 
 export class S3FileRepository implements IFileInterface {
   #s3: S3;
@@ -45,33 +46,46 @@ export class S3FileRepository implements IFileInterface {
   getFileStream = async (
     eventRecord: S3EventRecord,
   ): Promise<IFileStreamResult> => {
-    const bucket = eventRecord.s3.bucket.name;
-    const key = decodeURIComponent(
-      eventRecord.s3.object.key.replace(/\+/g, ' '),
-    );
-    const fileStream = this.#s3
-      .getObject({
-        Bucket: bucket,
-        Key: key,
-      })
-      .createReadStream();
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const tagSet = await tagsPromise;
-    const tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-    return {
-      fileStream,
-      tags,
-    };
+    try {
+      const bucket = eventRecord.s3.bucket.name;
+      log.info('bucket' + bucket);
+      const key = decodeURIComponent(
+        eventRecord.s3.object.key.replace(/\+/g, ' '),
+      );
+      log.info('key' + key);
+      const fileStream = this.#s3
+        .getObject({
+          Bucket: bucket,
+          Key: key,
+        })
+        .createReadStream();
+      log.info('fileStream' + fileStream);
+      const tagsPromise = this.#s3
+        .getObjectTagging({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+      log.info('tagsPromise' + tagsPromise);
+      const tagSet = await tagsPromise;
+      const tags = tagSet.TagSet.reduce(
+        (acc, cur) => {
+          acc[cur.Key] = cur.Value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+      log.info('tags' + tags);
+      return {
+        fileStream,
+        tags,
+      };
+    } catch (error) {
+      log.error(error);
+      return {
+        fileStream: undefined,
+        tags:{hello:"wolrd"},
+      };
+    }
   };
 }
