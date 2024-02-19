@@ -44,9 +44,12 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
       async eventRecord => {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start handler');
+        log.info({ fileName: key }, 'Start csv file handler');
+        log.info(eventRecord);
         const fileStreamResult = await files.getFileStream(eventRecord);
+        log.info(fileStreamResult);
         const keyData = getKeyData(key);
+        log.info(keyData);
 
         if (!isCsvSuffix(keyData.fileSuffix)) {
           log.info(
