@@ -9,7 +9,7 @@ import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
-import {S3FileRepository} from "../../../adapters/s3FileRepository";
+import { S3FileRepository } from '../../../adapters/s3FileRepository';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -21,8 +21,6 @@ export function getLambdaConfigOrFail() {
 }
 
 const adminLogger: IAdminLogger = new PostgresLogger();
-
-
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -40,13 +38,16 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
   try {
-    const recordResults = event.Records.map(
-      async eventRecord => {
+    const recordResults = event.Records.map(async eventRecord => {
+      try {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start csv file handler');
+        log.info("HELLO1");
         log.info(eventRecord);
+        log.info("HELLO2");
         const fileStreamResult = await files.getFileStream(eventRecord);
+        log.info("HELLO3");
         log.info(fileStreamResult);
         const keyData = getKeyData(key);
         log.info(keyData);
@@ -59,10 +60,8 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           return null;
         }
 
-
-        log.info("fileStreamResult " + fileStreamResult);
-        log.info("fileStreamResult " + fileStreamResult.fileStream);
-
+        log.info('fileStreamResult ' + fileStreamResult);
+        log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
         if (fileStreamResult && fileStreamResult.fileStream) {
           const originalStream = cloneable(fileStreamResult.fileStream);
@@ -89,9 +88,14 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
             tags: fileStreamResult.tags,
           };
         } else return null;
-      },
-    );
-
+      } catch (err) {
+        log.error(`An error occured while processing events: ${err}`);
+        await adminLogger.error(
+          `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+        );
+        return null;
+      }
+    });
   } catch (err) {
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
