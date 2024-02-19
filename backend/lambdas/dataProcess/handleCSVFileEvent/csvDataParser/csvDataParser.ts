@@ -121,19 +121,6 @@ async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   return { ...parsedCSVContent };
 }
 
-async function writeFileChunkToQueueS3(
-  inputFileChunkBody: string,
-  runningDate: Date,
-  reportId: number,
-  key: string,
-  chunkNumber: number,
-) {
-  console.log('writeFileChunkToQueueS3 key ' + key);
-  console.log('writeFileChunkToQueueS3 report id ' + reportId);
-  console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
-  return;
-}
-
 async function parseCsvAndWriteToDb(
   fileBody: string,
   runningDate: Date,
@@ -283,27 +270,13 @@ export async function parseCSVFileStream(
   fileStream: Readable,
   metadata: ParseValueResult | null,
 ) {
+  console.log("parseCSVFileStream: " + keyData.fileBaseName);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[3];
+  console.log("fileNamePrefix: " + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
-  const reportId: number = await insertRaporttiData(
-    fileBaseName,
-    fileNamePrefix,
-    metadata,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-  );
+  const reportId: number = Number(fileNameParts[1]);
   log.info('reportId: ' + reportId);
   try {
     let runningDate = new Date();
@@ -359,12 +332,12 @@ export async function parseCSVFileStream(
             lineBuffer = [];
             rl.resume();
             log.info("keyData.keyWithoutSuffix: " + keyData.keyWithoutSuffix);
-            await writeFileChunkToQueueS3(
-              csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+            await handleBufferedLines(
+              csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+              fileNamePrefix,
               runningDate,
               reportId,
-              keyData.key,
-              handleCounter,
+              fileBaseName,
             );
             //  log.info("handled bufferd: " + handleCounter);
           }

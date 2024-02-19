@@ -117,7 +117,7 @@ export const parseFileContent = async (
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
   if (keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
-    log.info('csv parse file: ' + keyData.fileBaseName);
+    log.info('chop csv file: ' + keyData.fileBaseName);
     const fileStreamToParse = originalStream.clone();
     csvPromise = chopCSVFileStream(
       keyData,
