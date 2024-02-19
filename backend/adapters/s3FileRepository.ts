@@ -45,6 +45,7 @@ export class S3FileRepository implements IFileInterface {
 
   getFileStream = async (
     eventRecord: S3EventRecord,
+    includeTags: boolean,
   ): Promise<IFileStreamResult> => {
     try {
       const bucket = eventRecord.s3.bucket.name;
@@ -60,18 +61,20 @@ export class S3FileRepository implements IFileInterface {
         })
         .createReadStream();
       log.info('fileStream' + fileStream);
-      const tagsPromise = this.#s3
-        .getObjectTagging({
-          Bucket: bucket,
-          Key: key,
-        })
-        .promise();
-      log.info('tagsPromise' + tagsPromise);
-      const tagSet = await tagsPromise;
-      log.info('tagSet' + tagSet);
 
       let tags = {};
-      if (tagSet.TagSet) {
+
+      if (includeTags) {
+        const tagsPromise = this.#s3
+          .getObjectTagging({
+            Bucket: bucket,
+            Key: key,
+          })
+          .promise();
+        log.info('tagsPromise' + tagsPromise);
+        const tagSet = await tagsPromise;
+        log.info('tagSet' + tagSet);
+
         tags = tagSet.TagSet.reduce(
           (acc, cur) => {
             acc[cur.Key] = cur.Value;
@@ -80,10 +83,7 @@ export class S3FileRepository implements IFileInterface {
           {} as Record<string, string>,
         );
         log.info('tags' + tags);
-      } else {
-        log.info('no tags');
       }
-
       return {
         fileStream,
         tags,

@@ -3,5 +3,8 @@ import { IFileResult, IFileStreamResult } from './index';
 
 export interface IFileInterface {
   getFile: (eventRecord: S3EventRecord) => Promise<IFileResult>;
-  getFileStream: (eventRecord: S3EventRecord) => Promise<IFileStreamResult>;
+  getFileStream: (
+    eventRecord: S3EventRecord,
+    includeTags: boolean,
+  ) => Promise<IFileStreamResult>;
 }

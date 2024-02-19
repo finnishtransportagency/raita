@@ -46,7 +46,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info("HELLO1");
         log.info(eventRecord);
         log.info("HELLO2");
-        const fileStreamResult = await files.getFileStream(eventRecord);
+        const fileStreamResult = await files.getFileStream(eventRecord, false);
         log.info("HELLO3");
         log.info(fileStreamResult);
         const keyData = getKeyData(key);
