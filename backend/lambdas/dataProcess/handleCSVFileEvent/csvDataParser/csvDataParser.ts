@@ -270,11 +270,11 @@ export async function parseCSVFileStream(
   fileStream: Readable,
   metadata: ParseValueResult | null,
 ) {
-  log.info("parseCSVFileStream: " + keyData.fileBaseName);
+  log.info('parseCSVFileStream: ' + keyData.fileBaseName);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[3];
-  log.info("fileNamePrefix: " + fileNamePrefix);
+  log.info('fileNamePrefix: ' + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
   const reportId: number = Number(fileNameParts[1]);
   log.info('reportId: ' + reportId);
@@ -299,54 +299,13 @@ export async function parseCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-log.info('HELLOOO?: ' + line);
-
-        //running date on the firstline unless it's missing; then csv column headers on the first line
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
-          if (lineBuffer[0].search('Running Date') != -1) {
-            runningDate = readRunningDateFromLine(lineBuffer[0]);
-            log.info('runningdate set: ' + runningDate);
-          } else {
-            csvHeaderLine = lineBuffer[0];
-            state = ReadState.READING_BODY;
-            lineBuffer = [];
-            log.info('csvHeaderLine set 0: ' + csvHeaderLine);
-          }
-        }
-
-        //csv column headers on the second line when running date was found on the first
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          csvHeaderLine = lineBuffer[1];
-          state = ReadState.READING_BODY;
-          lineBuffer = [];
-          log.info('csvHeaderLine set: ' + csvHeaderLine);
-        }
-
-        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can hadle them
-        if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
-            rl.pause();
-
-            handleCounter++;
-             log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
-            const bufferCopy = lineBuffer.slice();
-            lineBuffer = [];
-            rl.resume();
-            log.info("keyData.keyWithoutSuffix: " + keyData.keyWithoutSuffix);
-            await handleBufferedLines(
-              csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-              fileNamePrefix,
-              runningDate,
-              reportId,
-              fileBaseName,
-            );
-            //  log.info("handled bufferd: " + handleCounter);
-          }
-        }
+        log.info('HELLOOO?: ' + line);
       });
+
       rl.on('error', () => {
         log.warn('error ');
       });
+
       rl.on('close', function () {
         log.info('closed');
         resolve();

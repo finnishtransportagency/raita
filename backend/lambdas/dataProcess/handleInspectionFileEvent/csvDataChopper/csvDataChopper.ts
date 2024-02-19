@@ -179,7 +179,7 @@ export async function chopCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 500;
+    const maxBufferSize = 50000;
 
     let state = ReadState.READING_HEADER as ReadState;
 
