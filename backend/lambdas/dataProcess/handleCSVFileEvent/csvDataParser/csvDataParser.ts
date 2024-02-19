@@ -299,7 +299,7 @@ export async function parseCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-log.info('HELLOOO?');
+log.info('HELLOOO?: ' + line);
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
