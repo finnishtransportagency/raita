@@ -270,11 +270,11 @@ export async function parseCSVFileStream(
   fileStream: Readable,
   metadata: ParseValueResult | null,
 ) {
-  console.log("parseCSVFileStream: " + keyData.fileBaseName);
+  log.info("parseCSVFileStream: " + keyData.fileBaseName);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   const fileNamePrefix = fileNameParts[3];
-  console.log("fileNamePrefix: " + fileNamePrefix);
+  log.info("fileNamePrefix: " + fileNamePrefix);
   const jarjestelmä = fileNamePrefix.toUpperCase();
   const reportId: number = Number(fileNameParts[1]);
   log.info('reportId: ' + reportId);
@@ -299,6 +299,7 @@ export async function parseCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
+log.info('HELLOOO?');
 
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
@@ -327,7 +328,7 @@ export async function parseCSVFileStream(
             rl.pause();
 
             handleCounter++;
-            //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+             log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
@@ -353,7 +354,9 @@ export async function parseCSVFileStream(
     });
 
     try {
+      log.info('await myReadPromise');
       await myReadPromise;
+      log.info('awaited myReadPromise');
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
