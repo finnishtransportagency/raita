@@ -103,7 +103,7 @@ async function writeFileChunkToQueueS3(
   console.log('writeFileChunkToQueueS3 report id ' + reportId);
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
-  const outFileName = 'chunkFile_'+ reportId + '_'+ chunkNumber + '_'+ key.fileBaseName;
+  const outFileName = 'chunkFile_'+ reportId + '_'+ chunkNumber + '_'+ key.fileName;
 
   log.info('outFileName ' + outFileName);
 
