@@ -24,7 +24,7 @@ import {
   isDevelopmentPreMainStack,
 } from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import {ISecurityGroup, IVpc} from "aws-cdk-lib/aws-ec2";
+
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -33,6 +33,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly jwtTokenIssuer: string;
   readonly inspectionDataBucket: Bucket;
   readonly dataReceptionBucket: Bucket;
+  readonly csvDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
@@ -68,20 +69,7 @@ export class RaitaApiStack extends NestedStack {
   constructor(
     scope: Construct,
     id: string,
-    props: {
-      jwtTokenIssuer: string;
-      openSearchDomain: Domain;
-      cloudfrontDomainName: string;
-      stackId: string;
-      vpc: IVpc;
-      raitaSecurityGroup: ISecurityGroup;
-      raitaEnv: 'prod' | 'dev';
-      raitaStackIdentifier: string;
-      inspectionDataBucket: Bucket;
-      openSearchMetadataIndex: string;
-      dataReceptionBucket: Bucket;
-      csvDataBucket: Bucket;
-    },
+    props: RaitaApiStackProps,
   ) {
     super(scope, id, props);
     const {
