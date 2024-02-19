@@ -285,7 +285,7 @@ export async function parseCSVFileStream(
 ) {
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
-  const fileNamePrefix = fileNameParts[0];
+  const fileNamePrefix = fileNameParts[3];
   const jarjestelmä = fileNamePrefix.toUpperCase();
   const reportId: number = await insertRaporttiData(
     fileBaseName,

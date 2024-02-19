@@ -56,6 +56,11 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           return null;
         }
 
+
+        log.info("fileStreamResult " + fileStreamResult);
+        log.info("fileStreamResult " + fileStreamResult.fileStream);
+
+
         if (fileStreamResult && fileStreamResult.fileStream) {
           const originalStream = cloneable(fileStreamResult.fileStream);
           originalStream.pause();
