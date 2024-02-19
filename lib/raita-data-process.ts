@@ -32,7 +32,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
-import {handleCSVFileEvent} from "../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent";
+import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -257,6 +257,7 @@ export class DataProcessStack extends NestedStack {
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
       inspectionBucketName: this.inspectionDataBucket.bucketName,
+      csvBucketName: this.csvDataBucket.bucketName,
       openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
       lambdaRole: this.dataProcessorLambdaServiceRole,
@@ -270,7 +271,7 @@ export class DataProcessStack extends NestedStack {
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
-    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn)
+    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     this.csvDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
@@ -388,6 +389,7 @@ export class DataProcessStack extends NestedStack {
     openSearchDomainEndpoint,
     configurationBucketName,
     inspectionBucketName,
+    csvBucketName,
     configurationFile,
     openSearchMetadataIndex,
     lambdaRole,
@@ -399,6 +401,7 @@ export class DataProcessStack extends NestedStack {
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
     inspectionBucketName: string;
+    csvBucketName: string;
     configurationFile: string;
     lambdaRole: iam.Role;
     openSearchMetadataIndex: string;
@@ -420,6 +423,7 @@ export class DataProcessStack extends NestedStack {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
         INSPECTION_BUCKET: inspectionBucketName,
+        CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
