@@ -68,14 +68,22 @@ export class S3FileRepository implements IFileInterface {
         .promise();
       log.info('tagsPromise' + tagsPromise);
       const tagSet = await tagsPromise;
-      const tags = tagSet.TagSet.reduce(
-        (acc, cur) => {
-          acc[cur.Key] = cur.Value;
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-      log.info('tags' + tags);
+      log.info('tagSet' + tagSet);
+
+      let tags = {};
+      if (tagSet.TagSet) {
+        tags = tagSet.TagSet.reduce(
+          (acc, cur) => {
+            acc[cur.Key] = cur.Value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
+        log.info('tags' + tags);
+      } else {
+        log.info('no tags');
+      }
+
       return {
         fileStream,
         tags,
@@ -84,7 +92,7 @@ export class S3FileRepository implements IFileInterface {
       log.error(error);
       return {
         fileStream: undefined,
-        tags:{hello:"wolrd"},
+        tags: { hello: 'wolrd' },
       };
     }
   };
