@@ -114,7 +114,7 @@ async function writeFileChunkToQueueS3(
   const command = new PutObjectCommand({
     Bucket: config.csvBucket,
     Key: outFileName,
-    ContentType: 'tesxt/csv',
+    ContentType: 'text/csv',
     Body: Buffer.from(inputFileChunkBody),
   });
   const s3Client = new S3Client({});
