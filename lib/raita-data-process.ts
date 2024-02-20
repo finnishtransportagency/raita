@@ -284,28 +284,31 @@ export class DataProcessStack extends NestedStack {
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
       name: 'dp-handler-csv-file',
+      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+      configurationBucketName: configurationBucket.bucketName,
+      inspectionBucketName: this.inspectionDataBucket.bucketName,
       csvBucketName: this.csvDataBucket.bucketName,
+      openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
     });
-
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
     this.inspectionDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
     this.handleInspectionFileEventFn.addEventSource(
-      new S3EventSource(this.csvDataBucket, {
+      new S3EventSource(this.inspectionDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
-      new S3EventSource(this.inspectionDataBucket, {
+      new S3EventSource(this.csvDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
@@ -440,11 +443,70 @@ export class DataProcessStack extends NestedStack {
     });
   }
 
+
+
+
+  /**
+   * Creates the parser lambda and add S3 buckets as event sources,
+   * granting lambda read access to these buckets
+   */
+  private createCsvFileEventHandler({
+                                             name,
+                                             openSearchDomainEndpoint,
+                                             configurationBucketName,
+                                             inspectionBucketName,
+                                             csvBucketName,
+                                             configurationFile,
+                                             openSearchMetadataIndex,
+                                             lambdaRole,
+                                             raitaStackIdentifier,
+                                             vpc,
+                                             databaseEnvironmentVariables,
+                                           }: {
+    name: string;
+    openSearchDomainEndpoint: string;
+    configurationBucketName: string;
+    inspectionBucketName: string;
+    csvBucketName: string;
+    configurationFile: string;
+    lambdaRole: iam.Role;
+    openSearchMetadataIndex: string;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 10240,
+      timeout: cdk.Duration.seconds(15 * 60),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCSVFileEvent',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
+      ),
+      environment: {
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        CONFIGURATION_BUCKET: configurationBucketName,
+        INSPECTION_BUCKET: inspectionBucketName,
+        CSV_BUCKET: csvBucketName,
+        CONFIGURATION_FILE: configurationFile,
+        METADATA_INDEX: openSearchMetadataIndex,
+        REGION: this.region,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
   /**
    * Creates the csv parser lambda and add csv S3 bucket as event sources,
    * granting lambda read access to the bucket
    */
-  private createCsvFileEventHandler({
+  private createCsvFileEventHandler2({
     name,
     csvBucketName,
     configurationFile,
