@@ -279,12 +279,7 @@ export class DataProcessStack extends NestedStack {
       this.handleInspectionFileEventFn,
     );
 
-    // Add s3 event source for any added file
-    this.handleInspectionFileEventFn.addEventSource(
-      new S3EventSource(this.inspectionDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
-    );
+
 
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
@@ -299,10 +294,18 @@ export class DataProcessStack extends NestedStack {
 
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+    this.inspectionDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+
+    // Add s3 event source for any added file
+    this.handleInspectionFileEventFn.addEventSource(
+      new S3EventSource(this.csvDataBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
+    );
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
-      new S3EventSource(this.csvDataBucket, {
+      new S3EventSource(this.inspectionDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
@@ -463,10 +466,10 @@ export class DataProcessStack extends NestedStack {
       memorySize: 10240,
       timeout: cdk.Duration.seconds(15 * 60),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleInspectionFileEvent',
+      handler: 'handleCSVFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
       ),
       environment: {
         CSV_BUCKET: csvBucketName,
