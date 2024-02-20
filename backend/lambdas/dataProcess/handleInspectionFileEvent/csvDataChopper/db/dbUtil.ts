@@ -7,7 +7,7 @@ import { log } from '../../../../../utils/logger';
 
 let connection: postgres.Sql;
 //todo set false
-const localDevDB = true;
+const localDevDB = false;
 
 export async function getDBConnection() {
   let schema;

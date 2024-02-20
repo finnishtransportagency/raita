@@ -8,7 +8,7 @@ import { joinWithCommas } from 'aws-cdk-lib/aws-ecs/lib/log-drivers/utils';
 
 let connection: postgres.Sql;
 //todo set false
-const localDevDB = true;
+const localDevDB = fa;
 
 export async function getDBConnection() {
   let schema;
