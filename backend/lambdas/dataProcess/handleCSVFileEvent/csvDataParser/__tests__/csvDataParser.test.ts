@@ -1,7 +1,7 @@
-import { insertRaporttiData, parseCSVFileStream } from '../csvDataParser';
+import {insertRaporttiData, parseCSVFile, parseCSVFileStream} from '../csvDataParser';
 import { amsSchema } from '../csvSchemas/amsCsvSchema';
-import {stringToStream} from "../../__tests__/testUtils";
 import * as fs from "fs";
+import {stringToStream} from "../../../handleInspectionFileEvent/__tests__/testUtils";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -13,7 +13,7 @@ const amsCsv =
   '318107,"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,-21.2956,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '318108,"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,-23.1085,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
 //const amsCsvStream =stringToStream(amsCsv);
-const amsCsvStream = fs.createReadStream('./AMS_20221121_003_RITKL_1_16_72.csv');
+const amsCsvStream = fs.createReadStream('./AMS_20221024_251_LHRP_1_130_130.csv');
 
 
 const amsCsvMissingSSCount =
@@ -169,11 +169,11 @@ describe('insert raportti success', () => {
 
 describe('handle ams file success', () => {
   test('success: normal run', async () => {
-     const result = await parseCSVFileStream(
+     const result = await parseCSVFile(
        {
-         fileBaseName: "AMS_20221122_008_KOKOL_LR_630_630.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "", key: 'Meeri/2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+         fileBaseName: "chunkFile_180_0_AMS_20221122_008_KOKOL_LR_630_630.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "", key: 'Meeri/2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
          path:[]},
-       amsCsvStream,
+       amsCsv,
        {},
      );
   }, 900000);

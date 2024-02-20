@@ -1,4 +1,4 @@
-import { ParseValueResult } from '../../../../types';
+import { IFileResult, ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
 import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
@@ -11,6 +11,7 @@ import { tgSchema } from './csvSchemas/tgCsvSchema';
 import { tsightSchema } from './csvSchemas/tsightCsvSchema';
 import { ZodObject } from 'zod';
 import {
+  readRunningDate,
   readRunningDateFromLine,
   replaceSeparators,
   tidyUpFileBody,
@@ -348,4 +349,29 @@ export async function parseCSVFileStream(
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
+}
+
+export async function parseCSVFile(
+  keyData: KeyData,
+  fileBody: string,
+  metadata: ParseValueResult | null,
+) {
+  log.info('parseCSVFileStream: ' + keyData.fileBaseName);
+  const fileBaseName = keyData.fileBaseName;
+  const fileNameParts = fileBaseName.split('_');
+  const fileNamePrefix = fileNameParts[3];
+  log.info('fileNamePrefix: ' + fileNamePrefix);
+  const jarjestelmä = fileNamePrefix.toUpperCase();
+  const reportId: number = Number(fileNameParts[1]);
+  log.info('reportId: ' + reportId);
+
+  //const fileBody = file.fileBody;
+  const runningDate = readRunningDate(fileBody);
+  await handleBufferedLines(
+    fileBody,
+    fileNamePrefix,
+    runningDate,
+    reportId,
+    fileBaseName,
+  );
 }

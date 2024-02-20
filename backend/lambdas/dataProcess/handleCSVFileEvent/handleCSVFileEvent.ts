@@ -8,7 +8,7 @@ import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
+import {parseCSVFile, parseCSVFileStream} from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 
 export function getLambdaConfigOrFail() {
@@ -47,6 +47,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info(eventRecord);
         log.info("HELLO2");
         const fileStreamResult = await files.getFileStream(eventRecord, false);
+        const fileResult = await files.getFile(eventRecord);
         log.info("HELLO3");
         log.info(fileStreamResult);
         const keyData = getKeyData(key);
@@ -63,17 +64,13 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info('fileStreamResult ' + fileStreamResult);
         log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
-        if (fileStreamResult && fileStreamResult.fileStream) {
-          const originalStream = cloneable(fileStreamResult.fileStream);
-          originalStream.pause();
-          const fileStreamToCsvParse = originalStream.clone();
+        if (fileResult && fileResult.fileBody) {
 
-          await adminLogger.info(`Tiedosto parsittu: ${key}`);
 
           log.info('csv parse file: ' + keyData.fileBaseName);
-          const result = await parseCSVFileStream(
+          const result = await parseCSVFile(
             keyData,
-            fileStreamToCsvParse,
+            fileResult.fileBody,
             null,
           );
           log.info('csv parsing result: ' + result);
