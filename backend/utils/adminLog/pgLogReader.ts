@@ -79,6 +79,12 @@ ORDER BY start_timestamp DESC
 LIMIT ${pageSize} OFFSET ${pageOffset};`;
 }
 
+/**
+ * Get admin log summary
+ *
+ * note: pageSize determines the number of database rows returned which differs from the amount of rows in formatted response
+ * TODO: query format can be changed to make this consistent
+ */
 export async function getLogSummary(
   startTimestamp: string,
   endTimestamp: string,

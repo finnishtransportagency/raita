@@ -59,6 +59,6 @@ export type AdminLogSummary = {
   totalSize: number;
   pageIndex: number;
   pageSize: number;
-  stats: StatsQueryDBResponseRow[];
-  summaryRows: SummaryRow[];
+  stats: StatsQueryDBResponseRow[]; // row count for each log level
+  summaryRows: SummaryRow[]; // list of "events" with message counts for each level and source
 };

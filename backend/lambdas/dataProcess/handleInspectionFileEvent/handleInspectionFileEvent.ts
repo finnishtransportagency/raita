@@ -72,14 +72,17 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
             log.info(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
             );
+            await adminLogger.info(
+              `Tiedosto ${key} sisältää tunnetun tiedostopäätteen jota ei käsitellä: ${keyData.fileSuffix}`,
+            );
           } else {
             log.error(
               `Ignoring file ${key} with unknown suffix ${keyData.fileSuffix}`,
             );
+            await adminLogger.warn(
+              `Tiedosto ${key} sisältää tuntemattoman tiedostopäätteen ja sitä ei käsitellä`,
+            );
           }
-          await adminLogger.warn(
-            `Tiedosto ${key} sisältää tuntemattoman tiedostopäätteen ja sitä ei käsitellä`,
-          );
           return null;
         }
         const parseResults = await parseFileMetadata({
