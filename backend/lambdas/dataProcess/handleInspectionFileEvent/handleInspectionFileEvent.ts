@@ -58,8 +58,8 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
-        const fileResult = await backend.files.getFile(eventRecord, true);
+        const fileStreamResult = await backend.files.getFileStream(eventRecord, false);
+        const fileResult = await backend.files.getFile(eventRecord, false);
         log.info("HELLOLHELOEHL: " + fileResult.fileBody?.substring(0,100));
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);

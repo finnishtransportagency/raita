@@ -463,10 +463,10 @@ export class DataProcessStack extends NestedStack {
       memorySize: 10240,
       timeout: cdk.Duration.seconds(15 * 60),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleCSVFileEvent',
+      handler: 'handleInspectionFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
+        `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
       ),
       environment: {
         CSV_BUCKET: csvBucketName,
