@@ -48,7 +48,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info("HELLO2");
 
 
-          log.info("bucket_arn: " +eventRecord.s3.bucket.arn);
+        log.info("bucket_arn: " +eventRecord.s3.bucket.arn);
         log.info("bucket_name: " +eventRecord.s3.bucket.name);
         log.info("object.size: " +eventRecord.s3.object.size);
 

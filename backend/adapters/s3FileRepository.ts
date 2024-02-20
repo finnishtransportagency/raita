@@ -25,16 +25,18 @@ export class S3FileRepository implements IFileInterface {
         Key: key,
       })
       .promise();
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const [file, tagSet] = await Promise.all([filePromise, tagsPromise]);
+
+    const file = await filePromise;
     let tags = {};
 
     if (includeTags) {
+      const tagsPromise = this.#s3
+        .getObjectTagging({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+      const tagSet = await tagsPromise;
       tags = tagSet.TagSet.reduce(
         (acc, cur) => {
           acc[cur.Key] = cur.Value;
