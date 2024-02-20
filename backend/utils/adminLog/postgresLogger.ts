@@ -1,8 +1,8 @@
 import postgres from 'postgres';
-import { log } from './logger';
-import { AdminLogLevel, AdminLogSource, IAdminLogger } from './adminLogger';
-import { getEnvOrFail } from '../../utils';
-import { getSecretsManagerSecret } from './secretsManager';
+import { log } from '../logger';
+import { getEnvOrFail } from '../../../utils';
+import { AdminLogLevel, AdminLogSource, IAdminLogger } from './types';
+import { getSecretsManagerSecret } from '../secretsManager';
 
 export class PostgresLogger implements IAdminLogger {
   private source: AdminLogSource;

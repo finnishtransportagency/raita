@@ -12,8 +12,8 @@ import {
   RaitaLambdaError,
 } from '../../utils';
 import MetadataPort from '../../../ports/metadataPort';
-import { IAdminLogger } from '../../../utils/adminLogger';
-import { PostgresLogger } from '../../../utils/postgresLogger';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 
 function getLambdaConfigOrFail() {
   return {

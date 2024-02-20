@@ -11,8 +11,8 @@ import {
 } from '../../utils';
 import { FILEPART_SUFFIX, ZIP_SUFFIX } from '../../../../constants';
 import { launchECSZipTask } from './utils';
-import { IAdminLogger } from '../../../utils/adminLogger';
-import { PostgresLogger } from '../../../utils/postgresLogger';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DataProcessLockedError,
   acquireDataProcessLockOrFail,

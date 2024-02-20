@@ -15,8 +15,8 @@ import {
   isKnownSuffix,
 } from '../../utils';
 import { parseFileMetadata } from './parseFileMetadata';
-import { IAdminLogger } from '../../../utils/adminLogger';
-import { PostgresLogger } from '../../../utils/postgresLogger';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
