@@ -46,10 +46,17 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info("HELLO1");
         log.info(eventRecord);
         log.info("HELLO2");
-        const fileStreamResult = await files.getFileStream(eventRecord, false);
-        const fileResult = await files.getFile(eventRecord);
-        log.info("HELLO3");
-        log.info(fileStreamResult);
+
+
+          log.info("bucket_arn: " +eventRecord.s3.bucket.arn);
+        log.info("bucket_name: " +eventRecord.s3.bucket.name);
+        log.info("object.size: " +eventRecord.s3.object.size);
+
+        //const fileStreamResult = await files.getFileStream(eventRecord, false);
+        const fileResult = await files.getFile(eventRecord, false);
+        log.info("HELLO3: ");
+        log.info(fileResult);
+        //log.info(fileStreamResult);
         const keyData = getKeyData(key);
         log.info(keyData);
 
@@ -61,8 +68,6 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           return null;
         }
 
-        log.info('fileStreamResult ' + fileStreamResult);
-        log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
         if (fileResult && fileResult.fileBody) {
 
@@ -82,7 +87,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
             bucket_arn: eventRecord.s3.bucket.arn,
             bucket_name: eventRecord.s3.bucket.name,
             size: eventRecord.s3.object.size,
-            tags: fileStreamResult.tags,
+            tags: fileResult.tags,
           };
         } else return null;
       } catch (err) {

@@ -11,7 +11,10 @@ export class S3FileRepository implements IFileInterface {
     this.#s3 = new S3();
   }
 
-  getFile = async (eventRecord: S3EventRecord): Promise<IFileResult> => {
+  getFile = async (
+    eventRecord: S3EventRecord,
+    includeTags: boolean,
+  ): Promise<IFileResult> => {
     const bucket = eventRecord.s3.bucket.name;
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
@@ -29,13 +32,17 @@ export class S3FileRepository implements IFileInterface {
       })
       .promise();
     const [file, tagSet] = await Promise.all([filePromise, tagsPromise]);
-    const tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
+    let tags = {};
+
+    if (includeTags) {
+      tags = tagSet.TagSet.reduce(
+        (acc, cur) => {
+          acc[cur.Key] = cur.Value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+    }
     return {
       fileBody: file.Body?.toString(),
       contentType: file.ContentType,
