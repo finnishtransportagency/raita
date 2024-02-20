@@ -298,7 +298,7 @@ export class DataProcessStack extends NestedStack {
     });
 
     // Grant lambda permissions to bucket
-    this.csvDataBucket.grantRead(this.handleCSVFileEventFn);
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
