@@ -19,37 +19,51 @@ export class S3FileRepository implements IFileInterface {
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
     );
-    const filePromise = this.#s3
-      .getObject({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
 
-    const file = await filePromise;
-    let tags = {};
-
-    if (includeTags) {
-      const tagsPromise = this.#s3
-        .getObjectTagging({
+    log.info('getfile: ' + bucket + key);
+    try {
+      const filePromise = this.#s3
+        .getObject({
           Bucket: bucket,
           Key: key,
         })
         .promise();
-      const tagSet = await tagsPromise;
-      tags = tagSet.TagSet.reduce(
-        (acc, cur) => {
-          acc[cur.Key] = cur.Value;
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
+
+      log.info('filePromise: ' + filePromise);
+      const file = await filePromise;
+      log.info('file: ' + file);
+      let tags = {};
+
+      if (includeTags) {
+        const tagsPromise = this.#s3
+          .getObjectTagging({
+            Bucket: bucket,
+            Key: key,
+          })
+          .promise();
+        const tagSet = await tagsPromise;
+        tags = tagSet.TagSet.reduce(
+          (acc, cur) => {
+            acc[cur.Key] = cur.Value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
+      }
+
+      return {
+        fileBody: file.Body?.toString(),
+        contentType: file.ContentType,
+        tags,
+      };
+    } catch (error) {
+      log.error('error getting file: ' + error);
+      return {
+        fileBody: undefined,
+        contentType: undefined,
+        tags: { hello: 'wolrd' },
+      };
     }
-    return {
-      fileBody: file.Body?.toString(),
-      contentType: file.ContentType,
-      tags,
-    };
   };
 
   getFileStream = async (
