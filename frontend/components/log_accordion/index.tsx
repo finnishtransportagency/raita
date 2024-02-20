@@ -180,6 +180,9 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
     }));
     setActiveEvents([...activeEvents, ...newElements]);
   };
+  const summaryRowsToShow = logSummary.summaryRows.filter(
+    row => !showErrorsOnly || rowContainsErrors(row, type),
+  );
   return (
     <>
       {errorMessage && <p>{errorMessage}</p>}
@@ -204,122 +207,126 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
               logSummary.stats.find(row => row.log_level === 'error')
                 ?.event_count ?? 0
             }`}</p>
-            <Accordion
-              allowMultipleExpanded
-              allowZeroExpanded
-              onChange={eventIds => onOpenStateChange(eventIds as string[])}
-            >
-              {logSummary.summaryRows
-                .filter(row => !showErrorsOnly || rowContainsErrors(row, type))
-                .map(logSummary => {
-                  const headerDateTime = format(
-                    new Date(logSummary.start_timestamp),
-                    'dd.MM.yyyy HH:mm',
-                  );
-                  const eventId = makeEventId(
-                    logSummary.log_date,
-                    logSummary.invocation_id,
-                    sources,
-                  );
-                  const containsErrors = rowContainsErrors(logSummary, type);
-                  const containsWarnings = rowContainsWarnings(
-                    logSummary,
-                    type,
-                  );
-                  const titleKey =
-                    type === 'delete'
-                      ? 'admin:log_header_delete_process'
-                      : 'admin:log_header_data_process';
-                  const noFilesHandled =
-                    type === 'data-process' &&
-                    (!logSummary.counts['data-inspection'] ||
-                      logSummary.counts['data-inspection'].info === 0);
-                  return (
-                    <AccordionItem
-                      className="border border-gray-300 rounded-lg p-2 my-2"
-                      key={eventId}
-                      uuid={eventId}
-                    >
-                      <AccordionItemHeading>
-                        <AccordionItemButton
-                          className={clsx(css.accordionButton)}
-                        >
-                          <FontAwesomeIcon
-                            className={`${clsx(css.downArrow)} mx-3`}
-                            icon={faChevronDown}
-                          />
-                          {`${headerDateTime} ${t(titleKey)}: ${
-                            logSummary.invocation_id
-                          }`}
-                          {containsErrors && (
-                            <span className="nowrap px-1 py-1 m-1 rounded-xl bg-error font-bold">
-                              {t('admin:log_contains_errors')}
-                            </span>
-                          )}
-                          {containsWarnings && (
-                            <span className="px-1 py-1 m-1 rounded-xl bg-warn font-bold">
-                              {t('admin:log_contains_warnings')}
-                            </span>
-                          )}
-                          {noFilesHandled && (
-                            <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
-                              {t('admin:log_no_files_handled')}
-                            </span>
-                          )}
-                        </AccordionItemButton>
-                      </AccordionItemHeading>
-                      <AccordionItemPanel
-                        className={`${clsx(css.logContainer)} bg-slate-100`}
-                      >
-                        {!eventLogs[eventId] ? (
-                          <p>{t('common:loading')}</p>
-                        ) : (
-                          <>
-                            <div className={clsx(css.logBox)}>
-                              {eventLogs[eventId].logs.map(row => (
-                                <pre
-                                  className={`${clsx(css.logRow)} bg-${
-                                    row.log_level
-                                  }`}
-                                  key={`${row.log_message}${row.log_timestamp}`}
-                                >
-                                  {`[${format(
-                                    new Date(row.log_timestamp),
-                                    'dd.MM.yyyy HH:mm:ss.SSS',
-                                  )}] ${row.log_message}`}
-                                </pre>
-                              ))}
-                            </div>
-                            <ResultsPager
-                              currentPage={
-                                (eventLogs[eventId]?.pageIndex ?? 0) + 1
-                              }
-                              itemCount={eventLogs[eventId]?.totalSize}
-                              pageSize={ADMIN_LOG_PAGE_SIZE}
-                              onGotoPage={i =>
-                                setActiveEvents(
-                                  activeEvents.map(event => {
-                                    if (event.eventId === eventId) {
-                                      return { eventId, pageIndex: i - 1 };
-                                    }
-                                    return event;
-                                  }),
-                                )
-                              }
-                            />
-                          </>
-                        )}
-                      </AccordionItemPanel>
-                    </AccordionItem>
-                  );
-                })}
-            </Accordion>
+            <p>{`${t('admin:log_summary_current_page_count')}: ${
+              summaryRowsToShow.length
+            }`}</p>
             <ResultsPager
               currentPage={summaryPageIndex + 1}
               itemCount={logSummary.totalSize}
               pageSize={ADMIN_LOG_SUMMARY_PAGE_SIZE}
               onGotoPage={i => setSummaryPageIndex(i - 1)}
             />
+            <Accordion
+              allowMultipleExpanded
+              allowZeroExpanded
+              onChange={eventIds => onOpenStateChange(eventIds as string[])}
+            >
+              {summaryRowsToShow.map(logSummary => {
+                const headerDateTime = format(
+                  new Date(logSummary.start_timestamp),
+                  'dd.MM.yyyy HH:mm',
+                );
+                const eventId = makeEventId(
+                  logSummary.log_date,
+                  logSummary.invocation_id,
+                  sources,
+                );
+                const containsErrors = rowContainsErrors(logSummary, type);
+                const containsWarnings = rowContainsWarnings(logSummary, type);
+                const titleKey =
+                  type === 'delete'
+                    ? 'admin:log_header_delete_process'
+                    : 'admin:log_header_data_process';
+                const noFilesHandled =
+                  type === 'data-process' &&
+                  (!logSummary.counts['data-inspection'] ||
+                    logSummary.counts['data-inspection'].info === 0);
+                return (
+                  <AccordionItem
+                    className="border border-gray-300 rounded-lg p-2 my-2"
+                    key={eventId}
+                    uuid={eventId}
+                  >
+                    <AccordionItemHeading>
+                      <AccordionItemButton
+                        className={clsx(css.accordionButton)}
+                      >
+                        <FontAwesomeIcon
+                          className={`${clsx(css.downArrow)} mx-3`}
+                          icon={faChevronDown}
+                        />
+                        {`${headerDateTime} ${t(titleKey)}: ${
+                          logSummary.invocation_id
+                        }`}
+                        {containsErrors && (
+                          <span className="nowrap px-1 py-1 m-1 rounded-xl bg-error font-bold">
+                            {t('admin:log_contains_errors')}
+                          </span>
+                        )}
+                        {containsWarnings && (
+                          <span className="px-1 py-1 m-1 rounded-xl bg-warn font-bold">
+                            {t('admin:log_contains_warnings')}
+                          </span>
+                        )}
+                        {noFilesHandled && (
+                          <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
+                            {t('admin:log_no_files_handled')}
+                          </span>
+                        )}
+                      </AccordionItemButton>
+                    </AccordionItemHeading>
+                    <AccordionItemPanel
+                      className={`${clsx(css.logContainer)} bg-slate-100`}
+                    >
+                      {!eventLogs[eventId] ? (
+                        <p>{t('common:loading')}</p>
+                      ) : (
+                        <>
+                          <ResultsPager
+                            currentPage={
+                              (eventLogs[eventId]?.pageIndex ?? 0) + 1
+                            }
+                            itemCount={eventLogs[eventId]?.totalSize}
+                            pageSize={ADMIN_LOG_PAGE_SIZE}
+                            onGotoPage={i =>
+                              setActiveEvents(
+                                activeEvents.map(event => {
+                                  if (event.eventId === eventId) {
+                                    return { eventId, pageIndex: i - 1 };
+                                  }
+                                  return event;
+                                }),
+                              )
+                            }
+                          />
+                          <p>
+                            {t('admin:log_row_counts', {
+                              current: eventLogs[eventId].logs.length,
+                              total: eventLogs[eventId]?.totalSize,
+                            })}
+                          </p>
+                          <div className={clsx(css.logBox)}>
+                            {eventLogs[eventId].logs.map(row => (
+                              <pre
+                                className={`${clsx(css.logRow)} bg-${
+                                  row.log_level
+                                }`}
+                                key={`${row.log_message}${row.log_timestamp}`}
+                              >
+                                {`[${format(
+                                  new Date(row.log_timestamp),
+                                  'dd.MM.yyyy HH:mm:ss.SSS',
+                                )}] ${row.log_message}`}
+                              </pre>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </AccordionItemPanel>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </>
         )}
     </>

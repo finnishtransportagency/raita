@@ -13,6 +13,8 @@
   "log_warnings": "Warnings",
   "log_no_files_handled": "No files parsed",
   "log_show_only_errors": "Show only events with errors",
+  "log_row_counts": "Showing rows: {{ current }} out of {{ total }} total",
+  "log_summary_current_page_count": "Showing on this page",
   "delete_input_placeholder": "Input path of files to delete",
   "delete_page_title": "Delete files",
   "delete_label": "Delete files",

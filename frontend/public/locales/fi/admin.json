@@ -13,6 +13,8 @@
   "log_warnings": "Huomautuksia",
   "log_no_files_handled": "Yhtään tiedostoa ei käsitelty",
   "log_show_only_errors": "Näytä vain virheelliset tapahtumat",
+  "log_row_counts": "Näytetään rivejä: {{ current }} / yhteensä: {{ total }}",
+  "log_summary_current_page_count": "Näytetään tällä sivulla",
   "delete_input_placeholder": "Syötä poistettava tiedostopolku",
   "delete_page_title": "Tiedostojen poisto",
   "delete_label": "Poista tiedostot",
