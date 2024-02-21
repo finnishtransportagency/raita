@@ -59,7 +59,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
       try {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start csv file handler');
+        log.info({ fileName: key }, 'Start csv Xfile handler');
         log.info("HELLO1");
         log.info(eventRecord);
         log.info("HELLO2");
