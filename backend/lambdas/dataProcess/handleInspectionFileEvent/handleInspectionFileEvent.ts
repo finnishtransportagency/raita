@@ -49,7 +49,7 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  * TODO: Parsing should be extracted out out the S3Event handler.
  *
  */
-export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
+export async function handleInspectionFileEvent2(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
  // const files = new S3FileRepository();
@@ -124,7 +124,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   }
 }
 
-export async function handleInspectionFileEvent2(event: S3Event): Promise<void> {
+export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
@@ -135,7 +135,6 @@ export async function handleInspectionFileEvent2(event: S3Event): Promise<void> 
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(eventRecord, false);
         const fileResult = await backend.files.getFile(eventRecord, false);
         log.info("HELLOLHELOEHL: " + fileResult.fileBody?.substring(0,100));
         const keyData = getKeyData(key);
@@ -166,37 +165,7 @@ export async function handleInspectionFileEvent2(event: S3Event): Promise<void> 
           return null;
         }
 
-        if (fileStreamResult && fileStreamResult.fileStream) {
-          const originalStream = cloneable(fileStreamResult.fileStream);
-          originalStream.pause();
-
-          const parseResults = await parseFileMetadata({
-            keyData,
-            file: fileStreamResult,
-            spec,
-          });
-
-          if (parseResults.errors) {
-            await adminLogger.error(
-              `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
-            );
-          } else {
-            await adminLogger.info(`Tiedosto parsittu: ${key}`);
-
-          }
-
-          return {
-            // key is sent to be stored in url decoded format to db
-            key,
-            file_name: keyData.fileName,
-            bucket_arn: eventRecord.s3.bucket.arn,
-            bucket_name: eventRecord.s3.bucket.name,
-            size: eventRecord.s3.object.size,
-            metadata: parseResults.metadata,
-            hash: parseResults.hash,
-            tags: fileStreamResult.tags,
-          };
-        } else return null;
+       return null;
       },
     );
     // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
