@@ -9,3 +9,4 @@ export { default as Navigation } from './navigation';
 export { default as CopyToClipboard } from './copy_to_clipboard';
 export { default as Instructions } from './instructions';
 export { default as LatestInspectionDate } from './latest_inspection_date';
+export { default as LogAccordion } from './log_accordion';
