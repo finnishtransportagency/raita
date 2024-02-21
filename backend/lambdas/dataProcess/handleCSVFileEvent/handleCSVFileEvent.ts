@@ -98,6 +98,10 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         return null;
       }
     });
+
+    const entries = await Promise.all(recordResults).then(
+      results => log.info(results),
+    );
   } catch (err) {
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
