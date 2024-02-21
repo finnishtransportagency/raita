@@ -10,7 +10,7 @@ import {
 import {
   getDecodedS3ObjectKey,
   getKeyData,
-  getOriginalZipNameFromPath,
+  getOriginalZipNameFromPath, isCsvSuffix,
   isKnownIgnoredSuffix,
   isKnownSuffix,
 } from '../../utils';
@@ -18,6 +18,8 @@ import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
+import {S3FileRepository} from "../../../adapters/s3FileRepository";
+import {parseCSVFile} from "../handleCSVFileEvent/csvDataParser/csvDataParser";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -48,6 +50,81 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  *
  */
 export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
+  const config = getLambdaConfigOrFail();
+  //const backend = BackendFacade.getBackend(config);
+  const files = new S3FileRepository();
+  let currentKey: string = ''; // for logging in case of errors
+  try {
+    const recordResults = event.Records.map(async eventRecord => {
+      try {
+        const key = getDecodedS3ObjectKey(eventRecord);
+        currentKey = key;
+        log.info({ fileName: key }, 'Start csv file handler');
+        log.info("HELLO1");
+        log.info(eventRecord);
+        log.info("HELLO2");
+
+
+        log.info("bucket_arn: " +eventRecord.s3.bucket.arn);
+        log.info("bucket_name: " +eventRecord.s3.bucket.name);
+        log.info("object.size: " +eventRecord.s3.object.size);
+
+        //const fileStreamResult = await files.getFileStream(eventRecord, false);
+        const fileResult = await files.getFile(eventRecord, false);
+        log.info("HELLO3: ");
+        log.info(fileResult);
+        //log.info(fileStreamResult);
+        const keyData = getKeyData(key);
+        log.info(keyData);
+
+        if (!isCsvSuffix(keyData.fileSuffix)) {
+          log.info(
+            `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
+          );
+
+          return null;
+        }
+
+
+        if (fileResult && fileResult.fileBody) {
+
+
+          log.info('csv parse file: ' + keyData.fileBaseName);
+          const result = await parseCSVFile(
+            keyData,
+            fileResult.fileBody,
+            null,
+          );
+          log.info('csv parsing result: ' + result);
+
+          return {
+            // key is sent to be stored in url decoded format to db
+            key,
+            file_name: keyData.fileName,
+            bucket_arn: eventRecord.s3.bucket.arn,
+            bucket_name: eventRecord.s3.bucket.name,
+            size: eventRecord.s3.object.size,
+            tags: fileResult.tags,
+          };
+        } else return null;
+      } catch (err) {
+        log.error(`An error occured while processing events: ${err}`);
+        await adminLogger.error(
+          `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+        );
+        return null;
+      }
+    });
+  } catch (err) {
+    // TODO: Figure out proper error handling.
+    log.error(`An error occured while processing events: ${err}`);
+    await adminLogger.error(
+      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+    );
+  }
+}
+
+export async function handleInspectionFileEvent2(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
