@@ -51,8 +51,8 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  */
 export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
   const config = getLambdaConfigOrFail();
-  //const backend = BackendFacade.getBackend(config);
-  const files = new S3FileRepository();
+  const backend = BackendFacade.getBackend(config);
+ // const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
   try {
     const recordResults = event.Records.map(async eventRecord => {
@@ -70,7 +70,7 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         log.info("object.size: " +eventRecord.s3.object.size);
 
         //const fileStreamResult = await files.getFileStream(eventRecord, false);
-        const fileResult = await files.getFile(eventRecord, false);
+        const fileResult = await backend.files.getFile(eventRecord, false);
         log.info("HELLO3: ");
         log.info(fileResult);
         //log.info(fileStreamResult);
