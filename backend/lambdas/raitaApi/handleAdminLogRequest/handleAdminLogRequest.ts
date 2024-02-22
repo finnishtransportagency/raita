@@ -46,9 +46,7 @@ export async function handleAdminLogsRequest(
     if (isNaN(parsedDate.getTime())) {
       throw new RaitaLambdaError('Invalid parsedDate', 400);
     }
-    const invocationId = queryStringParameters.invocationId
-      .split('+')
-      .join(' ');
+    const invocationId = decodeURIComponent(queryStringParameters.invocationId);
     const sources = queryStringParameters.sources;
     const splitSources = sources.split(',');
     let parsedSources: AdminLogSource[];
