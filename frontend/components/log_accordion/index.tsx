@@ -198,6 +198,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
               <input
                 className="mx-1"
                 type="checkbox"
+                checked={showErrorsOnly}
                 onChange={e => setShowErrorsOnly(e.currentTarget.checked)}
               />
               {t('admin:log_show_only_errors')}
