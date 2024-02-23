@@ -301,13 +301,6 @@ export class DataProcessStack extends NestedStack {
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
-    this.handleInspectionFileEventFn.addEventSource(
-      new S3EventSource(this.inspectionDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
-    );
-
-    // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
       new S3EventSource(this.csvDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
