@@ -300,7 +300,6 @@ export async function parseCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-        log.info('HELLOOO?: ' + line);
       });
 
       rl.on('error', () => {
