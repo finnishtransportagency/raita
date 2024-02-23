@@ -382,6 +382,7 @@ export class DataProcessStack extends NestedStack {
         __dirname,
         `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
       ),
+      reservedConcurrentExecutions: 100,
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
