@@ -32,6 +32,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
 
 interface DataProcessStackProps extends NestedStackProps {
@@ -279,7 +280,12 @@ export class DataProcessStack extends NestedStack {
       this.handleInspectionFileEventFn,
     );
 
-
+    // Add s3 event source for any added file
+    this.handleInspectionFileEventFn.addEventSource(
+      new S3EventSource(this.inspectionDataBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
+    );
 
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
@@ -293,7 +299,6 @@ export class DataProcessStack extends NestedStack {
     });
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
-    this.inspectionDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
     this.handleInspectionFileEventFn.addEventSource(
@@ -741,20 +746,13 @@ export class DataProcessStack extends NestedStack {
         },
       },
     );
-    // Repository for storing docker images
-    const raitaEcrRepository = new ecr.Repository(this, 'repository-raita', {
-      repositoryName: `repository-${raitaStackIdentifier}-zip-handler`,
-      lifecycleRules: [{ maxImageCount: 3 }],
-      imageScanOnPush: true,
-      removalPolicy: getRemovalPolicy(raitaEnv),
+    const image = new DockerImageAsset(this, 'zip-handler-image', {
+      directory: path.join(__dirname, '../backend/containers/zipHandler'),
     });
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
-        image: ecs.ContainerImage.fromEcrRepository(
-          raitaEcrRepository,
-          'latest',
-        ),
+        image: ecs.ContainerImage.fromDockerImageAsset(image),
         logging: new ecs.AwsLogDriver({
           streamPrefix: 'FargateHandleZip',
           logRetention: RetentionDays.SIX_MONTHS,
