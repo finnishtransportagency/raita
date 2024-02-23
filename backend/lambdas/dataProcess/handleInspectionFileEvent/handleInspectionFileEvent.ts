@@ -88,8 +88,6 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
         }
 
         if (fileStreamResult && fileStreamResult.fileStream) {
-          const originalStream = cloneable(fileStreamResult.fileStream);
-          originalStream.pause();
 
           const parseResults = await parseFileMetadata({
             keyData,

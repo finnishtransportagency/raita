@@ -63,15 +63,11 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
         if (fileStreamResult && fileStreamResult.fileStream) {
-          const originalStream = cloneable(fileStreamResult.fileStream);
-          originalStream.pause();
-          const fileStreamToCsvParse = originalStream.clone();
-
 
           log.info('csv parse file: ' + keyData.fileBaseName);
           const result = await parseCSVFileStream(
             keyData,
-            fileStreamToCsvParse,
+            fileStreamResult.fileStream,
             null,
           );
           log.info('csv parsing result: ' + result);

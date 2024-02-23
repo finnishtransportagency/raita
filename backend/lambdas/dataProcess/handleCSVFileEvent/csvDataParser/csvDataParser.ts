@@ -211,9 +211,6 @@ async function handleBufferedLines(
   }
 }
 
-async function writeFileChunkToQueueS3(s: string, runningDate: Date, reportId: number, keyData: KeyData, handleCounter: number) {
-  log.debug("writeFileChunkToQueueS3");
-}
 
 export async function parseCSVFileStream(
   keyData: KeyData,
@@ -245,7 +242,7 @@ export async function parseCSVFileStream(
     let lineCounter = 0;
     let handleCounter = 0;
 
-    const myReadPromise2 = new Promise<void>((resolve, reject) => {
+    const myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
@@ -305,65 +302,6 @@ export async function parseCSVFileStream(
       });
     });
 
-    const myReadPromise = new Promise<void>((resolve, reject) => {
-      rl.on('line', async line => {
-        lineBuffer.push(line);
-        lineCounter++;
-
-
-        //TODO validate fist chunk or smaller so we dont chop invalid file
-
-        //running date on the firstline unless it's missing; then csv column headers on the first line
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
-          if (lineBuffer[0].search('Running Date') != -1) {
-            runningDate = readRunningDateFromLine(lineBuffer[0]);
-            log.info('runningdate set: ' + runningDate);
-          } else {
-            csvHeaderLine = lineBuffer[0];
-            state = ReadState.READING_BODY;
-            lineBuffer = [];
-            log.info('csvHeaderLine set 0: ' + csvHeaderLine);
-          }
-        }
-
-        //csv column headers on the second line when running date was found on the first
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          csvHeaderLine = lineBuffer[1];
-          state = ReadState.READING_BODY;
-          lineBuffer = [];
-          log.info('csvHeaderLine set: ' + csvHeaderLine);
-        }
-
-        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
-        if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
-            rl.pause();
-
-            handleCounter++;
-            //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
-            const bufferCopy = lineBuffer.slice();
-            lineBuffer = [];
-            rl.resume();
-            log.info('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
-            await writeFileChunkToQueueS3(
-              csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-              runningDate,
-              reportId,
-              keyData,
-              handleCounter,
-            );
-            //  log.info("handled bufferd: " + handleCounter);
-          }
-        }
-      });
-      rl.on('error', () => {
-        log.warn('error ');
-      });
-      rl.on('close', function () {
-        log.info('closed');
-        resolve();
-      });
-    });
 
     try {
       log.info('await myReadPromise' );
