@@ -375,7 +375,7 @@ export class DataProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(15),
+      timeout: cdk.Duration.seconds(60),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
