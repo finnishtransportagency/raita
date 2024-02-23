@@ -1,7 +1,6 @@
 import { IFileResult, ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { Raportti } from './db/model/Raportti';
-import { convertToDBRow, getDBConnection, writeRowsToDB } from './db/dbUtil';
+import { convertToDBRow, getDBConnection, writeRowsToDB } from '../../handleInspectionFileEvent/csvDataChopper/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
 import { amsSchema } from './csvSchemas/amsCsvSchema';
 import { piSchema } from './csvSchemas/piCsvSchema';
@@ -38,60 +37,6 @@ async function updateRaporttiStatus(
     log.info(a);
   } catch (e) {
     log.error('Error updating raportti status');
-    log.error(e);
-    throw e;
-  }
-}
-
-//todo get all needed values from metadata
-export async function insertRaporttiData(
-  fileBaseName: string,
-  fileNamePrefix: string,
-  metadata: ParseValueResult | null,
-  aloitus_rata_kilometri: number | null,
-  kampanja: string | null,
-  lopetus_rata_kilometri: number | null,
-  raide_numero: number | null,
-  raportin_kategoria: string | null,
-  raportointiosuus: string | null,
-  rataosuus_numero: string | null,
-  tarkastusajon_tunniste: string | null,
-  tarkastusvaunu: string | null,
-  tiedoston_koko_kb: string | null,
-  tiedostonimi: string | null,
-  tiedostotyyppi: string | null,
-): Promise<number> {
-  const data: Raportti = {
-    aloitus_rata_kilometri,
-    kampanja,
-    lopetus_rata_kilometri,
-    raide_numero,
-    raportin_kategoria,
-    raportointiosuus,
-    rataosuus_numero,
-    tarkastusajon_tunniste,
-    tarkastusvaunu,
-    tiedoston_koko_kb,
-    tiedostonimi,
-    tiedostotyyppi,
-    zip_tiedostonimi: fileBaseName,
-    zip_vastaanotto_pvm: new Date(),
-    zip_vastaanotto_vuosi: new Date(),
-    pvm: new Date(),
-    vuosi: new Date(),
-    jarjestelma: fileNamePrefix,
-  };
-
-  let { schema, sql } = await getDBConnection();
-
-  try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
-    log.info(id);
-    return id.id;
-  } catch (e) {
-    log.error('Error inserting raportti data');
     log.error(e);
     throw e;
   }
@@ -180,7 +125,7 @@ async function handleBufferedLines(
   fileBaseName: string,
 ) {
   const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  //log.info('fileChunkBody: ' + fileChunkBody.length);
+  log.info('fileChunkBody: ' + fileChunkBody.length);
   switch (fileNamePrefix) {
     case 'AMS':
       await parseCsvAndWriteToDb(
@@ -296,16 +241,60 @@ export async function parseCSVFileStream(
     let lineCounter = 0;
     let handleCounter = 0;
 
-    let myReadPromise = new Promise<void>((resolve, reject) => {
+    const myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-      });
 
+
+        //TODO validate fist chunk or smaller so we dont chop invalid file
+
+        //running date on the firstline unless it's missing; then csv column headers on the first line
+        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
+          if (lineBuffer[0].search('Running Date') != -1) {
+            runningDate = readRunningDateFromLine(lineBuffer[0]);
+            log.info('runningdate set: ' + runningDate);
+          } else {
+            csvHeaderLine = lineBuffer[0];
+            state = ReadState.READING_BODY;
+            lineBuffer = [];
+            log.info('csvHeaderLine set 0: ' + csvHeaderLine);
+          }
+        }
+
+        //csv column headers on the second line when running date was found on the first
+        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
+          csvHeaderLine = lineBuffer[1];
+          state = ReadState.READING_BODY;
+          lineBuffer = [];
+          log.info('csvHeaderLine set: ' + csvHeaderLine);
+        }
+
+        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
+        if (state == ReadState.READING_BODY) {
+          if (lineBuffer.length > maxBufferSize) {
+            rl.pause();
+
+            handleCounter++;
+            //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+            const bufferCopy = lineBuffer.slice();
+            lineBuffer = [];
+            rl.resume();
+            log.info('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
+            await handleBufferedLines(
+              csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+              fileNamePrefix,
+              runningDate,
+              reportId,
+              fileBaseName,
+            );
+            //  log.info("handled bufferd: " + handleCounter);
+          }
+        }
+      });
       rl.on('error', () => {
         log.warn('error ');
       });
-
       rl.on('close', function () {
         log.info('closed');
         resolve();
@@ -313,9 +302,9 @@ export async function parseCSVFileStream(
     });
 
     try {
-      log.info('await myReadPromise');
+      log.info('await myReadPromise' );
       await myReadPromise;
-      log.info('awaited myReadPromise');
+      log.info('awaited myReadPromise' );
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
@@ -348,29 +337,4 @@ export async function parseCSVFileStream(
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
-}
-
-export async function parseCSVFile(
-  keyData: KeyData,
-  fileBody: string,
-  metadata: ParseValueResult | null,
-) {
-  log.info('parseCSVFileStream: ' + keyData.fileBaseName);
-  const fileBaseName = keyData.fileBaseName;
-  const fileNameParts = fileBaseName.split('_');
-  const fileNamePrefix = fileNameParts[3];
-  log.info('fileNamePrefix: ' + fileNamePrefix);
-  const jarjestelmä = fileNamePrefix.toUpperCase();
-  const reportId: number = Number(fileNameParts[1]);
-  log.info('reportId: ' + reportId);
-
-  //const fileBody = file.fileBody;
-  const runningDate = readRunningDate(fileBody);
-  await handleBufferedLines(
-    fileBody,
-    fileNamePrefix,
-    runningDate,
-    reportId,
-    fileBaseName,
-  );
 }

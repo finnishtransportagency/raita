@@ -1,5 +1,4 @@
 import { S3Event } from 'aws-lambda';
-import { FileMetadataEntry } from '../../../types';
 
 import { log } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
@@ -8,7 +7,7 @@ import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { IAdminLogger } from '../../../utils/adminLogger';
 import { PostgresLogger } from '../../../utils/postgresLogger';
 import cloneable from 'cloneable-readable';
-import {parseCSVFile, parseCSVFileStream} from './csvDataParser/csvDataParser';
+import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 
 export function getLambdaConfigOrFail() {
@@ -46,17 +45,9 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
         log.info("HELLO1");
         log.info(eventRecord);
         log.info("HELLO2");
-
-
-        log.info("bucket_arn: " +eventRecord.s3.bucket.arn);
-        log.info("bucket_name: " +eventRecord.s3.bucket.name);
-        log.info("object.size: " +eventRecord.s3.object.size);
-
-        //const fileStreamResult = await files.getFileStream(eventRecord, false);
-        const fileResult = await files.getFile(eventRecord, false);
-        log.info("HELLO3: ");
-        log.info(fileResult);
-        //log.info(fileStreamResult);
+        const fileStreamResult = await files.getFileStream(eventRecord, false);
+        log.info("HELLO3");
+        log.info(fileStreamResult);
         const keyData = getKeyData(key);
         log.info(keyData);
 
@@ -68,14 +59,19 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           return null;
         }
 
+        log.info('fileStreamResult ' + fileStreamResult);
+        log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
-        if (fileResult && fileResult.fileBody) {
+        if (fileStreamResult && fileStreamResult.fileStream) {
+          const originalStream = cloneable(fileStreamResult.fileStream);
+          originalStream.pause();
+          const fileStreamToCsvParse = originalStream.clone();
 
 
           log.info('csv parse file: ' + keyData.fileBaseName);
-          const result = await parseCSVFile(
+          const result = await parseCSVFileStream(
             keyData,
-            fileResult.fileBody,
+            fileStreamToCsvParse,
             null,
           );
           log.info('csv parsing result: ' + result);
@@ -87,7 +83,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
             bucket_arn: eventRecord.s3.bucket.arn,
             bucket_name: eventRecord.s3.bucket.name,
             size: eventRecord.s3.object.size,
-            tags: fileResult.tags,
+            tags: fileStreamResult.tags,
           };
         } else return null;
       } catch (err) {
