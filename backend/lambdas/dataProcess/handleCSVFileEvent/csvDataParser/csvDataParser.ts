@@ -90,6 +90,9 @@ async function parseCsvAndWriteToDb(
     const dbBegin = Date.now();
     const a = await writeCsvContentToDb(dbRows, table);
     log.info('dbinsert count ' + a);
+    log.info("first and last");
+    log.info(dbRows[0]);
+    log.info(dbRows[dbRows.length-1]);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
    // log.info('dbcumu seconds ' + dbCumu/1000);
