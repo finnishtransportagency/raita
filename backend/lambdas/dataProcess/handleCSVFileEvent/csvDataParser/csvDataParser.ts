@@ -79,15 +79,20 @@ async function parseCsvAndWriteToDb(
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
   if (parsedCSVContent.success) {
     const dbRows: any[] = [];
+
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
+
+    log.info("first and last");
+    log.info(dbRows[0]);
+    log.info(dbRows[dbRows.length-1]);
     const dbBegin = Date.now();
     const a = await writeCsvContentToDb(dbRows, table);
     log.info('dbinsert count ' + a);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
-    log.info('dbcumu seconds ' + dbCumu/1000);
+   // log.info('dbcumu seconds ' + dbCumu/1000);
     return a;
   } else {
     const errors = parsedCSVContent.errors;
