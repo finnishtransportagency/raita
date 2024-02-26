@@ -62,8 +62,8 @@ async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   const parseEnd = Date.now();
   parseCumu += parseEnd - parseBegin;
-  console.log('tidy: ' + tidyCumu);
-  console.log('parse: ' + parseCumu);
+  //console.log('tidy: ' + tidyCumu);
+  //console.log('parse: ' + parseCumu);
   return { ...parsedCSVContent };
 }
 
@@ -84,9 +84,10 @@ async function parseCsvAndWriteToDb(
     );
     const dbBegin = Date.now();
     const a = await writeCsvContentToDb(dbRows, table);
+    log.info('dbinsert count ' + a);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
-    log.info('dbcumu ' + dbCumu);
+    log.info('dbcumu seconds ' + dbCumu/1000);
     return a;
   } else {
     const errors = parsedCSVContent.errors;
@@ -125,7 +126,7 @@ async function handleBufferedLines(
   fileBaseName: string,
 ) {
   const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  log.info('fileChunkBody: ' + fileChunkBody.length);
+  //log.info('fileChunkBody: ' + fileChunkBody.length);
   switch (fileNamePrefix) {
     case 'AMS':
       await parseCsvAndWriteToDb(
@@ -281,7 +282,6 @@ export async function parseCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            log.info('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
             await handleBufferedLines(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
