@@ -84,15 +84,13 @@ async function parseCsvAndWriteToDb(
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
 
-    log.info("first and last");
-    log.info(dbRows[0]);
-    log.info(dbRows[dbRows.length-1]);
+
+    const first =dbRows[0].sscount;
+const last =dbRows[dbRows.length-1].sscount;
     const dbBegin = Date.now();
+    log.info("inserting db: " + first +"-"+last);
     const a = await writeCsvContentToDb(dbRows, table);
-    log.info('dbinsert count ' + a);
-    log.info("first and last");
-    log.info(dbRows[0]);
-    log.info(dbRows[dbRows.length-1]);
+    log.info("inserted db: " + first +"-"+last+"-"+a);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
    // log.info('dbcumu seconds ' + dbCumu/1000);
@@ -263,7 +261,7 @@ export async function parseCSVFileStream(
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
           if (lineBuffer[0].search('Running Date') != -1) {
             runningDate = readRunningDateFromLine(lineBuffer[0]);
-            log.info('runningdate set: ' + runningDate);
+            //log.info('runningdate set: ' + runningDate);
           } else {
             csvHeaderLine = lineBuffer[0];
             state = ReadState.READING_BODY;
@@ -277,7 +275,7 @@ export async function parseCSVFileStream(
           csvHeaderLine = lineBuffer[1];
           state = ReadState.READING_BODY;
           lineBuffer = [];
-          log.info('csvHeaderLine set: ' + csvHeaderLine);
+          //log.info('csvHeaderLine set: ' + csvHeaderLine);
         }
 
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
@@ -305,7 +303,7 @@ export async function parseCSVFileStream(
         log.warn('error ');
       });
       rl.on('close', function () {
-        log.info('closed');
+        //log.info('closed');
         resolve();
       });
     });
@@ -319,10 +317,10 @@ export async function parseCSVFileStream(
       log.warn('an error has occurred ' + err);
     }
 
-    log.info('Reading file line by line with readline done.' + lineCounter);
+    //log.info('Reading file line by line with readline done.' + lineCounter);
 
     // Last content of lineBuffer not handled yet
-    log.info('buffer lines to write: ' + lineBuffer.length + state);
+    //log.info('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
       await handleBufferedLines(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
