@@ -293,15 +293,26 @@ export async function parseCSVFileStream(
 
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
-            rl.pause();
 
+          if (lineBuffer.length > maxBufferSize) {
+            log.info("first: " + lineBuffer.length);
+            rl.pause();
+            let a= 0;
+            a++;
+            a--;
+            log.info("a: " +a);
             handleCounter++;
             //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
-            lineBuffer = [];
+            log.info("copy: " + bufferCopy.length);
+
+            log.info("then: " + lineBuffer.length);
+            lineBuffer = lineBuffer.slice(bufferCopy.length);
+            //lineBuffer =[];
+            log.info("after: " + lineBuffer.length);
             rl.resume();
             notWritten++;
+
             await handleBufferedLines(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
@@ -309,7 +320,9 @@ export async function parseCSVFileStream(
               reportId,
               fileBaseName,
             );
+
             notWritten--;
+
             //  log.info("handled bufferd: " + handleCounter);
           }
         }
@@ -319,7 +332,7 @@ export async function parseCSVFileStream(
       });
       rl.on('close', async function () {
         log.info('close when all written');
-        await until(() => notWritten = 0);
+        await until(() => notWritten == 0);
         log.info('close');
         resolve();
       });
