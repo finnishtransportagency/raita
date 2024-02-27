@@ -264,7 +264,7 @@ export async function chopCSVFileStream(
         runningDate,
         reportId,
         keyData,
-        handleCounter,
+        handleCounter + 1,
       );
     }
 

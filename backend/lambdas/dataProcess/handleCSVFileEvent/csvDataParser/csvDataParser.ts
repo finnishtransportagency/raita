@@ -101,9 +101,9 @@ async function parseCsvAndWriteToDb(
     const first = dbRows[0].sscount;
     const last = dbRows[dbRows.length - 1].sscount;
     const dbBegin = Date.now();
-    log.info('inserting db: ' + first + '-' + last);
+    //log.info('inserting db: ' + first + '-' + last);
     const a = await writeCsvContentToDb(dbRows, table);
-    log.info('inserted db: ' + first + '-' + last + '-' + a);
+    //log.info('inserted db: ' + first + '-' + last + '-' + a);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
     // log.info('dbcumu seconds ' + dbCumu/1000);
@@ -293,23 +293,25 @@ export async function parseCSVFileStream(
 
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
-
           if (lineBuffer.length > maxBufferSize) {
-            log.info("first: " + lineBuffer.length);
+            // log.info("first: " + lineBuffer.length);
             rl.pause();
-            let a= 0;
+            let a = 0;
             a++;
             a--;
-            log.info("a: " +a);
+            //log.info("a: " +a);
             handleCounter++;
             //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
-            log.info("copy: " + bufferCopy.length);
+            //log.info("copy: " + bufferCopy.length);
 
-            log.info("then: " + lineBuffer.length);
+            //log.info("then: " + lineBuffer.length);
             lineBuffer = lineBuffer.slice(bufferCopy.length);
+            if(lineBuffer.length != 0){
+              log.warn("Linebugger not empty when excepted! " + lineBuffer.length);
+            }
             //lineBuffer =[];
-            log.info("after: " + lineBuffer.length);
+            // log.info("after: " + lineBuffer.length);
             rl.resume();
             notWritten++;
 
@@ -331,17 +333,17 @@ export async function parseCSVFileStream(
         log.warn('error ');
       });
       rl.on('close', async function () {
-        log.info('close when all written');
+        //log.info('close when all written');
         await until(() => notWritten == 0);
-        log.info('close');
+        //log.info('close');
         resolve();
       });
     });
 
     try {
-      log.info('await myReadPromise');
+      //log.info('await myReadPromise');
       await myReadPromise;
-      log.info('awaited myReadPromise');
+      //log.info('awaited myReadPromise');
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
