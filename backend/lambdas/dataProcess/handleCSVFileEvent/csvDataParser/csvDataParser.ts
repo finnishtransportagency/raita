@@ -1,6 +1,10 @@
 import { IFileResult, ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { convertToDBRow, getDBConnection, writeRowsToDB } from '../../handleInspectionFileEvent/csvDataChopper/db/dbUtil';
+import {
+  convertToDBRow,
+  getDBConnection,
+  writeRowsToDB,
+} from '../../handleInspectionFileEvent/csvDataChopper/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
 import { amsSchema } from './csvSchemas/amsCsvSchema';
 import { piSchema } from './csvSchemas/piCsvSchema';
@@ -40,6 +44,16 @@ async function updateRaporttiStatus(
     log.error(e);
     throw e;
   }
+}
+
+function until(conditionFunction: () => any) {
+  const poll = (resolve: () => void) => {
+    if (conditionFunction()) resolve();
+    else setTimeout(_ => poll(resolve), 400);
+  };
+
+  // @ts-ignore
+  return new Promise(poll);
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
@@ -84,16 +98,15 @@ async function parseCsvAndWriteToDb(
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
 
-
-    const first =dbRows[0].sscount;
-const last =dbRows[dbRows.length-1].sscount;
+    const first = dbRows[0].sscount;
+    const last = dbRows[dbRows.length - 1].sscount;
     const dbBegin = Date.now();
-    log.info("inserting db: " + first +"-"+last);
+    log.info('inserting db: ' + first + '-' + last);
     const a = await writeCsvContentToDb(dbRows, table);
-    log.info("inserted db: " + first +"-"+last+"-"+a);
+    log.info('inserted db: ' + first + '-' + last + '-' + a);
     const dbEnd = Date.now();
     dbCumu += dbEnd - dbBegin;
-   // log.info('dbcumu seconds ' + dbCumu/1000);
+    // log.info('dbcumu seconds ' + dbCumu/1000);
     return a;
   } else {
     const errors = parsedCSVContent.errors;
@@ -218,7 +231,6 @@ async function handleBufferedLines(
   }
 }
 
-
 export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
@@ -249,11 +261,12 @@ export async function parseCSVFileStream(
     let lineCounter = 0;
     let handleCounter = 0;
 
+    let notWritten = 0; //number of chunks not written to db yet
+
     const myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-
 
         //TODO validate fist chunk or smaller so we dont chop invalid file
 
@@ -288,6 +301,7 @@ export async function parseCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
+            notWritten++;
             await handleBufferedLines(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               fileNamePrefix,
@@ -295,6 +309,7 @@ export async function parseCSVFileStream(
               reportId,
               fileBaseName,
             );
+            notWritten--;
             //  log.info("handled bufferd: " + handleCounter);
           }
         }
@@ -302,17 +317,18 @@ export async function parseCSVFileStream(
       rl.on('error', () => {
         log.warn('error ');
       });
-      rl.on('close', function () {
-        //log.info('closed');
+      rl.on('close', async function () {
+        log.info('close when all written');
+        await until(() => notWritten = 0);
+        log.info('close');
         resolve();
       });
     });
 
-
     try {
-      log.info('await myReadPromise' );
+      log.info('await myReadPromise');
       await myReadPromise;
-      log.info('awaited myReadPromise' );
+      log.info('awaited myReadPromise');
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
