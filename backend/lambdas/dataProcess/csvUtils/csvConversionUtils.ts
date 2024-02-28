@@ -5,13 +5,15 @@ import * as readline from 'readline';
 
 function tidyUpDataLines(csvDataLines: string): string {
   //log.info('csvDataLines: ' + csvDataLines.length);
-  const tidyedLines = csvDataLines.replace(/NaN/g, '');
+  const tidyedLines = csvDataLines
+    .replace(/NaN/g, '')
+    //remove semicolon sometimes at the end of file
+    .replace(/;/g, '');
   //log.info('tidyedLines: ' + tidyedLines.length);
   return tidyedLines;
 }
 
 export function tidyUpHeaderLine(csvHeaderLine: string): string {
-
   var tidyedHeaderLine = csvHeaderLine
     //prefix second ajonopeus fields
     .replace(/Running Dynamics\.Ajonopeus/, 'ams_ajonopeus')
@@ -52,7 +54,6 @@ export function tidyUpHeaderLine(csvHeaderLine: string): string {
 
   return tidyedHeaderLine;
 }
-
 
 export function readRunningDateFromLine(inputFirstLine: string) {
   const firstLine = inputFirstLine.replace(/;/g, ',');
@@ -111,7 +112,6 @@ export function isSemicolonSeparatorLine(line: string) {
   return semicolonCount > commaCount;
 }
 
-
 export function isSemicolonSeparator(fileBody: string) {
   //we have to find out what is the csv separator; we look at second line (first data line) and count if many semicolons
   const firstNewLinePos = fileBody.search(/\r\n|\r|\n/);
@@ -148,7 +148,6 @@ export function replaceSeparatorsInHeaderLine(line: string) {
   }
   return line;
 }
-
 
 export function readRunningDate(csvFileBody: string) {
   const lines = csvFileBody.split('\n');
