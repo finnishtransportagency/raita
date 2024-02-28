@@ -122,7 +122,6 @@ export const parseFileContent = async (
     csvPromise = chopCSVFileStream(
       keyData,
       fileStreamToParse,
-      null,
     );
     log.info('csv parsing result: ' + csvPromise);
   } else {

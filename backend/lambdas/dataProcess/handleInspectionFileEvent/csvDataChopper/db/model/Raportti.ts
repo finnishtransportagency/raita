@@ -20,4 +20,5 @@ export type Raportti = {
   tarkastusajon_tunniste: string | null;
   raportin_kategoria: string | null;
   tiedoston_koko_kb: string | null;
+  status: string | null;
 };

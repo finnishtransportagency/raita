@@ -6,14 +6,8 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
 import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
-import {
-  readRunningDateFromLine,
-  replaceSeparators,
-  replaceSeparatorsInHeaderLine,
-  tidyUpFileBody,
-  tidyUpHeaderLine,
-} from '../../csvUtils/csvConversionUtils';
-import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import { readRunningDateFromLine } from '../../csvUtils/csvConversionUtils';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 async function updateRaporttiStatus(
   id: number,
@@ -54,6 +48,7 @@ export async function insertRaporttiData(
   tiedoston_koko_kb: string | null,
   tiedostonimi: string | null,
   tiedostotyyppi: string | null,
+  status: string | null,
 ): Promise<number> {
   const data: Raportti = {
     aloitus_rata_kilometri,
@@ -68,6 +63,7 @@ export async function insertRaporttiData(
     tiedoston_koko_kb,
     tiedostonimi,
     tiedostotyyppi,
+    status,
     zip_tiedostonimi: fileBaseName,
     zip_vastaanotto_pvm: new Date(),
     zip_vastaanotto_vuosi: new Date(),
@@ -91,7 +87,6 @@ export async function insertRaporttiData(
   }
 }
 
-
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,
   runningDate: Date,
@@ -103,7 +98,8 @@ async function writeFileChunkToQueueS3(
   console.log('writeFileChunkToQueueS3 report id ' + reportId);
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
-  const outFileName = 'chunkFile_'+ reportId + '_'+ chunkNumber + '_'+ key.fileName;
+  const outFileName =
+    'chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
 
   log.info('outFileName ' + outFileName);
 
@@ -123,7 +119,6 @@ async function writeFileChunkToQueueS3(
   return;
 }
 
-
 enum ReadState {
   READING_HEADER = 'READING_HEADER',
   READING_BODY = 'READING_BODY',
@@ -132,7 +127,7 @@ const allowedPrefixes = ['AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT'];
 
 async function checkFilenamePrefix(fileNamePrefix: string) {
   if (allowedPrefixes.find(s => s === fileNamePrefix)) {
-    log.info("prefix ok " + fileNamePrefix);
+    log.info('prefix ok ' + fileNamePrefix);
   } else {
     log.warn('Unknown csv file prefix: ' + fileNamePrefix);
     throw new Error('Unknown csv file prefix:');
@@ -142,8 +137,7 @@ async function checkFilenamePrefix(fileNamePrefix: string) {
 //chop csv file into 50000 row chunks; add header line to each chunk; write each chunk as a file in CSV S3 bucket
 export async function chopCSVFileStream(
   keyData: KeyData,
-  fileStream: Readable,
-  metadata: ParseValueResult | null,
+  fileStream: Readable
 ) {
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
@@ -152,7 +146,6 @@ export async function chopCSVFileStream(
   const reportId: number = await insertRaporttiData(
     fileBaseName,
     fileNamePrefix,
-    metadata,
     null,
     null,
     null,
@@ -165,6 +158,8 @@ export async function chopCSVFileStream(
     null,
     null,
     null,
+    null,
+    'CHOPPING',
   );
   log.info('reportId: ' + reportId);
   checkFilenamePrefix(jarjestelma);
@@ -190,7 +185,6 @@ export async function chopCSVFileStream(
       rl.on('line', async line => {
         lineBuffer.push(line);
         lineCounter++;
-
 
         //TODO validate fist chunk or smaller so we dont chop invalid file
 
@@ -247,9 +241,9 @@ export async function chopCSVFileStream(
     });
 
     try {
-      log.info('await myReadPromise' );
+      log.info('await myReadPromise');
       await myReadPromise;
-      log.info('awaited myReadPromise' );
+      log.info('awaited myReadPromise');
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
@@ -274,11 +268,11 @@ export async function chopCSVFileStream(
     );
 
     log.info('Wrote files to csv bucket ' + fileBaseName + ' ' + handleCounter);
-    await updateRaporttiStatus(reportId, 'SUCCESS', null);
+    await updateRaporttiStatus(reportId, 'PARSING', null);
     log.info('HEllo suscses done');
     return 'success';
   } catch (e) {
-    log.warn('csv parsing error ' + e.toString());
+    log.warn('csv chopping error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
