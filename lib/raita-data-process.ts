@@ -6,7 +6,10 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import {
+  S3EventSource,
+  SqsEventSource,
+} from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
@@ -33,6 +36,8 @@ import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -268,12 +273,21 @@ export class DataProcessStack extends NestedStack {
       this.handleInspectionFileEventFn,
     );
 
-    // Add s3 event source for any added file
-    this.handleInspectionFileEventFn.addEventSource(
-      new S3EventSource(this.inspectionDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
+    // route inspection events through a queue
+    const inspectionQueue = new Queue(this, 'inspection-queue', {
+      visibilityTimeout: Duration.seconds(240),
+    });
+    this.inspectionDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(inspectionQueue),
     );
+    const queueSource = new SqsEventSource(inspectionQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 100,
+    });
+
+    // Add s3 event source for any added file
+    this.handleInspectionFileEventFn.addEventSource(queueSource);
     const allAlarms = [...receptionAlarms, ...inspectionAlarms];
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
@@ -372,10 +386,16 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
+    // any events that fail cause lambda to fail twice will be written here
+    // currently nothing is done to this queue
+    const inspectionDeadLetterQueue = new Queue(
+      this,
+      'inspection-handler-deadletter',
+    );
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(60),
+      timeout: cdk.Duration.seconds(240),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
@@ -396,6 +416,7 @@ export class DataProcessStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      deadLetterQueue: inspectionDeadLetterQueue,
     });
   }
 
@@ -461,10 +482,7 @@ export class DataProcessStack extends NestedStack {
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_PARSING_EXCEPTION'),
-          FilterPattern.any(
-            FilterPattern.stringValue('$.level', '=', 'warn'),
-            FilterPattern.stringValue('$.level', '=', 'error'),
-          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `inspection-parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
@@ -476,12 +494,25 @@ export class DataProcessStack extends NestedStack {
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
-          FilterPattern.any(
-            FilterPattern.stringValue('$.level', '=', 'warn'),
-            FilterPattern.stringValue('$.level', '=', 'error'),
-          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `inspection-other-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    // create separate warn metric with no alarm associated
+    const warningMetricFilter = logGroup.addMetricFilter(
+      'inspection-warn-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.any(
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_PARSING_EXCEPTION'),
+          ),
+          FilterPattern.stringValue('$.level', '=', 'warn'),
+        ),
+        metricName: `inspection-warn-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
