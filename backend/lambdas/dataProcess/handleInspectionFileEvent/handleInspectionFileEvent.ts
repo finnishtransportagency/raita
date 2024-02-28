@@ -1,4 +1,4 @@
-import { S3Event } from 'aws-lambda';
+import { S3Event, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
 
 import { log } from '../../../utils/logger';
@@ -43,14 +43,21 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  * TODO: Parsing should be extracted out out the S3Event handler.
  *
  */
-export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
+export async function handleInspectionFileEvent(
+  event: SQSEvent,
+): Promise<void> {
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
   try {
     const spec = await backend.specs.getSpecification();
-    const recordResults = event.Records.map<Promise<FileMetadataEntry | null>>(
-      async eventRecord => {
+    // one event from sqs can contain multiple s3 events
+    const sqsRecordResults = event.Records.map(async sqsRecord => {
+      const s3Event: S3Event = JSON.parse(sqsRecord.body);
+      const recordResults = s3Event.Records.map<
+        Promise<FileMetadataEntry | null>
+      >(async eventRecord => {
+        eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start handler');
@@ -108,20 +115,36 @@ export async function handleInspectionFileEvent(event: S3Event): Promise<void> {
           hash: parseResults.hash,
           tags: file.tags,
         };
-      },
-    );
-    // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
-    // Switch to granular error handling.
-    // Check if lambda supports es2022 and if so, switch to Promise.allSettled
+      });
+      // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
+      // Switch to granular error handling.
+      // Check if lambda supports es2022 and if so, switch to Promise.allSettled
 
-    const entries = await Promise.all(recordResults).then(
-      results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
+      const entries = await Promise.all(recordResults).then(
+        results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
+      );
+      return await backend.metadataStorage.saveFileMetadata(entries);
+    });
+    const settled = await Promise.allSettled(sqsRecordResults);
+    await Promise.all(
+      settled.map(async settledResult => {
+        if (settledResult.status === 'rejected') {
+          log.error({
+            error: settledResult.reason,
+            message: 'An error occured while processing events in array',
+          });
+          await adminLogger.error(
+            `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
+          );
+        }
+      }),
     );
-
-    await backend.metadataStorage.saveFileMetadata(entries);
   } catch (err) {
     // TODO: Figure out proper error handling.
-    log.error(`An error occured while processing events: ${err}`);
+    log.error({
+      error: err,
+      message: 'An error occured while processing events',
+    });
     await adminLogger.error(
       `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
     );
