@@ -78,11 +78,13 @@ export async function writeRowsToDB(
   table: string,
 ): Promise<number> {
   const { schema, sql } = await getDBConnection();
-
+const xtable ="X";
   try {
-    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
+    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(xtable)} ${sql(
       parsedCSVRows,
-    )} returning latitude, longitude, id`;
+    )} returning latitude, longitude, id`.catch((e)=>{log.error('XError inserting measurement data: ' + table + ' ' + e);
+      log.error(e);
+      throw e;});
 
     //  await populateGisPoints(rows, schema, table, sql);
     //  log.info("populatedGisPoints ");
@@ -144,6 +146,7 @@ function constructRataosoite(track: string, location: string): Rataosoite {
     rataKilometri = Number(splittedLocation[0]);
     rataMetrit = Number(splittedLocation[1]);
   } catch (e) {
+    log.error("constructRataosoite fail " + track + location);
     throw Error('Illegal location: ' + location);
   }
 
