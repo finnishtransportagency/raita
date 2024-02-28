@@ -82,9 +82,7 @@ const xtable ="X";
   try {
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(xtable)} ${sql(
       parsedCSVRows,
-    )} returning latitude, longitude, id`.catch((e)=>{log.error('XError inserting measurement data: ' + table + ' ' + e);
-      log.error(e);
-      throw e;});
+    )} returning latitude, longitude, id`;
 
     //  await populateGisPoints(rows, schema, table, sql);
     //  log.info("populatedGisPoints ");
