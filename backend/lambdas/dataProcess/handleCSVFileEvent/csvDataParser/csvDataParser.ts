@@ -58,7 +58,7 @@ function until(conditionFunction: () => any) {
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
   const result: number = await writeRowsToDB(dbRows, table);
-
+  console.log('HELLO resutl: ' + result);
   return result;
 }
 
@@ -71,7 +71,7 @@ async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const tidyEnd = Date.now();
   tidyCumu += tidyEnd - tidyBegin;
-  //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 600));
+  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 6000));
   const parseBegin = Date.now();
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   const parseEnd = Date.now();
@@ -307,24 +307,35 @@ export async function parseCSVFileStream(
 
             //log.info("then: " + lineBuffer.length);
             lineBuffer = lineBuffer.slice(bufferCopy.length);
-            if(lineBuffer.length != 0){
-              log.warn("Linebugger not empty when excepted! " + lineBuffer.length);
+            if (lineBuffer.length != 0) {
+              log.warn(
+                'Linebugger not empty when excepted! ' + lineBuffer.length,
+              );
             }
             //lineBuffer =[];
             // log.info("after: " + lineBuffer.length);
             rl.resume();
             notWritten++;
 
-            await handleBufferedLines(
-              csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-              fileNamePrefix,
-              runningDate,
-              reportId,
-              fileBaseName,
-            );
+            try {
+              await handleBufferedLines(
+                csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+                fileNamePrefix,
+                runningDate,
+                reportId,
+                fileBaseName,
+              );
 
-            notWritten--;
-
+              notWritten--;
+            } catch (e) {
+              //todo what to do
+              log.error(
+                'ERROR handling buffered csv lines: ' +
+                  e +
+                  ' ' +
+                  bufferCopy.length && bufferCopy[0],
+              );
+            }
             //  log.info("handled bufferd: " + handleCounter);
           }
         }
