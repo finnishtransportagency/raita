@@ -27,6 +27,10 @@ function getLambdaConfigOrFail() {
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 
+const setTimeoutPromise = (delay: number) =>
+  new Promise((resolve, reject) => {
+    setTimeout(() => resolve(null), delay);
+  });
 /**
  * Handle an incoming delete request
  * Delete keys that start with given prefix
@@ -139,6 +143,7 @@ export async function handleDeleteRequest(
  * @return amount of deleted objects
  */
 async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
+  const waitPerRequest = 1500;
   try {
     let fetchMore = true;
     let continuationToken: string | undefined = undefined;
@@ -146,6 +151,7 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     const keyBatches: string[][] = []; // array of arrays of up to 1000 keys
     // loop through multiple requests if there are more than 1000 keys
     while (fetchMore) {
+      // first fetch list of object keys to delete
       const params: S3.ListObjectsV2Request = {
         Bucket: bucket,
         Prefix: prefix,
@@ -171,43 +177,49 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
         fetchMore = false;
       }
     }
-    const deleteResponses = keyBatches.map(keys =>
-      s3
+
+    // do delete requests
+    let deleteCount = 0;
+    for (let i = 0; i < keyBatches.length; i++) {
+      const keyBatch = keyBatches[i];
+      const response = await s3
         .deleteObjects({
           Bucket: bucket,
           Delete: {
-            Objects: keys.map(key => ({
+            Objects: keyBatch.map(key => ({
               Key: key,
             })),
           },
         })
-        .promise(),
-    );
-    const responses = await Promise.all(deleteResponses);
-    let deleteCount = 0;
-    Promise.all(
-      responses.map(async response => {
-        if (response.Deleted && response.Deleted.length) {
-          const deletedKeys = response.Deleted.map(d => d.Key);
-          log.info({ keys: deletedKeys }, `Deleted from ${bucket}`);
-          deleteCount += response.Deleted.length;
-          return await adminLogger.batch(
-            deletedKeys.map(key => `Poistettu ${key}`),
-            'info',
-          );
-        } else {
-          log.error(`No keys deleted from ${bucket}`);
-        }
-        if (response.Errors && response.Errors.length) {
-          log.error(
-            { errors: response.Errors },
-            'Errors with bucket delete request',
-          );
-        }
-      }),
-    );
+        .promise();
+      if (response.Deleted && response.Deleted.length) {
+        const deletedKeys = response.Deleted.map(d => d.Key);
+        log.info({ keys: deletedKeys }, `Deleted from ${bucket}`);
+        deleteCount += response.Deleted.length;
+        await adminLogger.batch(
+          deletedKeys.map(key => `Poistettu ${key}`),
+          'info',
+        );
+      } else {
+        log.error(`No keys deleted from ${bucket}`);
+      }
+      if (response.Errors && response.Errors.length) {
+        log.error(
+          { errors: response.Errors },
+          'Errors with bucket delete request',
+        );
+      }
+      // wait between each request to not hit s3 ratelimits
+      await setTimeoutPromise(waitPerRequest);
+    }
     return deleteCount;
   } catch (err: any) {
+    log.error({
+      error: err,
+      message: 'Error deleting from bucket',
+      prefix,
+      bucket,
+    });
     throw new RaitaLambdaError(
       `Error deleting from bucket ${bucket}: ${err.message}`,
       500,
