@@ -54,5 +54,5 @@ export const launchECSZipTask = async ({
       ],
     },
   });
-  await client.send(command);
+  return await client.send(command);
 };
