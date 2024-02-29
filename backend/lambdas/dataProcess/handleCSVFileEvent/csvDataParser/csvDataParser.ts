@@ -102,12 +102,19 @@ async function parseCsvAndWriteToDb(
     const last = dbRows[dbRows.length - 1].sscount;
     const dbBegin = Date.now();
     //log.info('inserting db: ' + first + '-' + last);
-    const a = await writeCsvContentToDb(dbRows, table);
-    //log.info('inserted db: ' + first + '-' + last + '-' + a);
-    const dbEnd = Date.now();
-    dbCumu += dbEnd - dbBegin;
-    // log.info('dbcumu seconds ' + dbCumu/1000);
-    return a;
+    try {
+      const a = await writeCsvContentToDb(dbRows, table);
+      //log.info('inserted db: ' + first + '-' + last + '-' + a);
+      const dbEnd = Date.now();
+      dbCumu += dbEnd - dbBegin;
+      // log.info('dbcumu seconds ' + dbCumu/1000);
+      return a;
+    }
+    catch (e){
+      log.error("Error writing to db");
+      log.error(e);
+      throw e;
+    }
   } else {
     const errors = parsedCSVContent.errors;
     let errorsOutString = '';
@@ -383,7 +390,7 @@ export async function parseCSVFileStream(
     log.info('HEllo suscses done');
     return 'success';
   } catch (e) {
-    log.warn('csv parsing error ' + e.toString());
+    log.error('csv parsing error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
     return 'error';
   }
