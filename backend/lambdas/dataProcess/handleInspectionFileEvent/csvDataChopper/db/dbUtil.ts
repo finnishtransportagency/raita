@@ -7,13 +7,13 @@ import { log } from '../../../../../utils/logger';
 import {isLocalDevStack} from "../../../../../../lib/utils";
 
 let connection: postgres.Sql;
-//todo set false
-const localDevDB = isLocalDevStack();
 
 export async function getDBConnection() {
   let schema;
   let sql;
-  if (localDevDB) {
+  log.info("STACK_ID"+process.env.STACK_ID);
+  log.info("ENVIRONMENT"+process.env.ENVIRONMENT);
+  if (isLocalDevStack()) {
     schema = 'public';
     sql = await getConnectionLocalDev();
   } else {

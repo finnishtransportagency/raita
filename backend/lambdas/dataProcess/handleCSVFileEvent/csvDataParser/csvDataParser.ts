@@ -352,6 +352,8 @@ export async function parseCSVFileStream(
                   ' ' +
                   bufferCopy.length && bufferCopy[0],
               );
+              rl.removeAllListeners();
+              rl.close();
               reject(e);
             }
             //  log.info("handled bufferd: " + handleCounter);
