@@ -84,22 +84,48 @@ export const getEnvDependentOsConfiguration = (
         },
       ],
     },
+    // identical conf in dev to accurately test with large amount of data
+    // this can be changed back to old conf (in comments) if needed
     dev: {
       removalPolicy: getRemovalPolicy(env),
       ebs: {
-        volumeSize: 10,
-        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+        volumeSize: 200,
+        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
       },
       capacity: {
-        dataNodes: 1,
-        dataNodeInstanceType: 't3.small.search',
+        masterNodes: 3,
+        masterNodeInstanceType: 'm6g.large.search',
+        dataNodes: 2,
+        dataNodeInstanceType: 'm6g.large.search',
+      },
+      // Must be enabled if VPC contains multiple private subnets.
+      zoneAwareness: {
+        enabled: true,
+        availabilityZoneCount: subnets.length,
       },
       vpcSubnets: [
         {
-          subnets: subnets.slice(0, 1),
+          subnets: subnets,
         },
       ],
     },
+    // OLD DEV CONF
+    // dev: {
+    //   removalPolicy: getRemovalPolicy(env),
+    //   ebs: {
+    //     volumeSize: 10,
+    //     volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+    //   },
+    //   capacity: {
+    //     dataNodes: 1,
+    //     dataNodeInstanceType: 't3.small.search',
+    //   },
+    //   vpcSubnets: [
+    //     {
+    //       subnets: subnets.slice(0, 1),
+    //     },
+    //   ],
+    // },
   };
   return envDependentProperties[env];
 };
