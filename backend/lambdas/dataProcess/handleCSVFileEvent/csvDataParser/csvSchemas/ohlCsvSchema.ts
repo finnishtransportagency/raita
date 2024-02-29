@@ -6,7 +6,7 @@ import { z } from 'zod';
 */
 
 export const ohlSchema = z.object({
-  sscount: zcsv.number(),
+  sscount: zcsv.number(z.number().optional()),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(),
