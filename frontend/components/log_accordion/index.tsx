@@ -168,12 +168,10 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
   }, [activeEvents]);
 
   const onOpenStateChange = (eventIds: string[]) => {
-    console.log(eventIds);
     const newlyOpenedIds = eventIds.filter(
       newId =>
         activeEvents.find(active => active.eventId === newId) === undefined,
     );
-    console.log(newlyOpenedIds);
     const newElements = newlyOpenedIds.map(eventId => ({
       eventId,
       pageIndex: 0,
