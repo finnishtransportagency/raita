@@ -4,16 +4,17 @@ import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../../utils/logger';
-import {isLocalDevStack} from "../../../../../../lib/utils";
+import { isLocalDevStack } from '../../../../../../lib/utils';
 
 let connection: postgres.Sql;
 
 export async function getDBConnection() {
   let schema;
   let sql;
-  log.info("STACK_ID"+process.env.STACK_ID);
-  log.info("ENVIRONMENT"+process.env.ENVIRONMENT);
-  if (isLocalDevStack()) {
+  log.info('STACK_ID' + process.env.STACK_ID);
+  log.info('ENVIRONMENT' + process.env.ENVIRONMENT);
+  //  if (isLocalDevStack()) {
+  if (process.env.ENVIRONMENT == 'kalle') {
     schema = 'public';
     sql = await getConnectionLocalDev();
   } else {
@@ -84,8 +85,8 @@ export async function writeRowsToDB(
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`.catch(e => {
-     // log.error('XError inserting measurement data: ' + table + ' ' + e);
-     // log.error(e);
+      // log.error('XError inserting measurement data: ' + table + ' ' + e);
+      // log.error(e);
       throw e;
     });
 
@@ -94,8 +95,8 @@ export async function writeRowsToDB(
 
     return rows.length;
   } catch (e) {
-   // log.error('Error inserting measurement data: ' + table + ' ' + e);
-   // log.error(e);
+    // log.error('Error inserting measurement data: ' + table + ' ' + e);
+    // log.error(e);
     throw e;
   }
 }
