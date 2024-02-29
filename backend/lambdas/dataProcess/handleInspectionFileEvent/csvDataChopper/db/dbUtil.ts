@@ -4,10 +4,11 @@ import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../../utils/logger';
+import {isLocalDevStack} from "../../../../../../lib/utils";
 
 let connection: postgres.Sql;
 //todo set false
-const localDevDB = false;
+const localDevDB = isLocalDevStack();
 
 export async function getDBConnection() {
   let schema;
@@ -83,8 +84,8 @@ export async function writeRowsToDB(
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`.catch(e => {
-      log.error('XError inserting measurement data: ' + table + ' ' + e);
-      log.error(e);
+     // log.error('XError inserting measurement data: ' + table + ' ' + e);
+     // log.error(e);
       throw e;
     });
 
@@ -93,8 +94,8 @@ export async function writeRowsToDB(
 
     return rows.length;
   } catch (e) {
-    log.error('Error inserting measurement data: ' + table + ' ' + e);
-    log.error(e);
+   // log.error('Error inserting measurement data: ' + table + ' ' + e);
+   // log.error(e);
     throw e;
   }
 }

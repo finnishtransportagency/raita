@@ -34,11 +34,18 @@ async function updateRaporttiStatus(
   if (error) {
     errorSubstring = error.substring(0, 1000);
   }
+  log.info("error mesg to db: " + errorSubstring);
   try {
     const a = await sql`UPDATE ${sql(
       schema,
-    )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`;
-    log.info(a);
+    )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`.catch(
+      e => {
+        log.error('Error updateRaporttiStatus: ' + e);
+
+        throw e;
+      },
+    );
+    log.info('inserted:' + a);
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -57,9 +64,14 @@ function until(conditionFunction: () => any) {
 }
 
 async function writeCsvContentToDb(dbRows: any[], table: string) {
-  const result: number = await writeRowsToDB(dbRows, table);
-  console.log('HELLO resutl: ' + result);
-  return result;
+  try {
+    const result: number = await writeRowsToDB(dbRows, table);
+    console.log('HELLO resutl: ' + result);
+    return result;
+  } catch (e) {
+    log.error('writeCsvContentToDb: ' + e);
+    throw e;
+  }
 }
 
 let tidyCumu = 0;
@@ -71,7 +83,7 @@ async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const tidyEnd = Date.now();
   tidyCumu += tidyEnd - tidyBegin;
-  log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 6000));
+  //log.info('tidyedFileBody: ' + tidyedFileBody.substring(0, 6000));
   const parseBegin = Date.now();
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   const parseEnd = Date.now();
@@ -109,9 +121,8 @@ async function parseCsvAndWriteToDb(
       dbCumu += dbEnd - dbBegin;
       // log.info('dbcumu seconds ' + dbCumu/1000);
       return a;
-    }
-    catch (e){
-      log.error("Error writing to db");
+    } catch (e) {
+      log.error('Error writing to db');
       log.error(e);
       throw e;
     }
@@ -151,90 +162,95 @@ async function handleBufferedLines(
   reportId: number,
   fileBaseName: string,
 ) {
-  const fileChunkBody = replaceSeparators(inputFileChunkBody);
-  //log.info('fileChunkBody: ' + fileChunkBody.length);
-  switch (fileNamePrefix) {
-    case 'AMS':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'ams_mittaus',
-        amsSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'OHL':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'ohl_mittaus',
-        ohlSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'PI':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'pi_mittaus',
-        piSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'RC':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'rc_mittaus',
-        rcSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'RP':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'rp_mittaus',
-        rpSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'TG':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'tg_mittaus',
-        tgSchema,
-        fileNamePrefix,
-      );
-      break;
-    case 'TSIGHT':
-      await parseCsvAndWriteToDb(
-        fileChunkBody,
-        runningDate,
-        reportId,
-        fileBaseName,
-        'tsight_mittaus',
-        tsightSchema,
-        fileNamePrefix,
-      );
-      break;
+  try {
+    const fileChunkBody = replaceSeparators(inputFileChunkBody);
+    //log.info('fileChunkBody: ' + fileChunkBody.length);
+    switch (fileNamePrefix) {
+      case 'AMS':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'ams_mittaus',
+          amsSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'OHL':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'ohl_mittaus',
+          ohlSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'PI':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'pi_mittaus',
+          piSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'RC':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'rc_mittaus',
+          rcSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'RP':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'rp_mittaus',
+          rpSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'TG':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'tg_mittaus',
+          tgSchema,
+          fileNamePrefix,
+        );
+        break;
+      case 'TSIGHT':
+        await parseCsvAndWriteToDb(
+          fileChunkBody,
+          runningDate,
+          reportId,
+          fileBaseName,
+          'tsight_mittaus',
+          tsightSchema,
+          fileNamePrefix,
+        );
+        break;
 
-    default:
-      log.warn('Unknown csv file prefix: ' + fileNamePrefix);
-      throw new Error('Unknown csv file prefix:');
+      default:
+        log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+        throw new Error('Unknown csv file prefix:');
+    }
+  } catch (e) {
+    log.error('handleBufferedLines: ' + e);
+    throw e;
   }
 }
 
@@ -275,8 +291,6 @@ export async function parseCSVFileStream(
         lineBuffer.push(line);
         lineCounter++;
 
-        //TODO validate fist chunk or smaller so we dont chop invalid file
-
         //running date on the firstline unless it's missing; then csv column headers on the first line
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
           if (lineBuffer[0].search('Running Date') != -1) {
@@ -303,10 +317,6 @@ export async function parseCSVFileStream(
           if (lineBuffer.length > maxBufferSize) {
             // log.info("first: " + lineBuffer.length);
             rl.pause();
-            let a = 0;
-            a++;
-            a--;
-            //log.info("a: " +a);
             handleCounter++;
             //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
@@ -342,28 +352,33 @@ export async function parseCSVFileStream(
                   ' ' +
                   bufferCopy.length && bufferCopy[0],
               );
+              reject(e);
             }
             //  log.info("handled bufferd: " + handleCounter);
           }
         }
       });
       rl.on('error', () => {
-        log.warn('error ');
+        log.error('rl on error ');
       });
       rl.on('close', async function () {
-        //log.info('close when all written');
+        log.info('close when all written');
         await until(() => notWritten == 0);
-        //log.info('close');
+        log.info('close');
         resolve();
       });
     });
 
     try {
       //log.info('await myReadPromise');
-      await myReadPromise;
+      await myReadPromise.catch(e => {
+        log.error('csv file parse or save error' + e);
+        throw e;
+      });
       //log.info('awaited myReadPromise');
     } catch (err) {
-      log.warn('an error has occurred ' + err);
+      log.error('an error has occurred ' + err);
+      throw err;
     }
 
     //log.info('Reading file line by line with readline done.' + lineCounter);
@@ -390,8 +405,16 @@ export async function parseCSVFileStream(
     log.info('HEllo suscses done');
     return 'success';
   } catch (e) {
-    log.error('csv parsing error ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString());
+    log.error('csv parsing error, updating status ' + e.toString());
+    try {
+      await updateRaporttiStatus(reportId, 'ERROR', e.toString()).catch(e => {
+        log.error('raportti status update error: ' + e);
+        throw e;
+      });
+      log.info('raportti status update success');
+    } catch (e) {
+      log.error('raportti status update error: ' + e);
+    }
     return 'error';
   }
 }
