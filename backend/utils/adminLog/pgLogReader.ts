@@ -52,6 +52,10 @@ export async function getSingleEventLogs(
   };
 }
 
+/**
+ * Get summary for each log "event"
+ * An event is defined by invocation_id (filename) and date part of timestamp
+ */
 function getSummaryQuery(
   sql: postgres.Sql,
   schema: string,
@@ -63,20 +67,40 @@ function getSummaryQuery(
 ): Promise<SummaryDBResponse[]> {
   const pageOffset = pageIndex * pageSize;
   return sql`
-SELECT
-  date_trunc('day', log_timestamp) as log_date,
-  MIN(log_timestamp) as start_timestamp,
-  invocation_id,
-  log_level,
-  source,
-  COUNT(*) as count
-FROM ${sql(schema)}.logging
-WHERE
-source IN ${sql(sources)}
-AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
-GROUP BY log_date, log_level, source, invocation_id
-ORDER BY start_timestamp DESC
-LIMIT ${pageSize} OFFSET ${pageOffset};`;
+SELECT events.log_date, events.start_timestamp, events.invocation_id,  counts.log_level, counts.source, counts.count
+FROM (
+-- subquery: select list of all "events" with paging
+  SELECT
+    date_trunc('day', log_timestamp) as log_date,
+    MIN(log_timestamp) as start_timestamp,
+    invocation_id
+  FROM ${sql(schema)}.logging
+  WHERE
+    source IN ${sql(sources)}
+    AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
+  GROUP BY log_date, invocation_id
+  ORDER BY start_timestamp DESC
+  LIMIT ${pageSize} OFFSET ${pageOffset}
+) AS events
+LEFT JOIN (
+-- subquery: get counts by log_level and source for each "event"
+  SELECT
+    date_trunc('day', log_timestamp) as log_date,
+    invocation_id,
+    log_level,
+    source,
+    COUNT(*) as count
+  FROM ${sql(schema)}.logging
+  WHERE
+    source IN ${sql(sources)}
+    AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
+  GROUP BY log_date, invocation_id, source, log_level
+) AS counts
+ON
+  events.invocation_id = counts.invocation_id
+  AND events.log_date = counts.log_date
+ORDER BY events.start_timestamp DESC;
+  `;
 }
 
 /**

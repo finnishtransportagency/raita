@@ -74,6 +74,9 @@ async function start() {
             // TODO: Temporary logging
             log.error(logMessages['streamErrorMessage'](streamError));
           }
+          if (entries.error.length) {
+            log.error(entries.error);
+          }
         })
         .catch(err => {
           // Catches zip opening errors
