@@ -143,7 +143,7 @@ export async function handleDeleteRequest(
  * @return amount of deleted objects
  */
 async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
-  const waitPerRequest = 1500;
+  const waitPerRequest = 500;
   try {
     let fetchMore = true;
     let continuationToken: string | undefined = undefined;
