@@ -53,7 +53,7 @@ const extractionSpec: IExtractionSpec = {
     },
   ],
   knownExceptions: {
-    fileNameExtractionSpec: { containsUnderscore: [] },
+    fileNameExtractionSpec: { containsUnderscore: [], removePrefix: [] },
     substituteValues: [],
   },
 };

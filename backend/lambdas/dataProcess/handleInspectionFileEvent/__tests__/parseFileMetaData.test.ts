@@ -101,6 +101,7 @@ const extractionSpec: IExtractionSpec = {
   knownExceptions: {
     fileNameExtractionSpec: {
       containsUnderscore: [],
+      removePrefix: [],
     },
     substituteValues: [],
   },
@@ -323,6 +324,42 @@ describe('parseFileMetadata', () => {
         pathOnly2: 'path',
         nameOnly1: 'TEST',
         nameOnly2: 112233,
+        overlapping: 'FROMNAME',
+        parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        parser_version: '0.0.1',
+      },
+    });
+  });
+  test('success: normal .txt', async () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'FROMPATH', 'TEST_FROMNAME_112233.txt'],
+      rootFolder: 'test',
+      fileName: 'TEST_FROMNAME_112233.txt',
+      fileBaseName: 'TEST_FROMNAME_112233',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
+    };
+    const fileData = {
+      fileStream: stringToStream(testFileBody),
+      tags: {}, // TODO what is this
+    };
+    const params = {
+      keyData,
+      file: fileData,
+      spec: extractionSpec,
+    };
+    const result = await parseFileMetadata(params);
+    expect(result).toEqual({
+      errors: false,
+      hash: testFileHash,
+      metadata: {
+        file_type: 'txt',
+        pathOnly1: 'test',
+        pathOnly2: 'path',
+        nameOnly1: 'TEST',
+        nameOnly2: 112233,
+        contentOnly1: 'first value',
+        contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
