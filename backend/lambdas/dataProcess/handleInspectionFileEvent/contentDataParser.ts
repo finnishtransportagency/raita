@@ -6,7 +6,7 @@ import {
   IExtractionSpec,
 } from '../../../types';
 import { ParseValueResult } from '../../../types';
-import { parsePrimitive } from './parsePrimitives';
+import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData } from '../../utils';
@@ -21,6 +21,7 @@ export const shouldParseContent = (suffix: string) =>
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
   fileBody: string,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   const { propertyKey, pattern, parseAs } = extractSpec;
   // If more than one possible pattern, add logic here for passing
@@ -36,9 +37,12 @@ const extractValue = (
     const found = res[0];
     const val = res[1];
     if (found) {
-      return parseAs
-        ? parsePrimitive(propertyKey, val, parseAs)
-        : { key: propertyKey, value: val };
+      return parsePrimitiveWithSubstitution(
+        propertyKey,
+        val,
+        parseAs,
+        substituteValues,
+      );
     }
     return null;
   } catch (error: any) {
@@ -52,7 +56,13 @@ export const extractFileContentData = (
   fileBody: string,
 ) =>
   spec.fileContentExtractionSpec
-    .map(extractSpecItem => extractValue(extractSpecItem, fileBody))
+    .map(extractSpecItem =>
+      extractValue(
+        extractSpecItem,
+        fileBody,
+        spec.knownExceptions.substituteValues,
+      ),
+    )
     .reduce<ParseValueResult>((acc, cur) => {
       if (cur) {
         acc[cur.key] = cur.value;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": "1.0.0",
+  "parserVersion": "1.2.0",
   "fileNameExtractionSpec": {
     "csv": [
       {
@@ -197,7 +197,15 @@
       "containsUnderscore": [
         {"name": "track_part", "value": "LRMST_D"},
         {"name": "track_part", "value": "LRMST_U"}
-      ]
-    }
+      ],
+      "removePrefix": ["VR_"]
+    },
+    "substituteValues": [
+      {
+        "key": "system",
+        "oldValue": "Over Head Line Geometry",
+        "newValue": "OHL"
+      }
+    ]
   }
 }

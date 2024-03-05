@@ -60,6 +60,7 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleZipProcessFn: NodejsFunction;
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleAdminLogsRequestFn: NodejsFunction;
+  public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
@@ -294,6 +295,17 @@ export class RaitaApiStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
     });
+    this.handleAdminLogsSummaryRequestFn =
+      this.createAdminLogsRequestSummaryHandler({
+        name: 'api-handler-admin-logs-summary',
+        raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        jwtTokenIssuer,
+        lambdaRole: this.raitaApiLambdaServiceRole,
+        vpc,
+        databaseEnvironmentVariables,
+      });
 
     const handleReturnLogin = this.createReturnLoginHandler({
       name: 'api-handler-return-login',
@@ -363,6 +375,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 320,
         path: [`${apiBaseUrl}/delete`],
         targetName: 'delete',
+      },
+      {
+        lambda: this.handleAdminLogsSummaryRequestFn,
+        priority: 340,
+        path: [`${apiBaseUrl}/admin/logs/summary`],
+        targetName: 'admin-logs-summary',
       },
       {
         lambda: this.handleAdminLogsRequestFn,
@@ -946,6 +964,53 @@ export class RaitaApiStack extends NestedStack {
     });
   }
 
+  /**
+   * Creates and returns handler for admin log summary request
+   */
+  private createAdminLogsRequestSummaryHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(15),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleAdminLogsSummaryRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleAdminLogsSummaryRequest/handleAdminLogsSummaryRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
   private createReturnLoginHandler({
     name,
     raitaStackIdentifier,
@@ -1020,7 +1085,7 @@ export class RaitaApiStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(60), // TODO: how long is needed for *big* delete operations?
+      timeout: cdk.Duration.seconds(300), // TODO: how long is needed for *big* delete operations?
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleDeleteRequest',
       entry: path.join(

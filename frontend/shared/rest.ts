@@ -1,11 +1,12 @@
 import A from 'axios';
 import { baseURL } from 'shared/config';
 import {
-  AdminLogsResponse,
+  AdminLogsSummaryResponse,
   DeleteResponse,
   ImageKeyResponse,
   PollingProgress,
   SearchResponse,
+  SingleEventAdminLogsResponse,
 } from './types';
 
 /**
@@ -50,15 +51,34 @@ export const getImageKeysForFileKey = async (key: string) => {
     .then(images => images.map(image => image.key));
 };
 
-export const getAdminLogs = async (
+export const getSingleEventAdminLogs = async (
+  date: string,
+  invocationId: string,
+  sources: string[],
+  pageSize: number,
+  pageIndex: number,
+): Promise<SingleEventAdminLogsResponse> => {
+  return apiClient
+    .get<SingleEventAdminLogsResponse>(
+      `admin/logs?date=${date}&invocationId=${invocationId}&sources=${sources.join(
+        ',',
+      )}&pageSize=${pageSize}&pageIndex=${pageIndex}`,
+    )
+    .then(res => res.data);
+};
+
+export const getAdminLogsSummary = async (
   startDate: string,
   endDate: string,
-  pageIndex: number,
+  sources: string[],
   pageSize: number,
-): Promise<AdminLogsResponse> => {
+  pageIndex: number,
+): Promise<AdminLogsSummaryResponse> => {
   return apiClient
-    .get<AdminLogsResponse>(
-      `admin/logs?startDate=${startDate}&endDate=${endDate}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    .get<AdminLogsSummaryResponse>(
+      `admin/logs/summary?startDate=${startDate}&endDate=${endDate}&sources=${sources.join(
+        ',',
+      )}&pageSize=${pageSize}&pageIndex=${pageIndex}`,
     )
     .then(res => res.data);
 };

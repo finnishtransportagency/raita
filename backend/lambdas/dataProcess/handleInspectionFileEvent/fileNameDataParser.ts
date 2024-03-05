@@ -10,12 +10,12 @@ import {
   KeyData,
   RaitaParseError,
 } from '../../utils';
-import { log, logParsingException } from '../../../utils/logger';
-import { parsePrimitive } from './parsePrimitives';
+import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 
 export const parseFileNameParts = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) =>
   fileBaseNameParts.reduce<ParseValueResult>((acc, cur, index) => {
     // Handle the empty file indicator as special case.
@@ -27,9 +27,12 @@ export const parseFileNameParts = (
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
     const { name, parseAs } = labels[index + 1];
     if (name) {
-      const { key, value } = parseAs
-        ? parsePrimitive(name, cur, parseAs)
-        : { key: name, value: cur };
+      const { key, value } = parsePrimitiveWithSubstitution(
+        name,
+        cur,
+        parseAs,
+        substituteValues,
+      );
       acc[key] = value;
     }
     return acc;
@@ -58,18 +61,24 @@ export const validateGenericFileNameStructureOrFail = (
 const parseSubmissionReportExcelFileNameData = (
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   // Only process two first segments of file name, ignore others
-  return parseFileNameParts(labels, fileBaseNameParts.slice(0, 2));
+  return parseFileNameParts(
+    labels,
+    fileBaseNameParts.slice(0, 2),
+    substituteValues,
+  );
 };
 
 const parseGenericFileNameData = (
   fileName: string,
   labels: IExtractionSpecLabels,
   fileBaseNameParts: Array<string>,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   validateGenericFileNameStructureOrFail(fileName, labels, fileBaseNameParts);
-  return parseFileNameParts(labels, fileBaseNameParts);
+  return parseFileNameParts(labels, fileBaseNameParts, substituteValues);
 };
 
 /**
@@ -77,9 +86,12 @@ const parseGenericFileNameData = (
  */
 export const extractFileNameData = (
   keyData: KeyData,
-  fileNamePartLabels: IExtractionSpec['fileNameExtractionSpec'],
-  fileNameExceptions?: IExtractionSpec['knownExceptions']['fileNameExtractionSpec'],
+  spec: IExtractionSpec,
 ) => {
+  const fileNamePartLabels = spec.fileNameExtractionSpec;
+  const fileNameExceptions = spec.knownExceptions.fileNameExtractionSpec;
+  const removePrefix = fileNameExceptions.removePrefix;
+  const substituteValues = spec.knownExceptions.substituteValues;
   const { fileName, fileBaseName, fileSuffix } = keyData;
   if (!fileBaseName || !fileSuffix) {
     throw new RaitaParseError(
@@ -95,8 +107,20 @@ export const extractFileNameData = (
       fileName,
     );
   }
+  // if a prefix listed in removePrefix is found, remove it from filename before further parsing
+  let strippedFileName = fileBaseName;
+  if (removePrefix) {
+    // assume only one prefix can match
+    const foundPrefix = removePrefix.find(prefix =>
+      fileBaseName.match(new RegExp(`^${removePrefix}`)),
+    );
+    if (foundPrefix) {
+      strippedFileName = fileBaseName.slice(foundPrefix.length);
+    }
+  }
+
   // File name segments are separated by underscore
-  let fileBaseNameParts = fileBaseName.split('_');
+  let fileBaseNameParts = strippedFileName.split('_');
   // Underscore is used as a separator for data fields in name. Check for and handle any known values containing underscore
   let foundWithUnderscore: { value: string; name: string } | undefined =
     undefined;
@@ -106,10 +130,10 @@ export const extractFileNameData = (
     fileNameExceptions.containsUnderscore.length
   ) {
     foundWithUnderscore = fileNameExceptions.containsUnderscore.find(
-      exception => fileBaseName.includes(exception.value),
+      exception => strippedFileName.includes(exception.value),
     );
     if (foundWithUnderscore) {
-      const [before, after] = fileBaseName.split(foundWithUnderscore.value);
+      const [before, after] = strippedFileName.split(foundWithUnderscore.value);
       const valuesBefore = before.split('_').filter(v => v.length);
       const valuesAfter = after.split('_').filter(v => v.length);
       fileBaseNameParts = [
@@ -128,11 +152,20 @@ export const extractFileNameData = (
       // try parsing and return immediately if successful
       // Submission Report Excel file name parsing is special case, some name segments need to be ignored
       const fileNameMetadata = isSubmissionReport({
-        fileBaseName,
+        fileBaseName: strippedFileName,
         fileSuffix,
       })
-        ? parseSubmissionReportExcelFileNameData(labels, fileBaseNameParts)
-        : parseGenericFileNameData(fileName, labels, fileBaseNameParts);
+        ? parseSubmissionReportExcelFileNameData(
+            labels,
+            fileBaseNameParts,
+            substituteValues,
+          )
+        : parseGenericFileNameData(
+            fileName,
+            labels,
+            fileBaseNameParts,
+            substituteValues,
+          );
       if (
         foundWithUnderscore &&
         fileNameMetadata[foundWithUnderscore.name] !== foundWithUnderscore.value

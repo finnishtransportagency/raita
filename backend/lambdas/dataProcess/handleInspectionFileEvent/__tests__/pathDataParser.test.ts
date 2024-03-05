@@ -19,9 +19,9 @@ jest.mock('../../../../utils/logger', () => {
   };
 });
 
-const extractionSpec = {
+const extractionSpec: IExtractionSpec = {
   parserVersion: '0.0.1',
-  fileNameExtractionSpec: {},
+  fileNameExtractionSpec: { csv: [], txt: [], pdf: [], xlsx: [], xls: [] },
   folderTreeExtractionSpec: {
     '1': { name: 'part1' },
     '2': { name: 'part2' },
@@ -32,7 +32,11 @@ const extractionSpec = {
     '1': { name: 'vPart1' },
     '2': { name: 'filename' },
   },
-  fileContentExtractionSpec: {},
+  fileContentExtractionSpec: [],
+  knownExceptions: {
+    fileNameExtractionSpec: { containsUnderscore: [], removePrefix: [] },
+    substituteValues: [],
+  },
 };
 
 describe('extractPathData', () => {
@@ -46,10 +50,7 @@ describe('extractPathData', () => {
       keyWithoutSuffix: 'test/path/1/test_123_456',
     };
 
-    const result = extractPathData(
-      keyData,
-      extractionSpec as any as IExtractionSpec,
-    );
+    const result = extractPathData(keyData, extractionSpec);
     expect(result).toEqual({
       part1: 'test',
       part2: 'path',
@@ -66,10 +67,7 @@ describe('extractPathData', () => {
       keyWithoutSuffix: 'test/test_123_456',
     };
 
-    const result = extractPathData(
-      keyData,
-      extractionSpec as any as IExtractionSpec,
-    );
+    const result = extractPathData(keyData, extractionSpec);
     expect(result).toEqual({
       vPart1: 'test',
     });
@@ -84,8 +82,52 @@ describe('extractPathData', () => {
       keyWithoutSuffix: 'test/path/test_123_456',
     };
 
-    expect(() =>
-      extractPathData(keyData, extractionSpec as any as IExtractionSpec),
-    ).toThrow(RaitaParseError);
+    expect(() => extractPathData(keyData, extractionSpec)).toThrow(
+      RaitaParseError,
+    );
+  });
+  test('success: OHL substitution', () => {
+    const keyData: KeyData = {
+      path: [
+        'test',
+        'path',
+        'here',
+        'Over Head Line Geometry',
+        'test_123_456.xlsx',
+      ],
+      rootFolder: 'test',
+      fileName: 'test_123_456.xlsx',
+      fileBaseName: 'test_123_456',
+      fileSuffix: 'xlsx',
+      keyWithoutSuffix: 'test/path/here/Over Head Line Geometry/test_123_456',
+    };
+    const folderTreeExtractionSpec = {
+      '1': { name: 'part1' },
+      '2': { name: 'part2' },
+      '3': { name: 'part3' },
+      '4': { name: 'system' },
+      '5': { name: 'filename' },
+    };
+
+    expect(
+      extractPathData(keyData, {
+        ...extractionSpec,
+        folderTreeExtractionSpec,
+        knownExceptions: {
+          substituteValues: [
+            {
+              key: 'system',
+              oldValue: 'Over Head Line Geometry',
+              newValue: 'OHL',
+            },
+          ],
+        },
+      } as any as IExtractionSpec),
+    ).toEqual({
+      part1: 'test',
+      part2: 'path',
+      part3: 'here',
+      system: 'OHL',
+    });
   });
 });

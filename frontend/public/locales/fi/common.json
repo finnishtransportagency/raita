@@ -10,7 +10,8 @@
     "generic": "Virhe",
     "user_info": "Virhe käyttäjätietojen hakemisessa",
     "403": "Ei pääsyoikeutta",
-    "500": "Virhe palvelimella"
+    "500": "Virhe palvelimella",
+    "date_range_missing": "Virhe: aseta aloitus- ja lopetusaika"
   },
   "raita_title": "RAITA",
   "raita_subtitle": "Koneellinen radantarkastus",

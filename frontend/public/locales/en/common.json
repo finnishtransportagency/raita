@@ -10,7 +10,8 @@
     "generic": "Error",
     "user_info": "Error fetching user information",
     "403": "Forbidden",
-    "500": "Server error"
+    "500": "Server error",
+    "date_range_missing": "Error: set start and end date"
   },
   "raita_title": "RAITA",
   "raita_subtitle": "Mechanical track inspection",

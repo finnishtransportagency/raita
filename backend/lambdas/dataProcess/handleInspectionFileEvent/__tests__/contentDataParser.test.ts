@@ -23,9 +23,9 @@ jest.mock('../../../../utils/logger', () => {
   };
 });
 
-const extractionSpec = {
+const extractionSpec: IExtractionSpec = {
   parserVersion: '0.0.1',
-  fileNameExtractionSpec: {},
+  fileNameExtractionSpec: { csv: [], txt: [], pdf: [], xlsx: [], xls: [] },
   folderTreeExtractionSpec: {},
   vRunFolderTreeExtractionSpec: {},
   fileContentExtractionSpec: [
@@ -52,6 +52,10 @@ const extractionSpec = {
       parseAs: 'integer',
     },
   ],
+  knownExceptions: {
+    fileNameExtractionSpec: { containsUnderscore: [], removePrefix: [] },
+    substituteValues: [],
+  },
 };
 
 describe('shouldParseContent', () => {
@@ -75,10 +79,7 @@ VAL3: 332211
 
 data here
 `;
-    const result = extractFileContentData(
-      extractionSpec as any as IExtractionSpec,
-      fileBody,
-    );
+    const result = extractFileContentData(extractionSpec, fileBody);
     expect(result).toEqual({
       contentVal1: 'value_1',
       contentVal2: 'value number 2',
@@ -93,10 +94,7 @@ VAL3: 332211
 
 data here
 `;
-    const result = extractFileContentData(
-      extractionSpec as any as IExtractionSpec,
-      fileBody,
-    );
+    const result = extractFileContentData(extractionSpec, fileBody);
     expect(result).toEqual({
       contentVal1: 'value_1',
       contentVal2: '',
@@ -110,10 +108,7 @@ VAL3: 332211
 
 data here
 `;
-    const result = extractFileContentData(
-      extractionSpec as any as IExtractionSpec,
-      fileBody,
-    );
+    const result = extractFileContentData(extractionSpec, fileBody);
     expect(result).toEqual({
       contentVal1: 'value_1',
       // missing contentVal2
@@ -128,10 +123,7 @@ VAL3: 332211
 
 data here
 `;
-    const result = extractFileContentData(
-      extractionSpec as any as IExtractionSpec,
-      fileBody,
-    );
+    const result = extractFileContentData(extractionSpec, fileBody);
     expect(result).toEqual({
       contentVal1: 'value_1',
       // missing contentVal2
@@ -149,7 +141,7 @@ VAL3: 332211
 data here
 `;
     const result = await extractFileContentDataFromStream(
-      extractionSpec as any as IExtractionSpec,
+      extractionSpec,
       stringToStream(fileBody),
     );
     expect(result).toEqual({
@@ -167,7 +159,7 @@ VAL3: 332211
 data here
 `;
     const result = await extractFileContentDataFromStream(
-      extractionSpec as any as IExtractionSpec,
+      extractionSpec,
       stringToStreamWithDelay(fileBody, 1000),
     );
     expect(result).toEqual({
