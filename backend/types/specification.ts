@@ -22,6 +22,7 @@ export const FieldExtractionSpecObject = z.object({
 
 // Note: Update ExtractionSpec to use ExtractionItem when there is more than one
 export const ExtractionSpec = z.object({
+  parserVersion: z.string(),
   fileNameExtractionSpec: z.object({
     csv: z.array(z.record(z.string(), FieldExtractionSpecObject)),
     txt: z.array(z.record(z.string(), FieldExtractionSpecObject)),
@@ -41,7 +42,16 @@ export const ExtractionSpec = z.object({
           value: z.string(),
         }),
       ),
+      removePrefix: z.array(z.string()),
     }),
+    substituteValues: z.array(
+      z.object({
+        // if metadata field key is found with value oldValue (exact match), substitute with newValue
+        key: z.string(),
+        oldValue: z.string(),
+        newValue: z.string(), // Value as string. Type parsing is done after substitution
+      }),
+    ),
   }),
 });
 

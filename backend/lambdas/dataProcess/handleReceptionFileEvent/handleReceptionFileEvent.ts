@@ -1,4 +1,4 @@
-import { S3Event } from 'aws-lambda';
+import { S3Event, SQSEvent } from 'aws-lambda';
 import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { log } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
@@ -9,10 +9,10 @@ import {
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
-import { ZIP_SUFFIX } from '../../../../constants';
+import { FILEPART_SUFFIX, ZIP_SUFFIX } from '../../../../constants';
 import { launchECSZipTask } from './utils';
-import { IAdminLogger } from '../../../utils/adminLogger';
-import { PostgresLogger } from '../../../utils/postgresLogger';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DataProcessLockedError,
   acquireDataProcessLockOrFail,
@@ -31,14 +31,20 @@ function getLambdaConfigOrFail() {
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 
-export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
+export async function handleReceptionFileEvent(
+  queueEvent: SQSEvent,
+): Promise<void> {
   try {
-    const recordResults = event.Records.map(async eventRecord => {
-      const config = getLambdaConfigOrFail();
+    const config = getLambdaConfigOrFail();
+    const sqsRecords = queueEvent.Records;
+    const sqsRecord = sqsRecords[0]; // assume only one event here // TODO: handle this if batch size is increased
+    const s3Event: S3Event = JSON.parse(sqsRecord.body);
+    const recordResults = s3Event.Records.map(async eventRecord => {
       const bucket = eventRecord.s3.bucket;
       const key = getDecodedS3ObjectKey(eventRecord);
+      log.info({ fileName: key }, 'Start reception handler');
       await adminLogger.init('data-reception', key);
-      await adminLogger.info(`Zip vastaanotettu: ${key}`);
+      await adminLogger.info(`Tiedosto vastaanotettu: ${key}`);
       try {
         // note: currently this lock is never released
         // pipeline can acquire lock only after all dataprocess locks have timed out
@@ -50,16 +56,26 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
         return;
       }
       const { path, fileSuffix } = getKeyData(key);
+      if (!fileSuffix) {
+        await adminLogger.warn(`Ei tiedostopäätettä, ei käsitellä.`);
+        return;
+      }
+      if (fileSuffix === FILEPART_SUFFIX) {
+        await adminLogger.warn(`Filepart tiedosto, ei käsitellä.`);
+        return;
+      }
       if (!isZipPath(path)) {
         throw new RaitaLambdaError(`Unexpected file path ${path}`, 400);
       }
       if (fileSuffix === ZIP_SUFFIX) {
         // Launch zip extraction for zip file
-        return launchECSZipTask({
+        const result = await launchECSZipTask({
           ...config,
           key,
           sourceBucketName: bucket.name,
         });
+        log.info({ result }); // temporary? for debugging
+        return result;
       } else if (isExcelSuffix(fileSuffix)) {
         // Copy the file to target S3 bucket if it is an Excel file
         const command = new CopyObjectCommand({
@@ -69,6 +85,8 @@ export async function handleReceptionFileEvent(event: S3Event): Promise<void> {
         });
         const s3Client = new S3Client({});
         return s3Client.send(command);
+      } else {
+        throw new RaitaLambdaError(`Unexpected file suffix: ${path}`, 400);
       }
     });
     await Promise.all(recordResults);

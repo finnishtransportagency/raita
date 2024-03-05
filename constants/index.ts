@@ -16,6 +16,7 @@ export const fileSuffixesToIncludeInMetadataParsing = {
 export const KNOWN_IGNORED_FILE_SUFFIXES = ['png'];
 
 export const ZIP_SUFFIX = 'zip';
+export const FILEPART_SUFFIX = 'filepart';
 export const EMPTY_FILE_INDICATOR = 'EMPTY';
 
 export const DATA_TIME_ZONE = 'Europe/Helsinki';

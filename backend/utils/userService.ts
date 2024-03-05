@@ -43,9 +43,12 @@ function parseRoles(roles: string): string[] | undefined {
     : undefined;
 }
 
+/**
+ * Used only for tests and non-permanent stacks
+ */
 const getMockUser = (): RaitaUser => ({
   uid: 'MOCK_UID',
-  roles: [STATIC_ROLES.read],
+  roles: [STATIC_ROLES.read, STATIC_ROLES.admin],
 });
 
 const handleApiKeyRequest = async (

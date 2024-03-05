@@ -98,22 +98,48 @@ export const getEnvDependentOsConfiguration = (
         },
       ],
     },
+    // identical conf in dev to accurately test with large amount of data
+    // this can be changed back to old conf (in comments) if needed
     dev: {
       removalPolicy: getRemovalPolicy(env),
       ebs: {
-        volumeSize: 10,
-        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+        volumeSize: 200,
+        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
       },
       capacity: {
-        dataNodes: 1,
-        dataNodeInstanceType: 't3.small.search',
+        masterNodes: 3,
+        masterNodeInstanceType: 'm6g.large.search',
+        dataNodes: 2,
+        dataNodeInstanceType: 'm6g.large.search',
+      },
+      // Must be enabled if VPC contains multiple private subnets.
+      zoneAwareness: {
+        enabled: true,
+        availabilityZoneCount: subnets.length,
       },
       vpcSubnets: [
         {
-          subnets: subnets.slice(0, 1),
+          subnets: subnets,
         },
       ],
     },
+    // OLD DEV CONF
+    // dev: {
+    //   removalPolicy: getRemovalPolicy(env),
+    //   ebs: {
+    //     volumeSize: 10,
+    //     volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
+    //   },
+    //   capacity: {
+    //     dataNodes: 1,
+    //     dataNodeInstanceType: 't3.small.search',
+    //   },
+    //   vpcSubnets: [
+    //     {
+    //       subnets: subnets.slice(0, 1),
+    //     },
+    //   ],
+    // },
   };
   return envDependentProperties[env];
 };
@@ -133,15 +159,13 @@ export const getDatabaseEnvironmentVariables = (
     !isDevelopmentMainStack(stackId, raitaEnv) &&
     !isDevelopmentPreMainStack(stackId, raitaEnv)
   ) {
-    // return a dummy for other branches
-    // TODO: test if premain db works for other branches
-    return {
-      PGUSER: 'INVALID',
-      PGHOST: 'INVALID',
-      PGDATABASE: 'INVALID',
-      PGPORT: 'INVALID',
-      RAITA_PGSCHEMA: 'INVALID',
-    };
+    // for non-permanent stacks use _template_ config file and stackid as schema name
+    const file = readFileSync(
+      path.join(__dirname, `../backend/db/conf/_template_/env.json`),
+      'utf8',
+    );
+    const replaced = file.replace('_schema_', stackId);
+    return JSON.parse(replaced);
   }
   const file = readFileSync(
     path.join(__dirname, `../backend/db/conf/${stackId}/env.json`),

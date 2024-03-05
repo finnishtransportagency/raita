@@ -1,5 +1,27 @@
 import format from 'date-fns/format';
-import { parsePrimitive } from '../parsePrimitives';
+import {
+  parsePrimitive,
+  parsePrimitiveWithSubstitution,
+} from '../parsePrimitives';
+
+jest.mock('../../../../utils/logger', () => {
+  return {
+    log: {
+      warn: jest.fn(),
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    },
+    logParsingException: {
+      warn: jest.fn(),
+      info: jest.fn(),
+      log: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+    },
+  };
+});
 
 describe('parsePrimitive', () => {
   test('success: integer', () => {
@@ -93,6 +115,102 @@ describe('parsePrimitive', () => {
     expect(summerResult).toEqual({
       key: 'test',
       value: '2023-06-02T00:00:00.000Z',
+    });
+  });
+  test('success: multiple dates in format d/M/y h:m:s a', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = '03/01/2023 8:00:00 am';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'test',
+      value: '2023-01-02T06:00:00.000Z',
+    });
+    const date3 = '04/01/2023 8:00:00 am';
+    const result2 = parsePrimitive(
+      'test',
+      `${date1} ${date2} ${date3}`,
+      'date',
+    );
+    expect(result2).toEqual({
+      key: 'test',
+      value: '2023-01-02T06:00:00.000Z',
+    });
+  });
+  test('fail: date in format d/M/y h:m:s a followed by invalid date', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = '123/01/2023 8:00:00 am';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'nonparsed_test',
+      value: `${date1} ${date2}`,
+    });
+  });
+  test('fail: date in format d/M/y h:m:s a followed by non date', () => {
+    const date1 = '02/01/2023 8:00:00 am';
+    const date2 = 'other data goes here';
+    const result = parsePrimitive('test', `${date1} ${date2}`, 'date');
+    expect(result).toEqual({
+      key: 'nonparsed_test',
+      value: `${date1} ${date2}`,
+    });
+  });
+});
+describe('parsePrimitiveWithSubstitution', () => {
+  test('success: string with no substitution match', () => {
+    const key = 'test';
+    const data = 'TESTVAL';
+    const keyMatchResult = parsePrimitiveWithSubstitution(
+      key,
+      data,
+      undefined,
+      [{ key, oldValue: 'OTHERVAL', newValue: 'NEWVAL' }],
+    );
+    expect(keyMatchResult).toEqual({
+      key,
+      value: data,
+    });
+    const valMatchResult = parsePrimitiveWithSubstitution(
+      key,
+      data,
+      undefined,
+      [{ key: 'OTHERKEY', oldValue: 'TESTVAL', newValue: 'NEWVAL' }],
+    );
+    expect(valMatchResult).toEqual({
+      key,
+      value: data,
+    });
+  });
+  test('success: integer with no substitution match', () => {
+    const key = 'test';
+    const data = '123';
+    const result = parsePrimitiveWithSubstitution(key, data, 'integer', [
+      { key, oldValue: '1234', newValue: '12345' },
+    ]);
+    expect(result).toEqual({
+      key,
+      value: 123,
+    });
+  });
+  test('success: string with substitution match', () => {
+    const key = 'test';
+    const data = 'TESTVAL';
+    const result = parsePrimitiveWithSubstitution(key, data, undefined, [
+      { key, oldValue: 'TESTVAL', newValue: 'NEWVAL' },
+    ]);
+    expect(result).toEqual({
+      key,
+      value: 'NEWVAL',
+    });
+  });
+  test('success: integer with substitution match', () => {
+    const key = 'test';
+    const data = '123';
+    const result = parsePrimitiveWithSubstitution(key, data, 'integer', [
+      { key, oldValue: '123', newValue: '1234' },
+    ]);
+    expect(result).toEqual({
+      key,
+      value: 1234,
     });
   });
 });

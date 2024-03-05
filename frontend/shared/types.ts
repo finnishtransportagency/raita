@@ -105,7 +105,10 @@ export interface DeleteResponse {
   metadataDeleteCount: number;
 }
 
-export interface AdminLogsResponse {
+export interface SingleEventAdminLogsResponse {
+  totalSize: number;
+  pageIndex: number;
+  pageSize: number;
   logs: {
     source: string;
     invocation_id: string;
@@ -113,6 +116,29 @@ export interface AdminLogsResponse {
     log_message: string;
     log_level: string;
   }[];
+}
+
+export interface AdminLogSummaryRow {
+  log_date: string;
+  invocation_id: string;
+  start_timestamp: string;
+  counts: {
+    [source: string]: {
+      error: number;
+      warn: number;
+      info: number;
+    };
+  };
+}
+export interface AdminLogsSummaryResponse {
+  totalSize: number;
+  pageIndex: number;
+  pageSize: number;
+  stats: {
+    log_level: string;
+    event_count: string;
+  }[];
+  summaryRows: AdminLogSummaryRow[];
 }
 
 export interface PollingProgress {

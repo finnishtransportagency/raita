@@ -6,10 +6,10 @@ import {
   IExtractionSpec,
 } from '../../../types';
 import { ParseValueResult } from '../../../types';
-import { parsePrimitive } from './parsePrimitives';
+import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
-import { KeyData, RaitaParseError } from '../../utils';
+import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
 import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
 
@@ -22,6 +22,7 @@ export const shouldParseContent = (suffix: string) =>
 const extractValue = (
   extractSpec: IColonSeparatedKeyValuePairDefinition,
   fileBody: string,
+  substituteValues: IExtractionSpec['knownExceptions']['substituteValues'],
 ) => {
   const { propertyKey, pattern, parseAs } = extractSpec;
   // If more than one possible pattern, add logic here for passing
@@ -31,20 +32,23 @@ const extractValue = (
   );
   try {
     const res = regr.exec(fileBody);
-    const val = res?.[1];
-    if (val) {
-      return parseAs
-        ? parsePrimitive(propertyKey, val, parseAs)
-        : { key: propertyKey, value: val };
+    if (!res) {
+      return null;
+    }
+    const found = res[0];
+    const val = res[1];
+    if (found) {
+      return parsePrimitiveWithSubstitution(
+        propertyKey,
+        val,
+        parseAs,
+        substituteValues,
+      );
     }
     return null;
-  } catch (err) {
-    throw new RaitaParseError(
-      `Parsing failed for the term: ${propertyKey}: ${
-        err instanceof Error ? err.message : err
-      }`,
-      'VALUE_PARSE_ERROR',
-    );
+  } catch (error: any) {
+    log.error(error);
+    return null;
   }
 };
 
@@ -53,7 +57,13 @@ export const extractFileContentData = (
   fileBody: string,
 ) =>
   spec.fileContentExtractionSpec
-    .map(extractSpecItem => extractValue(extractSpecItem, fileBody))
+    .map(extractSpecItem =>
+      extractValue(
+        extractSpecItem,
+        fileBody,
+        spec.knownExceptions.substituteValues,
+      ),
+    )
     .reduce<ParseValueResult>((acc, cur) => {
       if (cur) {
         acc[cur.key] = cur.value;

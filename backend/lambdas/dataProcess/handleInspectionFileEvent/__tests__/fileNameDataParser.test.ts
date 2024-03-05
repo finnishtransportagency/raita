@@ -31,7 +31,7 @@ describe('parseFileNameParts', () => {
       '3': { name: 'length' },
     };
     const fileNameParts = ['testName', '123', '100.5'];
-    const result = parseFileNameParts(extractionSpecLabels, fileNameParts);
+    const result = parseFileNameParts(extractionSpecLabels, fileNameParts, []);
     expect(result).toEqual({
       name: 'testName',
       count: '123',
@@ -44,7 +44,7 @@ describe('parseFileNameParts', () => {
       '2': { name: 'test' },
     };
     const fileNameParts = ['testName', 'test', 'EMPTY'];
-    const result = parseFileNameParts(extractionSpecLabels, fileNameParts);
+    const result = parseFileNameParts(extractionSpecLabels, fileNameParts, []);
     expect(result).toEqual({
       name: 'testName',
       test: 'test',
@@ -132,42 +132,52 @@ describe('validateGenericFileNameStructureOrFail', () => {
   });
 });
 describe('extractFileNameData', () => {
-  const extractionSpec: IExtractionSpec['fileNameExtractionSpec'] = {
-    txt: [
-      {
-        '1': { name: 'name' },
-        '2': { name: 'test1' },
-        '3': { name: 'test2' },
-      },
-    ],
-    csv: [
-      {
-        '1': { name: 'name' },
-        '2': { name: 'test1' },
-        '3': { name: 'test2' },
-      },
-    ],
-    pdf: [
-      {
-        '1': { name: 'name' },
-        '2': { name: 'test1' },
-        '3': { name: 'test2' },
-      },
-    ],
-    xlsx: [
-      {
-        '1': { name: 'name' },
-        '2': { name: 'test1' },
-        '3': { name: 'test2' },
-      },
-    ],
-    xls: [
-      {
-        '1': { name: 'name' },
-        '2': { name: 'test1' },
-        '3': { name: 'test2' },
-      },
-    ],
+  const testExtractionSpec: IExtractionSpec = {
+    parserVersion: '0.0.1',
+    fileContentExtractionSpec: [],
+    folderTreeExtractionSpec: {},
+    vRunFolderTreeExtractionSpec: {},
+    fileNameExtractionSpec: {
+      txt: [
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+      csv: [
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+      pdf: [
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+      xlsx: [
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+      xls: [
+        {
+          '1': { name: 'name' },
+          '2': { name: 'test1' },
+          '3': { name: 'test2' },
+        },
+      ],
+    },
+    knownExceptions: {
+      fileNameExtractionSpec: { containsUnderscore: [], removePrefix: [] },
+      substituteValues: [],
+    },
   };
   test('success', () => {
     const keyData: KeyData = {
@@ -179,7 +189,7 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/test_123_456',
       key: 'Meeri/test/path/test_123_456',
     };
-    const result = extractFileNameData(keyData, extractionSpec);
+    const result = extractFileNameData(keyData, testExtractionSpec);
     expect(result).toEqual({
       file_type: 'txt',
       name: 'test',
@@ -197,19 +207,26 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/test_123_456',
       key: 'Meeri/test/path/test_123_456',
     };
-    const testExtractionSpec = {
-      txt: [
-        {
-          '1': { name: 'name' },
-        },
-        {
-          '1': { name: 'name' },
-          '2': { name: 'test1' },
-          '3': { name: 'test2' },
-        },
-      ],
+    const spec: IExtractionSpec = {
+      ...testExtractionSpec,
+      fileNameExtractionSpec: {
+        txt: [
+          {
+            '1': { name: 'name' },
+          },
+          {
+            '1': { name: 'name' },
+            '2': { name: 'test1' },
+            '3': { name: 'test2' },
+          },
+        ],
+        csv: [],
+        pdf: [],
+        xlsx: [],
+        xls: [],
+      },
     };
-    const result = extractFileNameData(keyData, testExtractionSpec as any);
+    const result = extractFileNameData(keyData, spec);
     expect(result).toEqual({
       file_type: 'txt',
       name: 'test',
@@ -232,15 +249,22 @@ describe('extractFileNameData', () => {
         'test/path/P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
       key: 'Meeri/test/path/test_123_456',
     };
-    const testExtractionSpec = {
-      xlsx: [
-        {
-          '1': { name: 'report_type' },
-          '2': { name: 'inspection_date' },
-        },
-      ],
+    const spec: IExtractionSpec = {
+      ...testExtractionSpec,
+      fileNameExtractionSpec: {
+        xlsx: [
+          {
+            '1': { name: 'report_type' },
+            '2': { name: 'inspection_date' },
+          },
+        ],
+        txt: [],
+        csv: [],
+        pdf: [],
+        xls: [],
+      },
     };
-    const result = extractFileNameData(keyData, testExtractionSpec as any);
+    const result = extractFileNameData(keyData, spec);
     expect(result).toEqual({
       file_type: 'xlsx',
       report_type: 'P420016A68Z ASM 03 - Submission Report',
@@ -257,26 +281,33 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/test_part1_part2_test2',
       key: 'Meeri/test/path/test_123_456',
     };
-    const testExtractionSpec = {
-      txt: [
-        {
-          '1': { name: 'value1' },
-          '2': { name: 'value2' },
-          '3': { name: 'value3' },
+    const spec: IExtractionSpec = {
+      ...testExtractionSpec,
+      fileNameExtractionSpec: {
+        txt: [
+          {
+            '1': { name: 'value1' },
+            '2': { name: 'value2' },
+            '3': { name: 'value3' },
+          },
+        ],
+        csv: [],
+        pdf: [],
+        xlsx: [],
+        xls: [],
+      },
+      knownExceptions: {
+        fileNameExtractionSpec: {
+          containsUnderscore: [
+            { name: 'dummy', value: 'does_not_exist' },
+            { name: 'value2', value: 'part1_part2' },
+          ],
+          removePrefix: [],
         },
-      ],
+        substituteValues: [],
+      },
     };
-    const fileNameExceptions = {
-      containsUnderscore: [
-        { name: 'dummy', value: 'does_not_exist' },
-        { name: 'value2', value: 'part1_part2' },
-      ],
-    };
-    const result = extractFileNameData(
-      keyData,
-      testExtractionSpec as any,
-      fileNameExceptions,
-    );
+    const result = extractFileNameData(keyData, spec);
     expect(result).toEqual({
       file_type: 'txt',
       value1: 'test',
@@ -294,21 +325,28 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/one_field_only',
       key: 'Meeri/test/path/test_123_456',
     };
-    const testExtractionSpec = {
-      txt: [
-        {
-          '1': { name: 'value1' },
+    const spec: IExtractionSpec = {
+      ...testExtractionSpec,
+      fileNameExtractionSpec: {
+        txt: [
+          {
+            '1': { name: 'value1' },
+          },
+        ],
+        csv: [],
+        pdf: [],
+        xlsx: [],
+        xls: [],
+      },
+      knownExceptions: {
+        fileNameExtractionSpec: {
+          containsUnderscore: [{ name: 'value1', value: 'one_field_only' }],
+          removePrefix: [],
         },
-      ],
+        substituteValues: [],
+      },
     };
-    const fileNameExceptions = {
-      containsUnderscore: [{ name: 'value1', value: 'one_field_only' }],
-    };
-    const result = extractFileNameData(
-      keyData,
-      testExtractionSpec as any,
-      fileNameExceptions,
-    );
+    const result = extractFileNameData(keyData, spec);
     expect(result).toEqual({
       file_type: 'txt',
       value1: 'one_field_only',
@@ -324,24 +362,29 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/UNDERSCORE_VALUE_test',
       key: 'Meeri/test/path/test_123_456',
     };
-    const testExtractionSpec = {
-      txt: [
-        {
-          '1': { name: 'value1' },
-          '2': { name: 'value2' },
+    const spec: IExtractionSpec = {
+      ...testExtractionSpec,
+      fileNameExtractionSpec: {
+        txt: [
+          {
+            '1': { name: 'value1' },
+            '2': { name: 'value2' },
+          },
+        ],
+        csv: [],
+        pdf: [],
+        xlsx: [],
+        xls: [],
+      },
+      knownExceptions: {
+        fileNameExtractionSpec: {
+          containsUnderscore: [{ name: 'value2', value: 'UNDERSCORE_VALUE' }],
+          removePrefix: [],
         },
-      ],
+        substituteValues: [],
+      },
     };
-    const fileNameExceptions = {
-      containsUnderscore: [{ name: 'value2', value: 'UNDERSCORE_VALUE' }],
-    };
-    expect(() =>
-      extractFileNameData(
-        keyData,
-        testExtractionSpec as any,
-        fileNameExceptions,
-      ),
-    ).toThrow(RaitaParseError);
+    expect(() => extractFileNameData(keyData, spec)).toThrow(RaitaParseError);
   });
   test('fail: too many file name segments', () => {
     const keyData: KeyData = {
@@ -354,7 +397,7 @@ describe('extractFileNameData', () => {
       key: 'Meeri/test/path/test_123_456',
     };
 
-    expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
+    expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
     );
   });
@@ -374,10 +417,10 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/test_123_456_789',
     };
     expect(() =>
-      extractFileNameData(keyData1 as KeyData, extractionSpec),
+      extractFileNameData(keyData1 as KeyData, testExtractionSpec),
     ).toThrow(RaitaParseError);
     expect(() =>
-      extractFileNameData(keyData2 as KeyData, extractionSpec),
+      extractFileNameData(keyData2 as KeyData, testExtractionSpec),
     ).toThrow(RaitaParseError);
   });
   test('fail: wrong file type', () => {
@@ -390,8 +433,47 @@ describe('extractFileNameData', () => {
       keyWithoutSuffix: 'test/path/test_123_456_789',
       key: 'Meeri/test/path/test_123_456',
     };
-    expect(() => extractFileNameData(keyData, extractionSpec)).toThrow(
+    expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
     );
+  });
+  test('fail: additional VR_ prefix', () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'VR_test_123_456.txt'],
+      rootFolder: 'test',
+      fileName: 'VR_test_123_456.txt',
+      fileBaseName: 'VR_test_123_456',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'VR_test/path/test_123_456',
+    };
+    expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
+      RaitaParseError,
+    );
+  });
+  test('success: remove additional VR_ prefix', () => {
+    const keyData: KeyData = {
+      path: ['test', 'path', 'VR_test_123_456.txt'],
+      rootFolder: 'test',
+      fileName: 'VR_test_123_456.txt',
+      fileBaseName: 'VR_test_123_456',
+      fileSuffix: 'txt',
+      keyWithoutSuffix: 'test/path/VR_test_123_456',
+    };
+    const specWithRemovePrefix: IExtractionSpec = {
+      ...testExtractionSpec,
+      knownExceptions: {
+        fileNameExtractionSpec: {
+          containsUnderscore: [],
+          removePrefix: ['VR_'],
+        },
+        substituteValues: [],
+      },
+    };
+    expect(extractFileNameData(keyData, specWithRemovePrefix)).toEqual({
+      file_type: 'txt',
+      name: 'test',
+      test1: '123',
+      test2: '456',
+    });
   });
 });

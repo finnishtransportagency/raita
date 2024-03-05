@@ -6,12 +6,15 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { S3EventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import {
+  S3EventSource,
+  SqsEventSource,
+} from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { FilterPattern, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
@@ -33,6 +36,8 @@ import { Topic } from 'aws-cdk-lib/aws-sns';
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
 
 interface DataProcessStackProps extends NestedStackProps {
@@ -183,7 +188,7 @@ export class DataProcessStack extends NestedStack {
     this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
     // Create ECS cluster resources for zip extraction task
-    const { ecsCluster, handleZipTask, handleZipContainer } =
+    const { ecsCluster, handleZipTask, handleZipContainer, zipTaskLogGroup } =
       this.createZipHandlerECSResources({
         raitaStackIdentifier,
         vpc,
@@ -208,8 +213,12 @@ export class DataProcessStack extends NestedStack {
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
     this.dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
+    const zipHandlerAlarms = this.createReceptionZipHandlerAlarms(
+      zipTaskLogGroup!,
+      raitaStackIdentifier,
+    );
     const receptionAlarms = this.createReceptionHandlerAlarms(
-      handleReceptionFileEventFn,
+      handleReceptionFileEventFn.logGroup,
       raitaStackIdentifier,
     );
 
@@ -244,13 +253,21 @@ export class DataProcessStack extends NestedStack {
       }),
     );
 
-    // Handler is run for all the files types
-    handleReceptionFileEventFn.addEventSource(
-      new S3EventSource(this.dataReceptionBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-        filters: [{ prefix: `${raitaSourceSystems.Meeri}/` }],
-      }),
+    // route reception s3 events through a queue
+    const receptionQueue = new Queue(this, 'reception-queue', {
+      visibilityTimeout: Duration.seconds(915), // matching lambda timeout
+    });
+    const receptionQueueSource = new SqsEventSource(receptionQueue, {
+      batchSize: 1,
+      maxConcurrency: 2,
+    });
+    this.dataReceptionBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(receptionQueue),
+      { prefix: `${raitaSourceSystems.Meeri}/` },
     );
+
+    handleReceptionFileEventFn.addEventSource(receptionQueueSource);
 
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
@@ -267,7 +284,7 @@ export class DataProcessStack extends NestedStack {
       databaseEnvironmentVariables,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
-      this.handleInspectionFileEventFn,
+      this.handleInspectionFileEventFn.logGroup,
       raitaStackIdentifier,
     );
     // Grant lambda permissions to buckets
@@ -280,12 +297,25 @@ export class DataProcessStack extends NestedStack {
       this.handleInspectionFileEventFn,
     );
 
-    // Add s3 event source for any added file
-    this.handleInspectionFileEventFn.addEventSource(
-      new S3EventSource(this.inspectionDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
+    // route inspection s3 events through a queue
+    const inspectionQueue = new Queue(this, 'inspection-queue', {
+      visibilityTimeout: Duration.seconds(240),
+    });
+    this.inspectionDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(inspectionQueue),
     );
+    const inspectionQueueSource = new SqsEventSource(inspectionQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 100,
+    });
+    this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
+    const allAlarms = [
+      ...receptionAlarms,
+      ...inspectionAlarms,
+      ...zipHandlerAlarms,
+    ];
+
 
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
@@ -307,7 +337,6 @@ export class DataProcessStack extends NestedStack {
       }),
     );
 
-    const allAlarms = [...receptionAlarms, ...inspectionAlarms];
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
       this,
@@ -409,6 +438,12 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
+    // any events that fail cause lambda to fail twice will be written here
+    // currently nothing is done to this queue
+    const inspectionDeadLetterQueue = new Queue(
+      this,
+      'inspection-handler-deadletter',
+    );
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 10240,
@@ -419,6 +454,7 @@ export class DataProcessStack extends NestedStack {
         __dirname,
         `../backend/lambdas/dataProcess/handleInspectionFileEvent/handleInspectionFileEvent.ts`,
       ),
+      reservedConcurrentExecutions: 100,
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
@@ -434,7 +470,36 @@ export class DataProcessStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      deadLetterQueue: inspectionDeadLetterQueue,
     });
+  }
+
+  private createReceptionZipHandlerAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const errorMetricFilter = logGroup.addMetricFilter(
+      'zip-handler-error-filter',
+      {
+        filterPattern: FilterPattern.stringValue('$.level', '=', 'error'),
+        metricName: `zip-handler-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const errorAlarm = new Alarm(this, 'zip-handler-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `zip-handler-errors-alarm-${raitaStackIdentifier}`,
+      metric: errorMetricFilter.metric({
+        label: `Reception zip handler errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm];
   }
 
 
@@ -487,22 +552,18 @@ export class DataProcessStack extends NestedStack {
    * Add alarms for monitoring errors from logs
    */
   private createReceptionHandlerAlarms(
-    handler: NodejsFunction,
+    logGroup: ILogGroup,
     raitaStackIdentifier: string,
   ) {
-    const logGroup = handler.logGroup;
     const errorMetricFilter = logGroup.addMetricFilter(
       'reception-error-filter',
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
-          FilterPattern.any(
-            FilterPattern.stringValue('$.level', '=', 'warn'),
-            FilterPattern.stringValue('$.level', '=', 'error'),
-          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `parsing-error-${raitaStackIdentifier}`,
-        metricNamespace: 'raita-inspection',
+        metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
     );
@@ -527,10 +588,9 @@ export class DataProcessStack extends NestedStack {
    * Multiple alarms for different types if errors
    */
   private createInspectionHandlerAlarms(
-    handler: NodejsFunction,
+    logGroup: ILogGroup,
     raitaStackIdentifier: string,
   ) {
-    const logGroup = handler.logGroup;
     const timeoutMetricFilter = logGroup.addMetricFilter(
       'inspection-timeout-filter',
       {
@@ -545,10 +605,7 @@ export class DataProcessStack extends NestedStack {
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_PARSING_EXCEPTION'),
-          FilterPattern.any(
-            FilterPattern.stringValue('$.level', '=', 'warn'),
-            FilterPattern.stringValue('$.level', '=', 'error'),
-          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `inspection-parsing-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
@@ -560,12 +617,25 @@ export class DataProcessStack extends NestedStack {
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
-          FilterPattern.any(
-            FilterPattern.stringValue('$.level', '=', 'warn'),
-            FilterPattern.stringValue('$.level', '=', 'error'),
-          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `inspection-other-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    // create separate warn metric with no alarm associated
+    const warningMetricFilter = logGroup.addMetricFilter(
+      'inspection-warn-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.any(
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_PARSING_EXCEPTION'),
+          ),
+          FilterPattern.stringValue('$.level', '=', 'warn'),
+        ),
+        metricName: `inspection-warn-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -742,19 +812,25 @@ export class DataProcessStack extends NestedStack {
     const image = new DockerImageAsset(this, 'zip-handler-image', {
       directory: path.join(__dirname, '../backend/containers/zipHandler'),
     });
+    const logDriver = new ecs.AwsLogDriver({
+      streamPrefix: 'FargateHandleZip',
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
         image: ecs.ContainerImage.fromDockerImageAsset(image),
-        logging: new ecs.AwsLogDriver({
-          streamPrefix: 'FargateHandleZip',
-          logRetention: RetentionDays.SIX_MONTHS,
-        }),
+        logging: logDriver,
         environment: {
           AWS_REGION: this.region,
         },
       },
     );
-    return { ecsCluster, handleZipTask, handleZipContainer };
+    return {
+      ecsCluster,
+      handleZipTask,
+      handleZipContainer,
+      zipTaskLogGroup: logDriver.logGroup,
+    };
   }
 }

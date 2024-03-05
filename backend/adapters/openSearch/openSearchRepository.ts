@@ -4,6 +4,7 @@ import { IMetadataStorageInterface } from '../../types/portDataStorage';
 import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { OpenSearchResponseParser } from './openSearchResponseParser';
 import { log } from '../../utils/logger';
+import { wrapRetryOnTooManyRequests } from './util';
 
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
@@ -25,35 +26,28 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   }
 
   searchExisting = async (client: Client, entry: FileMetadataEntry) => {
-    try {
-      const existing = await client.search({
-        index: this.#dataIndex,
-        body: {
-          query: {
-            bool: {
-              must: [
-                {
-                  match: {
-                    'file_name.keyword': entry.file_name,
-                  },
+    const existing = await client.search({
+      index: this.#dataIndex,
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                match: {
+                  'file_name.keyword': entry.file_name,
                 },
-                {
-                  match: {
-                    'key.keyword': entry.key,
-                  },
+              },
+              {
+                match: {
+                  'key.keyword': entry.key,
                 },
-              ],
-            },
+              },
+            ],
           },
         },
-      });
-      return existing.body.hits;
-    } catch (error) {
-      log.error(
-        `Error while searching for existing doc: ${error}, Index creation will be attempted`,
-      );
-      return null;
-    }
+      },
+    });
+    return existing.body.hits;
   };
 
   addDoc = async (client: Client, entry: FileMetadataEntry) => {
@@ -74,9 +68,27 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
   };
 
   upsertDocument = async (entry: FileMetadataEntry) => {
+    // TODO: define these in config
+    const initialRetryWait = 2000;
+    const maxRetryWait = 8001;
+
     const client = await this.#openSearchClient.getClient();
     const { key, hash } = entry;
-    const exists = await this.searchExisting(client, entry);
+    let exists;
+    try {
+      exists = await wrapRetryOnTooManyRequests(
+        () => this.searchExisting(client, entry),
+        initialRetryWait,
+        maxRetryWait,
+      );
+    } catch (error) {
+      log.error({
+        message:
+          'Error while searching for existing doc, Index creation will be attempted',
+        errorObject: error,
+      });
+      exists = null;
+    }
     // Double check, as opensearch can sometimes give "relevant" results even
     // if they are not complete matches. This way we can be sure to only
     // update documents that we are supposed to.
@@ -85,9 +97,17 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       // @ts-ignore
       exists && exists.hits.find(doc => doc._source.key === key);
     if (!exists || !docToUpdate) {
-      await this.addDoc(client, entry);
+      await wrapRetryOnTooManyRequests(
+        () => this.addDoc(client, entry),
+        initialRetryWait,
+        maxRetryWait,
+      );
     } else if (hash !== docToUpdate._source.hash) {
-      await this.updateDoc(client, docToUpdate._id, entry);
+      await wrapRetryOnTooManyRequests(
+        () => this.updateDoc(client, docToUpdate._id, entry),
+        initialRetryWait,
+        maxRetryWait,
+      );
     }
   };
 

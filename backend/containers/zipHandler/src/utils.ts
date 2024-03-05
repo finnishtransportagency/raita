@@ -88,7 +88,9 @@ export const uploadToS3 = ({
       Key: key,
       Body: passThrough,
       ContentType: mime.contentType(fileName) || undefined,
-      Tagging: `ZipTimeStamp=${zipFileData.timeStamp}&ZipTimeStampType=${zipFileData.timeStampType}&ZipFileName=${zipFileData.fileName}`,
+      Tagging: `ZipTimeStamp=${zipFileData.timeStamp}&ZipTimeStampType=${
+        zipFileData.timeStampType
+      }&ZipFileName=${encodeURIComponent(zipFileData.fileName)}`,
     },
   });
   return {
@@ -133,7 +135,7 @@ export class RaitaZipError extends Error {
     where System is one of the following: Meeri, Emma, Elli',
   } as const;
 
-  constructor(zipError: keyof typeof RaitaZipError['raitaZipErrorMessages']) {
+  constructor(zipError: keyof (typeof RaitaZipError)['raitaZipErrorMessages']) {
     const message = RaitaZipError.raitaZipErrorMessages[zipError];
     super(message);
   }

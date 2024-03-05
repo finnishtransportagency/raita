@@ -10,8 +10,10 @@ export async function middleware(request: NextRequest) {
     const apiPart = `${path.slice(path.indexOf('/api') + 4)}`;
     let newUrl = `${devApiUrl}${apiPart}`;
     const queryParams = request.nextUrl.searchParams;
+    const decodedParams = decodeURIComponent(queryParams.toString());
+    const newParams = decodedParams.split('+').join(' '); // for some reason requests can be partly urlencoded but with spaces replaced by '+'
     if (queryParams && queryParams.size) {
-      newUrl = `${newUrl}?${decodeURIComponent(queryParams.toString())}`;
+      newUrl = `${newUrl}?${newParams}`;
     }
     if (request.method === 'GET') {
       return await fetch(newUrl, {

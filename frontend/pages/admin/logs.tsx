@@ -1,24 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { clsx } from 'clsx';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionItemHeading,
-  AccordionItemButton,
-  AccordionItemPanel,
-} from 'react-accessible-accordion';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
-
-import { AdminLogsResponse, RaitaNextPage, Range } from 'shared/types';
-import { getAdminLogs } from 'shared/rest';
+import { RaitaNextPage, Range } from 'shared/types';
 import { subDays } from 'date-fns';
-import format from 'date-fns/format';
-import { Button, DateRange } from 'components';
-import Head from 'next/head';
-import css from './logs.module.css';
+import { Button, DateRange, LogAccordion } from 'components';
 import { RaitaRole } from 'shared/user';
+import css from './logs.module.css';
+import clsx from 'clsx';
 
 const AdminLogs: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
@@ -26,67 +13,20 @@ const AdminLogs: RaitaNextPage = () => {
   const defaultStartDate = subDays(new Date(), 7);
   const defaultEndDate = new Date();
 
-  const [logs, setLogs] = useState<AdminLogsResponse['logs']>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [fetching, setFetching] = useState<boolean>(false);
   const [dateRange, setDateRange] = useState<Range<Date>>({
     start: defaultStartDate,
     end: defaultEndDate,
   });
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'delete' | 'data-process'>(
+    'data-process',
+  );
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    if (!dateRange.start) {
-      // TODO show some error
-      return;
-    }
-    if (!dateRange.end) {
-      return;
-    }
-    setIsLoading(true);
-    const startDate = format(dateRange.start, 'yyyy-MM-dd');
-    const endDate = format(dateRange.end, 'yyyy-MM-dd');
-    try {
-      await getAdminLogs(startDate, endDate).then(receivedLogs => {
-        setLogs(receivedLogs);
-        setIsLoading(false);
-        setErrorMessage('');
-      });
-    } catch (error) {
-      const message = t('common:error_loading');
-      setErrorMessage(message);
-    }
+  const fetchNew = () => {
+    setFetching(false);
+    setTimeout(() => setFetching(true));
   };
 
-  // use both date part of timestamp and invocationId to group log rows
-  const groupedLogs: {
-    [constructedId: string]: AdminLogsResponse['logs'];
-  } = {};
-  logs.forEach(logRow => {
-    const date = format(new Date(logRow.log_timestamp), 'yyyy-MM-dd');
-    const constructedId = `${date}-${logRow.invocation_id}`;
-    if (groupedLogs[constructedId]) {
-      groupedLogs[constructedId].push(logRow);
-    } else {
-      groupedLogs[constructedId] = [logRow];
-    }
-  });
-  // sort by timestamp
-  Object.keys(groupedLogs).forEach(id => {
-    groupedLogs[id].sort((a, b) =>
-      a.log_timestamp.localeCompare(b.log_timestamp),
-    );
-  });
-  const logGroupIds = Object.keys(groupedLogs);
-  // sort by full timestamp of first log message, newest first
-  logGroupIds.sort((a, b) =>
-    groupedLogs[b][0].log_timestamp.localeCompare(
-      groupedLogs[a][0].log_timestamp,
-    ),
-  );
   return (
     <div className="container mx-auto px-16 py-6">
       <h1 className="text-3xl mb-4 pb-2 w-4/12 border-primary border-b-2">
@@ -102,118 +42,42 @@ const AdminLogs: RaitaNextPage = () => {
           className="max-w-md"
           inputId="log-daterange"
         />
-        <Button label={t('common:search')} onClick={fetchLogs} />
+        <Button label={t('common:search')} onClick={fetchNew} />
       </div>
-      {errorMessage && <p>{errorMessage}</p>}
-      {!errorMessage && isLoading && <p>{t('common:loading')}</p>}
-      {!isLoading && !errorMessage && (
-        <div>
-          {logs.length === 0 ? (
-            <div>Ei dataa</div>
-          ) : (
-            <Accordion allowMultipleExpanded allowZeroExpanded>
-              {logGroupIds.map(id => {
-                const logRows = groupedLogs[id];
-                const headerDateTime = format(
-                  new Date(logRows[0].log_timestamp),
-                  'dd.MM.yyyy HH:mm',
-                );
-                const containsErrors = logRows.find(
-                  row => row.log_level === 'error',
-                );
-                const containsWarnings = logRows.find(
-                  row => row.log_level === 'warn',
-                );
-                // should be exactly one row per file
-                const fileRows = logRows.filter(
-                  row => row.source === 'data-inspection',
-                );
-                const filesTotal = fileRows.length;
-                const successCount = fileRows.filter(
-                  row => row.log_level === 'info',
-                ).length;
-                const errorCount = fileRows.filter(
-                  row => row.log_level === 'error',
-                ).length;
-
-                let statsMessage = '';
-                if (
-                  ['data-inspection', 'data-reception'].includes(
-                    logRows[0].source,
-                  )
-                ) {
-                  statsMessage = `Tiedostoja yhteensä: ${filesTotal}. Parsinta onnistui: ${successCount} tiedostoa. Parsinta epäonnistui: ${errorCount} tiedostoa.`;
-                }
-                let titleKey = '';
-                switch (logRows[0].source) {
-                  case 'data-inspection':
-                  case 'data-reception':
-                    titleKey = 'admin:log_header_data_process';
-                    break;
-                  case 'delete-process':
-                    titleKey = 'admin:log_header_delete_process';
-                  default:
-                    break;
-                }
-                return (
-                  <AccordionItem
-                    className="border border-gray-300 rounded-lg p-2 my-2"
-                    key={`${logRows[0].log_timestamp}${id}`}
-                  >
-                    <AccordionItemHeading>
-                      <AccordionItemButton
-                        className={clsx(css.accordionButton)}
-                      >
-                        <FontAwesomeIcon
-                          className={`${clsx(css.downArrow)} mx-3`}
-                          icon={faChevronDown}
-                        />
-                        {`${headerDateTime} ${t(titleKey)}: ${
-                          logRows[0].invocation_id
-                        }`}
-                        {containsErrors && (
-                          <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
-                            {t('admin:log_contains_errors')}
-                          </span>
-                        )}
-                        {containsWarnings && (
-                          <span className="px-1 py-1 m-1 rounded-xl bg-warn font-bold">
-                            {t('admin:log_contains_warnings')}
-                          </span>
-                        )}
-                      </AccordionItemButton>
-                    </AccordionItemHeading>
-                    <AccordionItemPanel
-                      className={`${clsx(css.logContainer)} bg-slate-100`}
-                    >
-                      <div className={clsx(css.logBox)}>
-                        {logRows.map(row => (
-                          <pre
-                            className={`${clsx(css.logRow)} bg-${
-                              row.log_level
-                            }`}
-                            key={`${row.log_message}${row.log_timestamp}`}
-                          >
-                            {`[${format(
-                              new Date(row.log_timestamp),
-                              'dd.MM.yyyy HH:mm:ss.SSS',
-                            )}] ${row.log_message}`}
-                          </pre>
-                        ))}
-                        {statsMessage && (
-                          <pre className={clsx(css.logRows)}>
-                            {statsMessage}
-                          </pre>
-                        )}
-                      </div>
-                    </AccordionItemPanel>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+      <div>
+        <button
+          onClick={() => setActiveTab('data-process')}
+          className={clsx(
+            css.tabButton,
+            activeTab === 'data-process' ? css.active : '',
           )}
-        </div>
-      )}
+        >
+          {t('admin:log_data_process_events')}
+        </button>
+        <button
+          onClick={() => setActiveTab('delete')}
+          className={clsx(
+            css.tabButton,
+            activeTab === 'delete' ? css.active : '',
+          )}
+        >
+          {t('admin:log_delete_events')}
+        </button>
+      </div>
+      <div className={activeTab === 'data-process' ? '' : 'hidden'}>
+        <LogAccordion
+          type="data-process"
+          dateRange={dateRange}
+          forceFetch={fetching}
+        />
+      </div>
+      <div className={activeTab === 'delete' ? '' : 'hidden'}>
+        <LogAccordion
+          type="delete"
+          dateRange={dateRange}
+          forceFetch={fetching}
+        />
+      </div>
     </div>
   );
 };

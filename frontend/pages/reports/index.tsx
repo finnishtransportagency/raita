@@ -246,9 +246,12 @@ const ReportsIndex: RaitaNextPage = () => {
 
   if (meta.isError) return <div>Error</div>;
 
-  const showCopyableZipPath =
+  const showAdminFields =
     user.user && user.user.roles.includes(RaitaRole.Admin);
   const zipFileNameIndex = cfg.zipFileNameIndex;
+
+  // some fields are hidden on non-admin users
+  const adminOnlyMetadataFields = ['parser_version'];
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -483,7 +486,7 @@ const ReportsIndex: RaitaNextPage = () => {
                             <header>{doc.file_name}</header>
 
                             <div className="text-xs">
-                              {showCopyableZipPath && (
+                              {showAdminFields && (
                                 <dl className={clsx(css.keyMetadataContainer)}>
                                   <dt>
                                     {t('common:zip_path_label')}
@@ -503,8 +506,13 @@ const ReportsIndex: RaitaNextPage = () => {
                                 </dl>
                               )}
                               <dl className={clsx(css.metadataGrid)}>
-                                {Object.entries(doc.metadata).map(
-                                  ([k, v], index) => (
+                                {Object.entries(doc.metadata)
+                                  .filter(
+                                    ([k, v]) =>
+                                      !adminOnlyMetadataFields.includes(k) ||
+                                      showAdminFields,
+                                  )
+                                  .map(([k, v], index) => (
                                     <Fragment key={index}>
                                       <dt className="truncate">
                                         {t(`metadata:label_${k}`)}
@@ -519,8 +527,7 @@ const ReportsIndex: RaitaNextPage = () => {
                                       </dd>
                                       <Tooltip id={`${doc.key}_val_${k}`} />
                                     </Fragment>
-                                  ),
-                                )}
+                                  ))}
                                 {doc.size && (
                                   <Fragment>
                                     <dt
