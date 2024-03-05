@@ -90,6 +90,7 @@ export const extractFileNameData = (
 ) => {
   const fileNamePartLabels = spec.fileNameExtractionSpec;
   const fileNameExceptions = spec.knownExceptions.fileNameExtractionSpec;
+  const removePrefix = fileNameExceptions.removePrefix;
   const substituteValues = spec.knownExceptions.substituteValues;
   const { fileName, fileBaseName, fileSuffix } = keyData;
   if (!fileBaseName || !fileSuffix) {
@@ -106,8 +107,20 @@ export const extractFileNameData = (
       fileName,
     );
   }
+  // if a prefix listed in removePrefix is found, remove it from filename before further parsing
+  let strippedFileName = fileBaseName;
+  if (removePrefix) {
+    // assume only one prefix can match
+    const foundPrefix = removePrefix.find(prefix =>
+      fileBaseName.match(new RegExp(`^${removePrefix}`)),
+    );
+    if (foundPrefix) {
+      strippedFileName = fileBaseName.slice(foundPrefix.length);
+    }
+  }
+
   // File name segments are separated by underscore
-  let fileBaseNameParts = fileBaseName.split('_');
+  let fileBaseNameParts = strippedFileName.split('_');
   // Underscore is used as a separator for data fields in name. Check for and handle any known values containing underscore
   let foundWithUnderscore: { value: string; name: string } | undefined =
     undefined;
@@ -117,10 +130,10 @@ export const extractFileNameData = (
     fileNameExceptions.containsUnderscore.length
   ) {
     foundWithUnderscore = fileNameExceptions.containsUnderscore.find(
-      exception => fileBaseName.includes(exception.value),
+      exception => strippedFileName.includes(exception.value),
     );
     if (foundWithUnderscore) {
-      const [before, after] = fileBaseName.split(foundWithUnderscore.value);
+      const [before, after] = strippedFileName.split(foundWithUnderscore.value);
       const valuesBefore = before.split('_').filter(v => v.length);
       const valuesAfter = after.split('_').filter(v => v.length);
       fileBaseNameParts = [
@@ -139,7 +152,7 @@ export const extractFileNameData = (
       // try parsing and return immediately if successful
       // Submission Report Excel file name parsing is special case, some name segments need to be ignored
       const fileNameMetadata = isSubmissionReport({
-        fileBaseName,
+        fileBaseName: strippedFileName,
         fileSuffix,
       })
         ? parseSubmissionReportExcelFileNameData(

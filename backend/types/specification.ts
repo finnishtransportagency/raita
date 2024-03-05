@@ -42,6 +42,7 @@ export const ExtractionSpec = z.object({
           value: z.string(),
         }),
       ),
+      removePrefix: z.array(z.string()),
     }),
     substituteValues: z.array(
       z.object({
