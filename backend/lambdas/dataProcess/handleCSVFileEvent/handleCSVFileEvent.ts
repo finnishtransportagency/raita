@@ -1,14 +1,12 @@
 import { S3Event } from 'aws-lambda';
 
 import { log } from '../../../utils/logger';
-import BackendFacade from '../../../ports/backend';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
-import { IAdminLogger } from '../../../utils/adminLogger';
-import { PostgresLogger } from '../../../utils/postgresLogger';
-import cloneable from 'cloneable-readable';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
+import {IAdminLogger} from "../../../utils/adminLog/types";
+import {PostgresLogger} from "../../../utils/adminLog/postgresLogger";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
