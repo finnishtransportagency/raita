@@ -431,7 +431,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456_789',
       fileSuffix: 'exe',
       keyWithoutSuffix: 'test/path/test_123_456_789',
-      key: 'Meeri/test/path/test_123_456',
+      key: 'Meeri/test/path/test_123_456_789',
     };
     expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
@@ -445,6 +445,8 @@ describe('extractFileNameData', () => {
       fileBaseName: 'VR_test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'VR_test/path/test_123_456',
+      key: 'Meeri/VR_test/path/test_123_456',
+
     };
     expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
@@ -458,6 +460,7 @@ describe('extractFileNameData', () => {
       fileBaseName: 'VR_test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/VR_test_123_456',
+      key: 'Meeri/test/path/VR_test_123_456',
     };
     const specWithRemovePrefix: IExtractionSpec = {
       ...testExtractionSpec,

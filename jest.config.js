@@ -12,6 +12,7 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     'csvDataParser',
+    'csvDataChopper',
     'contentDataParser',
     'parseFileMetaData',
     '/zod-csv/',
