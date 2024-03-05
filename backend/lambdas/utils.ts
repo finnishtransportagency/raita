@@ -117,7 +117,6 @@ export const getKeyData = (key: string) => {
     fileBaseName,
     fileSuffix,
     keyWithoutSuffix,
-    key
   };
 };
 

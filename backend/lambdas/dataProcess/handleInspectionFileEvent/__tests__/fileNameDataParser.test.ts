@@ -187,7 +187,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456',
-      key: 'Meeri/test/path/test_123_456',
     };
     const result = extractFileNameData(keyData, testExtractionSpec);
     expect(result).toEqual({
@@ -205,7 +204,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456',
-      key: 'Meeri/test/path/test_123_456',
     };
     const spec: IExtractionSpec = {
       ...testExtractionSpec,
@@ -247,7 +245,6 @@ describe('extractFileNameData', () => {
       fileSuffix: 'xlsx',
       keyWithoutSuffix:
         'test/path/P420016A68Z ASM 03 - Submission Report_20230213_TG_PI.xlsx',
-      key: 'Meeri/test/path/test_123_456',
     };
     const spec: IExtractionSpec = {
       ...testExtractionSpec,
@@ -279,7 +276,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_part1_part2_test2',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_part1_part2_test2',
-      key: 'Meeri/test/path/test_123_456',
     };
     const spec: IExtractionSpec = {
       ...testExtractionSpec,
@@ -323,7 +319,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'one_field_only',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/one_field_only',
-      key: 'Meeri/test/path/test_123_456',
     };
     const spec: IExtractionSpec = {
       ...testExtractionSpec,
@@ -360,7 +355,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'UNDERSCORE_VALUE_test',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/UNDERSCORE_VALUE_test',
-      key: 'Meeri/test/path/test_123_456',
     };
     const spec: IExtractionSpec = {
       ...testExtractionSpec,
@@ -394,7 +388,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456_789',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/test_123_456_789',
-      key: 'Meeri/test/path/test_123_456',
     };
 
     expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
@@ -431,7 +424,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'test_123_456_789',
       fileSuffix: 'exe',
       keyWithoutSuffix: 'test/path/test_123_456_789',
-      key: 'Meeri/test/path/test_123_456_789',
     };
     expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
@@ -445,8 +437,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'VR_test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'VR_test/path/test_123_456',
-      key: 'Meeri/VR_test/path/test_123_456',
-
     };
     expect(() => extractFileNameData(keyData, testExtractionSpec)).toThrow(
       RaitaParseError,
@@ -460,7 +450,6 @@ describe('extractFileNameData', () => {
       fileBaseName: 'VR_test_123_456',
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/VR_test_123_456',
-      key: 'Meeri/test/path/VR_test_123_456',
     };
     const specWithRemovePrefix: IExtractionSpec = {
       ...testExtractionSpec,
