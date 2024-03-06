@@ -179,7 +179,7 @@ export async function chopCSVFileStream(
     let state = ReadState.READING_HEADER as ReadState;
 
     let lineCounter = 0;
-    let handleCounter = 0;
+    let chunkCounter = 0;
 
     const myReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
@@ -214,7 +214,7 @@ export async function chopCSVFileStream(
           if (lineBuffer.length > maxBufferSize) {
             rl.pause();
 
-            handleCounter++;
+            chunkCounter++;
             //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
@@ -225,7 +225,7 @@ export async function chopCSVFileStream(
               runningDate,
               reportId,
               keyData,
-              handleCounter,
+              chunkCounter,
             );
             //  log.info("handled bufferd: " + handleCounter);
           }
@@ -253,12 +253,13 @@ export async function chopCSVFileStream(
     // Last content of lineBuffer not handled yet
     log.info('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
+      chunkCounter++;
       await writeFileChunkToQueueS3(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
         runningDate,
         reportId,
         keyData,
-        handleCounter + 1,
+        chunkCounter,
       );
     }
 
@@ -267,7 +268,7 @@ export async function chopCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    log.info('Wrote files to csv bucket ' + fileBaseName + ' ' + handleCounter);
+    log.info('Wrote files to csv bucket ' + fileBaseName + ' ' + Counter);
     await updateRaporttiStatus(reportId, 'PARSING', null);
     log.info('HEllo suscses done');
     return 'success';

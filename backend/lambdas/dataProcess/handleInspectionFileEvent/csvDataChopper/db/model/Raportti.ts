@@ -21,4 +21,6 @@ export type Raportti = {
   raportin_kategoria: string | null;
   tiedoston_koko_kb: string | null;
   status: string | null;
+  chunks_to_process: number | null;
+  events: string | null;
 };
