@@ -1,8 +1,8 @@
-import { IFileResult, ParseValueResult } from '../../../../types';
+import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import {
-  convertToDBRow,
-  getDBConnection,
+  convertToDBRow, raporttiChunksToProcess, substractRaporttiChunk, updateRaporttiChunks,
+  updateRaporttiStatus,
   writeRowsToDB,
 } from '../../handleInspectionFileEvent/csvDataChopper/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
@@ -14,7 +14,6 @@ import { tgSchema } from './csvSchemas/tgCsvSchema';
 import { tsightSchema } from './csvSchemas/tsightCsvSchema';
 import { ZodObject } from 'zod';
 import {
-  readRunningDate,
   readRunningDateFromLine,
   replaceSeparators,
   tidyUpFileBody,
@@ -23,35 +22,6 @@ import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-
-async function updateRaporttiStatus(
-  id: number,
-  status: string,
-  error: null | string,
-) {
-  let { schema, sql } = await getDBConnection();
-  let errorSubstring = error;
-  if (error) {
-    errorSubstring = error.substring(0, 1000);
-  }
-  log.info("error mesg to db: " + errorSubstring);
-  try {
-    const a = await sql`UPDATE ${sql(
-      schema,
-    )}.raportti SET status = ${status}, error = ${errorSubstring} WHERE id = ${id};`.catch(
-      e => {
-        log.error('Error updateRaporttiStatus: ' + e);
-
-        throw e;
-      },
-    );
-    log.info('inserted:' + a);
-  } catch (e) {
-    log.error('Error updating raportti status');
-    log.error(e);
-    throw e;
-  }
-}
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -402,8 +372,16 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    log.info('HEllo suscses');
-    await updateRaporttiStatus(reportId, 'SUCCESS', null);
+    log.info('HEllo suscsesXXX');
+
+
+    await substractRaporttiChunk(reportId);
+    log.info('substractedRaporttiChunk');
+    const chunksLeft = await raporttiChunksToProcess(reportId).catch((e)=>log.error("EEEEE"));
+    log.info('HEllo chunksLeft ' + chunksLeft);
+    if(chunksLeft == 0){
+      await updateRaporttiStatus(reportId, 'SUCCESS', null);
+    }
     log.info('HEllo suscses done');
     return 'success';
   } catch (e) {

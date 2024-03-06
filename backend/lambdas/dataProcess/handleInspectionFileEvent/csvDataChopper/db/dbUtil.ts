@@ -4,7 +4,6 @@ import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../../utils/logger';
-import { isLocalDevStack } from '../../../../../../lib/utils';
 
 let connection: postgres.Sql;
 
@@ -179,3 +178,85 @@ export function convertToDBRow(
     ...rataosoite,
   };
 }
+
+export async function updateRaporttiStatus(
+  id: number,
+  status: string,
+  error: null | string,
+) {
+  let { schema, sql } = await getDBConnection();
+  let errorSubstring = error;
+  if (error) {
+    errorSubstring = error.substring(0, 1000);
+  }
+  log.info('error mesg to db: ' + errorSubstring);
+  try {
+    const a = await sql`UPDATE ${sql(schema)}.raportti
+                            SET status = ${status},
+                                error  = ${errorSubstring}
+                            WHERE id = ${id};`.catch(e => {
+      log.error('Error updateRaporttiStatus: ' + e);
+
+      throw e;
+    });
+    log.info('inserted:' + a);
+  } catch (e) {
+    log.error('Error updating raportti status');
+    log.error(e);
+    throw e;
+  }
+}
+
+export async function updateRaporttiChunks(id: number, chunks: number) {
+  let { schema, sql } = await getDBConnection();
+
+  try {
+    const a = await sql`UPDATE ${sql(
+      schema,
+    )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    log.info(a);
+  } catch (e) {
+    log.error('Error updating raportti status');
+    log.error(e);
+    throw e;
+  }
+}
+
+export async function substractRaporttiChunk(id: number) {
+  let { schema, sql } = await getDBConnection();
+
+  try {
+    const a = await sql`UPDATE ${sql(
+      schema,
+    )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
+    log.info(a);
+  } catch (e) {
+    log.error('Error updating raportti status');
+    log.error(e);
+    throw e;
+  }
+}
+
+
+export async function raporttiChunksToProcess(id: number) {
+  log.info("raporttiChunksToProcess");
+  let { schema, sql } = await getDBConnection();
+  log.info("got conn: " + schema);
+  try {
+    const chunks = await sql<Number[]>`SELECT chunks_to_process FROM ${sql(
+      schema,
+    )}.raportti  WHERE id = ${id};`.catch((e)=>{log.error(e); throw e;});
+    log.info("got chunks");
+    log.info(chunks[0]);
+    return 0;
+  } catch (e) {
+    log.error('Error SELECT chunks_to_process ');
+    log.error(e);
+    throw e;
+  }
+}
+
+
+
+
+
