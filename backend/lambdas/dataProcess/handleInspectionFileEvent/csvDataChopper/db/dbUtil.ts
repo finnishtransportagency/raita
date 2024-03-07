@@ -243,12 +243,12 @@ export async function raporttiChunksToProcess(id: number) {
   let { schema, sql } = await getDBConnection();
   log.info("got conn: " + schema);
   try {
-    const chunks = await sql<Number[]>`SELECT chunks_to_process FROM ${sql(
+    const chunks = await sql`SELECT chunks_to_process FROM ${sql(
       schema,
     )}.raportti  WHERE id = ${id};`.catch((e)=>{log.error(e); throw e;});
     log.info("got chunks");
-    log.info(chunks[0]);
-    return 0;
+
+    return Number(chunks[0].chunks_to_process);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
