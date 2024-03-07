@@ -105,6 +105,13 @@ export async function handleInspectionFileEvent(
             spec,
           });
 
+          log.info("Hello parsed metadata");
+          log.info(parseResults.metadata);
+
+
+
+
+
           if (parseResults.errors) {
             await adminLogger.error(
               `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,

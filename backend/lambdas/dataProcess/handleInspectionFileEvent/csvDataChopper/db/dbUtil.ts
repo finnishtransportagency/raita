@@ -222,6 +222,22 @@ export async function updateRaporttiChunks(id: number, chunks: number) {
   }
 }
 
+export async function updateRaporttiMetadata(id: number, chunks: number) {
+  let { schema, sql } = await getDBConnection();
+
+  try {
+    const a = await sql`UPDATE ${sql(
+      schema,
+    )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    log.info(a);
+  } catch (e) {
+    log.error('Error updating raportti status');
+    log.error(e);
+    throw e;
+  }
+}
+
+
 export async function substractRaporttiChunk(id: number) {
   let { schema, sql } = await getDBConnection();
 
