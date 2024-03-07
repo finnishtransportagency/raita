@@ -45,12 +45,16 @@ export function MultiChoice(props: Props) {
           </option>
         )}
         {items
-          .filter(item => item.key.toLocaleLowerCase().includes(searchValue))
           .sort((a, b) => (a.value > b.value ? 1 : -1))
-          .map((it, ix) => {
+          .map((item, ix) => {
+            const visible = item.key.toLocaleLowerCase().includes(searchValue);
             return (
-              <option key={ix} value={it.value}>
-                {it.key}
+              <option
+                key={ix}
+                value={item.value}
+                className={visible ? '' : 'hidden'}
+              >
+                {item.key}
               </option>
             );
           })}
