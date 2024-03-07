@@ -1,13 +1,19 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import { Raportti } from './db/model/Raportti';
-import {getDBConnection, updateRaporttiChunks, updateRaporttiStatus} from './db/dbUtil';
+import {
+  getDBConnection,
+  updateRaporttiChunks,
+  updateRaporttiStatus,
+} from './db/dbUtil';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvUtils/csvConversionUtils';
+import {getLambdaConfigOrFail} from "../handleInspectionFileEvent";
+import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
-//metadata isn't inserterd yet; metadata is available only after streaming thu file; todo insert metadata in backend/lambdas/dataProcess/handleCSVFileEvent
+//metadata isn't inserted yet; metadata is available only after streaming thu file; todo insert metadata in backend/lambdas/dataProcess/handleCSVFileEvent
 export async function insertRaporttiData(
   fileBaseName: string,
   fileNamePrefix: string,
@@ -81,7 +87,7 @@ async function writeFileChunkToQueueS3(
 
   log.info('outFileName ' + outFileName);
 
- /* const config = getLambdaConfigOrFail();
+  const config = getLambdaConfigOrFail();
 
   log.info('config.targetBucketName' + config.inspectionBucket);
 
@@ -92,7 +98,7 @@ async function writeFileChunkToQueueS3(
     Body: Buffer.from(inputFileChunkBody),
   });
   const s3Client = new S3Client({});
-  await s3Client.send(command);*/
+  await s3Client.send(command);
 
   return;
 }

@@ -1,5 +1,4 @@
 import { insertRaporttiData, chopCSVFileStream } from '../csvDataChopper';
-import { amsSchema } from '../csvSchemas/amsCsvSchema';
 import {stringToStream} from "../../__tests__/testUtils";
 import * as fs from "fs";
 
