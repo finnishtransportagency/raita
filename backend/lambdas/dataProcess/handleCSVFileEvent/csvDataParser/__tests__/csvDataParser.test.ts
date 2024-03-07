@@ -177,6 +177,7 @@ describe('handle ams csv file success', () => {
        amsCsvStream,
        {},
      );
+     console.log(result);
   }, 900000);
 });
 

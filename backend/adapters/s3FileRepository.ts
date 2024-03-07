@@ -61,7 +61,7 @@ export class S3FileRepository implements IFileInterface {
       return {
         fileBody: undefined,
         contentType: undefined,
-        tags: { hello: 'wolrd' },
+        tags: {},
       };
     }
   };

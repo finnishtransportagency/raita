@@ -1,37 +1,14 @@
 import { S3Event } from 'aws-lambda';
-
 import { log } from '../../../utils/logger';
-import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import {IAdminLogger} from "../../../utils/adminLog/types";
 import {PostgresLogger} from "../../../utils/adminLog/postgresLogger";
 
-export function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
-  return {
-    configurationFile: getEnv('CONFIGURATION_FILE'),
-    csvBucket: getEnv('CSV_BUCKET'),
-    region: getEnv('REGION'),
-  };
-}
-
 const adminLogger: IAdminLogger = new PostgresLogger();
 
-/**
- * Currently function takes in S3 events. This has implication that file port
- * does not make sense conceptually as we are committed in S3 from the outset.
- * Should we make the handling more generic from the start, accepting also HTTP trigger
- * events and using Strategy pattern possibly to plug in correct file backend based on
- * config or even event details.
- *
- * TODO: Parsing should be extracted out out the S3Event handler.
- *
- */
 export async function handleCSVFileEvent(event: S3Event): Promise<void> {
-  const config = getLambdaConfigOrFail();
-  //const backend = BackendFacade.getBackend(config);
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
   try {
@@ -39,15 +16,14 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
       try {
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start csv file handler');
-        log.info("HELLO1");
-        log.info(eventRecord);
-        log.info("HELLO2");
+        log.debug({ fileName: key }, 'Start csv file handler');
+        log.debug(eventRecord);
+
         const fileStreamResult = await files.getFileStream(eventRecord, false);
-        log.info("HELLO3");
-        log.info(fileStreamResult);
+
+        log.debug(fileStreamResult);
         const keyData = getKeyData(key);
-        log.info(keyData);
+        log.debug(keyData);
 
         if (!isCsvSuffix(keyData.fileSuffix)) {
           log.info(
@@ -57,18 +33,16 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
           return null;
         }
 
-        log.info('fileStreamResult ' + fileStreamResult);
-        log.info('fileStreamResult ' + fileStreamResult.fileStream);
 
         if (fileStreamResult && fileStreamResult.fileStream) {
 
-          log.info('csv parse file: ' + keyData.fileBaseName);
+          log.debug('csv parse file: ' + keyData.fileBaseName);
           const result = await parseCSVFileStream(
             keyData,
             fileStreamResult.fileStream,
             null,
           );
-          log.info('csv parsing result: ' + result);
+          log.debug('csv parsing result: ' + result);
 
           return {
             // key is sent to be stored in url decoded format to db
@@ -90,7 +64,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
     });
 
     const entries = await Promise.all(recordResults).then(
-      results => log.info(results),
+      results => log.debug(results),
     );
   } catch (err) {
     // TODO: Figure out proper error handling.

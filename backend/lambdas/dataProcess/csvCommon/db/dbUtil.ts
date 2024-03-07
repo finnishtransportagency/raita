@@ -1,18 +1,16 @@
 import postgres from 'postgres';
-import { getEnvOrFail } from '../../../../../../utils';
-import { getSecretsManagerSecret } from '../../../../../utils/secretsManager';
+import { getEnvOrFail } from '../../../../../utils';
+import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
-import { log } from '../../../../../utils/logger';
+import { log } from '../../../../utils/logger';
 
 let connection: postgres.Sql;
 
 export async function getDBConnection() {
   let schema;
   let sql;
-  log.info('STACK_ID' + process.env.STACK_ID);
-  log.info('ENVIRONMENT' + process.env.ENVIRONMENT);
-  //  if (isLocalDevStack()) {
+  //  if (isLocalDevStack()) { (ei toiminut)
   if (process.env.ENVIRONMENT == 'kalle') {
     schema = 'public';
     sql = await getConnectionLocalDev();
@@ -22,7 +20,7 @@ export async function getDBConnection() {
   }
   return { schema, sql };
 }
-//UPDATE yourtable SET geom = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326);
+
 
 async function populateGisPointsForTable(
   schema: string,
@@ -84,8 +82,7 @@ export async function writeRowsToDB(
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`.catch(e => {
-      // log.error('XError inserting measurement data: ' + table + ' ' + e);
-      // log.error(e);
+      log.error(e);
       throw e;
     });
 
@@ -239,14 +236,11 @@ export async function substractRaporttiChunk(id: number) {
 
 
 export async function raporttiChunksToProcess(id: number) {
-  log.info("raporttiChunksToProcess");
   let { schema, sql } = await getDBConnection();
-  log.info("got conn: " + schema);
   try {
     const chunks = await sql`SELECT chunks_to_process FROM ${sql(
       schema,
     )}.raportti  WHERE id = ${id};`.catch((e)=>{log.error(e); throw e;});
-    log.info("got chunks");
 
     return Number(chunks[0].chunks_to_process);
   } catch (e) {

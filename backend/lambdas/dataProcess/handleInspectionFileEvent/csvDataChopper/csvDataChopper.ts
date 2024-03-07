@@ -1,15 +1,15 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { Raportti } from './db/model/Raportti';
+import { Raportti } from '../../csvCommon/db/model/Raportti';
 import {
   getDBConnection,
   updateRaporttiChunks,
   updateRaporttiStatus,
-} from './db/dbUtil';
+} from '../../csvCommon/db/dbUtil';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-import { readRunningDateFromLine } from '../../csvUtils/csvConversionUtils';
+import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
 import {getLambdaConfigOrFail} from "../handleInspectionFileEvent";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
@@ -62,7 +62,7 @@ export async function insertRaporttiData(
     const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
       data,
     )} returning id`;
-    log.info(id);
+    log.debug(id);
     return id.id;
   } catch (e) {
     log.error('Error inserting raportti data');
@@ -85,11 +85,11 @@ async function writeFileChunkToQueueS3(
   const outFileName =
     'chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
 
-  log.info('outFileName ' + outFileName);
+  log.debug('outFileName ' + outFileName);
 
   const config = getLambdaConfigOrFail();
 
-  log.info('config.targetBucketName' + config.inspectionBucket);
+  log.debug('config.targetBucketName' + config.inspectionBucket);
 
   const command = new PutObjectCommand({
     Bucket: config.csvBucket,
@@ -111,7 +111,7 @@ const allowedPrefixes = ['AMS', 'OHL', 'PI', 'RC', 'RP', 'TG', 'TSIGHT'];
 
 async function checkFilenamePrefix(fileNamePrefix: string) {
   if (allowedPrefixes.find(s => s === fileNamePrefix)) {
-    log.info('prefix ok ' + fileNamePrefix);
+    log.debug('prefix ok ' + fileNamePrefix);
   } else {
     log.warn('Unknown csv file prefix: ' + fileNamePrefix);
     throw new Error('Unknown csv file prefix:');
@@ -145,7 +145,7 @@ export async function chopCSVFileStream(
     null,
     'CHOPPING',
   );
-  log.info('reportId: ' + reportId);
+  log.debug('reportId: ' + reportId);
   checkFilenamePrefix(jarjestelma);
 
   try {
@@ -176,12 +176,12 @@ export async function chopCSVFileStream(
         if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
           if (lineBuffer[0].search('Running Date') != -1) {
             runningDate = readRunningDateFromLine(lineBuffer[0]);
-            log.info('runningdate set: ' + runningDate);
+            log.debug('runningdate set: ' + runningDate);
           } else {
             csvHeaderLine = lineBuffer[0];
             state = ReadState.READING_BODY;
             lineBuffer = [];
-            log.info('csvHeaderLine set 0: ' + csvHeaderLine);
+            log.debug('csvHeaderLine set 0: ' + csvHeaderLine);
           }
         }
 
@@ -190,7 +190,7 @@ export async function chopCSVFileStream(
           csvHeaderLine = lineBuffer[1];
           state = ReadState.READING_BODY;
           lineBuffer = [];
-          log.info('csvHeaderLine set: ' + csvHeaderLine);
+          log.debug('csvHeaderLine set: ' + csvHeaderLine);
         }
 
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
@@ -199,11 +199,11 @@ export async function chopCSVFileStream(
             rl.pause();
 
             chunkCounter++;
-            //  log.info("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
+            //  log.debug("handle bufferd: " + handleCounter + " line counter: " + lineCounter);
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            log.info('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
+            log.debug('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
             await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               runningDate,
@@ -211,7 +211,7 @@ export async function chopCSVFileStream(
               keyData,
               chunkCounter,
             );
-            //  log.info("handled bufferd: " + handleCounter);
+            //  log.debug("handled bufferd: " + handleCounter);
           }
         }
       });
@@ -219,23 +219,23 @@ export async function chopCSVFileStream(
         log.warn('error ');
       });
       rl.on('close', function () {
-        log.info('closed');
+        log.debug('closed');
         resolve();
       });
     });
 
     try {
-      log.info('await myReadPromise');
+      log.debug('await myReadPromise');
       await myReadPromise;
-      log.info('awaited myReadPromise');
+      log.debug('awaited myReadPromise');
     } catch (err) {
       log.warn('an error has occurred ' + err);
     }
 
-    log.info('Reading file line by line with readline done.' + lineCounter);
+    log.debug('Reading file line by line with readline done.' + lineCounter);
 
     // Last content of lineBuffer not handled yet
-    log.info('buffer lines to write: ' + lineBuffer.length + state);
+    log.debug('buffer lines to write: ' + lineBuffer.length + state);
     if (state == ReadState.READING_BODY && lineBuffer.length) {
       chunkCounter++;
       await writeFileChunkToQueueS3(
@@ -248,14 +248,14 @@ export async function chopCSVFileStream(
     }
 
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    log.info(
+    log.debug(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    log.info('Wrote files to csv bucket ' + fileBaseName + ' ' + chunkCounter);
+    log.debug('Wrote files to csv bucket ' + fileBaseName + ' ' + chunkCounter);
     await updateRaporttiStatus(reportId, 'PARSING', null);
     updateRaporttiChunks(reportId, chunkCounter);
-    log.info('HEllo suscses done');
+    log.debug('Chopped file successfully: ' + fileBaseName);
     return 'success';
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());
