@@ -17,6 +17,7 @@ interface FrontendStackProps extends NestedStackProps {
 
 export class FrontendStack extends NestedStack {
   public readonly frontendBucket: Bucket;
+  public readonly maintenancePageBucket: Bucket;
 
   constructor(scope: Construct, id: string, props: FrontendStackProps) {
     super(scope, id, props);
@@ -34,6 +35,18 @@ export class FrontendStack extends NestedStack {
     new BucketDeployment(this, 'FrontendDeployment', {
       sources: [Source.asset(path.join(__dirname, buildDir))],
       destinationBucket: this.frontendBucket,
+    });
+
+    this.maintenancePageBucket = createRaitaBucket({
+      scope: this,
+      name: 'maintenance-page',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+    const maintenanceBuildDir = '../frontend/maintenance_page';
+    new BucketDeployment(this, 'MaintenancePageDeployment', {
+      sources: [Source.asset(path.join(__dirname, maintenanceBuildDir))],
+      destinationBucket: this.maintenancePageBucket,
     });
     if (isDevelopmentPreMainStack(stackId, raitaEnv)) {
       // save bucket arn for use by main stack, in dev premain stack only

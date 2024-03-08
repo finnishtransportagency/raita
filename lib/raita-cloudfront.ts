@@ -87,6 +87,32 @@ export class CloudfrontStack extends Stack {
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
       };
 
+      const maintenanceBehavior = {
+        origin: new origins.S3Origin(frontendStack.maintenancePageBucket, {
+          originAccessIdentity: cloudfrontOAI,
+        }),
+        functionAssociations: [
+          {
+            function: new cloudfront.Function(
+              this,
+              'HandleMaintenanceFunction',
+              {
+                code: cloudfront.FunctionCode.fromFile({
+                  filePath: path.join(
+                    __dirname,
+                    '../backend/lambdas/cloudfront/frontendRedirect/redirectToIndex.js',
+                  ),
+                }),
+              },
+            ),
+            eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+          },
+        ],
+        allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      };
+
       let importedBucket = null;
       if (isDevelopmentMainStack(stackId, raitaEnv)) {
         const bucketArnParam = StringParameter.fromStringParameterName(
@@ -133,6 +159,7 @@ export class CloudfrontStack extends Stack {
           cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
         };
         additionalBehaviors = {
+          [`/maintenance`]: maintenanceBehavior,
           [`/premain/api*`]: apiProxyBehavior,
           [`/api*`]: apiProxyBehavior,
           [`/premain*`]: frontEndPremainBehavior,
@@ -140,7 +167,9 @@ export class CloudfrontStack extends Stack {
         };
       } else {
         // production
+        // maintenance behavior path can be changesd to * to enable showing maintenance page
         additionalBehaviors = {
+          [`/maintenance`]: maintenanceBehavior,
           [`/api*`]: apiProxyBehavior,
           [`/oauth2*`]: apiProxyBehavior,
         };
