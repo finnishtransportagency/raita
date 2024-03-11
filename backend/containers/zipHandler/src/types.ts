@@ -17,6 +17,7 @@ export interface ZipFileData {
   timeStamp: string;
   timeStampType: string;
   fileName: string;
+  metadata: { [key: string]: string };
 }
 
 export function isZipPath(arg: Array<string>): arg is ZipPath {

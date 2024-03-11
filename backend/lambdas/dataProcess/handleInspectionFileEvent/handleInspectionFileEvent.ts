@@ -94,7 +94,7 @@ export async function handleInspectionFileEvent(
         }
         const parseResults = await parseFileMetadata({
           keyData,
-          file,
+          fileStream: file.fileStream,
           spec,
         });
         if (parseResults.errors) {
@@ -104,6 +104,10 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
+        const s3MetaData = file.metaData;
+        const skipHashCheck =
+          s3MetaData['skip-hash-check'] !== undefined &&
+          Number(s3MetaData['skip-hash-check']) === 1;
         return {
           // key is sent to be stored in url decoded format to db
           key,
@@ -114,6 +118,9 @@ export async function handleInspectionFileEvent(
           metadata: parseResults.metadata,
           hash: parseResults.hash,
           tags: file.tags,
+          options: {
+            skip_hash_check: skipHashCheck,
+          },
         };
       });
       // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.

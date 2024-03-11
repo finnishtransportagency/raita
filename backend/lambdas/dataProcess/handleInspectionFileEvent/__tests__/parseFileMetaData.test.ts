@@ -131,13 +131,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
-    const fileData = {
-      fileStream: stringToStream(testFileBody),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -167,13 +163,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
-    const fileData = {
-      fileStream: stringToStream('dummy'),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -199,13 +191,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
-    const fileData = {
-      fileStream: stringToStream('dummy'),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -235,13 +223,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
-    const fileData = {
-      fileStream: stringToStream(testFileBody),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -269,13 +253,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
-    const fileData = {
-      fileStream: stringToStream(testFileBody),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -304,13 +284,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
-    const fileData = {
-      fileStream: stringToStream('dummy'),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
@@ -339,13 +315,9 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
-    const fileData = {
-      fileStream: stringToStream(testFileBody),
-      tags: {}, // TODO what is this
-    };
     const params = {
       keyData,
-      file: fileData,
+      fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
     const result = await parseFileMetadata(params);
