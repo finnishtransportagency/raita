@@ -50,7 +50,12 @@ export function tidyUpHeaderLine(csvHeaderLine: string): string {
     .replace(/ä/g, 'a')
     .replace(/ö/g, 'o')
     //remove degree signs
-    .replace(/°/g, '');
+    .replace(/°/g, '')
+    //removeDoubleQuotes
+    .replace(/\"/g, '')
+    //replace zero-width chars
+    .replace(/([\u200B]+|[\u200C]+|[\u200D]+|[\u200E]+|[\u200F]+|[\uFEFF]+)/g, '');
+
 
   return tidyedHeaderLine;
 }
