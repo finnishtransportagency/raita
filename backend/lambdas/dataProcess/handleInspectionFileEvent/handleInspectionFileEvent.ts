@@ -18,6 +18,7 @@ import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import cloneable from 'cloneable-readable';
+import {updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -142,7 +143,7 @@ export async function handleInspectionFileEvent(
 
       log.info("HELLO ENTRIES");
       log.info(entries);
-
+      updateRaporttiMetadata(entries);
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);
