@@ -237,7 +237,7 @@ export async function updateRaporttiStatus(
 export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
   let { schema, sql } = await getDBConnection();
   for (const metaDataEntry of data) {
-    metaDataEntry.reportId
+
 
     try {
       let id;
@@ -247,9 +247,15 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
       else{
         throw new Error("ReportID unefined")
       }
+
+      let tiedostotyyppi = metaDataEntry.metadata["tiedostotyyppi"];
+      let zip_vastaanotto_vuosi =  metaDataEntry.metadata["zip_reception__year"];
+
       const a = await sql`UPDATE ${sql(schema)}.raportti
                             SET tiedostonimi = ${metaDataEntry.file_name},
-                                tiedoston_koko_kb  = ${metaDataEntry.size}
+                                tiedoston_koko_kb  = ${metaDataEntry.size},
+                                tiedostotyyppi = ${tiedostotyyppi},
+                                zip_vastaanotto_vuosi = ${zip_vastaanotto_vuosi}
                             WHERE id = ${id};`.catch(e => {
         log.error('Error updateRaporttiStatus: ' + e);
 
