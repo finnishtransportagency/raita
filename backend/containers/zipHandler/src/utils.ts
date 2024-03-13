@@ -91,6 +91,7 @@ export const uploadToS3 = ({
       Tagging: `ZipTimeStamp=${zipFileData.timeStamp}&ZipTimeStampType=${
         zipFileData.timeStampType
       }&ZipFileName=${encodeURIComponent(zipFileData.fileName)}`,
+      Metadata: zipFileData.metadata,
     },
   });
   return {

@@ -35,7 +35,12 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
-
+    const zipMetadata = getObjectResult.Metadata ?? {};
+    // pass on relevant metadata fields from zip file to extracted files
+    const metadataForFiles: any = {};
+    if (zipMetadata['skip-hash-check']) {
+      metadataForFiles['skip-hash-check'] = zipMetadata['skip-hash-check'];
+    }
     // Timestamp is needed to tie the extracted files and meta data entries into the zip
     // file they were extracted from. The LastModified here should always equal to the moment
     // when zip was uploaded to the S3 bucket. As a backup, a secondary processing date is provided.
@@ -44,11 +49,13 @@ async function start() {
           timeStamp: getObjectResult.LastModified.toISOString(),
           timeStampType: 'zipLastModified',
           fileName,
+          metadata: metadataForFiles,
         }
       : {
           timeStamp: new Date().toISOString(),
           timeStampType: 'zipProcessed',
           fileName,
+          metadata: metadataForFiles,
         };
 
     const readStream = getObjectResult.Body as Readable;

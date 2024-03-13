@@ -89,18 +89,19 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       });
       exists = null;
     }
+    const skipHashCheck = entry.options.skip_hash_check;
     // Double check, as opensearch can sometimes give "relevant" results even
     // if they are not complete matches. This way we can be sure to only
     // update documents that we are supposed to.
     const docToUpdate =
-      exists && exists.hits.find(doc => doc._source.key === key);
+      exists && exists.hits.find((doc: any) => doc._source.key === key);
     if (!exists || !docToUpdate) {
       await wrapRetryOnTooManyRequests(
         () => this.addDoc(client, entry),
         initialRetryWait,
         maxRetryWait,
       );
-    } else if (hash !== docToUpdate._source.hash) {
+    } else if (skipHashCheck || hash !== docToUpdate._source.hash) {
       await wrapRetryOnTooManyRequests(
         () => this.updateDoc(client, docToUpdate._id, entry),
         initialRetryWait,

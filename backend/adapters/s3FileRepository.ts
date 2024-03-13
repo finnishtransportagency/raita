@@ -2,6 +2,7 @@ import { S3EventRecord } from 'aws-lambda';
 import { S3 } from 'aws-sdk';
 import { IFileResult, IFileStreamResult } from '../types';
 import { IFileInterface } from '../types/portFile';
+import { log } from '../utils/logger';
 
 export class S3FileRepository implements IFileInterface {
   #s3: S3;
@@ -49,6 +50,13 @@ export class S3FileRepository implements IFileInterface {
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
     );
+    // get metadata separately with head request because fileStream only contains file body
+    const headPromise = this.#s3
+      .headObject({
+        Bucket: bucket,
+        Key: key,
+      })
+      .promise();
     const fileStream = this.#s3
       .getObject({
         Bucket: bucket,
@@ -69,9 +77,12 @@ export class S3FileRepository implements IFileInterface {
       },
       {} as Record<string, string>,
     );
+    const headResponse = await headPromise;
     return {
       fileStream,
+      contentType: headResponse.ContentType,
       tags,
+      metaData: headResponse.Metadata ?? {},
     };
   };
 }
