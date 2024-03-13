@@ -15,6 +15,7 @@ export interface FileMetadataEntry {
   bucket_arn: string;
   metadata: ParseValueResult;
   hash: string | undefined;
+  reportId: number | undefined;
 }
 
 export interface IFileResult {

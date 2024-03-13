@@ -204,7 +204,6 @@ export async function updateRaporttiStatus(
   }
 }
 
-
 /*key": "Meeri/2022/Kamppis/20220202/20221020_TG_AMS_OHL_CW_Reports/554/KONVUS/1/2022/Over Head Line Geometry/20221020_144556/TextualReports/OHL_20221020_554_KONVUS_1_662_753.csv",
 "file_name": "OHL_20221020_554_KONVUS_1_662_753.csv",
   "bucket_arn": "arn:aws:s3:::s3-raita-dev-premain-inspection-data",
@@ -237,25 +236,24 @@ export async function updateRaporttiStatus(
 export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
   let { schema, sql } = await getDBConnection();
   for (const metaDataEntry of data) {
-
-
+    const raporttiData = {
+      size: metaDataEntry.size,
+      ...metaDataEntry.metadata,
+    };
+    console.log(raporttiData);
     try {
       let id;
-      if(metaDataEntry.reportId){
+      if (metaDataEntry.reportId) {
         id = metaDataEntry.reportId;
-      }
-      else{
-        throw new Error("ReportID unefined")
+      } else {
+        throw new Error('ReportID unefined');
       }
 
-      let tiedostotyyppi = metaDataEntry.metadata["tiedostotyyppi"];
-      let zip_vastaanotto_vuosi =  metaDataEntry.metadata["zip_reception__year"];
+      let tiedostotyyppi = metaDataEntry.metadata['tiedostotyyppi'];
+      let zip_vastaanotto_vuosi = metaDataEntry.metadata['zip_reception__year'];
 
-      const a = await sql`UPDATE ${sql(schema)}.raportti
-                            SET tiedostonimi = ${metaDataEntry.file_name},
-                                tiedoston_koko_kb  = ${metaDataEntry.size},
-                                tiedostotyyppi = ${tiedostotyyppi},
-                                zip_vastaanotto_vuosi = ${zip_vastaanotto_vuosi}
+      const a = await sql`UPDATE ${sql(schema)}.raportti set
+                            ${sql(raporttiData)}
                             WHERE id = ${id};`.catch(e => {
         log.error('Error updateRaporttiStatus: ' + e);
 

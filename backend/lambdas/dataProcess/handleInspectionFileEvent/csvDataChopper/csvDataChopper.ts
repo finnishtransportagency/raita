@@ -10,48 +10,22 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
-import {getLambdaConfigOrFail} from "../handleInspectionFileEvent";
-import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 //metadata isn't inserted yet; metadata is available only after streaming thu file; todo insert metadata in backend/lambdas/dataProcess/handleCSVFileEvent
 export async function insertRaporttiData(
+  key: string,
   fileBaseName: string,
   fileNamePrefix: string,
   metadata: ParseValueResult | null,
-  aloitus_rata_kilometri: number | null,
-  kampanja: string | null,
-  lopetus_rata_kilometri: number | null,
-  raide_numero: number | null,
-  raportin_kategoria: string | null,
-  raportointiosuus: string | null,
-  rataosuus_numero: string | null,
-  tarkastusajon_tunniste: string | null,
-  tarkastusvaunu: string | null,
-  tiedoston_koko_kb: string | null,
-  tiedostonimi: string | null,
-  tiedostotyyppi: string | null,
   status: string | null,
 ): Promise<number> {
   const data: Raportti = {
-    aloitus_rata_kilometri,
-    kampanja,
-    lopetus_rata_kilometri,
-    raide_numero,
-    raportin_kategoria,
-    raportointiosuus,
-    rataosuus_numero,
-    tarkastusajon_tunniste,
-    tarkastusvaunu,
-    tiedoston_koko_kb,
-    tiedostonimi,
-    tiedostotyyppi,
+    key,
     status,
-    zip_tiedostonimi: fileBaseName,
-    zip_vastaanotto_pvm: new Date(),
-    zip_vastaanotto_vuosi: new Date(),
-    pvm: new Date(),
-    vuosi: new Date(),
-    jarjestelma: fileNamePrefix,
+    file_name: fileBaseName,
+    system: fileNamePrefix,
     chunks_to_process: -1,
     events: null,
   };
@@ -128,20 +102,9 @@ export async function chopCSVFileStream(
   const fileNamePrefix = fileNameParts[0];
   const jarjestelma = fileNamePrefix.toUpperCase();
   const reportId: number = await insertRaporttiData(
+    keyData.keyWithoutSuffix,
     fileBaseName,
     fileNamePrefix,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
     null,
     'CHOPPING',
   );

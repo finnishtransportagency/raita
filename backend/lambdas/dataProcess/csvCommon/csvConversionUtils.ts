@@ -100,11 +100,7 @@ export function tidyUpFileBody(csvFileBody: string) {
 
   if (tidyHeaderLine.search(/sscount/) == -1) {
     tidyHeaderLine = '"sscount",' + tidyHeaderLine;
-    log.info('tidyHeaderLine new' + tidyHeaderLine.substring(0, 15));
     tidyDataLines = tidyDataLines.replace(/\n/g, '\n,');
-    log.info(
-      'tidyDataLines.substring(0,10000)' + tidyDataLines.substring(0, 100),
-    );
   }
 
   return tidyHeaderLine.concat(tidyDataLines);
