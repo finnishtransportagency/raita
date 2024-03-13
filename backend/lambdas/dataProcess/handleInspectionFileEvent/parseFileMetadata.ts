@@ -17,7 +17,7 @@ export async function parseFileMetadata({
   keyData: KeyData;
   file: IFileStreamResult;
   spec: IExtractionSpec;
-}): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean }> {
+}): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean; reportId: number; }> {
   let errorsFound = false;
   let fileNameData: any = {};
   try {
@@ -49,6 +49,7 @@ export async function parseFileMetadata({
   }
   let fileContentData: any = {};
   let hash = '';
+  let reportId: number = -1;
   try {
     if (file.fileStream) {
       const contentResult = await parseFileContent(
@@ -58,6 +59,7 @@ export async function parseFileMetadata({
       );
       fileContentData = contentResult.contentData;
       hash = contentResult.hash;
+      reportId = contentResult.reportId;
     } else {
       throw new RaitaParseError(
         'No fileStream',
@@ -84,6 +86,26 @@ export async function parseFileMetadata({
     ...generatedMetadata,
   };
 
+
+  log.info("HELLO pathData");
+  log.info(pathData);
+
+
+  log.info("HELLO fileContentData");
+  log.info(fileContentData);
+
+
+  log.info("HELLO fileNameData");
+  log.info(fileNameData);
+
+
+  log.info("HELLO generatedMetadata");
+  log.info(generatedMetadata);
+
+
+  log.info("HELLO allMetadata");
+  log.info(allMetadata);
+
   // find any key that is marked at non parsed
   const nonParsedKeys = Object.keys(allMetadata).filter(key =>
     key.match(/^nonparsed_/),
@@ -95,6 +117,7 @@ export async function parseFileMetadata({
     metadata: allMetadata,
     hash,
     errors: errorsFound,
+    reportId,
   };
 }
 

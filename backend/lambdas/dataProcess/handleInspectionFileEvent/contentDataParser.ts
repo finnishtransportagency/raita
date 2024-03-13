@@ -119,9 +119,9 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-): Promise<{ contentData: ParseValueResult; hash: string }> => {
+): Promise<{ contentData: ParseValueResult; hash: string;  reportId: number }> => {
   let contentPromise: Promise<ParseValueResult>;
-  let csvPromise: Promise<string>;
+  let csvPromise: Promise<number>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
@@ -135,7 +135,7 @@ export const parseFileContent = async (
     );
     log.info('csv parsing result: ' + csvPromise);
   } else {
-    csvPromise = Promise.resolve("");
+    csvPromise = Promise.resolve(-1);
   }
 
   if (shouldParseContent(keyData.fileSuffix)) {
@@ -145,9 +145,10 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData] = await Promise.all([hashPromise, contentPromise, csvPromise]);
+  const [hash, contentData, reportId] = await Promise.all([hashPromise, contentPromise, csvPromise]);
   return {
     contentData,
     hash,
+    reportId
   };
 };

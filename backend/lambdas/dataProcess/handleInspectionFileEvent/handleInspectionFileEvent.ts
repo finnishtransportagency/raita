@@ -105,6 +105,8 @@ export async function handleInspectionFileEvent(
             spec,
           });
 
+          log.info("HELLO got report id:  " + parseResults.reportId)
+
           if (parseResults.errors) {
             await adminLogger.error(
               `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -124,6 +126,7 @@ export async function handleInspectionFileEvent(
             metadata: parseResults.metadata,
             hash: parseResults.hash,
             tags: fileStreamResult.tags,
+            reportId: parseResults.reportId,
           };
         } else return null;
       },
@@ -135,6 +138,11 @@ export async function handleInspectionFileEvent(
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
+
+
+      log.info("HELLO ENTRIES");
+      log.info(entries);
+
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);

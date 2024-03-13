@@ -256,10 +256,10 @@ export async function chopCSVFileStream(
     await updateRaporttiStatus(reportId, 'PARSING', null);
     updateRaporttiChunks(reportId, chunkCounter);
     log.debug('Chopped file successfully: ' + fileBaseName);
-    return 'success';
+    return reportId;
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString());
-    return 'error';
+    return -1;
   }
 }
