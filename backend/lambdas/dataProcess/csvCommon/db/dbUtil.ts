@@ -160,6 +160,10 @@ function constructRataosoite(track: string, location: string): Rataosoite {
   return rataosoite;
 }
 
+function convertCoord(coord: string) {
+  return Number(coord.replace(/[^0-9$.,]/g, ''));
+}
+
 export function convertToDBRow(
   row: Mittaus,
   runningDate: Date,
@@ -167,11 +171,16 @@ export function convertToDBRow(
   fileNamePrefix: string,
 ) {
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
+  const lat = convertCoord(row.latitude);
+  const long = convertCoord(row.longitude);
+
   return {
     ...row,
     raportti_id: reportId,
     running_date: runningDate,
     jarjestelma: fileNamePrefix,
+    lat,
+    long,
     ...rataosoite,
   };
 }
