@@ -106,7 +106,6 @@ export async function handleInspectionFileEvent(
             spec,
           });
 
-          log.info("HELLO got report id:  " + parseResults.reportId)
 
           if (parseResults.errors) {
             await adminLogger.error(
@@ -141,9 +140,7 @@ export async function handleInspectionFileEvent(
       );
 
 
-      log.info("HELLO ENTRIES");
-      log.info(entries);
-      updateRaporttiMetadata(entries);
+      await updateRaporttiMetadata(entries);
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);
