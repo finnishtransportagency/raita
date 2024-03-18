@@ -108,7 +108,7 @@ async function getConnection() {
     password,
     transform: { undefined: null },
     idle_timeout: 20,
-    max_lifetime: 30,
+    max_lifetime: 120,
   });
   return connection;
 }
