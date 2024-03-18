@@ -4,7 +4,8 @@ import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
-import { FileMetadataEntry } from '../../../../types';
+import { FileMetadataEntry, ParseValueResult } from '../../../../types';
+import { Raportti } from './model/Raportti';
 
 let connection: postgres.Sql;
 
@@ -35,6 +36,7 @@ async function populateGisPointsForTable(
   sqlString += ' where sijainti IS NULL';
 
   await sql.unsafe(sqlString);
+  await sql.end();
 }
 
 async function populateGisPoints(
@@ -70,6 +72,7 @@ async function populateGisPoints(
     sqlString += ';';
   });
   await sql.unsafe(sqlString);
+  await sql.end();
 }
 
 export async function writeRowsToDB(
@@ -88,9 +91,10 @@ export async function writeRowsToDB(
 
     //  await populateGisPoints(rows, schema, table, sql);
     //  log.info("populatedGisPoints ");
-
+    await sql.end();
     return rows.length;
   } catch (e) {
+    await sql.end();
     // log.error('Error inserting measurement data: ' + table + ' ' + e);
     // log.error(e);
     throw e;
@@ -102,7 +106,12 @@ async function getConnection() {
     return connection;
   }
   const password = await getSecretsManagerSecret('database_password');
-  connection = postgres({ password, transform: { undefined: null } });
+  connection = postgres({
+    password,
+    transform: { undefined: null },
+    idle_timeout: 20,
+    max_lifetime: 30,
+  });
   return connection;
 }
 
@@ -115,6 +124,8 @@ export async function getConnectionLocalDev() {
     password,
     username: 'postgres',
     transform: { undefined: null },
+    idle_timeout: 20,
+    max_lifetime: 30,
   });
   return connection;
 }
@@ -205,10 +216,12 @@ export async function updateRaporttiStatus(
 
       throw e;
     });
+    await sql.end();
     log.info('inserted:' + a);
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
+    await sql.end();
     throw e;
   }
 }
@@ -268,10 +281,12 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
 
         throw e;
       });
+      await sql.end();
       log.info('inserted:' + a);
     } catch (e) {
       log.error('Error updating raportti status');
       log.error(e);
+      await sql.end();
       throw e;
     }
   }
@@ -284,10 +299,12 @@ export async function updateRaporttiChunks(id: number, chunks: number) {
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    await sql.end();
     log.info(a);
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
+    await sql.end();
     throw e;
   }
 }
@@ -299,10 +316,12 @@ export async function substractRaporttiChunk(id: number) {
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
+    await sql.end();
     log.info(a);
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
+    await sql.end();
     throw e;
   }
 }
@@ -316,11 +335,45 @@ export async function raporttiChunksToProcess(id: number) {
       log.error(e);
       throw e;
     });
-
+    await sql.end();
     return Number(chunks[0].chunks_to_process);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
+    await sql.end();
+    throw e;
+  }
+}
+
+export async function insertRaporttiData(
+  key: string,
+  fileBaseName: string,
+  fileNamePrefix: string,
+  metadata: ParseValueResult | null,
+  status: string | null,
+): Promise<number> {
+  const data: Raportti = {
+    key,
+    status,
+    file_name: fileBaseName,
+    system: fileNamePrefix,
+    chunks_to_process: -1,
+    events: null,
+  };
+
+  let { schema, sql } = await getDBConnection();
+
+  try {
+    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
+      data,
+    )} returning id`;
+    log.debug(id);
+    await sql.end();
+    return id.id;
+  } catch (e) {
+    log.error('Error inserting raportti data');
+    log.error(e);
+    await sql.end();
     throw e;
   }
 }

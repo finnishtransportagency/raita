@@ -1,8 +1,6 @@
-import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import { Raportti } from '../../csvCommon/db/model/Raportti';
 import {
-  getDBConnection,
+  insertRaporttiData,
   updateRaporttiChunks,
   updateRaporttiStatus,
 } from '../../csvCommon/db/dbUtil';
@@ -12,38 +10,6 @@ import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
 import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-
-//metadata isn't inserted yet; metadata is available only after streaming thu file; todo insert metadata in backend/lambdas/dataProcess/handleCSVFileEvent
-export async function insertRaporttiData(
-  key: string,
-  fileBaseName: string,
-  fileNamePrefix: string,
-  metadata: ParseValueResult | null,
-  status: string | null,
-): Promise<number> {
-  const data: Raportti = {
-    key,
-    status,
-    file_name: fileBaseName,
-    system: fileNamePrefix,
-    chunks_to_process: -1,
-    events: null,
-  };
-
-  let { schema, sql } = await getDBConnection();
-
-  try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
-    log.debug(id);
-    return id.id;
-  } catch (e) {
-    log.error('Error inserting raportti data');
-    log.error(e);
-    throw e;
-  }
-}
 
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,

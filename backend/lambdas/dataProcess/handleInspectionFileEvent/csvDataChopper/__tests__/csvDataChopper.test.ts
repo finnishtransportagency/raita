@@ -1,9 +1,9 @@
-import { insertRaporttiData, chopCSVFileStream } from '../csvDataChopper';
+import { chopCSVFileStream } from '../csvDataChopper';
 import { stringToStream } from '../../__tests__/testUtils';
 import * as fs from 'fs';
 import { log } from '../../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../../types';
-import {updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
+import {insertRaporttiData, updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -168,7 +168,7 @@ describe('insert raportti success', () => {
   test('success: normal run', async () => {
     const result = await insertRaporttiData(
       'polku ja tiedostonimi',
-      'tiedostonimu',
+      'tiedostonimi',
       'AMS',
       null,
       'CHOPPING',
