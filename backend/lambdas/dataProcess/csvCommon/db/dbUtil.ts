@@ -7,7 +7,7 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
 
-let connection: postgres.Sql;
+
 
 export async function getDBConnection() {
   let schema;
@@ -102,11 +102,9 @@ export async function writeRowsToDB(
 }
 
 async function getConnection() {
-  if (connection) {
-    return connection;
-  }
+
   const password = await getSecretsManagerSecret('database_password');
-  connection = postgres({
+  const connection = postgres({
     password,
     transform: { undefined: null },
     idle_timeout: 20,
@@ -116,11 +114,9 @@ async function getConnection() {
 }
 
 export async function getConnectionLocalDev() {
-  if (connection) {
-    return connection;
-  }
+
   const password = 'password';
-  connection = postgres({
+  const connection = postgres({
     password,
     username: 'postgres',
     transform: { undefined: null },
