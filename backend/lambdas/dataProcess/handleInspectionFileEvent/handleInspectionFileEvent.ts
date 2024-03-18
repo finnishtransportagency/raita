@@ -97,43 +97,40 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
-
-        if (fileStreamResult && fileStreamResult.fileStream) {
-
-          const parseResults = await parseFileMetadata({
-            keyData,
-            file: fileStreamResult,
-            spec,
-          });
-
-
-          if (parseResults.errors) {
-            await adminLogger.error(
-              `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
-            );
-          } else {
-            await adminLogger.info(`Tiedosto parsittu: ${key}`);
-
-          }
-
-          return {
-            // key is sent to be stored in url decoded format to db
-            key,
-            file_name: keyData.fileName,
-            bucket_arn: eventRecord.s3.bucket.arn,
-            bucket_name: eventRecord.s3.bucket.name,
-            size: eventRecord.s3.object.size,
-            metadata: parseResults.metadata,
-            hash: parseResults.hash,
-            tags: fileStreamResult.tags,
-            reportId: parseResults.reportId,
-          };
-        } else return null;
-      },
-    );
-    // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
-    // Switch to granular error handling.
-    // Check if lambda supports es2022 and if so, switch to Promise.allSettled
+        const parseResults = await parseFileMetadata({
+          keyData,
+          fileStream: file.fileStream,
+          spec,
+        });
+        if (parseResults.errors) {
+          await adminLogger.error(
+            `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
+          );
+        } else {
+          await adminLogger.info(`Tiedosto parsittu: ${key}`);
+        }
+        const s3MetaData = file.metaData;
+        const skipHashCheck =
+          s3MetaData['skip-hash-check'] !== undefined &&
+          Number(s3MetaData['skip-hash-check']) === 1;
+        return {
+          // key is sent to be stored in url decoded format to db
+          key,
+          file_name: keyData.fileName,
+          bucket_arn: eventRecord.s3.bucket.arn,
+          bucket_name: eventRecord.s3.bucket.name,
+          size: eventRecord.s3.object.size,
+          metadata: parseResults.metadata,
+          hash: parseResults.hash,
+          tags: file.tags,
+          options: {
+            skip_hash_check: skipHashCheck,
+          },
+        };
+      });
+      // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
+      // Switch to granular error handling.
+      // Check if lambda supports es2022 and if so, switch to Promise.allSettled
 
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,

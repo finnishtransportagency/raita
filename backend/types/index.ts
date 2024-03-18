@@ -16,8 +16,13 @@ export interface FileMetadataEntry {
   metadata: ParseValueResult;
   hash: string | undefined;
   reportId: number | undefined;
+  options: {
+    skip_hash_check?: boolean;
+  };
 }
-
+export type S3CustomMetadataFields = {
+  'skip-hash-check'?: string;
+};
 export interface IFileResult {
   fileBody: string | undefined;
   contentType: string | undefined;
@@ -25,6 +30,7 @@ export interface IFileResult {
 }
 export interface IFileStreamResult {
   fileStream: Readable | undefined;
-  // contentType: removed because it is not used and more complicated to get with streams. Add back if needed
+  contentType: string | undefined;
   tags: Record<string, string>;
+  metaData: S3CustomMetadataFields;
 }
