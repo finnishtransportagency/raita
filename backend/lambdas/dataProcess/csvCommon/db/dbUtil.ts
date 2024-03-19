@@ -187,8 +187,16 @@ export function convertToDBRow(
   fileNamePrefix: string,
 ) {
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
-  const lat = convertCoord(row.latitude);
-  const long = convertCoord(row.longitude);
+  let lat = undefined;
+  let long = undefined;
+
+
+  if(row.latitude) {
+    lat = convertCoord(row.latitude);
+  }
+  if(row.longitude) {
+    long = convertCoord(row.longitude);
+  }
 
   return {
     ...row,
