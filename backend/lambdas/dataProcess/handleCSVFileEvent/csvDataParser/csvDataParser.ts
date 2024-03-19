@@ -59,8 +59,7 @@ async function parseCsvAndWriteToDb(
     );
 
     try {
-      //return await writeRowsToDB(dbRows, table);
-      return new Promise(-1);
+      return await writeRowsToDB(dbRows, table);
     } catch (e) {
       log.error('Error writing to db');
       log.error(e);
