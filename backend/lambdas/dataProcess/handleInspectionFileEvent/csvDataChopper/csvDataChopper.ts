@@ -33,7 +33,7 @@ async function writeFileChunkToQueueS3(
 
   const command = new PutObjectCommand({
     Bucket: config.csvBucket,
-    Key: outFileName,
+    Key: key.keyWithoutSuffix,
     ContentType: 'text/csv',
     Body: Buffer.from(inputFileChunkBody),
   });
