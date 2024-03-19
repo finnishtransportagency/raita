@@ -116,9 +116,11 @@ async function getConnection() {
 }
 
 export async function getConnectionLocalDev() {
-
+  if (connection) {
+    return connection;
+  }
   const password = 'password';
-  const connection = postgres({
+  connection = postgres({
     password,
     username: 'postgres',
     transform: { undefined: null },
