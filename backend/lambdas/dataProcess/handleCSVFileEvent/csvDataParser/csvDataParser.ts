@@ -24,6 +24,12 @@ import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getLambdaConfigOrFail } from '../../handleInspectionFileEvent/handleInspectionFileEvent';
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -321,8 +327,14 @@ export async function parseCSVFileStream(
       await updateRaporttiStatus(reportId, 'SUCCESS', null);
     }
 
-    log.debug('Success reading file: ' + fileBaseName);
-
+    const config = getLambdaConfigOrFail();
+    log.debug('Success reading file, deleting: ' + fileBaseName);
+    const command = new DeleteObjectCommand({
+      Bucket: config.csvBucket,
+      Key: keyData.keyWithoutSuffix,
+    });
+    const s3Client = new S3Client({});
+    await s3Client.send(command);
     return 'success';
   } catch (e) {
     log.error('csv parsing error, updating status ' + e.toString());
