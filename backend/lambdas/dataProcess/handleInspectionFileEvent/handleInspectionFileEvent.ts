@@ -99,7 +99,7 @@ export async function handleInspectionFileEvent(
         }
         const parseResults = await parseFileMetadata({
           keyData,
-          fileStream: file.fileStream,
+          fileStream: fileStreamResult.fileStream,
           spec,
         });
         if (parseResults.errors) {
@@ -109,7 +109,7 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
-        const s3MetaData = file.metaData;
+        const s3MetaData = fileStreamResult.metaData;
         const skipHashCheck =
           s3MetaData['skip-hash-check'] !== undefined &&
           Number(s3MetaData['skip-hash-check']) === 1;
@@ -122,7 +122,8 @@ export async function handleInspectionFileEvent(
           size: eventRecord.s3.object.size,
           metadata: parseResults.metadata,
           hash: parseResults.hash,
-          tags: file.tags,
+          tags: fileStreamResult.tags,
+          reportId: parseResults.reportId,
           options: {
             skip_hash_check: skipHashCheck,
           },

@@ -202,6 +202,9 @@ describe('insert raportti success', () => {
         parser_version: "1.2.0",
         parsed_at_datetime: "2024-03-13T10:14:28.427Z"
       },
+      options: {
+        skip_hash_check: true,
+      },
     };
     updateData.push(row);
     await updateRaporttiMetadata(updateData);
