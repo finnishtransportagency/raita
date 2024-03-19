@@ -105,6 +105,7 @@ export async function writeRowsToDB(
 async function getConnection() {
   if (connection) {
     connReuseCount++;
+    log.info("connReuseCount: "+connReuseCount);
     return connection;
   }
   const password = await getSecretsManagerSecret('database_password');
@@ -115,6 +116,7 @@ async function getConnection() {
     max_lifetime: 60*3,
   });
   connCount++;
+  log.info("connCount: "+connCount);
   return connection;
 }
 
