@@ -6,6 +6,7 @@ import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import {IAdminLogger} from "../../../utils/adminLog/types";
 import {PostgresLogger} from "../../../utils/adminLog/postgresLogger";
 import {getGetEnvWithPreassignedContext} from "../../../../utils";
+import {DBConnection, getDBConnection} from "../csvCommon/db/dbUtil";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -17,8 +18,11 @@ export function getLambdaConfigOrFail() {
 }
 
 const adminLogger: IAdminLogger = new PostgresLogger();
+let dbConnection: DBConnection;
+
 
 export async function handleCSVFileEvent(event: S3Event): Promise<void> {
+  dbConnection = await getDBConnection();
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
   try {
@@ -51,6 +55,7 @@ export async function handleCSVFileEvent(event: S3Event): Promise<void> {
             keyData,
             fileStreamResult.fileStream,
             null,
+            dbConnection,
           );
           log.debug('csv parsing result: ' + result);
 
