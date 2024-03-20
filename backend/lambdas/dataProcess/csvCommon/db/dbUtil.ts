@@ -114,6 +114,7 @@ async function getConnection() {
     transform: { undefined: null },
     idle_timeout: 20,
     max_lifetime: 60*3,
+    max: 50,
   });
   connCount++;
   log.info("connCount: "+connCount);
