@@ -334,7 +334,9 @@ export async function parseCSVFileStream(
       Key: keyData.keyWithoutSuffix,
     });
     const s3Client = new S3Client({});
-    await s3Client.send(command);
+    const a = await s3Client.send(command);
+    log.info("DELETE output");
+    log.info(a);
     return 'success';
   } catch (e) {
     log.error('csv parsing error, updating status ' + e.toString());
