@@ -26,7 +26,7 @@ async function writeFileChunkToQueueS3(
   const outFileName =
     pathString + '/chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
 
-  log.debug('outFileName ' + outFileName);
+  log.info('outFileName ' + outFileName);
 
   const config = getLambdaConfigOrFail();
 
@@ -39,7 +39,9 @@ async function writeFileChunkToQueueS3(
     Body: Buffer.from(inputFileChunkBody),
   });
   const s3Client = new S3Client({});
-  await s3Client.send(command);
+  const a = await s3Client.send(command);
+  log.info("PutObjectCommand output");
+  log.info(a);
 
   return;
 }
