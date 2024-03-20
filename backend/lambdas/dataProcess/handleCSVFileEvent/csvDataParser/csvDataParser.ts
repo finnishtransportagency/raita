@@ -29,8 +29,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import {getLambdaConfigOrFail} from "../handleCSVFileEvent";
-
+import { getLambdaConfigOrFail } from '../handleCSVFileEvent';
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -332,11 +331,11 @@ export async function parseCSVFileStream(
     log.debug('Success reading file, deleting: ' + fileBaseName);
     const command = new DeleteObjectCommand({
       Bucket: config.csvBucket,
-      Key: keyData.keyWithoutSuffix,
+      Key: keyData.keyWithoutSuffix + '.' + keyData.fileSuffix,
     });
     const s3Client = new S3Client({});
     const a = await s3Client.send(command);
-    log.info("DELETE output");
+    log.info('DELETE output');
     log.info(a);
     return 'success';
   } catch (e) {
