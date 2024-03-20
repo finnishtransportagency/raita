@@ -23,7 +23,7 @@ async function writeFileChunkToQueueS3(
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
   const outFileName =
-    'chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
+    key.pathString + '/chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
 
   log.debug('outFileName ' + outFileName);
 
@@ -33,7 +33,7 @@ async function writeFileChunkToQueueS3(
 
   const command = new PutObjectCommand({
     Bucket: config.csvBucket,
-    Key: key.keyWithoutSuffix,
+    Key: outFileName,
     ContentType: 'text/csv',
     Body: Buffer.from(inputFileChunkBody),
   });

@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { log } from '../../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../../types';
 import {insertRaporttiData, updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
+import {getKeyData} from "../../../../utils";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -164,6 +165,15 @@ const ohlCsv: string =
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
 const ohlCsvStream = stringToStream(ohlCsv);
 
+describe('outfile name generation', () => {
+  test('success: normal run', async () => {
+    const key = getKeyData('Meeri/2021/Test/20210721/20210721_RP_Reports/005/ILMKON/1/2021/Rail+Profile/20210721_110925/TextualReports/RP_20210721_005_ILMKON_1_633_658.csv');
+    const outFileName =
+      key.pathString + '/chunkFile_' + "123" + '_' + 2 + '_' + key.fileName;
+    console.log(outFileName);
+  })
+});
+
 describe('insert raportti success', () => {
   test('success: normal run', async () => {
     const result = await insertRaporttiData(
@@ -212,13 +222,14 @@ describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const result = await chopCSVFileStream(
       {
+        pathString: "",
         fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
         fileName: '',
         fileSuffix: '',
         keyWithoutSuffix:
           '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
         rootFolder: '',
-        path: [],
+        path: []
       },
       amsCsvStream,
     );
