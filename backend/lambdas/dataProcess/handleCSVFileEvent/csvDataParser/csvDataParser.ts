@@ -29,7 +29,8 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { getLambdaConfigOrFail } from '../../handleInspectionFileEvent/handleInspectionFileEvent';
+import {getLambdaConfigOrFail} from "../handleCSVFileEvent";
+
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
