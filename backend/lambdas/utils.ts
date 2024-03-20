@@ -98,7 +98,6 @@ export type KeyData = ReturnType<typeof getKeyData>;
  */
 export const getKeyData = (key: string) => {
   const path = key.split('/');
-  const pathString = path.slice(0,path.length - 1).join('/');
   const rootFolder = path[0];
   const fileName = path[path.length - 1];
   const lastDotInFileName = fileName.lastIndexOf('.');
@@ -113,7 +112,6 @@ export const getKeyData = (key: string) => {
     : key;
   return {
     path,
-    pathString,
     rootFolder,
     fileName,
     fileBaseName,

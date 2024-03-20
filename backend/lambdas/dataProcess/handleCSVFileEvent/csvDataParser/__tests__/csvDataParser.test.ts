@@ -179,7 +179,6 @@ describe('handle ams csv file success', () => {
   test('success: normal run', async () => {
       const result = await parseCSVFileStream(
        {
-         pathString: "",
          fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
          path:[]},
        amsCsvStream,
@@ -193,7 +192,6 @@ describe('handle rp csv file success', () => {
   test('success: normal run', async () => {
     const result = await parseCSVFileStream(
       {
-        pathString: "",
         fileBaseName: "chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
         path:[]},
       rp2CsvFileStream,
