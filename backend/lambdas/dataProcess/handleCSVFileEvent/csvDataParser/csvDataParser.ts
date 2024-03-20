@@ -1,7 +1,7 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import {
-  convertToDBRow,
+  convertToDBRow, DBConnection, getDBConnection,
   raporttiChunksToProcess,
   substractRaporttiChunk,
   updateRaporttiStatus,
@@ -31,6 +31,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getLambdaConfigOrFail } from '../handleCSVFileEvent';
 
+
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
     if (conditionFunction()) resolve();
@@ -55,6 +56,7 @@ async function parseCsvAndWriteToDb(
   table: string,
   csvSchema: ZodObject<any>,
   fileNamePrefix: string,
+  dbConnection: DBConnection,
 ) {
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
   if (parsedCSVContent.success) {
@@ -65,8 +67,7 @@ async function parseCsvAndWriteToDb(
     );
 
     try {
-      //return await writeRowsToDB(dbRows, table);
-      return;
+      return await writeRowsToDB(dbRows, table, dbConnection);
     } catch (e) {
       log.error('Error writing to db');
       log.error(e);
@@ -106,6 +107,7 @@ async function handleBufferedLines(
   runningDate: Date,
   reportId: number,
   fileBaseName: string,
+  dbConnection: DBConnection,
 ) {
   try {
     const fileChunkBody = replaceSeparators(inputFileChunkBody);
@@ -120,6 +122,7 @@ async function handleBufferedLines(
           'ams_mittaus',
           amsSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'OHL':
@@ -131,6 +134,7 @@ async function handleBufferedLines(
           'ohl_mittaus',
           ohlSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'PI':
@@ -142,6 +146,7 @@ async function handleBufferedLines(
           'pi_mittaus',
           piSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'RC':
@@ -153,6 +158,7 @@ async function handleBufferedLines(
           'rc_mittaus',
           rcSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'RP':
@@ -164,6 +170,7 @@ async function handleBufferedLines(
           'rp_mittaus',
           rpSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'TG':
@@ -175,6 +182,7 @@ async function handleBufferedLines(
           'tg_mittaus',
           tgSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
       case 'TSIGHT':
@@ -186,6 +194,7 @@ async function handleBufferedLines(
           'tsight_mittaus',
           tsightSchema,
           fileNamePrefix,
+          dbConnection,
         );
         break;
 
@@ -203,6 +212,7 @@ export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
   metadata: ParseValueResult | null,
+  dbConnection: DBConnection,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
   const fileBaseName = keyData.fileBaseName;
@@ -274,6 +284,7 @@ export async function parseCSVFileStream(
                 runningDate,
                 reportId,
                 fileBaseName,
+                dbConnection,
               );
 
               notWritten--;
@@ -314,6 +325,7 @@ export async function parseCSVFileStream(
         runningDate,
         reportId,
         fileBaseName,
+        dbConnection,
       );
     }
 

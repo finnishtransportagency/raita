@@ -6,14 +6,16 @@ import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
+import {getKeyData} from "../../../utils";
 
 let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getDBConnection() {
+export async function getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
   let schema;
-  let sql;
+
+  let sql: postgres.Sql<{}>;
   //  if (isLocalDevStack()) { (ei toiminut)
   if (process.env.ENVIRONMENT == 'kalle') {
     schema = 'public';
@@ -24,6 +26,8 @@ export async function getDBConnection() {
   }
   return { schema, sql };
 }
+
+export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
 
 async function populateGisPointsForTable(
   schema: string,
@@ -79,8 +83,9 @@ async function populateGisPoints(
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
+  dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql } = await getDBConnection();
+  const { schema, sql } = dbConnection;
 
   try {
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
@@ -112,9 +117,6 @@ async function getConnection() {
   connection = postgres({
     password,
     transform: { undefined: null },
-    idle_timeout: 20,
-    max_lifetime: 60*3,
-    max: 50,
   });
   connCount++;
   log.info("connCount: "+connCount);
