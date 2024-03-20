@@ -275,31 +275,25 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
     };
-    console.log(raporttiData);
+    log.debug(raporttiData);
     try {
       let id;
       if (metaDataEntry.reportId) {
         id = metaDataEntry.reportId;
       } else {
-        throw new Error('ReportID unefined');
+        throw new Error('ReportID undefined');
       }
 
-      let tiedostotyyppi = metaDataEntry.metadata['tiedostotyyppi'];
-      let zip_vastaanotto_vuosi = metaDataEntry.metadata['zip_reception__year'];
-
-      const a = await sql`UPDATE ${sql(schema)}.raportti set
+      const rowList = await sql`UPDATE ${sql(schema)}.raportti set
                             ${sql(raporttiData)}
                             WHERE id = ${id};`.catch(e => {
-        log.error('Error updateRaporttiStatus: ' + e);
-
+        log.error('Error updating metadata to db: ' + e);
         throw e;
       });
 
-      log.info('inserted:' + a);
+      log.info('updated metadata rows:' + rowList.length);
     } catch (e) {
-      log.error('Error updating raportti status');
-      log.error(e);
-
+      log.error('Error in raportti metadata updating: ' +e);
       throw e;
     }
   }
