@@ -168,9 +168,11 @@ const ohlCsvStream = stringToStream(ohlCsv);
 describe('outfile name generation', () => {
   test('success: normal run', async () => {
     const key = getKeyData('Meeri/2021/Test/20210721/20210721_RP_Reports/005/ILMKON/1/2021/Rail+Profile/20210721_110925/TextualReports/RP_20210721_005_ILMKON_1_633_658.csv');
+    const pathString =  key.path.slice(0,key.path.length - 1).join('/');
     const outFileName =
-      key.pathString + '/chunkFile_' + "123" + '_' + 2 + '_' + key.fileName;
-    console.log(outFileName);
+      pathString + '/chunkFile_' + '123' + '_' + '1' + '_' + key.fileName;
+
+    console.log('outFileName ' + outFileName);
   })
 });
 
@@ -225,7 +227,6 @@ describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const result = await chopCSVFileStream(
       {
-        pathString: "",
         fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
         fileName: '',
         fileSuffix: '',
