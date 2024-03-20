@@ -5,6 +5,16 @@ import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import {IAdminLogger} from "../../../utils/adminLog/types";
 import {PostgresLogger} from "../../../utils/adminLog/postgresLogger";
+import {getGetEnvWithPreassignedContext} from "../../../../utils";
+
+export function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
+  return {
+    configurationFile: getEnv('CONFIGURATION_FILE'),
+    csvBucket:  getEnv('CSV_BUCKET'),
+    region: getEnv('REGION'),
+  };
+}
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 
