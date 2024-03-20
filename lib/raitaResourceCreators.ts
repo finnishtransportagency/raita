@@ -49,12 +49,14 @@ export const createRaitaServiceRole = ({
   scope: Construct;
   name: string;
   servicePrincipal: string;
-  policyName: string;
+  policyName?: string;
   raitaStackIdentifier: string;
 }) => {
   return new iam.Role(scope, name, {
     roleName: `${name}-${raitaStackIdentifier}`,
     assumedBy: new iam.ServicePrincipal(servicePrincipal),
-    managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName(policyName)],
+    managedPolicies: policyName
+      ? [iam.ManagedPolicy.fromAwsManagedPolicyName(policyName)]
+      : [],
   });
 };

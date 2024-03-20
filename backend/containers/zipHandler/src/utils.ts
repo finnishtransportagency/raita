@@ -61,7 +61,7 @@ export const resolveEntries = async (entries: Array<Promise<EntryRecord>>) => {
       acc[cur.status].push(cur);
       return acc;
     },
-    { success: [], error: [] } as ExtractEntriesResult['entries'],
+    { success: [], error: [], skipped: [] } as ExtractEntriesResult['entries'],
   );
 };
 
