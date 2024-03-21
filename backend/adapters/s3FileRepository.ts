@@ -89,6 +89,8 @@ export class S3FileRepository implements IFileInterface {
       .createReadStream();
     let tags = {};
 
+
+    //csv bucket event handler stalled here; so added boolean includeTags. TODO make smarter
     if (includeTags) {
       const tagsPromise = this.#s3
         .getObjectTagging({
