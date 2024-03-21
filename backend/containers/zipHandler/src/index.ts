@@ -12,6 +12,9 @@ import {
 import { isZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
 import { log } from './logger';
+import { IAdminLogger, PostgresLogger } from './adminLog/postgresLogger';
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 start();
 
@@ -23,6 +26,8 @@ async function start() {
   try {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileName } = getKeyData(zipKey);
+    const invocationId = zipKey;
+    await adminLogger.init('data-reception', invocationId); // TODO: use invocationId metadata later
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -72,7 +77,7 @@ async function start() {
         s3KeyPrefix: keyWithoutSuffix,
         zipFileData,
       })
-        .then(data => {
+        .then(async data => {
           const { entries, streamError } = data;
           // TODO: Temporary logging
           log.info(logMessages['resultMessage'](entries));
@@ -80,9 +85,41 @@ async function start() {
             // The process succeeded possibly partially. Currently only logs error, does not throw.
             // TODO: Temporary logging
             log.error(logMessages['streamErrorMessage'](streamError));
+            await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
           }
           if (entries.error.length) {
             log.error(entries.error);
+          }
+          const totalCount =
+            entries.success.length +
+            entries.skipped.length +
+            entries.error.length;
+          let logMessage = `Tiedostoja yhteensä: ${totalCount}`;
+          if (entries.success.length) {
+            logMessage += `\nPurettu onnistuneesti: ${entries.success.length}`;
+          }
+          if (entries.skipped.length) {
+            logMessage += `\nPurkaminen ohitettu: ${entries.skipped.length}`;
+          }
+          if (entries.error.length) {
+            logMessage += `\nVirhe purkamisessa: ${entries.error.length}`;
+          }
+          if (entries.error.length) {
+            await adminLogger.error(logMessage);
+          } else {
+            await adminLogger.info(logMessage);
+          }
+          if (
+            entries.skipped.length &&
+            !entries.success.length &&
+            !entries.error.length
+            // all files skipped
+          ) {
+            await adminLogger.init('data-inspection', invocationId);
+            // add one inspection message to show that no files were parsed on purpose
+            await adminLogger.warn(
+              'Kaikki tiedostot ohitettu, ei käsiteltävää',
+            );
           }
         })
         .catch(err => {
@@ -93,6 +130,7 @@ async function start() {
     readStream.pipe(writeStream);
   } catch (err: any) {
     // TODO: Temporary logging
+    await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
     log.error(err);
     // TODO: Possible recovery actions apart from logging
   }
