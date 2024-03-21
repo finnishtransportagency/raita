@@ -17,7 +17,6 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
-import cloneable from 'cloneable-readable';
 import {updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
 
 export function getLambdaConfigOrFail() {
@@ -66,7 +65,7 @@ export async function handleInspectionFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(eventRecord, false);
+        const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);
         await adminLogger.init('data-inspection', zipFile);
@@ -97,43 +96,41 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
-
-        if (fileStreamResult && fileStreamResult.fileStream) {
-
-          const parseResults = await parseFileMetadata({
-            keyData,
-            file: fileStreamResult,
-            spec,
-          });
-
-
-          if (parseResults.errors) {
-            await adminLogger.error(
-              `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
-            );
-          } else {
-            await adminLogger.info(`Tiedosto parsittu: ${key}`);
-
-          }
-
-          return {
-            // key is sent to be stored in url decoded format to db
-            key,
-            file_name: keyData.fileName,
-            bucket_arn: eventRecord.s3.bucket.arn,
-            bucket_name: eventRecord.s3.bucket.name,
-            size: eventRecord.s3.object.size,
-            metadata: parseResults.metadata,
-            hash: parseResults.hash,
-            tags: fileStreamResult.tags,
-            reportId: parseResults.reportId,
-          };
-        } else return null;
-      },
-    );
-    // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
-    // Switch to granular error handling.
-    // Check if lambda supports es2022 and if so, switch to Promise.allSettled
+        const parseResults = await parseFileMetadata({
+          keyData,
+          fileStream: fileStreamResult.fileStream,
+          spec,
+        });
+        if (parseResults.errors) {
+          await adminLogger.error(
+            `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
+          );
+        } else {
+          await adminLogger.info(`Tiedosto parsittu: ${key}`);
+        }
+        const s3MetaData = fileStreamResult.metaData;
+        const skipHashCheck =
+          s3MetaData['skip-hash-check'] !== undefined &&
+          Number(s3MetaData['skip-hash-check']) === 1;
+        return {
+          // key is sent to be stored in url decoded format to db
+          key,
+          file_name: keyData.fileName,
+          bucket_arn: eventRecord.s3.bucket.arn,
+          bucket_name: eventRecord.s3.bucket.name,
+          size: eventRecord.s3.object.size,
+          metadata: parseResults.metadata,
+          hash: parseResults.hash,
+          tags: fileStreamResult.tags,
+          reportId: parseResults.reportId,
+          options: {
+            skip_hash_check: skipHashCheck,
+          },
+        };
+      });
+      // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
+      // Switch to granular error handling.
+      // Check if lambda supports es2022 and if so, switch to Promise.allSettled
 
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,

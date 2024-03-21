@@ -1,8 +1,5 @@
-import {
-  IExtractionSpec,
-  IFileStreamResult,
-  ParseValueResult,
-} from '../../../types';
+import { Readable } from 'stream';
+import { IExtractionSpec, ParseValueResult } from '../../../types';
 import { log, logParsingException } from '../../../utils/logger';
 import { KeyData, RaitaParseError } from '../../utils';
 import { parseFileContent } from './contentDataParser';
@@ -11,11 +8,11 @@ import { extractPathData } from './pathDataParser';
 
 export async function parseFileMetadata({
   keyData,
-  file,
+  fileStream,
   spec,
 }: {
   keyData: KeyData;
-  file: IFileStreamResult;
+  fileStream: Readable | undefined;
   spec: IExtractionSpec;
 }): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean; reportId: number; }> {
   let errorsFound = false;
@@ -51,12 +48,8 @@ export async function parseFileMetadata({
   let hash = '';
   let reportId: number = -1;
   try {
-    if (file.fileStream) {
-      const contentResult = await parseFileContent(
-        spec,
-        keyData,
-        file.fileStream,
-      );
+    if (fileStream) {
+      const contentResult = await parseFileContent(spec, keyData, fileStream);
       fileContentData = contentResult.contentData;
       hash = contentResult.hash;
       reportId = contentResult.reportId;
