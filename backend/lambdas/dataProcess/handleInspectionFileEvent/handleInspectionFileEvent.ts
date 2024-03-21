@@ -17,7 +17,6 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
-import cloneable from 'cloneable-readable';
 import {updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
 
 export function getLambdaConfigOrFail() {
@@ -66,7 +65,7 @@ export async function handleInspectionFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(eventRecord, false);
+        const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);
         await adminLogger.init('data-inspection', zipFile);

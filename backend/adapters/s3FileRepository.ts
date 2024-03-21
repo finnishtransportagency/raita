@@ -90,20 +90,21 @@ export class S3FileRepository implements IFileInterface {
     let tags = {};
 
     if (includeTags) {
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const tagSet = await tagsPromise;
-    tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );}
+      const tagsPromise = this.#s3
+        .getObjectTagging({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+      const tagSet = await tagsPromise;
+      tags = tagSet.TagSet.reduce(
+        (acc, cur) => {
+          acc[cur.Key] = cur.Value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+    }
     const headResponse = await headPromise;
     return {
       fileStream,
