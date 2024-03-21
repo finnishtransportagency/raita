@@ -21,9 +21,11 @@ export class RaitaOpenSearchClient {
   #initClient = async () => {
     // TODO: Figure out defaultProvider usage
     const awsCredentials = await defaultProvider()();
+
     const connector = createAwsOpensearchConnector({
       credentials: awsCredentials,
       region: this.#region,
+      // @ts-ignore
       getCredentials: function (cb: () => void) {
         return cb();
       },

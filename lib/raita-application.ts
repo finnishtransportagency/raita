@@ -84,6 +84,7 @@ export class ApplicationStack extends NestedStack {
     const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
       inspectionDataBucket: dataProcessStack.inspectionDataBucket,
       dataReceptionBucket: dataProcessStack.dataReceptionBucket,
+      csvDataBucket: dataProcessStack.csvDataBucket,
       openSearchDomain: openSearchDomain,
       raitaEnv,
       stackId,

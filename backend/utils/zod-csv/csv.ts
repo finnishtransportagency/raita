@@ -91,7 +91,7 @@ const getCSVErrorsAndValidRows = <T extends z.ZodTypeAny>(csvContent: string, sc
 }
 
 const getRowsFromContent = <T extends z.ZodType>(csvContent: string, schema: T, options?: Options) => {
-    const headersFromSchema = getHeadersFromSchema(schema)
+    const headersFromSchema = getHeadersFromContent(csvContent, options);
     return extractRows(csvContent, options).map((cells) => {
         return headersFromSchema.reduce((row, header, index) => {
             let cell = cells[index];

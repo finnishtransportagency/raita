@@ -11,6 +11,7 @@ import { regexCapturePatterns } from './regex';
 import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
+import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -118,12 +119,25 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-): Promise<{ contentData: ParseValueResult; hash: string }> => {
+): Promise<{ contentData: ParseValueResult; hash: string;  reportId: number }> => {
   let contentPromise: Promise<ParseValueResult>;
+  let csvPromise: Promise<number>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
+  if (keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
+    log.info('chop csv file: ' + keyData.fileBaseName);
+    const fileStreamToParse = originalStream.clone();
+    csvPromise = chopCSVFileStream(
+      keyData,
+      fileStreamToParse,
+    );
+    log.info('csv parsing result: ' + csvPromise);
+  } else {
+    csvPromise = Promise.resolve(-1);
+  }
+
   if (shouldParseContent(keyData.fileSuffix)) {
     const fileStreamToParse = originalStream.clone();
     contentPromise = extractFileContentDataFromStream(spec, fileStreamToParse);
@@ -131,9 +145,10 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData] = await Promise.all([hashPromise, contentPromise]);
+  const [hash, contentData, reportId] = await Promise.all([hashPromise, contentPromise, csvPromise]);
   return {
     contentData,
     hash,
+    reportId
   };
 };

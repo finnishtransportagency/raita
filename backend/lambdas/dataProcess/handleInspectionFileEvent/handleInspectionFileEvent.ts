@@ -17,15 +17,19 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import {updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
 
-function getLambdaConfigOrFail() {
+export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    inspectionBucket: getEnv('INSPECTION_BUCKET'),
+    csvBucket:  getEnv('CSV_BUCKET'),
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
+
   };
 }
 
@@ -60,8 +64,8 @@ export async function handleInspectionFileEvent(
         eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start handler');
-        const file = await backend.files.getFileStream(eventRecord);
+        log.info({ fileName: key }, 'Start inspection file handler');
+        const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);
         await adminLogger.init('data-inspection', zipFile);
@@ -94,7 +98,7 @@ export async function handleInspectionFileEvent(
         }
         const parseResults = await parseFileMetadata({
           keyData,
-          fileStream: file.fileStream,
+          fileStream: fileStreamResult.fileStream,
           spec,
         });
         if (parseResults.errors) {
@@ -104,7 +108,7 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
-        const s3MetaData = file.metaData;
+        const s3MetaData = fileStreamResult.metaData;
         const skipHashCheck =
           s3MetaData['skip-hash-check'] !== undefined &&
           Number(s3MetaData['skip-hash-check']) === 1;
@@ -117,7 +121,8 @@ export async function handleInspectionFileEvent(
           size: eventRecord.s3.object.size,
           metadata: parseResults.metadata,
           hash: parseResults.hash,
-          tags: file.tags,
+          tags: fileStreamResult.tags,
+          reportId: parseResults.reportId,
           options: {
             skip_hash_check: skipHashCheck,
           },
@@ -130,6 +135,9 @@ export async function handleInspectionFileEvent(
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
+
+
+      await updateRaporttiMetadata(entries);
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);

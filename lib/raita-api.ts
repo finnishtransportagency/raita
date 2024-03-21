@@ -25,6 +25,7 @@ import {
 } from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
+
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
   readonly raitaEnv: RaitaEnvironment;
@@ -32,6 +33,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly jwtTokenIssuer: string;
   readonly inspectionDataBucket: Bucket;
   readonly dataReceptionBucket: Bucket;
+  readonly csvDataBucket: Bucket;
   readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
   readonly openSearchDomain: Domain;
@@ -65,7 +67,11 @@ export class RaitaApiStack extends NestedStack {
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
 
-  constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props: RaitaApiStackProps,
+  ) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
@@ -76,6 +82,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
       inspectionDataBucket,
       dataReceptionBucket,
+      csvDataBucket,
       openSearchDomain,
       cloudfrontDomainName,
       raitaSecurityGroup,
@@ -143,6 +150,7 @@ export class RaitaApiStack extends NestedStack {
     );
     inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
     dataCollectionBucket.grantRead(this.raitaApiLambdaServiceRole);
+    csvDataBucket.grantRead(this.raitaApiLambdaServiceRole);
 
     // TODO: this is not needed on all resources
     this.raitaApiLambdaServiceRole.addToPolicy(

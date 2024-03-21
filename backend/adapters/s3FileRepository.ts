@@ -11,40 +11,64 @@ export class S3FileRepository implements IFileInterface {
     this.#s3 = new S3();
   }
 
-  getFile = async (eventRecord: S3EventRecord): Promise<IFileResult> => {
+  getFile = async (
+    eventRecord: S3EventRecord,
+    includeTags: boolean,
+  ): Promise<IFileResult> => {
     const bucket = eventRecord.s3.bucket.name;
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
     );
-    const filePromise = this.#s3
-      .getObject({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const [file, tagSet] = await Promise.all([filePromise, tagsPromise]);
-    const tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
-    return {
-      fileBody: file.Body?.toString(),
-      contentType: file.ContentType,
-      tags,
-    };
+
+    log.info('getfile: ' + bucket + key);
+    try {
+      const filePromise = this.#s3
+        .getObject({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+
+      log.info('filePromise: ' + filePromise);
+      const file = await filePromise;
+      log.info('file: ' + file);
+      let tags = {};
+
+      if (includeTags) {
+        const tagsPromise = this.#s3
+          .getObjectTagging({
+            Bucket: bucket,
+            Key: key,
+          })
+          .promise();
+        const tagSet = await tagsPromise;
+        tags = tagSet.TagSet.reduce(
+          (acc, cur) => {
+            acc[cur.Key] = cur.Value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
+      }
+
+      return {
+        fileBody: file.Body?.toString(),
+        contentType: file.ContentType,
+        tags,
+      };
+    } catch (error) {
+      log.error('error getting file: ' + error);
+      return {
+        fileBody: undefined,
+        contentType: undefined,
+        tags: {},
+      };
+    }
   };
 
   getFileStream = async (
     eventRecord: S3EventRecord,
+    includeTags: boolean,
   ): Promise<IFileStreamResult> => {
     const bucket = eventRecord.s3.bucket.name;
     const key = decodeURIComponent(
@@ -63,20 +87,26 @@ export class S3FileRepository implements IFileInterface {
         Key: key,
       })
       .createReadStream();
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const tagSet = await tagsPromise;
-    const tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
+    let tags = {};
+
+
+    //csv bucket event handler stalled here; so added boolean includeTags. TODO make smarter
+    if (includeTags) {
+      const tagsPromise = this.#s3
+        .getObjectTagging({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+      const tagSet = await tagsPromise;
+      tags = tagSet.TagSet.reduce(
+        (acc, cur) => {
+          acc[cur.Key] = cur.Value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+    }
     const headResponse = await headPromise;
     return {
       fileStream,

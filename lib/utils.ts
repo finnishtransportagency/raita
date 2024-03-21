@@ -42,6 +42,20 @@ export const isProductionStack = (
 ) => stackId === PRODUCTION_STACK_ID && raitaEnv === ENVIRONMENTS.prod;
 
 /**
+ * Returns whether the stack is not any of the cloud stacks
+ */
+
+export const isLocalDevStack = () => {
+  const STACK_ID = process.env.STACK_ID || '';
+  const ENVIRONMENT = process.env.ENVIRONMENT || '';
+  return (
+    !isProductionStack(STACK_ID, ENVIRONMENT as RaitaEnvironment) &&
+    !isDevelopmentMainStack(STACK_ID, ENVIRONMENT as RaitaEnvironment) &&
+    !isDevelopmentPreMainStack(STACK_ID, ENVIRONMENT as RaitaEnvironment)
+  );
+};
+
+/**
  * Returns whether the stack is one of the two permanent Raita stacks
  * - development main stack that corresponds to development main branch in Github
  * - producition stack that corresponds to production branch in Github
