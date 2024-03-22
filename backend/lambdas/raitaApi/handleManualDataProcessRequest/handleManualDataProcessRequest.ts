@@ -18,7 +18,7 @@ import {
   getKeyData,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
-  isZipParentPath,
+  isCampaignOrMoreSpecificPath,
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
@@ -61,7 +61,7 @@ export async function handleManualDataProcessRequest(
     if (!requestBody?.prefix) {
       throw new RaitaLambdaError('Prefix not specified', 400);
     }
-    const { prefix, skipHashCheck } = requestBody;
+    const { prefix, skipHashCheck, requireNewerParserVersion } = requestBody;
     log.info(
       { prefix: prefix, user: user.uid },
       'Manual data process request received',
@@ -73,7 +73,8 @@ export async function handleManualDataProcessRequest(
     );
 
     const { path } = getKeyData(prefix);
-    const validReceptionPath = isZipPath(path) || isZipParentPath(path);
+    const validReceptionPath =
+      isZipPath(path) || isCampaignOrMoreSpecificPath(path); // block paths that are broader than "campaign" level
     const validInspectionPath = path.length > 5;
     if (!validReceptionPath && !validInspectionPath) {
       throw new RaitaLambdaError('Invalid prefix length', 400);
@@ -81,13 +82,23 @@ export async function handleManualDataProcessRequest(
     if (!['1', '0'].includes(skipHashCheck)) {
       throw new RaitaLambdaError('Invalid skipHashCheck value', 400);
     }
+    if (!['1', '0'].includes(requireNewerParserVersion)) {
+      throw new RaitaLambdaError(
+        'Invalid requireNewerParserVersion value',
+        400,
+      );
+    }
     const copyZips = validReceptionPath;
     const targetBucket = copyZips ? receptionBucket : inspectionBucket;
 
-    const metadata = {
-      'invocation-id': encodeURIComponent(invocationId), // for logging
+    const metadata: { [key: string]: string } = {
       'skip-hash-check': skipHashCheck,
+      'require-newer-parser-version': requireNewerParserVersion,
     };
+    if (!copyZips) {
+      // add invocationId metadata only for non zips: zips are logged with default invocationId = zip file name
+      metadata['invocation-id'] = encodeURIComponent(invocationId);
+    }
     const copiedCount = await copyInBucket(
       prefix,
       targetBucket,
@@ -173,7 +184,7 @@ async function copyInBucket(
     // TODO: using single copy requests might not work if file count is too high?
     for (let i = 0; i < allObjects.length; i++) {
       const object = allObjects[i];
-      const response = await copyFileInPlace(s3Client, object, {
+      await copyFileInPlace(s3Client, object, {
         Bucket: bucket,
         CopySource: encodeURIComponent(`${bucket}/${object.Key}`),
         Key: object.Key,
@@ -264,7 +275,7 @@ async function copyFileInPlace(
         UploadId: uploadId,
       });
       await s3Client.send(abortCommand);
-      throw new RaitaLambdaError('Error in multipart copy', 500);
     }
+    throw new RaitaLambdaError('Error in multipart copy', 500);
   }
 }

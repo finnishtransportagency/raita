@@ -64,6 +64,9 @@ export async function handleInspectionFileEvent(
         const file = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
         const s3MetaData = file.metaData;
+        const requireNewerParserVersion =
+          s3MetaData['require-newer-parser-version'] !== undefined &&
+          Number(s3MetaData['require-newer-parser-version']) === 1;
         const skipHashCheck =
           s3MetaData['skip-hash-check'] !== undefined &&
           Number(s3MetaData['skip-hash-check']) === 1;
@@ -122,6 +125,7 @@ export async function handleInspectionFileEvent(
           tags: file.tags,
           options: {
             skip_hash_check: skipHashCheck,
+            require_newer_parser_version: requireNewerParserVersion,
           },
         };
       });

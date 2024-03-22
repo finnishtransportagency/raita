@@ -41,6 +41,6 @@
   "process_in_progress": "Reprocessing request in progress...",
   "process_result_heading": "Reprocessing started",
   "process_started": "File reprocessing started. View progress details in the admin log page.",
-  "process_all": "Trigger reprocess for all selected files",
-  "process_unprocessed": "Trigger reprocessing only for files not found in RAITA system"
+  "process_all_label": "Trigger reprocess only for files that don't have any metadata saved",
+  "process_require_newer_version_label": "Trigger reprocess only for files that have been parsed with an older parser version"
 }

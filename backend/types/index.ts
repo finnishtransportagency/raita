@@ -17,10 +17,12 @@ export interface FileMetadataEntry {
   hash: string | undefined;
   options: {
     skip_hash_check?: boolean;
+    require_newer_parser_version?: boolean;
   };
 }
 export type S3CustomMetadataFields = {
   'skip-hash-check'?: '1' | '0';
+  'require-newer-parser-version'?: '1' | '0';
   'invocation-id'?: string;
 };
 export interface IFileResult {

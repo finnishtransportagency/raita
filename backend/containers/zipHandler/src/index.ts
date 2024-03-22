@@ -46,6 +46,10 @@ async function start() {
     if (fileMetadata['skip-hash-check']) {
       newFileMetadata['skip-hash-check'] = fileMetadata['skip-hash-check'];
     }
+    if (fileMetadata['require-newer-parser-version']) {
+      newFileMetadata['require-newer-parser-version'] =
+        fileMetadata['require-newer-parser-version'];
+    }
     newFileMetadata['invocation-id'] = encodeURIComponent(invocationId); // pass same invocationId to extracted files for logging
     // Timestamp is needed to tie the extracted files and meta data entries into the zip
     // file they were extracted from. The LastModified here should always equal to the moment

@@ -91,11 +91,13 @@ export const postDeleteRequest = async (keyPrefix: string) => {
 export const postManualDataProcessRequest = async (
   keyPrefix: string,
   skipHashCheck: boolean,
+  requireNewerParserVersion: boolean,
 ) => {
   return apiClient
     .post<ManualDataProcessRequest>('admin/process', {
       prefix: keyPrefix,
       skipHashCheck: skipHashCheck ? '1' : '0',
+      requireNewerParserVersion: requireNewerParserVersion ? '1' : '0',
     })
     .then(res => res.data);
 };

@@ -5,6 +5,7 @@ import { RaitaOpenSearchClient } from '../../clients/openSearchClient';
 import { OpenSearchResponseParser } from './openSearchResponseParser';
 import { log } from '../../utils/logger';
 import { wrapRetryOnTooManyRequests } from './util';
+import { compareVersionStrings } from '../../utils/compareVersionStrings';
 
 export class OpenSearchRepository implements IMetadataStorageInterface {
   #dataIndex: string;
@@ -102,6 +103,21 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         maxRetryWait,
       );
     } else if (skipHashCheck || hash !== docToUpdate._source.hash) {
+      log.info({ docToUpdate }); // TODO remove
+      const requireNewerParserVersion =
+        entry.options.require_newer_parser_version;
+      if (requireNewerParserVersion) {
+        const existingVersion = docToUpdate._source.metadata.parser_version;
+        const newVersion = entry.metadata.parser_version;
+        if (
+          compareVersionStrings(newVersion as any as string, existingVersion) <=
+          0
+        ) {
+          // new is smaller or equal => do nothing
+          log.info('not updating'); // TODO remove
+          return;
+        }
+      }
       await wrapRetryOnTooManyRequests(
         () => this.updateDoc(client, docToUpdate._id, entry),
         initialRetryWait,

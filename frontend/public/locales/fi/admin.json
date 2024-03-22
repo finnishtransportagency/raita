@@ -38,9 +38,9 @@
   "process_files_not_found": "Uudelleenkäsiteltäviä tiedostoja ei löytynyt",
   "process_counts_file": "Uudelleenkäsiteltävien tiedostojen määrä: {{ count }}",
   "process_label": "Käynnistä tiedostojen uudelleenkäsittely",
-  "process_in_progress": "Uudelleenkäsittelypyynto on käynnissä",
+  "process_in_progress": "Uudelleenkäsittelypyynto on käynnissä...",
   "process_result_heading": "Uudelleenkäsittely käynnistetty",
   "process_started": "Tiedostojen uudelleenkäsittely on käynnistetty. Tarkemmat tiedot uudelleenkäsittelyprosessin etenemisestä näkyvät adminlokisivulla.",
-  "process_all": "Uudelleenkäsittele kaikki valitut tiedostot",
-  "process_unprocessed": "Uudelleenkäsittele vain tiedostot joiden metadataa ei löydy RAITA-järjestelmästä"
+  "process_all_label": "Uudelleenkäsittele vain tiedostot joilla ei ole olemassaolevaa metadataa",
+  "process_require_newer_version_label": "Uudelleenkäsittele vain tiedostot jotka on käsitelty vanhemmalla parsijan versiolla"
 }

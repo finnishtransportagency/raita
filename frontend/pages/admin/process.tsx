@@ -24,6 +24,8 @@ const ProcessIndex: RaitaNextPage = () => {
   const [processRequestInProgress, setProcessRequestInProgress] =
     useState(false);
   const [skipHashCheck, setSkipHashCheck] = useState(true);
+  const [requireNewerParserVersion, setRequireNewerParserVersion] =
+    useState(true);
 
   const filesToProcessMutation = useSearch();
 
@@ -46,6 +48,7 @@ const ProcessIndex: RaitaNextPage = () => {
       const response = await postManualDataProcessRequest(
         prefixInput,
         skipHashCheck,
+        requireNewerParserVersion,
       );
       setProcessResult(response);
       setProcessRequestInProgress(false);
@@ -120,28 +123,62 @@ const ProcessIndex: RaitaNextPage = () => {
                   {t('admin:process_counts_file', {
                     count: filesToProcessMutation.data.total,
                   })}
-                  <label className="block mt-2">
-                    <input
-                      type="radio"
-                      name="skip-hash-check"
-                      value="true"
-                      checked={skipHashCheck}
-                      onChange={e => e.target.checked && setSkipHashCheck(true)}
-                    />
-                    {t('admin:process_all')}
-                  </label>
-                  <label className="block mb-2">
-                    <input
-                      type="radio"
-                      name="skip-hash-check"
-                      value="false"
-                      checked={!skipHashCheck}
-                      onChange={e =>
-                        e.target.checked && setSkipHashCheck(false)
-                      }
-                    />
-                    {t('admin:process_unprocessed')}
-                  </label>
+                  <div className="mb-2">
+                    {t('admin:process_all_label')}
+                    <label className="block">
+                      <input
+                        type="radio"
+                        name="skip-hash-check"
+                        value="false"
+                        checked={!skipHashCheck}
+                        onChange={e =>
+                          e.target.checked && setSkipHashCheck(false)
+                        }
+                      />
+                      {t('common:yes')}
+                    </label>
+                    <label className="block">
+                      <input
+                        type="radio"
+                        name="skip-hash-check"
+                        value="true"
+                        checked={skipHashCheck}
+                        onChange={e =>
+                          e.target.checked && setSkipHashCheck(true)
+                        }
+                      />
+
+                      {t('common:no')}
+                    </label>
+                  </div>
+                  <div className="mb-2">
+                    {t('admin:process_require_newer_version_label')}
+                    <label className="block">
+                      <input
+                        type="radio"
+                        name="require-newer-parser-version"
+                        value="true"
+                        checked={requireNewerParserVersion}
+                        onChange={e =>
+                          e.target.checked && setRequireNewerParserVersion(true)
+                        }
+                      />
+                      {t('common:yes')}
+                    </label>
+                    <label className="block mb-2">
+                      <input
+                        type="radio"
+                        name="require-newer-parser-version"
+                        value="false"
+                        checked={!requireNewerParserVersion}
+                        onChange={e =>
+                          e.target.checked &&
+                          setRequireNewerParserVersion(false)
+                        }
+                      />
+                      {t('common:no')}
+                    </label>
+                  </div>
                 </p>
               </>
             ))}
