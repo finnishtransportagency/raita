@@ -103,7 +103,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
         maxRetryWait,
       );
     } else if (skipHashCheck || hash !== docToUpdate._source.hash) {
-      log.info({ docToUpdate }); // TODO remove
       const requireNewerParserVersion =
         entry.options.require_newer_parser_version;
       if (requireNewerParserVersion) {
@@ -114,7 +113,6 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
           0
         ) {
           // new is smaller or equal => do nothing
-          log.info('not updating'); // TODO remove
           return;
         }
       }
