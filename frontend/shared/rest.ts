@@ -4,6 +4,7 @@ import {
   AdminLogsSummaryResponse,
   DeleteResponse,
   ImageKeyResponse,
+  ManualDataProcessRequest,
   PollingProgress,
   SearchResponse,
   SingleEventAdminLogsResponse,
@@ -85,6 +86,17 @@ export const getAdminLogsSummary = async (
 export const postDeleteRequest = async (keyPrefix: string) => {
   return apiClient
     .post<DeleteResponse>('delete', { prefix: keyPrefix })
+    .then(res => res.data);
+};
+export const postManualDataProcessRequest = async (
+  keyPrefix: string,
+  skipHashCheck: boolean,
+) => {
+  return apiClient
+    .post<ManualDataProcessRequest>('admin/process', {
+      prefix: keyPrefix,
+      skipHashCheck: skipHashCheck ? '1' : '0',
+    })
     .then(res => res.data);
 };
 

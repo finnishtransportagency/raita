@@ -3,7 +3,8 @@
     "reports": "Raportit",
     "admin": {
       "logs": "Adminloki",
-      "delete": "Tietojen poisto"
+      "delete": "Tietojen poisto",
+      "process": "Tiedostojen uudelleenkäsittely"
     }
   },
   "error": {

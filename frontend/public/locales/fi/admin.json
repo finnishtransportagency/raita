@@ -1,5 +1,5 @@
 {
-  "log_header_data_process": "Zip-tiedoston vastaanotto",
+  "log_header_data_process": "Tiedoston vastaanotto",
   "log_header_delete_process": "Tiedostojen poisto",
   "log_title": "Adminloki",
   "log_search_description": "Oletuksena näytetään viimeisen viikon lokitiedot.",
@@ -29,5 +29,18 @@
   "delete_error": "Virhe tiedostoja poistaessa: ",
   "delete_in_progress": "Poisto käynnissä...",
   "delete_files_loading": "Ladataan tietoa poistettavien tiedostojen määrästä...",
-  "delete_confirm_heading": "Poiston varmistus"
+  "delete_confirm_heading": "Poiston varmistus",
+  "process_input_placeholder": "Syötä uudelleenkäsiteltävien tiedostojen polku",
+  "process_confirm_heading": "Uudelleenkäsittelyn varmistus",
+  "process_path_info": "Olet uudelleenkäsittelemässä kaikki tiedostot polusta: {{ path }}",
+  "process_files_loading": "Ladataan tietoa uudelleenkäsiteltävien tiedostojen määrästä...",
+  "process_files_fetch_error": "Virhe uudelleenkäsiteltäviä tiedostoja haettaessa",
+  "process_files_not_found": "Uudelleenkäsiteltäviä tiedostoja ei löytynyt",
+  "process_counts_file": "Uudelleenkäsiteltävien tiedostojen määrä: {{ count }}",
+  "process_label": "Käynnistä tiedostojen uudelleenkäsittely",
+  "process_in_progress": "Uudelleenkäsittelypyynto on käynnissä",
+  "process_result_heading": "Uudelleenkäsittely käynnistetty",
+  "process_started": "Tiedostojen uudelleenkäsittely on käynnistetty. Tarkemmat tiedot uudelleenkäsittelyprosessin etenemisestä näkyvät adminlokisivulla.",
+  "process_all": "Uudelleenkäsittele kaikki valitut tiedostot",
+  "process_unprocessed": "Uudelleenkäsittele vain tiedostot joiden metadataa ei löydy RAITA-järjestelmästä"
 }

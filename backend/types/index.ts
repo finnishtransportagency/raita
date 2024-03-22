@@ -20,7 +20,8 @@ export interface FileMetadataEntry {
   };
 }
 export type S3CustomMetadataFields = {
-  'skip-hash-check'?: string;
+  'skip-hash-check'?: '1' | '0';
+  'invocation-id'?: string;
 };
 export interface IFileResult {
   fileBody: string | undefined;

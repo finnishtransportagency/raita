@@ -1,12 +1,12 @@
 # Tiedostojen poisto
 
-Tällä sivulla voit poistaa tiedostoja Raita-järjestelmästä. Tämä toiminto poistaa tiedostot seuraavista paikoista.
+Tällä sivulla voit poistaa tiedostoja RAITA-järjestelmästä. Tämä toiminto poistaa tiedostot seuraavista paikoista.
 
 - Raita-järjestelmän tiedostosäilö
 - Raita-järjestelmän metadatasäilö
 - Raita-järjestelmän zip-tiedostosäilö
 
-Alkuperäisestä zip-tiedostosta jää varmuuskopio Raita-järjestelmään. Tämä toiminto ei poista tiedostoja SFTP-palvelimelta.
+Alkuperäisestä zip-tiedostosta jää varmuuskopio Raita-järjestelmään.
 
 ## Ohjeet
 

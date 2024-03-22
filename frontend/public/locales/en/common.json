@@ -3,7 +3,8 @@
     "reports": "Reports",
     "admin": {
       "logs": "Admin log",
-      "delete": "Data deletion"
+      "delete": "Data deletion",
+      "process": "File reprocessing"
     }
   },
   "error": {

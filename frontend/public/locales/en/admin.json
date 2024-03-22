@@ -1,5 +1,5 @@
 {
-  "log_header_data_process": "Zip file received",
+  "log_header_data_process": "File received",
   "log_header_delete_process": "Files deleted",
   "log_title": "Admin log",
   "log_search_description": "Logs from the last week are displayed by default",
@@ -29,5 +29,18 @@
   "delete_error": "Error deleting files: ",
   "delete_in_progress": "Delete in progress...",
   "delete_files_loading": "Loading data on files to delete...",
-  "delete_confirm_heading": "Delete confirmation"
+  "delete_confirm_heading": "Delete confirmation",
+  "process_input_placeholder": "Please input file path to reprocess",
+  "process_confirm_heading": "Data reprocess confirmation",
+  "process_path_info": "You are about to reprocess all files in path: {{ path }}",
+  "process_files_loading": "Loading file count...",
+  "process_files_fetch_error": "Error fetching files to reprocess",
+  "process_files_not_found": "No files found",
+  "process_counts_file": "Amount of files to reprocess: {{ count }}",
+  "process_label": "Start file reprocessing",
+  "process_in_progress": "Reprocessing request in progress...",
+  "process_result_heading": "Reprocessing started",
+  "process_started": "File reprocessing started. View progress details in the admin log page.",
+  "process_all": "Trigger reprocess for all selected files",
+  "process_unprocessed": "Trigger reprocessing only for files not found in RAITA system"
 }
