@@ -5,7 +5,7 @@
       {
         "1": { "name": "system" },
         "2": { "name": "inspection_date", "parseAs": "date" },
-        "3": { "name": "track_number" },
+        "3": { "name": "track_number", "parseAs": "integer" },
         "4": { "name": "track_part" },
         "5": { "name": "track_id" },
         "6": { "name": "km_start", "parseAs": "integer" },
