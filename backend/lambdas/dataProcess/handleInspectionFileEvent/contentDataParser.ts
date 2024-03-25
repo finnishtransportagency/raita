@@ -12,6 +12,7 @@ import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
 import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
 import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
+import { DBConnection } from '../csvCommon/db/dbUtil';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -119,7 +120,12 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-): Promise<{ contentData: ParseValueResult; hash: string;  reportId: number }> => {
+  dbConnection: DBConnection,
+): Promise<{
+  contentData: ParseValueResult;
+  hash: string;
+  reportId: number;
+}> => {
   let contentPromise: Promise<ParseValueResult>;
   let csvPromise: Promise<number>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
@@ -129,10 +135,7 @@ export const parseFileContent = async (
   if (keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
     log.info('chop csv file: ' + keyData.fileBaseName);
     const fileStreamToParse = originalStream.clone();
-    csvPromise = chopCSVFileStream(
-      keyData,
-      fileStreamToParse,
-    );
+    csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
     log.info('csv parsing result: ' + csvPromise);
   } else {
     csvPromise = Promise.resolve(-1);
@@ -145,10 +148,14 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData, reportId] = await Promise.all([hashPromise, contentPromise, csvPromise]);
+  const [hash, contentData, reportId] = await Promise.all([
+    hashPromise,
+    contentPromise,
+    csvPromise,
+  ]);
   return {
     contentData,
     hash,
-    reportId
+    reportId,
   };
 };

@@ -5,16 +5,25 @@ import { KeyData, RaitaParseError } from '../../utils';
 import { parseFileContent } from './contentDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import { extractPathData } from './pathDataParser';
+import {DBConnection} from "../csvCommon/db/dbUtil";
 
-export async function parseFileMetadata({
-  keyData,
-  fileStream,
-  spec,
-}: {
-  keyData: KeyData;
-  fileStream: Readable | undefined;
-  spec: IExtractionSpec;
-}): Promise<{ metadata: ParseValueResult; hash: string; errors: boolean; reportId: number; }> {
+export async function parseFileMetadata(
+  {
+    keyData,
+    fileStream,
+    spec,
+  }: {
+    keyData: KeyData;
+    fileStream: Readable | undefined;
+    spec: IExtractionSpec;
+  },
+  dbConnection: DBConnection,
+): Promise<{
+  metadata: ParseValueResult;
+  hash: string;
+  errors: boolean;
+  reportId: number;
+}> {
   let errorsFound = false;
   let fileNameData: any = {};
   try {
@@ -49,7 +58,12 @@ export async function parseFileMetadata({
   let reportId: number = -1;
   try {
     if (fileStream) {
-      const contentResult = await parseFileContent(spec, keyData, fileStream);
+      const contentResult = await parseFileContent(
+        spec,
+        keyData,
+        fileStream,
+        dbConnection,
+      );
       fileContentData = contentResult.contentData;
       hash = contentResult.hash;
       reportId = contentResult.reportId;
@@ -79,24 +93,19 @@ export async function parseFileMetadata({
     ...generatedMetadata,
   };
 
-
-  log.info("HELLO pathData");
+  log.info('HELLO pathData');
   log.info(pathData);
 
-
-  log.info("HELLO fileContentData");
+  log.info('HELLO fileContentData');
   log.info(fileContentData);
 
-
-  log.info("HELLO fileNameData");
+  log.info('HELLO fileNameData');
   log.info(fileNameData);
 
-
-  log.info("HELLO generatedMetadata");
+  log.info('HELLO generatedMetadata');
   log.info(generatedMetadata);
 
-
-  log.info("HELLO allMetadata");
+  log.info('HELLO allMetadata');
   log.info(allMetadata);
 
   // find any key that is marked at non parsed

@@ -13,10 +13,10 @@ const amsCsv =
   '318106,"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-20.9017,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
   '318107,"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,-21.2956,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '318108,"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,-23.1085,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
-//const amsCsvStream =stringToStream(amsCsv);
+const amsCsvStream =stringToStream(amsCsv);
 //const amsCsvStream = fs.createReadStream('./AMS_20211125_003_YLORP_002_000_000.csv');
 //const amsCsvStream = fs.createReadStream('./chunkFile_221_1_RP_20231016_003_HL_V315-V317_106_106.csv');
-const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/AMS_20221024_251_LHRP_1_130_131.csv');
+//const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/AMS_20221024_251_LHRP_1_130_131.csv');
 
 
 const amsCsvMissingSSCount =
@@ -198,7 +198,7 @@ describe('handle rp csv file success', () => {
       {
         fileBaseName: "chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
         path:[]},
-      rp2CsvFileStream,
+      rpCsvStream,
       {},
       dbConnection,
     );

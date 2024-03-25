@@ -2,6 +2,7 @@ import { IExtractionSpec } from '../../../../types';
 import { KeyData } from '../../../utils';
 import { generateMetadata, parseFileMetadata } from '../parseFileMetadata';
 import { stringToStream } from './testUtils';
+import {getDBConnection} from "../../csvCommon/db/dbUtil";
 
 const ISODateRegexp =
   /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}Z/;
@@ -131,12 +132,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
+    const dbConnection = await getDBConnection();
     const params = {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: false,
       hash: testFileHash,
@@ -163,12 +165,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
+    const dbConnection = await getDBConnection();
     const params = {
       keyData,
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: true,
       hash: dummyHash,
@@ -191,12 +194,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
+    const dbConnection = await getDBConnection();
     const params = {
       keyData,
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: true,
       hash: dummyHash,
@@ -223,12 +227,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
+    const dbConnection = await getDBConnection();
     const params = {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: true,
       hash: testFileHash,
@@ -258,7 +263,8 @@ describe('parseFileMetadata', () => {
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const dbConnection = await getDBConnection();
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: true,
       hash: testFileHash,
@@ -289,7 +295,8 @@ describe('parseFileMetadata', () => {
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const dbConnection = await getDBConnection();
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: false, // TODO: should this report errors if no metadata is found?
       hash: dummyHash,
@@ -320,7 +327,8 @@ describe('parseFileMetadata', () => {
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
     };
-    const result = await parseFileMetadata(params);
+    const dbConnection = await getDBConnection();
+    const result = await parseFileMetadata(params, dbConnection);
     expect(result).toEqual({
       errors: false,
       hash: testFileHash,

@@ -17,7 +17,7 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
-import {updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
+import {DBConnection, getDBConnection, updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -34,6 +34,7 @@ export function getLambdaConfigOrFail() {
 }
 
 const adminLogger: IAdminLogger = new PostgresLogger();
+let dbConnection: DBConnection;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
@@ -50,6 +51,7 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 export async function handleInspectionFileEvent(
   event: SQSEvent,
 ): Promise<void> {
+  dbConnection = await getDBConnection();
   const config = getLambdaConfigOrFail();
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
@@ -100,7 +102,7 @@ export async function handleInspectionFileEvent(
           keyData,
           fileStream: fileStreamResult.fileStream,
           spec,
-        });
+        }, dbConnection);
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -137,7 +139,7 @@ export async function handleInspectionFileEvent(
       );
 
 
-      await updateRaporttiMetadata(entries);
+      await updateRaporttiMetadata(entries, dbConnection);
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);

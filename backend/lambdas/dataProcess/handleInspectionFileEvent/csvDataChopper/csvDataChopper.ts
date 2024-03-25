@@ -1,5 +1,6 @@
 import { log } from '../../../../utils/logger';
 import {
+  DBConnection,
   insertRaporttiData,
   updateRaporttiChunks,
   updateRaporttiStatus,
@@ -17,14 +18,21 @@ async function writeFileChunkToQueueS3(
   reportId: number,
   key: KeyData,
   chunkNumber: number,
+  dbConnection: DBConnection,
 ) {
   console.log('writeFileChunkToQueueS3 key ' + key);
   console.log('writeFileChunkToQueueS3 report id ' + reportId);
   console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
-  const pathString =  key.path.slice(0,key.path.length - 1).join('/');
+  const pathString = key.path.slice(0, key.path.length - 1).join('/');
   const outFileName =
-    pathString + '/chunkFile_' + reportId + '_' + chunkNumber + '_' + key.fileName;
+    pathString +
+    '/chunkFile_' +
+    reportId +
+    '_' +
+    chunkNumber +
+    '_' +
+    key.fileName;
 
   log.info('outFileName ' + outFileName);
 
@@ -40,7 +48,7 @@ async function writeFileChunkToQueueS3(
   });
   const s3Client = new S3Client({});
   const a = await s3Client.send(command);
-  log.info("PutObjectCommand output");
+  log.info('PutObjectCommand output');
   log.info(a);
 
   return;
@@ -65,6 +73,7 @@ async function checkFilenamePrefix(fileNamePrefix: string) {
 export async function chopCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
+  dbConnection: DBConnection,
 ) {
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
@@ -76,6 +85,7 @@ export async function chopCSVFileStream(
     fileNamePrefix,
     null,
     'CHOPPING',
+    dbConnection,
   );
   log.debug('reportId: ' + reportId);
   checkFilenamePrefix(jarjestelma);
@@ -142,6 +152,7 @@ export async function chopCSVFileStream(
               reportId,
               keyData,
               chunkCounter,
+              dbConnection
             );
             //  log.debug("handled bufferd: " + handleCounter);
           }
@@ -176,6 +187,7 @@ export async function chopCSVFileStream(
         reportId,
         keyData,
         chunkCounter,
+        dbConnection
       );
     }
 
@@ -185,13 +197,13 @@ export async function chopCSVFileStream(
     );
 
     log.debug('Wrote files to csv bucket ' + fileBaseName + ' ' + chunkCounter);
-    await updateRaporttiStatus(reportId, 'PARSING', null);
-    updateRaporttiChunks(reportId, chunkCounter);
+    await updateRaporttiStatus(reportId, 'PARSING', null,dbConnection);
+    updateRaporttiChunks(reportId, chunkCounter,dbConnection);
     log.debug('Chopped file successfully: ' + fileBaseName);
     return reportId;
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString());
+    await updateRaporttiStatus(reportId, 'ERROR', e.toString(),dbConnection);
     return -1;
   }
 }

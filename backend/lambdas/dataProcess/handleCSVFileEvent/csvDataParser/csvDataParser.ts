@@ -334,10 +334,10 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    await substractRaporttiChunk(reportId);
-    const chunksLeft = await raporttiChunksToProcess(reportId);
+    await substractRaporttiChunk(reportId, dbConnection);
+    const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
     if (chunksLeft == 0) {
-      await updateRaporttiStatus(reportId, 'SUCCESS', null);
+      await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
     }
 
     const config = getLambdaConfigOrFail();
@@ -353,7 +353,7 @@ export async function parseCSVFileStream(
     return 'success';
   } catch (e) {
     log.error('csv parsing error, updating status ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString());
+    await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
     return 'error';
   }
 }

@@ -6,7 +6,6 @@ import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
-import {getKeyData} from "../../../utils";
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -216,8 +215,9 @@ export async function updateRaporttiStatus(
   id: number,
   status: string,
   error: null | string,
+  dbConnection: DBConnection,
 ) {
-  let { schema, sql } = await getDBConnection();
+  const { schema, sql } = dbConnection;
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -271,8 +271,8 @@ export async function updateRaporttiStatus(
   "tags": {},
 "reportId": 237*/
 
-export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
-  let { schema, sql } = await getDBConnection();
+export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbConnection: DBConnection) {
+  const { schema, sql } = dbConnection;
   for (const metaDataEntry of data) {
     const raporttiData = {
       size: metaDataEntry.size,
@@ -302,8 +302,8 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>) {
   }
 }
 
-export async function updateRaporttiChunks(id: number, chunks: number) {
-  let { schema, sql } = await getDBConnection();
+export async function updateRaporttiChunks(id: number, chunks: number, dbConnection: DBConnection,) {
+  const { schema, sql } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
@@ -319,8 +319,8 @@ export async function updateRaporttiChunks(id: number, chunks: number) {
   }
 }
 
-export async function substractRaporttiChunk(id: number) {
-  let { schema, sql } = await getDBConnection();
+export async function substractRaporttiChunk(id: number, dbConnection: DBConnection) {
+  const { schema, sql } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
@@ -336,8 +336,8 @@ export async function substractRaporttiChunk(id: number) {
   }
 }
 
-export async function raporttiChunksToProcess(id: number) {
-  let { schema, sql } = await getDBConnection();
+export async function raporttiChunksToProcess(id: number, dbConnection: DBConnection) {
+  const { schema, sql } = dbConnection;
   try {
     const chunks = await sql`SELECT chunks_to_process FROM ${sql(
       schema,
@@ -361,6 +361,7 @@ export async function insertRaporttiData(
   fileNamePrefix: string,
   metadata: ParseValueResult | null,
   status: string | null,
+  dbConnection: DBConnection,
 ): Promise<number> {
   const data: Raportti = {
     key,
@@ -371,8 +372,8 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  let { schema, sql } = await getDBConnection();
 
+  const { schema, sql } = dbConnection;
   try {
     const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
       data,

@@ -3,7 +3,7 @@ import { stringToStream } from '../../__tests__/testUtils';
 import * as fs from 'fs';
 import { log } from '../../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../../types';
-import {insertRaporttiData, updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
+import {getDBConnection, insertRaporttiData, updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
 import {getKeyData} from "../../../../utils";
 
 const amsCsv =
@@ -178,12 +178,14 @@ describe('outfile name generation', () => {
 
 describe('insert raportti success', () => {
   test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
     const result = await insertRaporttiData(
       'polku ja tiedostonimi',
       'tiedostonimi',
       'AMS',
       null,
       'CHOPPING',
+      dbConnection
     );
     const updateData: Array<FileMetadataEntry> = [];
     const row: FileMetadataEntry = {
@@ -219,12 +221,13 @@ describe('insert raportti success', () => {
       },
     };
     updateData.push(row);
-    await updateRaporttiMetadata(updateData);
+    await updateRaporttiMetadata(updateData, dbConnection);
   });
 });
 
 describe('handle ams file success', () => {
   test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
     const result = await chopCSVFileStream(
       {
         fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
@@ -236,6 +239,7 @@ describe('handle ams file success', () => {
         path: []
       },
       amsCsvStream,
+      dbConnection
     );
     log.debug('report inserted: ' + result);
   }, 900000);
