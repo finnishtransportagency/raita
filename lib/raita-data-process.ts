@@ -349,10 +349,7 @@ export class DataProcessStack extends NestedStack {
       databaseEnvironmentVariables,
     });
     // Grant lambda permissions to bucket
-    this.csvDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
-    configurationBucket.grantRead(this.handleCSVFileMassImportEventFn);
-    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
-
+    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
@@ -375,10 +372,14 @@ export class DataProcessStack extends NestedStack {
         databaseEnvironmentVariables,
       });
     // Grant lambda permissions to bucket
-    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
+    configurationBucket.grantRead(this.handleCSVFileMassImportEventFn);
+    this.csvMassImportDataBucket.grantReadWrite(
+      this.handleCSVFileMassImportEventFn,
+    );
 
     // Add s3 event source for any added file
-    this.handleCSVFileEventFn.addEventSource(
+    this.handleCSVFileMassImportEventFn.addEventSource(
       new S3EventSource(this.csvMassImportDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
       }),
@@ -603,7 +604,7 @@ export class DataProcessStack extends NestedStack {
     csvMassImportBucketName,
     csvBucketName,
     configurationFile,
-                                                configurationBucketName,
+    configurationBucketName,
     lambdaRole,
     raitaStackIdentifier,
     vpc,
