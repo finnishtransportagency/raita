@@ -62,6 +62,8 @@ export class DataProcessStack extends NestedStack {
   public readonly dataReceptionBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
   public readonly handleCSVFileEventFn: NodejsFunction;
+  public readonly handleCSVFileMassImportEventFn: NodejsFunction;
+  public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
@@ -118,6 +120,12 @@ export class DataProcessStack extends NestedStack {
     this.csvDataBucket = createRaitaBucket({
       scope: this,
       name: 'csv-data',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+    this.csvMassImportDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'csv-data-mass-import',
       raitaEnv,
       raitaStackIdentifier,
     });
@@ -330,7 +338,6 @@ export class DataProcessStack extends NestedStack {
       ...zipHandlerAlarms,
     ];
 
-
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
       name: 'dp-handler-csv-file',
@@ -342,11 +349,37 @@ export class DataProcessStack extends NestedStack {
       databaseEnvironmentVariables,
     });
     // Grant lambda permissions to bucket
-    this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
+    configurationBucket.grantRead(this.handleCSVFileMassImportEventFn);
+    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
+
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
       new S3EventSource(this.csvDataBucket, {
+        events: [s3.EventType.OBJECT_CREATED],
+      }),
+    );
+
+    // Create csv data parser lambda for mass import that is triggered from csv-massimport bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
+    this.handleCSVFileMassImportEventFn =
+      this.createCsvFileMassImportEventHandler({
+        name: 'dp-handler-csv-file-mass-import',
+        csvMassImportBucketName: this.csvMassImportDataBucket.bucketName,
+        csvBucketName: this.csvDataBucket.bucketName,
+        configurationFile: parserConfigurationFile,
+        configurationBucketName: configurationBucket.bucketName,
+        lambdaRole: this.dataProcessorLambdaServiceRole,
+        raitaStackIdentifier,
+        vpc,
+        databaseEnvironmentVariables,
+      });
+    // Grant lambda permissions to bucket
+    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+
+    // Add s3 event source for any added file
+    this.handleCSVFileEventFn.addEventSource(
+      new S3EventSource(this.csvMassImportDataBucket, {
         events: [s3.EventType.OBJECT_CREATED],
       }),
     );
@@ -516,7 +549,6 @@ export class DataProcessStack extends NestedStack {
     return [errorAlarm];
   }
 
-
   /**
    * Creates the csv parser lambda and add csv S3 bucket as event sources,
    * granting lambda read access to the bucket
@@ -551,6 +583,57 @@ export class DataProcessStack extends NestedStack {
       environment: {
         CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
+        REGION: this.region,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  /**
+   * Creates the csv parser lambda and add csv S3 bucket as event sources,
+   * granting lambda read access to the bucket
+   */
+  private createCsvFileMassImportEventHandler({
+    name,
+    csvMassImportBucketName,
+    csvBucketName,
+    configurationFile,
+                                                configurationBucketName,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    csvMassImportBucketName: string;
+    csvBucketName: string;
+    configurationFile: string;
+    configurationBucketName: string;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 10240,
+      timeout: cdk.Duration.seconds(15 * 60),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCSVFileEvent',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
+      ),
+      environment: {
+        CSV_BUCKET: csvBucketName,
+        CSV_MASS_IMPORT_BUCKET: csvMassImportBucketName,
+        CONFIGURATION_FILE: configurationFile,
+        CONFIGURATION_BUCKET: configurationBucketName,
         REGION: this.region,
         ...databaseEnvironmentVariables,
       },
