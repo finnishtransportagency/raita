@@ -49,9 +49,9 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
             false,
           );
 
-          log.debug(fileStreamResult);
+          log.info(fileStreamResult);
           const keyData = getKeyData(key);
-          log.debug(keyData);
+          log.info(keyData);
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.info(
@@ -62,14 +62,14 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           }
 
           if (fileStreamResult && fileStreamResult.fileStream) {
-            log.debug('csv parse file: ' + keyData.fileBaseName);
+            log.info('csv parse file: ' + keyData.fileBaseName);
             const result = await parseCSVFileStream(
               keyData,
               fileStreamResult.fileStream,
               null,
               dbConnection,
             );
-            log.debug('csv parsing result: ' + result);
+            log.info('csv parsing result: ' + result);
 
             return {
               // key is sent to be stored in url decoded format to db
@@ -89,7 +89,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           return null;
         }
         const entries = await Promise.all(recordResults).then(
-          results => log.debug(results),
+          results => log.info(results),
         );
       });
     });
