@@ -74,6 +74,8 @@ export class S3FileRepository implements IFileInterface {
     const key = decodeURIComponent(
       eventRecord.s3.object.key.replace(/\+/g, ' '),
     );
+    log.info("bucket : " + bucket );
+    log.info("key : " + key );
     // get metadata separately with head request because fileStream only contains file body
     const headPromise = this.#s3
       .headObject({
@@ -81,12 +83,16 @@ export class S3FileRepository implements IFileInterface {
         Key: key,
       })
       .promise();
+    log.info("headPromise : " + headPromise );
     const fileStream = this.#s3
       .getObject({
         Bucket: bucket,
         Key: key,
       })
       .createReadStream();
+
+
+    log.info("fileStream : " + fileStream );
     let tags = {};
 
 
@@ -107,7 +113,10 @@ export class S3FileRepository implements IFileInterface {
         {} as Record<string, string>,
       );
     }
+    log.info("tags : " + tags );
+
     const headResponse = await headPromise;
+    log.info("headResponse : " + headResponse );
     return {
       fileStream,
       contentType: headResponse.ContentType,
