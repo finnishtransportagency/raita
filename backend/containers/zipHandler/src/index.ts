@@ -27,7 +27,7 @@ async function start() {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileName } = getKeyData(zipKey);
     const invocationId = zipKey;
-    await adminLogger.init('data-reception', invocationId); // TODO: use invocationId metadata later
+    await adminLogger.init('data-reception', invocationId);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -40,12 +40,17 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
-    const zipMetadata = getObjectResult.Metadata ?? {};
+    const fileMetadata = getObjectResult.Metadata ?? {};
     // pass on relevant metadata fields from zip file to extracted files
-    const metadataForFiles: any = {};
-    if (zipMetadata['skip-hash-check']) {
-      metadataForFiles['skip-hash-check'] = zipMetadata['skip-hash-check'];
+    const newFileMetadata: { [key: string]: string } = {};
+    if (fileMetadata['skip-hash-check']) {
+      newFileMetadata['skip-hash-check'] = fileMetadata['skip-hash-check'];
     }
+    if (fileMetadata['require-newer-parser-version']) {
+      newFileMetadata['require-newer-parser-version'] =
+        fileMetadata['require-newer-parser-version'];
+    }
+    newFileMetadata['invocation-id'] = encodeURIComponent(invocationId); // pass same invocationId to extracted files for logging
     // Timestamp is needed to tie the extracted files and meta data entries into the zip
     // file they were extracted from. The LastModified here should always equal to the moment
     // when zip was uploaded to the S3 bucket. As a backup, a secondary processing date is provided.
@@ -54,13 +59,13 @@ async function start() {
           timeStamp: getObjectResult.LastModified.toISOString(),
           timeStampType: 'zipLastModified',
           fileName,
-          metadata: metadataForFiles,
+          metadata: newFileMetadata,
         }
       : {
           timeStamp: new Date().toISOString(),
           timeStampType: 'zipProcessed',
           fileName,
-          metadata: metadataForFiles,
+          metadata: newFileMetadata,
         };
 
     const readStream = getObjectResult.Body as Readable;

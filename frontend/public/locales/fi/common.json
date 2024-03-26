@@ -3,7 +3,8 @@
     "reports": "Raportit",
     "admin": {
       "logs": "Adminloki",
-      "delete": "Tietojen poisto"
+      "delete": "Tietojen poisto",
+      "process": "Tiedostojen uudelleenkäsittely"
     }
   },
   "error": {
@@ -13,6 +14,8 @@
     "500": "Virhe palvelimella",
     "date_range_missing": "Virhe: aseta aloitus- ja lopetusaika"
   },
+  "yes": "Kyllä",
+  "no": "Ei",
   "raita_title": "RAITA",
   "raita_subtitle": "Koneellinen radantarkastus",
   "reports_head_title": "Raportit",
