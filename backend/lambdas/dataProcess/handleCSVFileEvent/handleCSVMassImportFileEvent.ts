@@ -27,10 +27,7 @@ export function getLambdaConfigOrFail() {
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
     cSVMassImportBucket: getEnv('CSV_MASS_IMPORT_BUCKET'),
     csvBucket:  getEnv('CSV_BUCKET'),
-    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
-    metadataIndex: getEnv('METADATA_INDEX'),
-
   };
 }
 
