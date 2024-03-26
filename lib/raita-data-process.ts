@@ -378,9 +378,9 @@ export class DataProcessStack extends NestedStack {
       this.handleCSVFileMassImportEventFn,
     );
 
-    // route inspection s3 events through a queue
+    // route csv mass import s3 events through a queue
     const csvMassImportQueue = new Queue(this, 'csv-mass-import-queue', {
-      visibilityTimeout: Duration.seconds(240),
+      visibilityTimeout: Duration.seconds(900),
     });
     this.csvMassImportDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
