@@ -378,12 +378,19 @@ export class DataProcessStack extends NestedStack {
       this.handleCSVFileMassImportEventFn,
     );
 
-    // Add s3 event source for any added file
-    this.handleCSVFileMassImportEventFn.addEventSource(
-      new S3EventSource(this.csvMassImportDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
+    // route inspection s3 events through a queue
+    const csvMassImportQueue = new Queue(this, 'csv-mass-import-queue', {
+      visibilityTimeout: Duration.seconds(240),
+    });
+    this.csvMassImportDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(csvMassImportQueue),
     );
+    const csvMassImportQueueSource = new SqsEventSource(csvMassImportQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 10,
+    });
+    this.handleCSVFileMassImportEventFn.addEventSource(csvMassImportQueueSource);
 
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
