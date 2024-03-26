@@ -349,7 +349,7 @@ export class DataProcessStack extends NestedStack {
       databaseEnvironmentVariables,
     });
     // Grant lambda permissions to bucket
-    this.csvMassImportDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // Add s3 event source for any added file
     this.handleCSVFileEventFn.addEventSource(
@@ -625,10 +625,10 @@ export class DataProcessStack extends NestedStack {
       memorySize: 10240,
       timeout: cdk.Duration.seconds(15 * 60),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleCSVFileEvent',
+      handler: 'handleCSVMassImportFileEvent',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVMassImportFileEvent.ts`,
       ),
       environment: {
         CSV_BUCKET: csvBucketName,
