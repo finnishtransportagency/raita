@@ -21,6 +21,8 @@ const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection;
 
 export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
+  log.info('Start csv file handler');
+  log.info(event);
   dbConnection = await getDBConnection();
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
@@ -28,12 +30,19 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
       const s3Event: S3Event = JSON.parse(sqsRecord.body);
-      const recordResults = s3Event.Records.map(async eventRecord => {
+      const recordResults: Promise<null | {
+        bucket_arn: string;
+        size: number;
+        file_name: string;
+        bucket_name: string;
+        key: string;
+        tags: Record<string, string>
+      } | any[]>[] = s3Event.Records.map(async eventRecord => {
         try {
           const key = getDecodedS3ObjectKey(eventRecord);
           currentKey = key;
-          log.debug({ fileName: key }, 'Start csv file handler');
-          log.debug(eventRecord);
+          log.info({ fileName: key }, 'Start csv file handler');
+          log.info(eventRecord);
 
           const fileStreamResult = await files.getFileStream(
             eventRecord,
@@ -79,6 +88,9 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           );
           return null;
         }
+        const entries = await Promise.all(recordResults).then(
+          results => log.debug(results),
+        );
       });
     });
 
@@ -91,7 +103,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
             message: 'An error occured while processing events in array',
           });
           await adminLogger.error(
-            `iedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
           );
         }
       }),
