@@ -363,9 +363,9 @@ export class DataProcessStack extends NestedStack {
       batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
       maxConcurrency: 10,
     });
-    this.handleCSVFileMassImportEventFn.addEventSource(csvImportQueueSource);
+    this.handleCSVFileEventFn.addEventSource(csvImportQueueSource);
 
-    // Create csv data parser lambda for mass import that is triggered from csv-massimport bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
+    // Create csv data parser lambda for mass import that is triggered from csv-mass-import bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
     this.handleCSVFileMassImportEventFn =
       this.createCsvFileMassImportEventHandler({
         openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
