@@ -40,13 +40,10 @@ let dbConnection: DBConnection;
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
 /**
- * Currently function takes in S3 events. This has implication that file port
- * does not make sense conceptually as we are committed in S3 from the outset.
- * Should we make the handling more generic from the start, accepting also HTTP trigger
- * events and using Strategy pattern possibly to plug in correct file backend based on
- * config or even event details.
- *
- * TODO: Parsing should be extracted out out the S3Event handler.
+ * This is otherwise same as handleInspectionFileEvent.ts but writing to opensearh disbaled.
+ * This is started from file event from csv-data-mass-import s3 bucket.
+ * The purpose of that bucket and this lambda is the mass import of existing csv files.
+ * A separate bucket and lambda are use so import of exixsting files can we done indepedently of normal data-process.
  *
  */
 export async function handleCSVMassImportFileEvent(
