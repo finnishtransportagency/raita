@@ -62,7 +62,7 @@ export async function handleCSVMassImportFileEvent(
         eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start cSVMassImport file handler');
+        log.info({ fileName: key }, 'Start CSVMassImport file handler');
         const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);

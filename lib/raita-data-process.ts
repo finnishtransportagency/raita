@@ -351,16 +351,26 @@ export class DataProcessStack extends NestedStack {
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
-    // Add s3 event source for any added file
-    this.handleCSVFileEventFn.addEventSource(
-      new S3EventSource(this.csvDataBucket, {
-        events: [s3.EventType.OBJECT_CREATED],
-      }),
+    // route csv bucket s3 events through a queue
+    const csvImportQueue = new Queue(this, 'csv-import-queue', {
+      visibilityTimeout: Duration.seconds(900),
+    });
+    this.csvDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(csvImportQueue),
     );
+    const csvImportQueueSource = new SqsEventSource(csvImportQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 10,
+    });
+    this.handleCSVFileMassImportEventFn.addEventSource(csvImportQueueSource);
 
     // Create csv data parser lambda for mass import that is triggered from csv-massimport bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
     this.handleCSVFileMassImportEventFn =
       this.createCsvFileMassImportEventHandler({
+        openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+        inspectionBucketName: this.inspectionDataBucket.bucketName,
+        openSearchMetadataIndex: openSearchMetadataIndex,
         name: 'dp-handler-csv-file-mass-import',
         csvMassImportBucketName: this.csvMassImportDataBucket.bucketName,
         csvBucketName: this.csvDataBucket.bucketName,
@@ -390,7 +400,9 @@ export class DataProcessStack extends NestedStack {
       batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
       maxConcurrency: 10,
     });
-    this.handleCSVFileMassImportEventFn.addEventSource(csvMassImportQueueSource);
+    this.handleCSVFileMassImportEventFn.addEventSource(
+      csvMassImportQueueSource,
+    );
 
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
@@ -612,6 +624,9 @@ export class DataProcessStack extends NestedStack {
     csvBucketName,
     configurationFile,
     configurationBucketName,
+    openSearchMetadataIndex,
+    openSearchDomainEndpoint,
+    inspectionBucketName,
     lambdaRole,
     raitaStackIdentifier,
     vpc,
@@ -622,6 +637,9 @@ export class DataProcessStack extends NestedStack {
     csvBucketName: string;
     configurationFile: string;
     configurationBucketName: string;
+    openSearchDomainEndpoint: string;
+    inspectionBucketName: string;
+    openSearchMetadataIndex: string;
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
@@ -643,6 +661,9 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         CONFIGURATION_BUCKET: configurationBucketName,
         REGION: this.region,
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        INSPECTION_BUCKET: inspectionBucketName,
+        METADATA_INDEX: openSearchMetadataIndex,
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
