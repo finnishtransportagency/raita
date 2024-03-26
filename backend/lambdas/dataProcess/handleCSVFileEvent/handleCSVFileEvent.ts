@@ -48,9 +48,11 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
             eventRecord,
             false,
           );
-
+          log.info('got file stream');
           log.info(fileStreamResult);
           const keyData = getKeyData(key);
+
+          log.info('got key data');
           log.info(keyData);
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
