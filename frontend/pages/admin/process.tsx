@@ -127,6 +127,7 @@ const ProcessIndex: RaitaNextPage = () => {
                     {t('admin:process_all_label')}
                     <label className="block">
                       <input
+                        className="mr-1"
                         type="radio"
                         name="skip-hash-check"
                         value="false"
@@ -139,6 +140,7 @@ const ProcessIndex: RaitaNextPage = () => {
                     </label>
                     <label className="block">
                       <input
+                        className="mr-1"
                         type="radio"
                         name="skip-hash-check"
                         value="true"
@@ -155,6 +157,7 @@ const ProcessIndex: RaitaNextPage = () => {
                     {t('admin:process_require_newer_version_label')}
                     <label className="block">
                       <input
+                        className="mr-1"
                         type="radio"
                         name="require-newer-parser-version"
                         value="true"
@@ -167,6 +170,7 @@ const ProcessIndex: RaitaNextPage = () => {
                     </label>
                     <label className="block mb-2">
                       <input
+                        className="mr-1"
                         type="radio"
                         name="require-newer-parser-version"
                         value="false"

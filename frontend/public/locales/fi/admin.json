@@ -41,6 +41,6 @@
   "process_in_progress": "Uudelleenkäsittelypyynto on käynnissä...",
   "process_result_heading": "Uudelleenkäsittely käynnistetty",
   "process_started": "Tiedostojen uudelleenkäsittely on käynnistetty. Tarkemmat tiedot uudelleenkäsittelyprosessin etenemisestä näkyvät adminlokisivulla.",
-  "process_all_label": "Uudelleenkäsittele vain tiedostot joilla ei ole olemassaolevaa metadataa",
+  "process_all_label": "Uudelleenkäsittele vain tiedostot joita ei löydy tietokannasta. Vertailu tehdään tiedostonimen sekä tiedoston sisällöstä lasketun hash-arvon perusteella. ",
   "process_require_newer_version_label": "Uudelleenkäsittele vain tiedostot jotka on käsitelty vanhemmalla parsijan versiolla"
 }
