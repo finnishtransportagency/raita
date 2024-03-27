@@ -87,11 +87,13 @@ export async function handleReceptionFileEvent(
         const existingResult = await s3Client.send(
           new HeadObjectCommand({
             Key: key,
-            Bucket: config.targetBucketName,
+            Bucket: bucket.name,
           }),
         );
         const existingMetadata = existingResult.Metadata ?? {};
-        const newMetadata: { [key: string]: string } = {};
+        const newMetadata: { [key: string]: string } = {
+          'invocation-id': key,
+        };
         // only copy some metadata fields
         if (existingMetadata['skip-hash-check']) {
           newMetadata['skip-hash-check'] = existingMetadata['skip-hash-check'];
