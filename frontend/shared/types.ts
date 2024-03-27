@@ -104,6 +104,10 @@ export interface DeleteResponse {
   inspectionDeleteCount: number;
   metadataDeleteCount: number;
 }
+export interface ManualDataProcessRequest {
+  count: number;
+  bucket: 'reception' | 'inspection';
+}
 
 export interface SingleEventAdminLogsResponse {
   totalSize: number;

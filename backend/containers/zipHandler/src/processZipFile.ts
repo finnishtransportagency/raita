@@ -58,6 +58,15 @@ export const processZipFile = ({
           // Inspect the enty file name to detect video files: video files are not extracted from the zip
           if (isRaitaVideoFile(entry.fileName)) {
             // Ignore the current video file entry and read next
+            entries.push(
+              Promise.resolve({
+                fileName: entry.fileName,
+                status: 'skipped',
+                errorDescription: '',
+                compressedSize: NaN, // sizes are not needed
+                uncompressedSize: NaN,
+              }),
+            );
             zipfile.readEntry();
           } else {
             // Generate key by joining the prefix to the path of the file inside zip

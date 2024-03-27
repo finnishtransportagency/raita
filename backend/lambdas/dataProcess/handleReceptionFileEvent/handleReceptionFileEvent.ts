@@ -1,5 +1,9 @@
 import { S3Event, SQSEvent } from 'aws-lambda';
-import { CopyObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  CopyObjectCommand,
+  HeadObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { log } from '../../../utils/logger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import {
@@ -78,12 +82,33 @@ export async function handleReceptionFileEvent(
         return result;
       } else if (isExcelSuffix(fileSuffix)) {
         // Copy the file to target S3 bucket if it is an Excel file
+        const s3Client = new S3Client({});
+        // fetch metadata from existing object
+        const existingResult = await s3Client.send(
+          new HeadObjectCommand({
+            Key: key,
+            Bucket: bucket.name,
+          }),
+        );
+        const existingMetadata = existingResult.Metadata ?? {};
+        const newMetadata: { [key: string]: string } = {
+          'invocation-id': key,
+        };
+        // only copy some metadata fields
+        if (existingMetadata['skip-hash-check']) {
+          newMetadata['skip-hash-check'] = existingMetadata['skip-hash-check'];
+        }
+        if (existingMetadata['require-newer-parser-version']) {
+          newMetadata['require-newer-parser-version'] =
+            existingMetadata['require-newer-parser-version'];
+        }
         const command = new CopyObjectCommand({
           Key: key,
           Bucket: config.targetBucketName,
           CopySource: `${bucket.name}/${key}`,
+          Metadata: newMetadata,
+          MetadataDirective: 'REPLACE',
         });
-        const s3Client = new S3Client({});
         return s3Client.send(command);
       } else {
         throw new RaitaLambdaError(`Unexpected file suffix: ${path}`, 400);

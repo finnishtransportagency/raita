@@ -29,7 +29,7 @@ export function isZipPath(arg: Array<string>): arg is ZipPath {
 
 export interface EntryRecord {
   fileName: string;
-  status: 'success' | 'error';
+  status: 'success' | 'error' | 'skipped';
   errorDescription: string;
   compressedSize: number;
   uncompressedSize: number;
@@ -39,6 +39,7 @@ export interface ExtractEntriesResult {
   entries: {
     success: Array<EntryRecord>;
     error: Array<EntryRecord>;
+    skipped: Array<EntryRecord>;
   };
   streamError?: Error;
 }

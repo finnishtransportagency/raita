@@ -159,6 +159,17 @@ export function isZipParentPath(arg: Array<string>): boolean {
   );
 }
 
+/**
+ * Check if arg is a valid zip path referencing a 'campaign' or 'date'
+ * Will reject if path is too broad, referencing 'system' or 'year'
+ */
+export function isCampaignOrMoreSpecificPath(arg: Array<string>): boolean {
+  const [system] = arg;
+  return (
+    arg.length > 2 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
+  );
+}
+
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
   return Object.values(fileSuffixesToIncludeInMetadataParsing).some(
     suffix => suffix === arg,

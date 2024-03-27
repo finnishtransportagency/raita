@@ -239,7 +239,9 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                 const noFilesHandled =
                   type === 'data-process' &&
                   (!logSummary.counts['data-inspection'] ||
-                    logSummary.counts['data-inspection'].info === 0);
+                    (logSummary.counts['data-inspection'].info === 0 &&
+                      logSummary.counts['data-inspection'].warn === 0 &&
+                      logSummary.counts['data-inspection'].error === 0));
                 return (
                   <AccordionItem
                     className="border border-gray-300 rounded-lg p-2 my-2"
