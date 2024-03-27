@@ -30,14 +30,18 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
       const s3Event: S3Event = JSON.parse(sqsRecord.body);
-      const recordResults: Promise<null | {
-        bucket_arn: string;
-        size: number;
-        file_name: string;
-        bucket_name: string;
-        key: string;
-        tags: Record<string, string>
-      } | any[]>[] = s3Event.Records.map(async eventRecord => {
+      const recordResults: Promise<
+        | null
+        | {
+            bucket_arn: string;
+            size: number;
+            file_name: string;
+            bucket_name: string;
+            key: string;
+            tags: Record<string, string>;
+          }
+        | any[]
+      >[] = s3Event.Records.map(async eventRecord => {
         try {
           const key = getDecodedS3ObjectKey(eventRecord);
           currentKey = key;
@@ -90,10 +94,10 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           );
           return null;
         }
-        const entries = await Promise.all(recordResults).then(
-          results => log.info(results),
-        );
       });
+      const entries = await Promise.all(recordResults).then(results =>
+        log.info(results),
+      );
     });
 
     const settled = await Promise.allSettled(sqsRecordResults);
@@ -110,7 +114,6 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
         }
       }),
     );
-
   } catch (err) {
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
