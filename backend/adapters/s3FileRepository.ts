@@ -77,13 +77,9 @@ export class S3FileRepository implements IFileInterface {
     log.info("bucket : " + bucket );
     log.info("key : " + key );
     // get metadata separately with head request because fileStream only contains file body
-    const headPromise = this.#s3
-      .headObject({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    log.info("headPromise : " + headPromise );
+
+
+
     const fileStream = this.#s3
       .getObject({
         Bucket: bucket,
@@ -94,7 +90,8 @@ export class S3FileRepository implements IFileInterface {
 
     log.info("fileStream : " + fileStream );
     let tags = {};
-
+    let metadata ={};
+    let contentType = "";
 
     //csv bucket event handler stalled here; so added boolean includeTags. TODO make smarter
     if (includeTags) {
@@ -112,16 +109,30 @@ export class S3FileRepository implements IFileInterface {
         },
         {} as Record<string, string>,
       );
+
+
+      const headPromise = this.#s3
+        .headObject({
+          Bucket: bucket,
+          Key: key,
+        })
+        .promise();
+
+      const headResponse = await headPromise;
+      metadata = headResponse.Metadata ?? {};
+      contentType = headResponse.ContentType;
+
     }
     log.info("tags : " + tags );
+    log.info("metadata : " + metadata );
 
-    const headResponse = await headPromise;
-    log.info("headResponse : " + headResponse );
+
+
     return {
       fileStream,
-      contentType: headResponse.ContentType,
+      contentType,
       tags,
-      metaData: headResponse.Metadata ?? {},
+      metaData: metadata,
     };
   };
 }

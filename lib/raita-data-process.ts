@@ -352,14 +352,14 @@ export class DataProcessStack extends NestedStack {
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
     // route csv bucket s3 events through a queue
-    const csvImportQueue = new Queue(this, 'csv-import-queue', {
+    const csvQueue = new Queue(this, 'csv-queue', {
       visibilityTimeout: Duration.seconds(900),
     });
     this.csvDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
-      new SqsDestination(csvImportQueue),
+      new SqsDestination(csvQueue),
     );
-    const csvImportQueueSource = new SqsEventSource(csvImportQueue, {
+    const csvImportQueueSource = new SqsEventSource(csvQueue, {
       batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
       maxConcurrency: 10,
     });
