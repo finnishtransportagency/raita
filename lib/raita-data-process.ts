@@ -361,7 +361,7 @@ export class DataProcessStack extends NestedStack {
     );
     const csvImportQueueSource = new SqsEventSource(csvQueue, {
       batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
-      maxConcurrency: 10,
+      maxConcurrency: 1,
     });
     this.handleCSVFileEventFn.addEventSource(csvImportQueueSource);
 
