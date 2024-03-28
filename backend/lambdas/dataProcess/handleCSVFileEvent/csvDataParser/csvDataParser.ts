@@ -68,8 +68,8 @@ async function parseCsvAndWriteToDb(
 
     try {
       //disable here if needed stop database
-      //return await writeRowsToDB(dbRows, table, dbConnection);
-      return;
+      return await writeRowsToDB(dbRows, table, dbConnection);
+      //return;
     } catch (e) {
       log.error('Error writing to db');
       log.error(e);
