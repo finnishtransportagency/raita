@@ -70,6 +70,7 @@ const extractionSpec: IExtractionSpec = {
     '3': { name: 'overlapping' },
     '4': { name: 'filename' },
   },
+  folderTreeExtractionSpecWithTestTrackExtraInfo: {},
   vRunFolderTreeExtractionSpec: {
     '1': { name: 'pathOnly1' },
     '2': { name: 'vPathOnly2' },
