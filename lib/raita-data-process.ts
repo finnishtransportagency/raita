@@ -463,7 +463,7 @@ export class DataProcessStack extends NestedStack {
       },
     );
     const anyErrorMetricFilter = logGroup.addMetricFilter(
-      'zip-handler-error-filter',
+      'zip-handler-any-error-filter',
       {
         filterPattern: FilterPattern.anyTerm('error', 'Error'),
         metricName: `zip-handler-any-error-${raitaStackIdentifier}`,
@@ -483,7 +483,7 @@ export class DataProcessStack extends NestedStack {
         statistic: Stats.SUM,
       }),
     });
-    const anyErrorAlarm = new Alarm(this, 'zip-handler-errors-alarm', {
+    const anyErrorAlarm = new Alarm(this, 'zip-handler-any-errors-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
       evaluationPeriods: 1,
