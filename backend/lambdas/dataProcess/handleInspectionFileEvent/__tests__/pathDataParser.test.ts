@@ -1,6 +1,6 @@
 import { IExtractionSpec } from '../../../../types';
 import { KeyData, RaitaParseError } from '../../../utils';
-import { extractPathData } from '../pathDataParser';
+import { determineParsingSpec, extractPathData } from '../pathDataParser';
 
 jest.mock('../../../../utils/logger', () => {
   return {
@@ -26,7 +26,20 @@ const extractionSpec: IExtractionSpec = {
     '1': { name: 'part1' },
     '2': { name: 'part2' },
     '3': { name: 'part3' },
-    '4': { name: 'filename' },
+    '4': { name: 'part4' },
+    '5': { name: 'zipFile' },
+    '6': { name: 'directory' },
+    '7': { name: 'filename' },
+  },
+  folderTreeExtractionSpecWithTestTrackExtraInfo: {
+    '1': { name: 'part1' },
+    '2': { name: 'part2' },
+    '3': { name: 'part3' },
+    '4': { name: 'part4' },
+    '5': { name: 'zipFile' },
+    '6': { name: 'extraInfo' },
+    '7': { name: 'directory' },
+    '8': { name: 'filename' },
   },
   vRunFolderTreeExtractionSpec: {
     '1': { name: 'vPart1' },
@@ -42,12 +55,12 @@ const extractionSpec: IExtractionSpec = {
 describe('extractPathData', () => {
   test('success: normal run', () => {
     const keyData: KeyData = {
-      path: ['test', 'path', '1', 'test_123_456.txt'],
+      path: ['test', 'path', '1', 'a', 'zip', 'b', 'test_123_456.txt'],
       rootFolder: 'test',
       fileName: 'test_123_456.txt',
       fileBaseName: 'test_123_456',
       fileSuffix: 'txt',
-      keyWithoutSuffix: 'test/path/1/test_123_456',
+      keyWithoutSuffix: 'test/path/1/a/zip/b/test_123_456',
     };
 
     const result = extractPathData(keyData, extractionSpec);
@@ -55,6 +68,9 @@ describe('extractPathData', () => {
       part1: 'test',
       part2: 'path',
       part3: '1',
+      part4: 'a',
+      zipFile: 'zip',
+      directory: 'b',
     });
   });
   test('success: virtual run', () => {
@@ -129,5 +145,76 @@ describe('extractPathData', () => {
       part3: 'here',
       system: 'OHL',
     });
+  });
+});
+
+describe('determineParsingSpec', () => {
+  test('success: folderTreeExtractionSpec', () => {
+    const testKeyData: KeyData = {
+      path: ['test', 'path', '1', 'a', 'zip', 'b', 'test_123_456.txt'],
+      rootFolder: '',
+      fileName: '',
+      fileBaseName: '',
+      fileSuffix: '',
+      keyWithoutSuffix: '',
+    };
+    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
+      extractionSpec.folderTreeExtractionSpec,
+    );
+  });
+  test('success: vRunFolderTreeExtractionSpec', () => {
+    const testKeyData: KeyData = {
+      path: ['test', 'filename.txt'],
+      rootFolder: '',
+      fileName: '',
+      fileBaseName: '',
+      fileSuffix: '',
+      keyWithoutSuffix: '',
+    };
+    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
+      extractionSpec.vRunFolderTreeExtractionSpec,
+    );
+  });
+  test('success: folderTreeExtractionSpecWithTestTrackExtraInfo', () => {
+    const testKeyData: KeyData = {
+      path: [
+        'test',
+        'path',
+        '1',
+        'a',
+        'zip',
+        'TEST TRACK',
+        'b',
+        'test_123_456.txt',
+      ],
+      rootFolder: '',
+      fileName: '',
+      fileBaseName: '',
+      fileSuffix: '',
+      keyWithoutSuffix: '',
+    };
+    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
+      extractionSpec.folderTreeExtractionSpecWithTestTrackExtraInfo,
+    );
+  });
+  test('failure: folderTreeExtractionSpecWithTestTrackExtraInfo with wrong extra info', () => {
+    const testKeyData: KeyData = {
+      path: [
+        'test',
+        'path',
+        '1',
+        'a',
+        'zip',
+        'WRONG EXTRA INFO HERE',
+        'b',
+        'test_123_456.txt',
+      ],
+      rootFolder: '',
+      fileName: '',
+      fileBaseName: '',
+      fileSuffix: '',
+      keyWithoutSuffix: '',
+    };
+    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(null);
   });
 });
