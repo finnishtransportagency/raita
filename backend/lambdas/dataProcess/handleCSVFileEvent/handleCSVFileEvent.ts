@@ -7,8 +7,9 @@ import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
+import {DeleteObjectCommand, S3Client} from "@aws-sdk/client-s3";
 
-export function getLambdaConfigOrFail() {
+function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
@@ -75,6 +76,18 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
               null,
               dbConnection,
             );
+            if(result == "success"){
+              const config = getLambdaConfigOrFail();
+              log.debug('Success reading file, deleting: ' + keyData.fileBaseName);
+              const command = new DeleteObjectCommand({
+                Bucket: config.csvBucket,
+                Key: keyData.keyWithoutSuffix + '.' + keyData.fileSuffix,
+              });
+              const s3Client = new S3Client({});
+              const a = await s3Client.send(command);
+              log.info('DELETE output');
+              log.info(a);
+            }
             log.info('csv parsing result: ' + result);
 
             return {
