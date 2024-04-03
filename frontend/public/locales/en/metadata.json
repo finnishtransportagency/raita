@@ -31,6 +31,7 @@
   "label_zip_name": "ZIP filename",
   "label_parsed_at_datetime": "Date added to RAITA",
   "label_extra_information": "Extra information",
+  "label_metadata_changed_at_datetime": "Metadata update datetime",
   "AMS": "Acceleration Measuring System",
   "TG": "Track Geometry Measuring System",
   "TGMS": "Track Geometry Measuring System",
