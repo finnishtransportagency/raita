@@ -5,7 +5,7 @@ export * from './portDataStorage';
 export * from './portFile';
 export * from './portSpecification';
 
-export type ParseValueResult = Record<string, string | number | boolean>;
+export type ParseValueResult = Record<string, string | number | boolean | null>;
 
 export interface FileMetadataEntry {
   file_name: string;

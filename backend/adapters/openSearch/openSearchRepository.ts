@@ -97,12 +97,14 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     const docToUpdate =
       exists && exists.hits.find((doc: any) => doc._source.key === key);
     if (!exists || !docToUpdate) {
-      await wrapRetryOnTooManyRequests(
+      return await wrapRetryOnTooManyRequests(
         () => this.addDoc(client, entry),
         initialRetryWait,
         maxRetryWait,
       );
-    } else if (skipHashCheck || hash !== docToUpdate._source.hash) {
+    }
+    const hashMatch = hash === docToUpdate._source.hash;
+    if (skipHashCheck || !hashMatch) {
       const requireNewerParserVersion =
         entry.options.require_newer_parser_version;
       if (requireNewerParserVersion) {
@@ -116,7 +118,13 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
           return;
         }
       }
-      await wrapRetryOnTooManyRequests(
+      if (hashMatch) {
+        // updating existing file: don't update parsed_at_datetime
+        const oldParsedAt =
+          docToUpdate._source.metadata.parsed_at_datetime || null;
+        entry.metadata.parsed_at_datetime = oldParsedAt;
+      }
+      return await wrapRetryOnTooManyRequests(
         () => this.updateDoc(client, docToUpdate._id, entry),
         initialRetryWait,
         maxRetryWait,
