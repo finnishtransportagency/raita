@@ -1,7 +1,9 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import {
-  convertToDBRow, DBConnection, getDBConnection,
+  convertToDBRow,
+  DBConnection,
+  getDBConnection,
   raporttiChunksToProcess,
   substractRaporttiChunk,
   updateRaporttiStatus,
@@ -14,18 +16,17 @@ import { rcSchema } from './csvSchemas/rcCsvSchema';
 import { rpSchema } from './csvSchemas/rpCsvSchema';
 import { tgSchema } from './csvSchemas/tgCsvSchema';
 import { tsightSchema } from './csvSchemas/tsightCsvSchema';
-import { ZodObject } from 'zod';
+import {z, ZodObject, ZodRawShape} from 'zod';
 import {
   readRunningDateFromLine,
   replaceSeparators,
   tidyUpFileBody,
+  tidyUpHeaderLine,
 } from '../../csvCommon/csvConversionUtils';
 import { parseCSVContent } from '../../../../utils/zod-csv/csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-
-
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -105,6 +106,7 @@ async function handleBufferedLines(
   reportId: number,
   fileBaseName: string,
   dbConnection: DBConnection,
+  fileSchema: ZodObject<any>,
 ) {
   try {
     const fileChunkBody = replaceSeparators(inputFileChunkBody);
@@ -117,7 +119,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'ams_mittaus',
-          amsSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -129,7 +131,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'ohl_mittaus',
-          ohlSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -141,7 +143,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'pi_mittaus',
-          piSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -153,7 +155,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'rc_mittaus',
-          rcSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -165,7 +167,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'rp_mittaus',
-          rpSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -177,7 +179,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'tg_mittaus',
-          tgSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -189,7 +191,7 @@ async function handleBufferedLines(
           reportId,
           fileBaseName,
           'tsight_mittaus',
-          tsightSchema,
+          fileSchema,
           fileNamePrefix,
           dbConnection,
         );
@@ -205,6 +207,55 @@ async function handleBufferedLines(
   }
 }
 
+function createFileSchema(
+  fileNamePrefix: string,
+  csvHeaderLine: string,
+): ZodObject<any> {
+  let originalSchema: ZodObject<any>;
+  switch (fileNamePrefix) {
+    case 'AMS':
+      originalSchema = amsSchema;
+      break;
+    case 'OHL':
+      originalSchema = ohlSchema;
+      break;
+    case 'PI':
+      originalSchema = piSchema;
+      break;
+    case 'RC':
+      originalSchema = rcSchema;
+      break;
+    case 'RP':
+      originalSchema = rpSchema;
+      break;
+    case 'TG':
+      originalSchema = tgSchema;
+      break;
+    case 'TSIGHT':
+      originalSchema = tsightSchema;
+      break;
+    default:
+      log.warn('Unknown csv file prefix: ' + fileNamePrefix);
+      throw new Error('Unknown csv file prefix:');
+  }
+  const tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
+  const splittedHeader: string[] = tidyHeaderLine.split(',');
+  const copyShape: ZodRawShape = {};
+  Object.assign(copyShape, originalSchema.shape);
+  const copySchema = z.object(copyShape);
+  for (let prop in copyShape) {
+    if (Object.prototype.hasOwnProperty.call(copyShape, prop)) {
+      if (!splittedHeader.includes(prop)) {
+        console.log('del prop: ' + prop);
+        // @ts-ignore
+        delete copyShape[prop];
+      }
+    }
+  }
+
+  return copySchema;
+}
+
 export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
@@ -217,6 +268,8 @@ export async function parseCSVFileStream(
   const fileNamePrefix = fileNameParts[3];
   const jarjestelmä = fileNamePrefix.toUpperCase();
   const reportId: number = Number(fileNameParts[1]);
+
+  let fileSchema: ZodObject<any> | undefined = undefined;
 
   try {
     let runningDate = new Date();
@@ -250,6 +303,7 @@ export async function parseCSVFileStream(
             csvHeaderLine = lineBuffer[0];
             state = ReadState.READING_BODY;
             lineBuffer = [];
+            fileSchema = createFileSchema(fileNamePrefix, csvHeaderLine);
             log.debug('csvHeaderLine set: ' + csvHeaderLine);
           }
         }
@@ -259,6 +313,7 @@ export async function parseCSVFileStream(
           csvHeaderLine = lineBuffer[1];
           state = ReadState.READING_BODY;
           lineBuffer = [];
+          fileSchema = createFileSchema(fileNamePrefix, csvHeaderLine);
           log.debug('csvHeaderLine set: ' + csvHeaderLine);
         }
 
@@ -275,14 +330,16 @@ export async function parseCSVFileStream(
             notWritten++;
 
             try {
-              await handleBufferedLines(
-                csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-                fileNamePrefix,
-                runningDate,
-                reportId,
-                fileBaseName,
-                dbConnection,
-              );
+              fileSchema &&
+                (await handleBufferedLines(
+                  csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+                  fileNamePrefix,
+                  runningDate,
+                  reportId,
+                  fileBaseName,
+                  dbConnection,
+                  fileSchema,
+                ));
 
               notWritten--;
             } catch (e) {
@@ -315,7 +372,7 @@ export async function parseCSVFileStream(
     });
 
     // Last content of lineBuffer not handled yet
-    if (state == ReadState.READING_BODY && lineBuffer.length) {
+    if (state == ReadState.READING_BODY && lineBuffer.length && fileSchema) {
       await handleBufferedLines(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
         fileNamePrefix,
@@ -323,6 +380,7 @@ export async function parseCSVFileStream(
         reportId,
         fileBaseName,
         dbConnection,
+        fileSchema,
       );
     }
 
@@ -336,8 +394,6 @@ export async function parseCSVFileStream(
     if (chunksLeft == 0) {
       await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
     }
-
-
 
     return 'success';
   } catch (e) {

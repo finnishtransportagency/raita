@@ -1,5 +1,4 @@
 import {parseCSVFileStream} from '../csvDataParser';
-import { amsSchema } from '../csvSchemas/amsCsvSchema';
 import * as fs from "fs";
 import {stringToStream} from "../../../handleInspectionFileEvent/__tests__/testUtils";
 import {getDBConnection} from "../../../csvCommon/db/dbUtil";
@@ -207,11 +206,22 @@ describe('handle ams csv file success', () => {
 describe('handle ams csv file with a missing field success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
-    const result = await parseCSVFileStream(
+    let result = await parseCSVFileStream(
       {
         fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
         path:[]},
       amsCsvMissingFieldStream,
+      {},
+      dbConnection,
+    );
+    console.log(result);
+    expect(result).toEqual("success");
+    console.log("PART TWO");
+    result = await parseCSVFileStream(
+      {
+        fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
+        path:[]},
+      amsCsvStream,
       {},
       dbConnection,
     );
