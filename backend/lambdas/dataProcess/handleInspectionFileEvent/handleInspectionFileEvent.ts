@@ -74,6 +74,13 @@ export async function handleInspectionFileEvent(
           ? decodeURIComponent(s3MetaData['invocation-id'])
           : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
         await adminLogger.init('data-inspection', invocationId);
+
+        if (eventRecord.s3.object.size === 0) {
+          // empty file is probably an error and will mess up searching by hash
+          log.error({ message: 'Empty file, skipping', key });
+          adminLogger.error(`Tyhjä tiedosto: ${key}`);
+          return null;
+        }
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
         if (!isRaitaSourceSystem(keyData.rootFolder)) {
