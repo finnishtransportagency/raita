@@ -3,7 +3,6 @@ import { log } from '../../../../utils/logger';
 import {
   convertToDBRow,
   DBConnection,
-  getDBConnection,
   raporttiChunksToProcess,
   substractRaporttiChunk,
   updateRaporttiStatus,
@@ -19,7 +18,7 @@ import { tsightSchema } from './csvSchemas/tsightCsvSchema';
 import {z, ZodObject, ZodRawShape} from 'zod';
 import {
   readRunningDateFromLine,
-  replaceSeparators,
+  replaceSeparators, replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from '../../csvCommon/csvConversionUtils';
@@ -238,7 +237,10 @@ function createFileSchema(
       log.warn('Unknown csv file prefix: ' + fileNamePrefix);
       throw new Error('Unknown csv file prefix:');
   }
-  const tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
+
+
+  //construct a schema with only the headers on file
+  const tidyHeaderLine = replaceSeparatorsInHeaderLine(tidyUpHeaderLine(csvHeaderLine));
   const splittedHeader: string[] = tidyHeaderLine.split(',');
   const copyShape: ZodRawShape = {};
   Object.assign(copyShape, originalSchema.shape);
@@ -246,8 +248,6 @@ function createFileSchema(
   for (let prop in copyShape) {
     if (Object.prototype.hasOwnProperty.call(copyShape, prop)) {
       if (!splittedHeader.includes(prop)) {
-        console.log('del prop: ' + prop);
-        // @ts-ignore
         delete copyShape[prop];
       }
     }
