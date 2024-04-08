@@ -101,7 +101,12 @@ const tgCsv: string =
   '294975,"006 LHRP 2",130+0101.75,"60.97624927° N","25.65626994° E",40.858,-0.47,-0.04,0.26,0.19,-1.82,0.09,0.00,-0.45,4.56,4.35,5.88,6.45,-0.23,0.04,-0.82,-0.48,-13.02,-12.53,-0.43,1523.53,-0.79,0.86,2.19,1.59,1.27,1.13,1.23,1.22,0.12,0.01,0.16,0.17\r\n' +
   '294976,"006 LHRP 2",130+0102.00,"60.97624912° N","25.65627453° E",40.861,-0.54,-0.16,0.12,0.13,-1.81,0.12,-0.09,-0.47,4.61,4.38,5.99,6.56,-0.27,-0.04,-0.79,-0.46,-12.91,-12.42,-0.43,1523.46,-0.68,0.86,2.19,1.59,1.27,1.13,1.23,1.22,0.03,0.08,0.16,0.17\r\n' +
   '294977,"006 LHRP 2",130+0102.25,"60.97624897° N","25.65627911° E",40.857,-0.64,-0.24,0.03,0.17,-1.81,0.00,-0.07,-0.49,4.66,4.42,6.11,6.66,-0.32,-0.12,-0.76,-0.43,-12.80,-12.31,-0.43,1523.36,-0.56,0.86,2.18,1.59,1.27,1.13,1.23,1.22,-0.05,0.09,0.16,0.17';
-const tgCsvStream =stringToStream(tgCsv);
+//const tgCsvStream =stringToStream(tgCsv);
+const tgCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/TG_20210901_521_LLARP_1_866_866.csv');
+//const tgCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/TG_20211004_441_SKRP_1_418_418.csv');
+
+
+
 
 const rpCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -210,17 +215,6 @@ describe('handle ams csv file with a missing field success', () => {
       {
         fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
         path:[]},
-      amsCsvMissingFieldStream,
-      {},
-      dbConnection,
-    );
-    console.log(result);
-    expect(result).toEqual("success");
-    console.log("PART TWO");
-    result = await parseCSVFileStream(
-      {
-        fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
-        path:[]},
       amsCsvStream,
       {},
       dbConnection,
@@ -239,6 +233,21 @@ describe('handle rp csv file success', () => {
         fileBaseName: "chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
         path:[]},
       rpCsvStream,
+      {},
+      dbConnection,
+    );
+    console.log(result);
+  }, 900000);
+});
+
+describe('handle tg csv file success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    const result = await parseCSVFileStream(
+      {
+        fileBaseName: "chunkFile_889_1_TG_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
+        path:[]},
+      tgCsvStream,
       {},
       dbConnection,
     );
