@@ -283,13 +283,18 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
       } else {
         throw new Error('ReportID undefined');
       }
-
-      const rowList = await sql`UPDATE ${sql(schema)}.raportti set
-                            ${sql(raporttiData)}
-                            WHERE id = ${id};`.catch(e => {
-        log.error('Error updating metadata to db: ' + e);
+      try {
+        const rowList = await sql`UPDATE ${sql(schema)}.raportti
+                                  set ${sql(raporttiData)}
+                                  WHERE id = ${id};`.catch(e => {
+          log.error('Error updating metadata to db: ' + e);
+          throw e;
+        });
+      } catch (e) {
+        await updateRaporttiStatus(id, 'ERROR', e.toString(),dbConnection);
         throw e;
-      });
+      }
+
 
     } catch (e) {
       log.error('Error in raportti metadata updating: ' +e);
