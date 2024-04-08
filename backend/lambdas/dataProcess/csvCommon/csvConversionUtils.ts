@@ -152,27 +152,19 @@ export function replaceSeparatorsInHeaderLine(line: string) {
 export function readRunningDate(csvFileBody: string) {
   const lines = csvFileBody.split('\n');
   const firstLine = lines[0];
-  log.info('firstLine: ' + firstLine);
+
   const found = firstLine.search('Running Date');
   if (found == -1) {
     log.warn('Running date not in file first line');
     return new Date();
   }
   const firstLineSplitted = firstLine.split(',');
-  log.info('1');
   const runningDateString = firstLineSplitted[1];
-  log.info('2');
   const runningDateStringDatePart = runningDateString.split(' ')[0];
-  log.info('3');
   const splitted = runningDateStringDatePart.split('/');
-  log.info('4');
   const day = splitted[0].substring(1);
-  log.info('5');
   const month = splitted[1];
-  log.info('6');
   const year = splitted[2];
-  log.info('7');
   const runningDate = new Date(Number(year), Number(month), Number(day));
-  console.log(runningDate);
   return runningDate;
 }

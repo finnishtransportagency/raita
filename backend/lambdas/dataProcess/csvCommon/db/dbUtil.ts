@@ -109,7 +109,6 @@ export async function writeRowsToDB(
 async function getConnection() {
   if (connection) {
     connReuseCount++;
-    log.info("connReuseCount: "+connReuseCount);
     return connection;
   }
   const password = await getSecretsManagerSecret('database_password');
@@ -118,7 +117,6 @@ async function getConnection() {
     transform: { undefined: null },
   });
   connCount++;
-  log.info("connCount: "+connCount);
   return connection;
 }
 
@@ -222,7 +220,6 @@ export async function updateRaporttiStatus(
   if (error) {
     errorSubstring = error.substring(0, 1000);
   }
-  log.info('error mesg to db: ' + errorSubstring);
   try {
     const a = await sql`UPDATE ${sql(schema)}.raportti
                             SET status = ${status},
@@ -233,7 +230,7 @@ export async function updateRaporttiStatus(
       throw e;
     });
 
-    log.info('inserted:' + a);
+
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -294,7 +291,6 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
         throw e;
       });
 
-      log.info('updated metadata rows:' + rowList.length);
     } catch (e) {
       log.error('Error in raportti metadata updating: ' +e);
       throw e;
@@ -310,7 +306,7 @@ export async function updateRaporttiChunks(id: number, chunks: number, dbConnect
       schema,
     )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
 
-    log.info(a);
+
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -327,7 +323,7 @@ export async function substractRaporttiChunk(id: number, dbConnection: DBConnect
       schema,
     )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
 
-    log.info(a);
+
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);

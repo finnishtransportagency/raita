@@ -53,12 +53,9 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
             eventRecord,
             false,
           );
-          log.info('got file stream');
-          log.info(fileStreamResult);
+
           const keyData = getKeyData(key);
 
-          log.info('got key data');
-          log.info(keyData);
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.info(
@@ -85,10 +82,8 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
               });
               const s3Client = new S3Client({});
               const a = await s3Client.send(command);
-              log.info('DELETE output');
-              log.info(a);
+
             }
-            log.info('csv parsing result: ' + result);
 
             return {
               // key is sent to be stored in url decoded format to db
