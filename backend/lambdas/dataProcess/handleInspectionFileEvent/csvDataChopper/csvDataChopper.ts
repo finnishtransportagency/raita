@@ -143,14 +143,17 @@ export async function chopCSVFileStream(
             lineBuffer = [];
             rl.resume();
             log.debug('keyData.keyWithoutSuffix: ' + keyData.keyWithoutSuffix);
-            await writeFileChunkToQueueS3(
+
+
+            //todo uncomment
+           /* await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               runningDate,
               reportId,
               keyData,
               chunkCounter,
               dbConnection
-            );
+            );*/
             //  log.debug("handled bufferd: " + handleCounter);
           }
         }
