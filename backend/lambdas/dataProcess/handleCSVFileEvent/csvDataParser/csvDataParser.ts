@@ -37,7 +37,7 @@ function until(conditionFunction: () => any) {
   return new Promise(poll);
 }
 
-export async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
+async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
@@ -63,8 +63,8 @@ async function parseCsvAndWriteToDb(
 
     try {
       //disable here if needed stop database
-      //return await writeRowsToDB(dbRows, table, dbConnection);
-      return;
+      return await writeRowsToDB(dbRows, table, dbConnection);
+      //return;
     } catch (e) {
       log.error('Error writing to db');
       log.error(e);
