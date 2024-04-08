@@ -20,9 +20,6 @@ async function writeFileChunkToQueueS3(
   chunkNumber: number,
   dbConnection: DBConnection,
 ) {
-  console.log('writeFileChunkToQueueS3 key ' + key);
-  console.log('writeFileChunkToQueueS3 report id ' + reportId);
-  console.log('writeFileChunkToQueueS3 chunknumber' + chunkNumber);
 
   const pathString = key.path.slice(0, key.path.length - 1).join('/');
   const outFileName =
