@@ -26,7 +26,7 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
     this.#responseParser = responseParser;
   }
 
-  searchExisting = async (client: Client, entry: FileMetadataEntry) => {
+  searchExistingByKey = async (client: Client, entry: FileMetadataEntry) => {
     const existing = await client.search({
       index: this.#dataIndex,
       body: {
@@ -41,6 +41,25 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
               {
                 match: {
                   'key.keyword': entry.key,
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+    return existing.body.hits;
+  };
+  searchExistingByHash = async (client: Client, entry: FileMetadataEntry) => {
+    const existing = await client.search({
+      index: this.#dataIndex,
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                match: {
+                  'hash.keyword': entry.hash,
                 },
               },
             ],
@@ -75,61 +94,90 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
 
     const client = await this.#openSearchClient.getClient();
     const { key, hash } = entry;
-    let exists;
+    let matchingDocs: any[] = [];
+    let hashExists = false;
     try {
-      exists = await wrapRetryOnTooManyRequests(
-        () => this.searchExisting(client, entry),
+      // first check hash, assume same hash always means same document
+      const hashResult = await wrapRetryOnTooManyRequests(
+        () => this.searchExistingByHash(client, entry),
         initialRetryWait,
         maxRetryWait,
       );
+      // ensure hash is exact match, assume only one match
+      const hashFound =
+        hashResult &&
+        hashResult.hits.filter((doc: any) => doc._source.hash === hash);
+      if (hashFound && hashFound.length) {
+        hashExists = true;
+        matchingDocs = hashFound;
+      } else {
+        // find by key, file contents could be changed
+        const keyResult = await wrapRetryOnTooManyRequests(
+          () => this.searchExistingByKey(client, entry),
+          initialRetryWait,
+          maxRetryWait,
+        );
+        const keyFound =
+          keyResult &&
+          keyResult.hits.filter((doc: any) => doc._source.key === key);
+        if (keyFound && keyFound.length) {
+          matchingDocs = keyFound;
+        }
+      }
     } catch (error) {
       log.error({
         message:
           'Error while searching for existing doc, Index creation will be attempted',
         errorObject: error,
       });
-      exists = null;
+      hashExists = false;
+      matchingDocs = [];
     }
-    const skipHashCheck = entry.options.skip_hash_check;
-    // Double check, as opensearch can sometimes give "relevant" results even
-    // if they are not complete matches. This way we can be sure to only
-    // update documents that we are supposed to.
-    const docToUpdate =
-      exists && exists.hits.find((doc: any) => doc._source.key === key);
-    if (!exists || !docToUpdate) {
+
+    if (matchingDocs.length > 1) {
+      const message = 'Multiple matches found when saving to opensearch';
+      log.error({
+        message,
+        matchingDocs,
+        entry,
+      });
+      throw new Error(message);
+    }
+    const docToUpdate = matchingDocs.length ? matchingDocs[0] : null;
+    if (!docToUpdate) {
       return await wrapRetryOnTooManyRequests(
         () => this.addDoc(client, entry),
         initialRetryWait,
         maxRetryWait,
       );
     }
-    const hashMatch = hash === docToUpdate._source.hash;
-    if (skipHashCheck || !hashMatch) {
-      const requireNewerParserVersion =
-        entry.options.require_newer_parser_version;
-      if (requireNewerParserVersion) {
-        const existingVersion = docToUpdate._source.metadata.parser_version;
-        const newVersion = entry.metadata.parser_version;
-        if (
-          compareVersionStrings(newVersion as any as string, existingVersion) <=
-          0
-        ) {
-          // new is smaller or equal => do nothing
-          return;
-        }
-      }
-      if (hashMatch) {
-        // updating existing file: don't update parsed_at_datetime
-        const oldParsedAt =
-          docToUpdate._source.metadata.parsed_at_datetime || null;
-        entry.metadata.parsed_at_datetime = oldParsedAt;
-      }
-      return await wrapRetryOnTooManyRequests(
-        () => this.updateDoc(client, docToUpdate._id, entry),
-        initialRetryWait,
-        maxRetryWait,
-      );
+    const skipHashCheck = entry.options.skip_hash_check;
+    if (hashExists && !skipHashCheck) {
+      log.info('Found by hash, skipping');
+      return;
     }
+    const requireNewerParserVersion =
+      entry.options.require_newer_parser_version;
+    if (requireNewerParserVersion) {
+      const existingVersion = docToUpdate._source.metadata.parser_version;
+      const newVersion = entry.metadata.parser_version;
+      if (
+        compareVersionStrings(newVersion as any as string, existingVersion) <= 0
+      ) {
+        log.info('Incoming version older than existing, skipping');
+        // new is smaller or equal => do nothing
+        return;
+      }
+    }
+    // updating existing file: don't update parsed_at_datetime
+    const oldParsedAt = docToUpdate._source.metadata.parsed_at_datetime || null;
+    entry.metadata.parsed_at_datetime = oldParsedAt;
+
+    return await wrapRetryOnTooManyRequests(
+      () => this.updateDoc(client, docToUpdate._id, entry),
+      initialRetryWait,
+      maxRetryWait,
+    );
   };
 
   saveFileMetadata = async (data: Array<FileMetadataEntry>) => {
