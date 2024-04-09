@@ -8,11 +8,12 @@ import {
 import { ParseValueResult } from '../../../types';
 import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
+import {ENVIRONMENTS, fileSuffixesToIncludeInMetadataParsing} from '../../../../constants';
 import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
 import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
 import { DBConnection } from '../csvCommon/db/dbUtil';
+import {getLambdaConfigOrFail} from "./handleInspectionFileEvent";
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -126,13 +127,15 @@ export const parseFileContent = async (
   hash: string;
   reportId: number;
 }> => {
+  const config = getLambdaConfigOrFail();
+  log.info("MOI env: " + config.environment);
   let contentPromise: Promise<ParseValueResult>;
   let csvPromise: Promise<number>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
-  if (keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
+  if (config.environment !== ENVIRONMENTS.dev && keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE) {
     log.info('chop csv file: ' + keyData.fileBaseName);
     const fileStreamToParse = originalStream.clone();
     csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);

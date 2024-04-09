@@ -29,6 +29,7 @@ export function getLambdaConfigOrFail() {
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
+    environment: getEnv('ENVIRONMENT'),
 
   };
 }

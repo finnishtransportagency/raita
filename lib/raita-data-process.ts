@@ -303,6 +303,7 @@ export class DataProcessStack extends NestedStack {
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
+      raitaEnv,
       databaseEnvironmentVariables,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
@@ -491,6 +492,7 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    raitaEnv,
     databaseEnvironmentVariables,
   }: {
     name: string;
@@ -503,6 +505,7 @@ export class DataProcessStack extends NestedStack {
     openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     // any events that fail cause lambda to fail twice will be written here
@@ -530,6 +533,7 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
+        ENVIRONMENT: raitaEnv,
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
