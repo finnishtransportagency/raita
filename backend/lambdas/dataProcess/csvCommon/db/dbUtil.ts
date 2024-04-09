@@ -276,7 +276,8 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
     };
-    log.debug(raporttiData);
+    log.info("RAPORTTIDATA");
+    log.info(raporttiData);
     try {
       let id;
       if (metaDataEntry.reportId) {
