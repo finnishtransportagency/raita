@@ -224,7 +224,8 @@ export async function updateRaporttiStatus(
     const a = await sql`UPDATE ${sql(schema)}.raportti
                             SET status = ${status},
                                 error  = ${errorSubstring}
-                            WHERE id = ${id};`.catch(e => {
+                            WHERE id = ${id}
+                            AND status <> 'ERROR';`.catch(e => {
       log.error('Error updateRaporttiStatus: ' + e);
 
       throw e;
@@ -291,6 +292,7 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
           throw e;
         });
       } catch (e) {
+        log.error('Update error to raportti table: ' + e);
         await updateRaporttiStatus(id, 'ERROR', e.toString(),dbConnection);
         throw e;
       }

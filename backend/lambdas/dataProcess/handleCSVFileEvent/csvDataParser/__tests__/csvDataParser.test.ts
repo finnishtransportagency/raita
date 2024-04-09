@@ -1,7 +1,7 @@
 import {parseCSVFileStream} from '../csvDataParser';
 import * as fs from "fs";
 import {stringToStream} from "../../../handleInspectionFileEvent/__tests__/testUtils";
-import {getDBConnection} from "../../../csvCommon/db/dbUtil";
+import {getDBConnection, updateRaporttiStatus} from "../../../csvCommon/db/dbUtil";
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -207,6 +207,18 @@ describe('handle ams csv file success', () => {
     expect(result).toEqual("success");
   }, 900000);
 });
+
+
+describe('handle ams csv file success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    await updateRaporttiStatus(889, 'ERROR', null,dbConnection);
+    await updateRaporttiStatus(889, 'SUCCESS', null,dbConnection);
+    //should not update out of error status
+  }, 900000);
+});
+
+
 
 describe('handle ams csv file with a missing field success', () => {
   test('success: normal run', async () => {
