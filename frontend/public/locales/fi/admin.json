@@ -41,6 +41,10 @@
   "process_in_progress": "Uudelleenkäsittelypyynto on käynnissä...",
   "process_result_heading": "Uudelleenkäsittely käynnistetty",
   "process_started": "Tiedostojen uudelleenkäsittely on käynnistetty. Tarkemmat tiedot uudelleenkäsittelyprosessin etenemisestä näkyvät adminlokisivulla.",
-  "process_all_label": "Uudelleenkäsittele vain tiedostot joita ei löydy tietokannasta. Vertailu tehdään tiedostonimen sekä tiedoston sisällöstä lasketun hash-arvon perusteella. ",
-  "process_require_newer_version_label": "Uudelleenkäsittele vain tiedostot jotka on käsitelty vanhemmalla parsijan versiolla"
+  "process_skip_hash_check_label": "Uudelleenkäsittele vain puuttuvat tiedostot joita ei löydy tietokannasta? Vertailu tehdään tiedostonimen sekä tiedoston sisällöstä lasketun hash-arvon perusteella. ",
+  "process_skip_hash_check_no": "Vain puuttuvat tiedostot",
+  "process_skip_hash_check_yes": "Kaikki tiedostot",
+  "process_require_newer_version_label": "Uudelleenkäsittele vain tiedostot jotka on käsitelty vanhemmalla parsijan versiolla?",
+  "process_require_newer_version_yes": "Vain vanhemmalla parsijan versiolla käsitellyt",
+  "process_require_newer_version_no": "Kaikki tiedostot"
 }

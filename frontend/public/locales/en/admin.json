@@ -41,6 +41,10 @@
   "process_in_progress": "Reprocessing request in progress...",
   "process_result_heading": "Reprocessing started",
   "process_started": "File reprocessing started. View progress details in the admin log page.",
-  "process_all_label": "Trigger reprocess only for files that don't have any metadata saved",
-  "process_require_newer_version_label": "Trigger reprocess only for files that have been parsed with an older parser version"
+  "process_skip_hash_check_label": "Trigger reprocess only for files that are missing from metadata database?",
+  "process_skip_hash_check_no": "Only missing files",
+  "process_skip_hash_check_yes": "All files",
+  "process_require_newer_version_label": "Trigger reprocess only for files that have been parsed with an older parser version?",
+  "process_require_newer_version_yes": "Only files parsed with older parser version",
+  "process_require_newer_version_no": "All files"
 }

@@ -124,7 +124,7 @@ const ProcessIndex: RaitaNextPage = () => {
                     count: filesToProcessMutation.data.total,
                   })}
                   <div className="mb-2">
-                    {t('admin:process_all_label')}
+                    {t('admin:process_skip_hash_check_label')}
                     <label className="block">
                       <input
                         className="mr-1"
@@ -136,7 +136,7 @@ const ProcessIndex: RaitaNextPage = () => {
                           e.target.checked && setSkipHashCheck(false)
                         }
                       />
-                      {t('common:yes')}
+                      {t('admin:process_skip_hash_check_no')}
                     </label>
                     <label className="block">
                       <input
@@ -150,7 +150,7 @@ const ProcessIndex: RaitaNextPage = () => {
                         }
                       />
 
-                      {t('common:no')}
+                      {t('admin:process_skip_hash_check_yes')}
                     </label>
                   </div>
                   <div className="mb-2">
@@ -166,7 +166,7 @@ const ProcessIndex: RaitaNextPage = () => {
                           e.target.checked && setRequireNewerParserVersion(true)
                         }
                       />
-                      {t('common:yes')}
+                      {t('admin:process_require_newer_version_yes')}
                     </label>
                     <label className="block mb-2">
                       <input
@@ -180,7 +180,7 @@ const ProcessIndex: RaitaNextPage = () => {
                           setRequireNewerParserVersion(false)
                         }
                       />
-                      {t('common:no')}
+                      {t('admin:process_require_newer_version_no')}
                     </label>
                   </div>
                 </p>
