@@ -136,6 +136,7 @@ describe('extractFileNameData', () => {
     parserVersion: '0.0.1',
     fileContentExtractionSpec: [],
     folderTreeExtractionSpec: {},
+    folderTreeExtractionSpecWithTestTrackExtraInfo: {},
     vRunFolderTreeExtractionSpec: {},
     fileNameExtractionSpec: {
       txt: [

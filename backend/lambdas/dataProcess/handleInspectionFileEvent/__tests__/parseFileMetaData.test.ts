@@ -70,6 +70,7 @@ const extractionSpec: IExtractionSpec = {
     '3': { name: 'overlapping' },
     '4': { name: 'filename' },
   },
+  folderTreeExtractionSpecWithTestTrackExtraInfo: {},
   vRunFolderTreeExtractionSpec: {
     '1': { name: 'pathOnly1' },
     '2': { name: 'vPathOnly2' },
@@ -150,6 +151,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -178,6 +180,7 @@ describe('parseFileMetadata', () => {
         pathOnly1: 'test',
         pathOnly2: 'path',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -207,6 +210,7 @@ describe('parseFileMetadata', () => {
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -240,6 +244,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMCONTENT',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -271,6 +276,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -302,6 +308,7 @@ describe('parseFileMetadata', () => {
         nameOnly2: 112233,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -334,6 +341,7 @@ describe('parseFileMetadata', () => {
         contentOnly2: 123456,
         overlapping: 'FROMNAME',
         parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+        metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
         parser_version: '0.0.1',
       },
     });
@@ -348,6 +356,7 @@ describe('generateMetadata', () => {
     expect(result).toEqual({
       parser_version: '0.0.1',
       parsed_at_datetime: expect.stringMatching(ISODateRegexp),
+      metadata_changed_at_datetime: expect.stringMatching(ISODateRegexp),
     });
   });
 });

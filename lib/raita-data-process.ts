@@ -179,15 +179,29 @@ export class DataProcessStack extends NestedStack {
     this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
 
     // Create ECS cluster resources for zip extraction task
-    const { ecsCluster, handleZipTask, handleZipContainer, zipTaskLogGroup } =
-      this.createZipHandlerECSResources({
-        raitaStackIdentifier,
-        vpc,
-        raitaEnv,
-      });
+    const {
+      ecsCluster,
+      handleZipTask,
+      handleZipContainer,
+      zipTaskLogGroup,
+      zipTaskTaskRole,
+    } = this.createZipHandlerECSResources({
+      raitaStackIdentifier,
+      vpc,
+      raitaEnv,
+      databaseEnvironmentVariables,
+    });
 
-    this.dataReceptionBucket.grantRead(handleZipTask.taskRole);
-    this.inspectionDataBucket.grantWrite(handleZipTask.taskRole);
+    this.dataReceptionBucket.grantRead(zipTaskTaskRole);
+    this.inspectionDataBucket.grantWrite(zipTaskTaskRole);
+
+    zipTaskTaskRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO: specify keys?
+      }),
+    );
 
     // Create zip handler lambda and grant permissions
     const handleReceptionFileEventFn = this.createReceptionFileEventHandler({
@@ -448,6 +462,15 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'zip-handler-any-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `zip-handler-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
     const errorAlarm = new Alarm(this, 'zip-handler-errors-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
@@ -460,7 +483,19 @@ export class DataProcessStack extends NestedStack {
         statistic: Stats.SUM,
       }),
     });
-    return [errorAlarm];
+    const anyErrorAlarm = new Alarm(this, 'zip-handler-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `zip-handler-any-errors-alarm-${raitaStackIdentifier}`,
+      metric: anyErrorMetricFilter.metric({
+        label: `Reception zip handler any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm, anyErrorAlarm];
   }
 
   /**
@@ -687,10 +722,12 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier,
     vpc,
     raitaEnv,
+    databaseEnvironmentVariables,
   }: {
     raitaStackIdentifier: string;
     vpc: IVpc;
     raitaEnv: RaitaEnvironment;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     const ecsCluster = new ecs.Cluster(
       this,
@@ -710,6 +747,13 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
     });
 
+    const zipTaskTaskRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaZipTaskTaskRole',
+      servicePrincipal: 'ecs-tasks.amazonaws.com',
+      raitaStackIdentifier,
+    });
+
     const handleZipTask = new ecs.FargateTaskDefinition(
       this,
       `task-${raitaStackIdentifier}-handle-zip`,
@@ -718,6 +762,7 @@ export class DataProcessStack extends NestedStack {
         cpu: 4096,
         ephemeralStorageGiB: 100,
         executionRole: zipTaskExecutionRole,
+        taskRole: zipTaskTaskRole,
         runtimePlatform: {
           cpuArchitecture: ecs.CpuArchitecture.X86_64,
           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
@@ -738,6 +783,7 @@ export class DataProcessStack extends NestedStack {
         logging: logDriver,
         environment: {
           AWS_REGION: this.region,
+          ...databaseEnvironmentVariables,
         },
       },
     );
@@ -746,6 +792,7 @@ export class DataProcessStack extends NestedStack {
       handleZipTask,
       handleZipContainer,
       zipTaskLogGroup: logDriver.logGroup,
+      zipTaskTaskRole,
     };
   }
 }

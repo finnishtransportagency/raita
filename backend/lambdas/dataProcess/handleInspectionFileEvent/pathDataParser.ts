@@ -40,14 +40,24 @@ export const extractPathData = (keyData: KeyData, spec: IExtractionSpec) => {
 // This is a rough implementation which can be replaced with more sofisticated one as the needs for
 // path data parsing come more clear (is is enough to configure this based on file suffix or if more detailed configration is needed),
 // more robust solution should be built on modifying the structure in extractionSpec parsing instructions. See Jira 242.
-const determineParsingSpec = (keyData: KeyData, spec: IExtractionSpec) => {
+export const determineParsingSpec = (
+  keyData: KeyData,
+  spec: IExtractionSpec,
+) => {
   const { fileSuffix, fileBaseName, path } = keyData;
+  const testTrackExtraInfoMatch = 'TEST TRACK';
   switch (true) {
     case path.length === Object.keys(spec.vRunFolderTreeExtractionSpec).length:
     case isSubmissionReport({ fileBaseName, fileSuffix }) && path.length === 5:
       return spec.vRunFolderTreeExtractionSpec;
     case path.length === Object.keys(spec.folderTreeExtractionSpec).length:
       return spec.folderTreeExtractionSpec;
+    case path.length ===
+      Object.keys(spec.folderTreeExtractionSpecWithTestTrackExtraInfo).length:
+      // match zip files that include a top level directory with test track "extra information"
+      if (path[5].match(new RegExp(testTrackExtraInfoMatch))) {
+        return spec.folderTreeExtractionSpecWithTestTrackExtraInfo;
+      } // else fall through to default
     default:
       return null;
   }

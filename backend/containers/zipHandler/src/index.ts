@@ -12,6 +12,9 @@ import {
 import { isZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
 import { log } from './logger';
+import { IAdminLogger, PostgresLogger } from './adminLog/postgresLogger';
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 start();
 
@@ -23,6 +26,8 @@ async function start() {
   try {
     const zipKey = decodeS3EventPropertyString(key);
     const { path, keyWithoutSuffix, fileSuffix, fileName } = getKeyData(zipKey);
+    const invocationId = zipKey;
+    await adminLogger.init('data-reception', invocationId);
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
@@ -35,12 +40,17 @@ async function start() {
       Bucket: bucket,
       Key: key,
     });
-    const zipMetadata = getObjectResult.Metadata ?? {};
+    const fileMetadata = getObjectResult.Metadata ?? {};
     // pass on relevant metadata fields from zip file to extracted files
-    const metadataForFiles: any = {};
-    if (zipMetadata['skip-hash-check']) {
-      metadataForFiles['skip-hash-check'] = zipMetadata['skip-hash-check'];
+    const newFileMetadata: { [key: string]: string } = {};
+    if (fileMetadata['skip-hash-check']) {
+      newFileMetadata['skip-hash-check'] = fileMetadata['skip-hash-check'];
     }
+    if (fileMetadata['require-newer-parser-version']) {
+      newFileMetadata['require-newer-parser-version'] =
+        fileMetadata['require-newer-parser-version'];
+    }
+    newFileMetadata['invocation-id'] = encodeURIComponent(invocationId); // pass same invocationId to extracted files for logging
     // Timestamp is needed to tie the extracted files and meta data entries into the zip
     // file they were extracted from. The LastModified here should always equal to the moment
     // when zip was uploaded to the S3 bucket. As a backup, a secondary processing date is provided.
@@ -49,13 +59,13 @@ async function start() {
           timeStamp: getObjectResult.LastModified.toISOString(),
           timeStampType: 'zipLastModified',
           fileName,
-          metadata: metadataForFiles,
+          metadata: newFileMetadata,
         }
       : {
           timeStamp: new Date().toISOString(),
           timeStampType: 'zipProcessed',
           fileName,
-          metadata: metadataForFiles,
+          metadata: newFileMetadata,
         };
 
     const readStream = getObjectResult.Body as Readable;
@@ -72,7 +82,7 @@ async function start() {
         s3KeyPrefix: keyWithoutSuffix,
         zipFileData,
       })
-        .then(data => {
+        .then(async data => {
           const { entries, streamError } = data;
           // TODO: Temporary logging
           log.info(logMessages['resultMessage'](entries));
@@ -80,9 +90,41 @@ async function start() {
             // The process succeeded possibly partially. Currently only logs error, does not throw.
             // TODO: Temporary logging
             log.error(logMessages['streamErrorMessage'](streamError));
+            await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
           }
           if (entries.error.length) {
             log.error(entries.error);
+          }
+          const totalCount =
+            entries.success.length +
+            entries.skipped.length +
+            entries.error.length;
+          let logMessage = `Tiedostoja yhteensä: ${totalCount}`;
+          if (entries.success.length) {
+            logMessage += `\nPurettu onnistuneesti: ${entries.success.length}`;
+          }
+          if (entries.skipped.length) {
+            logMessage += `\nPurkaminen ohitettu: ${entries.skipped.length}`;
+          }
+          if (entries.error.length) {
+            logMessage += `\nVirhe purkamisessa: ${entries.error.length}`;
+          }
+          if (entries.error.length) {
+            await adminLogger.error(logMessage);
+          } else {
+            await adminLogger.info(logMessage);
+          }
+          if (
+            entries.skipped.length &&
+            !entries.success.length &&
+            !entries.error.length
+            // all files skipped
+          ) {
+            await adminLogger.init('data-inspection', invocationId);
+            // add one inspection message to show that no files were parsed on purpose
+            await adminLogger.warn(
+              'Kaikki tiedostot ohitettu, ei käsiteltävää',
+            );
           }
         })
         .catch(err => {
@@ -93,6 +135,7 @@ async function start() {
     readStream.pipe(writeStream);
   } catch (err: any) {
     // TODO: Temporary logging
+    await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
     log.error(err);
     // TODO: Possible recovery actions apart from logging
   }

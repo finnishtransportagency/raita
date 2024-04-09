@@ -25,4 +25,9 @@ export const RaitaPages: PageDescription[] = [
     href: '/admin/delete',
     requiredRole: RaitaRole.Admin,
   },
+  {
+    labelTranslationKey: 'page_labels.admin.process',
+    href: '/admin/process',
+    requiredRole: RaitaRole.Admin,
+  },
 ];

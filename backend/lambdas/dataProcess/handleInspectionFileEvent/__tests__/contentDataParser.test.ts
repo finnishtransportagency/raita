@@ -27,6 +27,7 @@ const extractionSpec: IExtractionSpec = {
   parserVersion: '0.0.1',
   fileNameExtractionSpec: { csv: [], txt: [], pdf: [], xlsx: [], xls: [] },
   folderTreeExtractionSpec: {},
+  folderTreeExtractionSpecWithTestTrackExtraInfo: {},
   vRunFolderTreeExtractionSpec: {},
   fileContentExtractionSpec: [
     {
