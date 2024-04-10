@@ -93,21 +93,6 @@ export async function parseFileMetadata(
     ...generatedMetadata,
   };
 
-  log.info('HELLO pathData');
-  log.info(pathData);
-
-  log.info('HELLO fileContentData');
-  log.info(fileContentData);
-
-  log.info('HELLO fileNameData');
-  log.info(fileNameData);
-
-  log.info('HELLO generatedMetadata');
-  log.info(generatedMetadata);
-
-  log.info('HELLO allMetadata');
-  log.info(allMetadata);
-
   // find any key that is marked at non parsed
   const nonParsedKeys = Object.keys(allMetadata).filter(key =>
     key.match(/^nonparsed_/),
