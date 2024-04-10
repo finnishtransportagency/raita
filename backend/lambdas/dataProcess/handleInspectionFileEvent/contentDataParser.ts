@@ -131,12 +131,6 @@ export const parseFileContent = async (
   reportId: number;
 }> => {
   const config = getLambdaConfigOrFail();
-  log.info(
-    'MOI env: ' +
-      config.environment +
-      '  allowCSVInProd: ' +
-      config.allowCSVInProd,
-  );
   let contentPromise: Promise<ParseValueResult>;
   let csvPromise: Promise<number>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
@@ -144,10 +138,9 @@ export const parseFileContent = async (
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
 
-  //todo change to blocking prod
   if (
     config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.dev
+    config.environment !== ENVIRONMENTS.prod
   ) {
     if (
       keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE

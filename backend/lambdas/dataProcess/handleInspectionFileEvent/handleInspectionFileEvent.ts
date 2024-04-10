@@ -150,10 +150,9 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
-      //todo change to blocking prod
       if (
         config.allowCSVInProd === 'true' ||
-        config.environment !== ENVIRONMENTS.dev
+        config.environment !== ENVIRONMENTS.prod
       ) {
         await updateRaporttiMetadata(entries, dbConnection);
       } else {
