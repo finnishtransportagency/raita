@@ -18,6 +18,7 @@ import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {DBConnection, getDBConnection, updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
+import {ENVIRONMENTS} from "../../../../constants";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -30,7 +31,7 @@ export function getLambdaConfigOrFail() {
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
     environment: getEnv('ENVIRONMENT'),
-
+    allowCSVInProd: getEnv('ALLOW_CSV_PARSING_IN_PROD'),
   };
 }
 
@@ -139,8 +140,10 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
-
-      await updateRaporttiMetadata(entries, dbConnection);
+      //todo change to blocking prod
+      if( (config.allowCSVInProd === 'true' || config.environment !== ENVIRONMENTS.dev)) {
+        await updateRaporttiMetadata(entries, dbConnection);
+      }
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);

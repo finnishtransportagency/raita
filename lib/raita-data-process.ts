@@ -380,6 +380,7 @@ export class DataProcessStack extends NestedStack {
         lambdaRole: this.dataProcessorLambdaServiceRole,
         raitaStackIdentifier,
         vpc,
+        raitaEnv,
         databaseEnvironmentVariables,
       });
     // Grant lambda permissions to bucket
@@ -534,6 +535,7 @@ export class DataProcessStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
+        ALLOW_CSV_PARSING_IN_PROD: 'false',
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
@@ -634,6 +636,7 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    raitaEnv,
     databaseEnvironmentVariables,
   }: {
     name: string;
@@ -647,6 +650,7 @@ export class DataProcessStack extends NestedStack {
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     return new NodejsFunction(this, name, {
@@ -668,6 +672,8 @@ export class DataProcessStack extends NestedStack {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         INSPECTION_BUCKET: inspectionBucketName,
         METADATA_INDEX: openSearchMetadataIndex,
+        ENVIRONMENT: raitaEnv,
+        ALLOW_CSV_PARSING_IN_PROD: 'true',
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,

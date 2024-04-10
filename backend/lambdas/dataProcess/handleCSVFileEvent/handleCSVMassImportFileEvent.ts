@@ -20,19 +20,25 @@ import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
   getDBConnection,
-  updateRaporttiMetadata, updateRaporttiStatus,
+  updateRaporttiMetadata,
+  updateRaporttiStatus,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
+import {
+  ENVIRONMENTS,
+  fileSuffixesToIncludeInMetadataParsing,
+} from '../../../../constants';
 
 export function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
+  const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
     cSVMassImportBucket: getEnv('CSV_MASS_IMPORT_BUCKET'),
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
+    environment: getEnv('ENVIRONMENT'),
+    allowCSVInProd: getEnv('ALLOW_CSV_PARSING_IN_PROD'),
   };
 }
 
@@ -122,8 +128,7 @@ export async function handleCSVMassImportFileEvent(
               skip_hash_check: skipHashCheck,
             },
           };
-        }
-        else {
+        } else {
           return null;
         }
       });
@@ -134,8 +139,14 @@ export async function handleCSVMassImportFileEvent(
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
-
-      await updateRaporttiMetadata(entries, dbConnection);
+      if (
+        config.allowCSVInProd === 'true' ||
+        config.environment !== ENVIRONMENTS.dev
+      ) {
+        await updateRaporttiMetadata(entries, dbConnection);
+      } else {
+        log.warn('CSV postgres blocked in prod');
+      }
     });
     const settled = await Promise.allSettled(sqsRecordResults);
     await Promise.all(
