@@ -15,7 +15,7 @@ export interface FileMetadataEntry {
   bucket_arn: string;
   metadata: ParseValueResult;
   hash: string | undefined;
-  reportId: number | undefined;
+  reportId?: number | undefined;
   options: {
     skip_hash_check?: boolean;
     require_newer_parser_version?: boolean;
