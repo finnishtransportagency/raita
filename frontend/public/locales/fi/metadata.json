@@ -28,6 +28,8 @@
   "label_zip_reception__date": "ZIP vastaanotto pvm",
   "label_campaign": "Kampanja",
   "label_parsed_at_datetime": "Tuontiaika RAITA:an",
+  "label_extra_information": "Lisätietoja",
+  "label_metadata_changed_at_datetime": "Metatietojen päivitysaika",
   "AMS": "Kulkudynamiikan mittaus",
   "TG": "Raiteiden ja vaihteiden geometrian mittaus",
   "TGMS": "Raiteiden ja vaihteiden geometrian mittaus",

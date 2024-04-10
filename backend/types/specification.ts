@@ -32,6 +32,9 @@ export const ExtractionSpec = z.object({
   }),
   // TODO change these too?
   folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
+  folderTreeExtractionSpecWithTestTrackExtraInfo: z.record(
+    FieldExtractionSpecObject,
+  ),
   vRunFolderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
   knownExceptions: z.object({

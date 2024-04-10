@@ -78,8 +78,24 @@ export async function handleInspectionFileEvent(
           true,
         );
         const keyData = getKeyData(key);
-        const zipFile = getOriginalZipNameFromPath(keyData.path);
-        await adminLogger.init('data-inspection', zipFile);
+        const s3MetaData = file.metaData;
+        const requireNewerParserVersion =
+          s3MetaData['require-newer-parser-version'] !== undefined &&
+          Number(s3MetaData['require-newer-parser-version']) === 1;
+        const skipHashCheck =
+          s3MetaData['skip-hash-check'] !== undefined &&
+          Number(s3MetaData['skip-hash-check']) === 1;
+        const invocationId = s3MetaData['invocation-id']
+          ? decodeURIComponent(s3MetaData['invocation-id'])
+          : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
+        await adminLogger.init('data-inspection', invocationId);
+
+        if (eventRecord.s3.object.size === 0) {
+          // empty file is probably an error and will mess up searching by hash
+          log.error({ message: 'Empty file, skipping', key });
+          adminLogger.error(`Tyhjä tiedosto: ${key}`);
+          return null;
+        }
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
         if (!isRaitaSourceSystem(keyData.rootFolder)) {
@@ -122,10 +138,6 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
-        const s3MetaData = fileStreamResult.metaData;
-        const skipHashCheck =
-          s3MetaData['skip-hash-check'] !== undefined &&
-          Number(s3MetaData['skip-hash-check']) === 1;
         return {
           // key is sent to be stored in url decoded format to db
           key,
@@ -139,6 +151,7 @@ export async function handleInspectionFileEvent(
           reportId: parseResults.reportId,
           options: {
             skip_hash_check: skipHashCheck,
+            require_newer_parser_version: requireNewerParserVersion,
           },
         };
       });

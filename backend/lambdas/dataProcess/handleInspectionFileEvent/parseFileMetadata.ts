@@ -112,8 +112,10 @@ export async function parseFileMetadata(
  * For any metadata that is generated rather than parsed from file
  */
 export function generateMetadata(spec: IExtractionSpec) {
+  const now = new Date().toISOString();
   return {
     parser_version: spec.parserVersion,
-    parsed_at_datetime: new Date().toISOString(),
+    parsed_at_datetime: now,
+    metadata_changed_at_datetime: now,
   };
 }

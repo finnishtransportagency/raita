@@ -57,10 +57,12 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiZipProcessLambdaServiceRole: Role;
   public readonly raitaApiZipRequestLambdaServiceRole: Role;
   public readonly raitaApiDeleteRequestLambdaServiceRole: Role;
+  public readonly raitaApiManualDataProcessLambdaServiceRole: Role;
   public readonly handleFilesRequestFn: NodejsFunction;
   public readonly handleMetaRequestFn: NodejsFunction;
   public readonly handleZipProcessFn: NodejsFunction;
   public readonly handleDeleteRequestFn: NodejsFunction;
+  public readonly handleManualDataProcessFn: NodejsFunction;
   public readonly handleAdminLogsRequestFn: NodejsFunction;
   public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
   public readonly alb:
@@ -188,6 +190,27 @@ export class RaitaApiStack extends NestedStack {
       }),
     );
 
+    this.raitaApiManualDataProcessLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiManualDataProcessLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+    inspectionDataBucket.grantReadWrite(
+      this.raitaApiManualDataProcessLambdaServiceRole,
+    );
+    dataReceptionBucket.grantReadWrite(
+      this.raitaApiManualDataProcessLambdaServiceRole,
+    );
+    this.raitaApiManualDataProcessLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
+
     // Create handler lambdas
     const handleFileRequestFn = this.createFileRequestHandler({
       name: 'api-handler-file',
@@ -292,6 +315,20 @@ export class RaitaApiStack extends NestedStack {
       inspectionBucket: inspectionDataBucket,
       databaseEnvironmentVariables,
     });
+    this.handleManualDataProcessFn = this.createManualDataProcessRequestHandler(
+      {
+        name: 'api-handler-manual-data-process',
+        raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        jwtTokenIssuer,
+        lambdaRole: this.raitaApiManualDataProcessLambdaServiceRole,
+        vpc,
+        receptionBucket: dataReceptionBucket,
+        inspectionBucket: inspectionDataBucket,
+        databaseEnvironmentVariables,
+      },
+    );
 
     this.handleAdminLogsRequestFn = this.createAdminLogsRequestHandler({
       name: 'api-handler-admin-logs',
@@ -383,6 +420,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 320,
         path: [`${apiBaseUrl}/delete`],
         targetName: 'delete',
+      },
+      {
+        lambda: this.handleManualDataProcessFn,
+        priority: 325,
+        path: [`${apiBaseUrl}/admin/process`],
+        targetName: 'manual-data-process',
       },
       {
         lambda: this.handleAdminLogsSummaryRequestFn,
@@ -1109,6 +1152,54 @@ export class RaitaApiStack extends NestedStack {
         INSPECTION_BUCKET: inspectionBucket.bucketName,
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         METADATA_INDEX: openSearchMetadataIndex,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+  private createManualDataProcessRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    receptionBucket,
+    inspectionBucket,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    receptionBucket: Bucket;
+    inspectionBucket: Bucket;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(300), // TODO: how long is needed for copy?
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleManualDataProcessRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleManualDataProcessRequest/handleManualDataProcessRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        RECEPTION_BUCKET: receptionBucket.bucketName,
+        INSPECTION_BUCKET: inspectionBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
