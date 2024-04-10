@@ -17,8 +17,12 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
-import {DBConnection, getDBConnection, updateRaporttiMetadata} from "../csvCommon/db/dbUtil";
-import {ENVIRONMENTS} from "../../../../constants";
+import {
+  DBConnection,
+  getDBConnection,
+  updateRaporttiMetadata,
+} from '../csvCommon/db/dbUtil';
+import { ENVIRONMENTS } from '../../../../constants';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -26,7 +30,7 @@ export function getLambdaConfigOrFail() {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
     inspectionBucket: getEnv('INSPECTION_BUCKET'),
-    csvBucket:  getEnv('CSV_BUCKET'),
+    csvBucket: getEnv('CSV_BUCKET'),
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
@@ -69,7 +73,10 @@ export async function handleInspectionFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(eventRecord, true);
+        const fileStreamResult = await backend.files.getFileStream(
+          eventRecord,
+          true,
+        );
         const keyData = getKeyData(key);
         const zipFile = getOriginalZipNameFromPath(keyData.path);
         await adminLogger.init('data-inspection', zipFile);
@@ -100,11 +107,14 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
-        const parseResults = await parseFileMetadata({
-          keyData,
-          fileStream: fileStreamResult.fileStream,
-          spec,
-        }, dbConnection);
+        const parseResults = await parseFileMetadata(
+          {
+            keyData,
+            fileStream: fileStreamResult.fileStream,
+            spec,
+          },
+          dbConnection,
+        );
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -141,8 +151,13 @@ export async function handleInspectionFileEvent(
       );
 
       //todo change to blocking prod
-      if( (config.allowCSVInProd === 'true' || config.environment !== ENVIRONMENTS.dev)) {
+      if (
+        config.allowCSVInProd === 'true' ||
+        config.environment !== ENVIRONMENTS.dev
+      ) {
         await updateRaporttiMetadata(entries, dbConnection);
+      } else {
+        log.warn('CSV postgres blocked in prod');
       }
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
