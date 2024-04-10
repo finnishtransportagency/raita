@@ -186,7 +186,9 @@ const ohlCsv: string =
   '25527,"006 KVRP 847",194+0415.50,"60.86959588° N","26.75754806° E",32.765,-56.12,,6203.99,,9.86,,0.00,0.20,5.39,,5.19,,0.30,,77.32,,0.40,,77.59,,0.0000,,,,33,,-19.43,2023.57\r\n' +
   '25528,"006 KVRP 847",194+0415.25,"60.86959542° N","26.75754352° E",32.763,-56.67,,6206.22,,9.84,,0.00,0.20,5.45,,5.18,,0.32,,77.21,,0.43,,77.60,,0.0000,,,,33,,-20.55,2026.14\r\n' +
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
-const ohlCsvStream =stringToStream(ohlCsv);
+//const ohlCsvStream =stringToStream(ohlCsv);
+const ohlCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_23078_1_OHL_20231101_003_HKIRP_3_0_1.csv');
+
 
 
 
@@ -249,6 +251,7 @@ describe('handle rp csv file success', () => {
       dbConnection,
     );
     console.log(result);
+    expect(result).toEqual("success");
   }, 900000);
 });
 
@@ -264,10 +267,25 @@ describe('handle tg csv file success', () => {
       dbConnection,
     );
     console.log(result);
+    expect(result).toEqual("success");
   }, 900000);
 });
 
-
+describe('handle ohl csv file success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    const result = await parseCSVFileStream(
+      {
+        fileBaseName: "chunkFile_889_1_OHL_20231101_003_HKIRP_3_0_1.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
+        path:[]},
+      ohlCsvStream,
+      {},
+      dbConnection,
+    );
+    console.log(result);
+    expect(result).toEqual("success");
+  }, 900000);
+});
 
 
 /*describe('parseAMSCSV success', () => {
