@@ -106,7 +106,9 @@ export class OpenSearchRepository implements IMetadataStorageInterface {
       // ensure hash is exact match, assume only one match
       const hashFound =
         hashResult &&
-        hashResult.hits.filter((doc: any) => doc._source.hash === hash);
+        hashResult.hits.filter(
+          (doc: any) => doc._source.hash === hash && doc._source.key === key,
+        );
       if (hashFound && hashFound.length) {
         hashExists = true;
         matchingDocs = hashFound;

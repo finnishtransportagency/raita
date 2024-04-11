@@ -118,7 +118,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
     expect(repo.client.index).toHaveBeenCalledTimes(0);
     expect(repo.client.update).toHaveBeenCalledTimes(0);
   });
-  test('multiple matches found by hash => throw', async () => {
+  test('multiple matches found by hash and same key => throw', async () => {
     const entry: FileMetadataEntry = {
       file_name: 'test',
       key: 'path/test',
@@ -142,7 +142,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
           _source: { hash: 'testHash', key: 'path/test', metadata: {} },
         },
         {
-          _source: { hash: 'testHash', key: 'path/test2', metadata: {} },
+          _source: { hash: 'testHash', key: 'path/test', metadata: {} },
         },
       ],
       keySearchResult: undefined,
@@ -179,7 +179,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
     expect(repo.client.index).toHaveBeenCalledTimes(0);
     expect(repo.client.update).toHaveBeenCalledTimes(1);
   });
-  test('found by hash but key differs, skip_hash_check=true => overwrite/update', async () => {
+  test('found by hash but key differs, skip_hash_check=true => insert new', async () => {
     const entry: FileMetadataEntry = {
       file_name: 'test',
       key: 'path/test',
@@ -210,8 +210,8 @@ describe('OpenSearchRepository.upsertDocument', () => {
       keySearchResult: undefined,
     });
     await repo.repo.upsertDocument(entry);
-    expect(repo.client.index).toHaveBeenCalledTimes(0);
-    expect(repo.client.update).toHaveBeenCalledTimes(1);
+    expect(repo.client.index).toHaveBeenCalledTimes(1);
+    expect(repo.client.update).toHaveBeenCalledTimes(0);
   });
   test('found by key => update', async () => {
     const entry: FileMetadataEntry = {
