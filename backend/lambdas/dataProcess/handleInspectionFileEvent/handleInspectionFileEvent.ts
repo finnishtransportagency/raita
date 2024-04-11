@@ -167,7 +167,7 @@ export async function handleInspectionFileEvent(
         config.allowCSVInProd === 'true' ||
         config.environment !== ENVIRONMENTS.prod
       ) {
-        await updateRaporttiMetadata(entries, dbConnection);
+        await updateRaporttiMetadata(entries.filter(e=>e.reportId), dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }

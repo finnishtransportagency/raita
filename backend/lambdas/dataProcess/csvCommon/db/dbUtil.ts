@@ -276,13 +276,10 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
     };
-    log.info("RAPORTTIDATA");
-    log.info(raporttiData);
     try {
       let id;
       if (metaDataEntry.reportId) {
         id = metaDataEntry.reportId;
-        log.info("HELLO id: " + id);
       } else {
         throw new Error('ReportID undefined');
       }

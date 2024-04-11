@@ -5,7 +5,7 @@ import { KeyData, RaitaParseError } from '../../utils';
 import { parseFileContent } from './contentDataParser';
 import { extractFileNameData } from './fileNameDataParser';
 import { extractPathData } from './pathDataParser';
-import {DBConnection} from "../csvCommon/db/dbUtil";
+import { DBConnection } from '../csvCommon/db/dbUtil';
 
 export async function parseFileMetadata(
   {
@@ -19,10 +19,10 @@ export async function parseFileMetadata(
   },
   dbConnection: DBConnection,
 ): Promise<{
-  metadata: ParseValueResult;
+  metadata: any;
+  reportId: number | undefined;
   hash: string;
   errors: boolean;
-  reportId: number;
 }> {
   let errorsFound = false;
   let fileNameData: any = {};
@@ -55,7 +55,7 @@ export async function parseFileMetadata(
   }
   let fileContentData: any = {};
   let hash = '';
-  let reportId: number = -1;
+  let reportId: number | undefined = undefined;
   try {
     if (fileStream) {
       const contentResult = await parseFileContent(
