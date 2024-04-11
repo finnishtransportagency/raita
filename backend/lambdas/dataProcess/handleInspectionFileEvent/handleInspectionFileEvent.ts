@@ -78,7 +78,7 @@ export async function handleInspectionFileEvent(
           true,
         );
         const keyData = getKeyData(key);
-        const s3MetaData = file.metaData;
+        const s3MetaData = fileStreamResult.metaData;
         const requireNewerParserVersion =
           s3MetaData['require-newer-parser-version'] !== undefined &&
           Number(s3MetaData['require-newer-parser-version']) === 1;
