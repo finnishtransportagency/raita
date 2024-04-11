@@ -22,8 +22,8 @@ const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection;
 
 export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
-  log.info('Start csv file handler');
-  log.info(event);
+  log.debug('Start csv file handler');
+  log.debug(event);
   dbConnection = await getDBConnection();
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
@@ -46,8 +46,8 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
         try {
           const key = getDecodedS3ObjectKey(eventRecord);
           currentKey = key;
-          log.info({ fileName: key }, 'Start csv file handler');
-          log.info(eventRecord);
+          log.debug({ fileName: key }, 'Start csv file handler');
+          log.debug(eventRecord);
 
           const fileStreamResult = await files.getFileStream(
             eventRecord,
@@ -58,7 +58,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
 
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
-            log.info(
+            log.debug(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
             );
 
@@ -66,7 +66,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           }
 
           if (fileStreamResult && fileStreamResult.fileStream) {
-            log.info('csv parse file: ' + keyData.fileBaseName);
+            log.debug('csv parse file: ' + keyData.fileBaseName);
             const result = await parseCSVFileStream(
               keyData,
               fileStreamResult.fileStream,
@@ -104,7 +104,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
         }
       });
       const entries = await Promise.all(recordResults).then(results =>
-        log.info(results),
+        log.debug(results),
       );
     });
 

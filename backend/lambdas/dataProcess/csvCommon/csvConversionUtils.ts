@@ -8,7 +8,7 @@ function tidyUpDataLines(csvDataLines: string): string {
   const tidyedLines = csvDataLines
     //TODO non numeric handling
     .replace(/NaN/g, '')
-    //∞
+    //∞ replaced with max numeric
     .replace(/∞/g, '9999999999999999999')
 
     //remove semicolon sometimes at the end of file

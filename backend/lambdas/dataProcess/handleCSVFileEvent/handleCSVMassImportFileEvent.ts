@@ -73,7 +73,7 @@ export async function handleCSVMassImportFileEvent(
         eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start CSVMassImport file handler');
+        log.debug({ fileName: key }, 'Start CSVMassImport file handler');
         const fileStreamResult = await backend.files.getFileStream(
           eventRecord,
           true,
