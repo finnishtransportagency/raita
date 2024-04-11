@@ -11,8 +11,6 @@ import {
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
-  isKnownIgnoredSuffix,
-  isKnownSuffix,
 } from '../../utils';
 
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -21,7 +19,6 @@ import {
   DBConnection,
   getDBConnection,
   updateRaporttiMetadata,
-  updateRaporttiStatus,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
 import {
