@@ -128,11 +128,11 @@ export const parseFileContent = async (
 ): Promise<{
   contentData: ParseValueResult;
   hash: string;
-  reportId: number;
+  reportId: number | undefined;
 }> => {
   const config = getLambdaConfigOrFail();
   let contentPromise: Promise<ParseValueResult>;
-  let csvPromise: Promise<number>;
+  let csvPromise: Promise<number | undefined>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
@@ -150,11 +150,11 @@ export const parseFileContent = async (
       csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
       log.info('csv parsing result: ' + csvPromise);
     } else {
-      csvPromise = Promise.resolve(-1);
+      csvPromise = Promise.resolve(undefined);
     }
   } else {
     log.warn('CSV parsing blocked in prod');
-    csvPromise = Promise.resolve(-1);
+    csvPromise = Promise.resolve(undefined);
   }
 
   if (shouldParseContent(keyData.fileSuffix)) {
