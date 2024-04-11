@@ -312,7 +312,7 @@ export class DataProcessStack extends NestedStack {
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
-    this.inspectionDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
+    this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
     this.csvDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
@@ -354,7 +354,7 @@ export class DataProcessStack extends NestedStack {
 
     // route csv bucket s3 events through a queue
     const csvQueue = new Queue(this, 'csv-queue', {
-      visibilityTimeout: Duration.seconds(900),
+      visibilityTimeout: Duration.seconds(5*60),
     });
     this.csvDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
@@ -392,7 +392,7 @@ export class DataProcessStack extends NestedStack {
 
     // route csv mass import s3 events through a queue
     const csvMassImportQueue = new Queue(this, 'csv-mass-import-queue', {
-      visibilityTimeout: Duration.seconds(900),
+      visibilityTimeout: Duration.seconds(240),
     });
     this.csvMassImportDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
@@ -517,8 +517,8 @@ export class DataProcessStack extends NestedStack {
     );
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 10240,
-      timeout: cdk.Duration.seconds(15 * 60),
+      memorySize: 3072,
+      timeout: cdk.Duration.seconds(240),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
       entry: path.join(
@@ -619,8 +619,8 @@ export class DataProcessStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 10240,
-      timeout: cdk.Duration.seconds(15 * 60),
+      memorySize: 5120,
+      timeout: cdk.Duration.seconds(5 * 60),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleCSVFileEvent',
       entry: path.join(
@@ -676,8 +676,8 @@ export class DataProcessStack extends NestedStack {
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 10240,
-      timeout: cdk.Duration.seconds(15 * 60),
+      memorySize: 3072,
+      timeout: cdk.Duration.seconds(240),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleCSVMassImportFileEvent',
       entry: path.join(
