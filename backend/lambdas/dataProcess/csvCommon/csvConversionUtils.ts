@@ -8,6 +8,7 @@ function tidyUpDataLines(csvDataLines: string): string {
   const tidyedLines = csvDataLines
     //TODO non numeric handling
     .replace(/NaN/g, '')
+    .replace(/epäluku/g, '')
     //∞ replaced with max numeric
     .replace(/∞/g, '9999999999999999999')
 
