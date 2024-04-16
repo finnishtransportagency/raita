@@ -360,8 +360,6 @@ export async function raporttiChunksToProcess(id: number, dbConnection: DBConnec
 export async function insertRaporttiData(
   key: string,
   fileBaseName: string,
-  fileNamePrefix: string,
-  metadata: ParseValueResult | null,
   status: string | null,
   dbConnection: DBConnection,
 ): Promise<number> {
@@ -369,7 +367,6 @@ export async function insertRaporttiData(
     key,
     status,
     file_name: fileBaseName,
-    system: fileNamePrefix,
     chunks_to_process: -1,
     events: null,
   };

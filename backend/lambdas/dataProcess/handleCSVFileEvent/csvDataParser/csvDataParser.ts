@@ -15,10 +15,11 @@ import { rcSchema } from './csvSchemas/rcCsvSchema';
 import { rpSchema } from './csvSchemas/rpCsvSchema';
 import { tgSchema } from './csvSchemas/tgCsvSchema';
 import { tsightSchema } from './csvSchemas/tsightCsvSchema';
-import {z, ZodObject, ZodRawShape} from 'zod';
+import { z, ZodObject, ZodRawShape } from 'zod';
 import {
   readRunningDateFromLine,
-  replaceSeparators, replaceSeparatorsInHeaderLine,
+  replaceSeparators,
+  replaceSeparatorsInHeaderLine,
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from '../../csvCommon/csvConversionUtils';
@@ -238,9 +239,10 @@ function createFileSchema(
       throw new Error('Unknown csv file prefix:');
   }
 
-
   //construct a schema with only the headers on file
-  const tidyHeaderLine = replaceSeparatorsInHeaderLine(tidyUpHeaderLine(csvHeaderLine));
+  const tidyHeaderLine = replaceSeparatorsInHeaderLine(
+    tidyUpHeaderLine(csvHeaderLine),
+  );
   const splittedHeader: string[] = tidyHeaderLine.split(',');
   const copyShape: ZodRawShape = {};
   Object.assign(copyShape, originalSchema.shape);
@@ -265,8 +267,11 @@ export async function parseCSVFileStream(
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
-  const fileNamePrefix = fileNameParts[3];
-  const jarjestelmä = fileNamePrefix.toUpperCase();
+  let fileNamePrefix = fileNameParts[3];
+  if ((fileNamePrefix === 'VR')) {
+    fileNamePrefix = fileNameParts[4];
+  }
+
   const reportId: number = Number(fileNameParts[1]);
 
   let fileSchema: ZodObject<any> | undefined = undefined;

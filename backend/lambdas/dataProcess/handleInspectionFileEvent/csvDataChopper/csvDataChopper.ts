@@ -20,6 +20,7 @@ async function writeFileChunkToQueueS3(
   chunkNumber: number,
   dbConnection: DBConnection,
 ) {
+
   const pathString = key.path.slice(0, key.path.length - 1).join('/');
   const outFileName =
     pathString +
@@ -68,23 +69,16 @@ async function checkFilenamePrefix(fileNamePrefix: string) {
 //chop csv file into 50000 row chunks; add header line to each chunk; write each chunk as a file in CSV S3 bucket
 export async function chopCSVFileStream(
   originalKeyData: KeyData,
-  tidyedKeyData: KeyData, //remove prefixes like VR_ removed
   fileStream: Readable,
   dbConnection: DBConnection,
 ) {
-  const fileNameParts = tidyedKeyData.fileBaseName.split('_');
-  const fileNamePrefix = fileNameParts[0];
-  const jarjestelma = fileNamePrefix.toUpperCase();
   const reportId: number = await insertRaporttiData(
     originalKeyData.keyWithoutSuffix,
     originalKeyData.fileBaseName,
-    fileNamePrefix,
-    null,
     'CHOPPING',
     dbConnection,
   );
   log.debug('reportId: ' + reportId);
-  checkFilenamePrefix(jarjestelma);
 
   try {
     let runningDate = new Date();
@@ -141,15 +135,12 @@ export async function chopCSVFileStream(
             const bufferCopy = lineBuffer.slice();
             lineBuffer = [];
             rl.resume();
-            log.debug(
-              'keyData.keyWithoutSuffix: ' + tidyedKeyData.keyWithoutSuffix,
-            );
 
             await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
               runningDate,
               reportId,
-              tidyedKeyData,
+              originalKeyData,
               chunkCounter,
               dbConnection,
             );
@@ -184,7 +175,7 @@ export async function chopCSVFileStream(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
         runningDate,
         reportId,
-        tidyedKeyData,
+        originalKeyData,
         chunkCounter,
         dbConnection,
       );
@@ -197,13 +188,13 @@ export async function chopCSVFileStream(
 
     log.debug(
       'Wrote files to csv bucket ' +
-        tidyedKeyData.fileBaseName +
+        originalKeyData.fileBaseName +
         ' ' +
         chunkCounter,
     );
     await updateRaporttiStatus(reportId, 'PARSING', null, dbConnection);
     updateRaporttiChunks(reportId, chunkCounter, dbConnection);
-    log.debug('Chopped file successfully: ' + tidyedKeyData.fileBaseName);
+    log.debug('Chopped file successfully: ' + originalKeyData.fileBaseName);
     return reportId;
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());

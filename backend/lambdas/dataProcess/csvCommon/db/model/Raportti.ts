@@ -4,7 +4,6 @@ import { integer } from '@opensearch-project/opensearch/api/types';
 export type Raportti = {
   key: string | null;
   file_name: string | null;
-  system: string | null;
   status: string | null;
   chunks_to_process: number | null;
   events: string | null;
