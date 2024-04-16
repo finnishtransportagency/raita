@@ -67,8 +67,8 @@ async function checkFilenamePrefix(fileNamePrefix: string) {
 
 //chop csv file into 50000 row chunks; add header line to each chunk; write each chunk as a file in CSV S3 bucket
 export async function chopCSVFileStream(
-  tidyedKeyData: KeyData, //remove prefixes like VR_ removed
   originalKeyData: KeyData,
+  tidyedKeyData: KeyData, //remove prefixes like VR_ removed
   fileStream: Readable,
   dbConnection: DBConnection,
 ) {

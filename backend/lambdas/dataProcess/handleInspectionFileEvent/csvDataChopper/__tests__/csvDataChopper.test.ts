@@ -228,22 +228,25 @@ describe('insert raportti success', () => {
 describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
+
+
+
     const result = await chopCSVFileStream(
-      {
-        fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
-        fileName: '',
-        fileSuffix: '',
-        keyWithoutSuffix:
-          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
-        rootFolder: '',
-        path: []
-      },
       {
         fileBaseName: 'VR_AMS_20221122_008_KOKOL_LR_630_630.csv',
         fileName: '',
         fileSuffix: '',
         keyWithoutSuffix:
           '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/VR_AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: []
+      },
+      {
+        fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
         rootFolder: '',
         path: []
       },

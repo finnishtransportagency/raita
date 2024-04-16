@@ -11,6 +11,7 @@ import {
   RaitaParseError,
 } from '../../utils';
 import { parsePrimitiveWithSubstitution } from './parsePrimitives';
+import {log} from "../../../utils/logger";
 
 export const parseFileNameParts = (
   labels: IExtractionSpecLabels,
@@ -88,6 +89,9 @@ export const extractFileNameData = (
   keyData: KeyData,
   spec: IExtractionSpec,
 ) => {
+  console.log("HELLO1 ");
+  console.log(keyData);
+  console.log(spec);
   const fileNamePartLabels = spec.fileNameExtractionSpec;
   const fileNameExceptions = spec.knownExceptions.fileNameExtractionSpec;
   const removePrefix = fileNameExceptions.removePrefix;
@@ -176,6 +180,9 @@ export const extractFileNameData = (
           'VALUE_IN_WRONG_SLOT',
         );
       }
+      log.info("HELLO " + fileNameMetadata);
+      log.info(fileNameMetadata);
+
       return {
         file_type: fileSuffix,
         ...fileNameMetadata,
