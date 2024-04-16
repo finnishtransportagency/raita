@@ -61,6 +61,7 @@ export async function parseFileMetadata(
       const contentResult = await parseFileContent(
         spec,
         keyData,
+        fileNameData.keyData,
         fileStream,
         dbConnection,
       );

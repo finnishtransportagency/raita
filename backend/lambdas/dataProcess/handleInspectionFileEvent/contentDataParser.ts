@@ -123,6 +123,7 @@ const calculateHashFromStream = (fileStream: Readable): Promise<string> => {
 export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
+  tidyedKeyData: KeyData,
   fileStream: Readable,
   dbConnection: DBConnection,
 ): Promise<{
@@ -147,7 +148,7 @@ export const parseFileContent = async (
     ) {
       log.info('chop csv file: ' + keyData.fileBaseName);
       const fileStreamToParse = originalStream.clone();
-      csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
+      csvPromise = chopCSVFileStream(keyData, tidyedKeyData, fileStreamToParse, dbConnection);
       log.info('csv parsing result: ' + csvPromise);
     } else {
       csvPromise = Promise.resolve(undefined);
