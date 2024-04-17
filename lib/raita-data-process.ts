@@ -695,6 +695,7 @@ export class DataProcessStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         ENVIRONMENT: raitaEnv,
         ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD: 'true',
+        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'undefined', //this has no effect here but cvsDataChopper needs it to be in the env
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
