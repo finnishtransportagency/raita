@@ -13,8 +13,6 @@ module.exports = {
     '/node_modules/',
     'csvDataParser',
     'csvDataChopper',
-    'contentDataParser',
-    'parseFileMetaData',
     '/zod-csv/',
   ],
 };
