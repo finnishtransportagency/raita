@@ -186,6 +186,12 @@ export function isExcelSuffix(arg: string): arg is ExcelSuffix {
   );
 }
 
+export function isCsvSuffix(arg: string): arg is ExcelSuffix {
+  return (
+    fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg
+  );
+}
+
 export function getOriginalZipNameFromPath(path: string[]): string {
   if (path.length < 5) {
     return '';

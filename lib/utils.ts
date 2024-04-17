@@ -41,6 +41,7 @@ export const isProductionStack = (
   raitaEnv: RaitaEnvironment,
 ) => stackId === PRODUCTION_STACK_ID && raitaEnv === ENVIRONMENTS.prod;
 
+
 /**
  * Returns whether the stack is one of the two permanent Raita stacks
  * - development main stack that corresponds to development main branch in Github

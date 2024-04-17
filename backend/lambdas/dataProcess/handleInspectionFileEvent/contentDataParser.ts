@@ -8,9 +8,14 @@ import {
 import { ParseValueResult } from '../../../types';
 import { parsePrimitiveWithSubstitution } from './parsePrimitives';
 import { regexCapturePatterns } from './regex';
-import { fileSuffixesToIncludeInMetadataParsing } from '../../../../constants';
+import {
+  ENVIRONMENTS,
+  fileSuffixesToIncludeInMetadataParsing,
+} from '../../../../constants';
 import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
+import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
+import { DBConnection } from '../csvCommon/db/dbUtil';
 
 /**
  * Resolves whether content data parsing is needed for the file
@@ -118,12 +123,42 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-): Promise<{ contentData: ParseValueResult; hash: string }> => {
+  dbConnection: DBConnection | undefined,
+  doCSVParsing: boolean,
+): Promise<{
+  contentData: ParseValueResult;
+  hash: string;
+  reportId: number | undefined;
+}> => {
   let contentPromise: Promise<ParseValueResult>;
+  let csvPromise: Promise<number | undefined>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
+
+  if (doCSVParsing) {
+    if (
+      keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
+    ) {
+      log.info('chop csv file: ' + keyData.fileBaseName);
+      const fileStreamToParse = originalStream.clone();
+      if(dbConnection) {
+        csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
+        log.info('csv parsing result: ' + csvPromise);
+      }
+      else{
+        log.error("content parsing with called csv enabled and without dbconnection");
+        csvPromise = Promise.resolve(undefined);
+      }
+    } else {
+      csvPromise = Promise.resolve(undefined);
+    }
+  } else {
+    log.warn('CSV parsing blocked in prod');
+    csvPromise = Promise.resolve(undefined);
+  }
+
   if (shouldParseContent(keyData.fileSuffix)) {
     const fileStreamToParse = originalStream.clone();
     contentPromise = extractFileContentDataFromStream(spec, fileStreamToParse);
@@ -131,9 +166,14 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData] = await Promise.all([hashPromise, contentPromise]);
+  const [hash, contentData, reportId] = await Promise.all([
+    hashPromise,
+    contentPromise,
+    csvPromise,
+  ]);
   return {
     contentData,
     hash,
+    reportId,
   };
 };
