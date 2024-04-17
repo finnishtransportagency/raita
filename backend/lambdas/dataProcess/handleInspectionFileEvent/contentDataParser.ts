@@ -131,7 +131,6 @@ export const parseFileContent = async (
   hash: string;
   reportId: number | undefined;
 }> => {
-  const config = getLambdaConfigOrFail();
   let contentPromise: Promise<ParseValueResult>;
   let csvPromise: Promise<number | undefined>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
