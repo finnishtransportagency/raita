@@ -12,12 +12,17 @@ export async function parseFileMetadata(
     keyData,
     fileStream,
     spec,
+    doCSVParsing,
+    dbConnection=undefined,
+
   }: {
     keyData: KeyData;
     fileStream: Readable | undefined;
     spec: IExtractionSpec;
+    doCSVParsing: boolean;
+    dbConnection: DBConnection | undefined;
   },
-  dbConnection: DBConnection,
+
 ): Promise<{
   metadata: any;
   reportId: number | undefined;
@@ -63,6 +68,7 @@ export async function parseFileMetadata(
         keyData,
         fileStream,
         dbConnection,
+        doCSVParsing,
       );
       fileContentData = contentResult.contentData;
       hash = contentResult.hash;

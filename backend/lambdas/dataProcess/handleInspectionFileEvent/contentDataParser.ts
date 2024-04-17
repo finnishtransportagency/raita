@@ -124,7 +124,8 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-  dbConnection: DBConnection,
+  dbConnection: DBConnection | undefined,
+  doCSVParsing: boolean,
 ): Promise<{
   contentData: ParseValueResult;
   hash: string;
@@ -138,17 +139,20 @@ export const parseFileContent = async (
   originalStream.pause();
   const hashPromise = calculateHashFromStream(originalStream);
 
-  if (
-    config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.prod
-  ) {
+  if (doCSVParsing) {
     if (
       keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
     ) {
       log.info('chop csv file: ' + keyData.fileBaseName);
       const fileStreamToParse = originalStream.clone();
-      csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
-      log.info('csv parsing result: ' + csvPromise);
+      if(dbConnection) {
+        csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
+        log.info('csv parsing result: ' + csvPromise);
+      }
+      else{
+        log.error("content parsing with called csv enabled and without dbconnection");
+        csvPromise = Promise.resolve(undefined);
+      }
     } else {
       csvPromise = Promise.resolve(undefined);
     }

@@ -35,7 +35,7 @@ export function getLambdaConfigOrFail() {
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
     environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_PARSING_IN_PROD'),
+    allowCSVInProd: getEnv('ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD'),
   };
 }
 
@@ -45,10 +45,10 @@ let dbConnection: DBConnection;
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
 /**
- * This is otherwise same as handleInspectionFileEvent.ts but writing to opensearh disbaled.
+ * This is otherwise same as handleInspectionFileEvent.ts but writing to opensearh disabled.
  * This is started from file event from csv-data-mass-import s3 bucket.
  * The purpose of that bucket and this lambda is the mass import of existing csv files.
- * A separate bucket and lambda are use so import of exixsting files can we done indepedently of normal data-process.
+ * A separate bucket and lambda are use so import of existing files can be done indepedently of normal data-process.
  *
  */
 export async function handleCSVMassImportFileEvent(
@@ -56,6 +56,9 @@ export async function handleCSVMassImportFileEvent(
 ): Promise<void> {
   dbConnection = await getDBConnection();
   const config = getLambdaConfigOrFail();
+  const doCSVParsing =
+    config.allowCSVInProd === 'true' ||
+    config.environment !== ENVIRONMENTS.prod;
   // @ts-ignore
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
@@ -96,8 +99,10 @@ export async function handleCSVMassImportFileEvent(
               keyData,
               fileStream: fileStreamResult.fileStream,
               spec,
+              doCSVParsing,
+              dbConnection,
             },
-            dbConnection,
+
           );
           if (parseResults.errors) {
             await adminLogger.error(
@@ -136,10 +141,7 @@ export async function handleCSVMassImportFileEvent(
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
-      if (
-        config.allowCSVInProd === 'true' ||
-        config.environment !== ENVIRONMENTS.dev
-      ) {
+      if (doCSVParsing) {
         await updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');

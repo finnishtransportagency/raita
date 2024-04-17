@@ -35,12 +35,12 @@ export function getLambdaConfigOrFail() {
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
     environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_PARSING_IN_PROD'),
+    allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
 
 const adminLogger: IAdminLogger = new PostgresLogger();
-let dbConnection: DBConnection;
+let dbConnection: DBConnection | undefined = undefined;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
@@ -57,8 +57,13 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 export async function handleInspectionFileEvent(
   event: SQSEvent,
 ): Promise<void> {
-  dbConnection = await getDBConnection();
   const config = getLambdaConfigOrFail();
+  const doCSVParsing =
+    config.allowCSVInProd === 'true' ||
+    config.environment !== ENVIRONMENTS.prod;
+  if (doCSVParsing) {
+    dbConnection = await getDBConnection();
+  }
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
   try {
@@ -123,14 +128,13 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
-        const parseResults = await parseFileMetadata(
-          {
-            keyData,
-            fileStream: fileStreamResult.fileStream,
-            spec,
-          },
+        const parseResults = await parseFileMetadata({
+          keyData,
+          fileStream: fileStreamResult.fileStream,
+          spec,
+          doCSVParsing,
           dbConnection,
-        );
+        });
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -163,11 +167,17 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
-      if (
-        config.allowCSVInProd === 'true' ||
-        config.environment !== ENVIRONMENTS.prod
-      ) {
-        await updateRaporttiMetadata(entries.filter(e=>e.reportId), dbConnection);
+      if (doCSVParsing) {
+        if (dbConnection) {
+          await updateRaporttiMetadata(
+            entries.filter(e => e.reportId),
+            dbConnection,
+          );
+        } else {
+          log.error(
+            'content parsing with called csv enabled and without dbconnection',
+          );
+        }
       } else {
         log.warn('CSV postgres blocked in prod');
       }
