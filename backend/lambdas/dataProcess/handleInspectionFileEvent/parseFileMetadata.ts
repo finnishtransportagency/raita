@@ -13,7 +13,7 @@ export async function parseFileMetadata(
     fileStream,
     spec,
     doCSVParsing,
-    dbConnection=undefined,
+    dbConnection,
 
   }: {
     keyData: KeyData;
