@@ -58,7 +58,8 @@ export async function handleCSVMassImportFileEvent(
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.prod;
+    //todo change back to prod after premain tests
+    config.environment !== ENVIRONMENTS.dev;
   // @ts-ignore
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors

@@ -60,7 +60,8 @@ export async function handleInspectionFileEvent(
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.prod;
+    //todo change back to prod after premain tests
+    config.environment !== ENVIRONMENTS.dev;
   if (doCSVParsing) {
     dbConnection = await getDBConnection();
   }
