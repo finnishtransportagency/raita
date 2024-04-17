@@ -16,7 +16,6 @@ import { KeyData } from '../../utils';
 import { log } from '../../../utils/logger';
 import { chopCSVFileStream } from './csvDataChopper/csvDataChopper';
 import { DBConnection } from '../csvCommon/db/dbUtil';
-import { getLambdaConfigOrFail } from './handleInspectionFileEvent';
 
 /**
  * Resolves whether content data parsing is needed for the file
