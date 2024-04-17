@@ -11,73 +11,16 @@ let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
-  let schema;
-
-  let sql: postgres.Sql<{}>;
-  //  if (isLocalDevStack()) { (ei toiminut)
-  if (process.env.ENVIRONMENT == 'kalle') {
-    schema = 'public';
-    sql = await getConnectionLocalDev();
-  } else {
-    schema = getEnvOrFail('RAITA_PGSCHEMA');
-    sql = await getConnection();
-  }
+export async function getDBConnection(): Promise<{
+  schema: string;
+  sql: postgres.Sql<{}>;
+}> {
+  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const sql = await getConnection();
   return { schema, sql };
 }
 
 export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
-
-async function populateGisPointsForTable(
-  schema: string,
-  table: string,
-  sql: postgres.Sql<{}>,
-) {
-  var sqlString: string = '';
-  sqlString += 'update ';
-  sqlString += schema + '.' + table;
-  sqlString +=
-    ' set sijainti=ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)';
-  sqlString += ' where sijainti IS NULL';
-
-  await sql.unsafe(sqlString);
-}
-
-async function populateGisPoints(
-  rows: postgres.Row[] &
-    Iterable<NonNullable<postgres.Row[][number]>> &
-    postgres.ResultQueryMeta<
-      postgres.Row[]['length'],
-      keyof postgres.Row[][number]
-    >,
-  schema: string,
-  table: string,
-  sql: postgres.Sql<{}>,
-) {
-  var sqlString: string = '';
-
-  rows.forEach(row => {
-    const latitudeString: string = row.latitude;
-    const longitudeString: string = row.longitude;
-    const latitude = latitudeString.split('°')[0];
-    const longitude = longitudeString.split('°')[0];
-    const id: string = row.id;
-
-    //TODO is there nicer way to do this in the row insert?
-    sqlString += 'update ';
-    sqlString += schema + '.' + table;
-    sqlString += " set sijainti=st_geomfromtext('POINT(";
-    sqlString += longitude;
-    sqlString += ' ';
-    sqlString += latitude;
-    sqlString += ')';
-    sqlString += "', 4326) where id=";
-    sqlString += id;
-    sqlString += ';';
-  });
-  await sql.unsafe(sqlString);
-
-}
 
 export async function writeRowsToDB(
   parsedCSVRows: any[],
@@ -93,13 +36,11 @@ export async function writeRowsToDB(
       log.error(e);
       throw e;
     });
-
     //  await populateGisPoints(rows, schema, table, sql);
     //  log.info("populatedGisPoints ");
 
     return rows.length;
   } catch (e) {
-
     // log.error('Error inserting measurement data: ' + table + ' ' + e);
     // log.error(e);
     throw e;
@@ -190,11 +131,10 @@ export function convertToDBRow(
   let lat = undefined;
   let long = undefined;
 
-
-  if(row.latitude) {
+  if (row.latitude) {
     lat = convertCoord(row.latitude);
   }
-  if(row.longitude) {
+  if (row.longitude) {
     long = convertCoord(row.longitude);
   }
 
@@ -230,8 +170,6 @@ export async function updateRaporttiStatus(
 
       throw e;
     });
-
-
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -269,7 +207,10 @@ export async function updateRaporttiStatus(
   "tags": {},
 "reportId": 237*/
 
-export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbConnection: DBConnection) {
+export async function updateRaporttiMetadata(
+  data: Array<FileMetadataEntry>,
+  dbConnection: DBConnection,
+) {
   const { schema, sql } = dbConnection;
   for (const metaDataEntry of data) {
     const raporttiData = {
@@ -292,27 +233,27 @@ export async function updateRaporttiMetadata(data: Array<FileMetadataEntry>, dbC
         });
       } catch (e) {
         log.error('Update error to raportti table: ' + e);
-        await updateRaporttiStatus(id, 'ERROR', e.toString(),dbConnection);
+        await updateRaporttiStatus(id, 'ERROR', e.toString(), dbConnection);
         throw e;
       }
-
-
     } catch (e) {
-      log.error('Error in raportti metadata updating: ' +e);
+      log.error('Error in raportti metadata updating: ' + e);
       throw e;
     }
   }
 }
 
-export async function updateRaporttiChunks(id: number, chunks: number, dbConnection: DBConnection,) {
+export async function updateRaporttiChunks(
+  id: number,
+  chunks: number,
+  dbConnection: DBConnection,
+) {
   const { schema, sql } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
-
-
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -321,15 +262,16 @@ export async function updateRaporttiChunks(id: number, chunks: number, dbConnect
   }
 }
 
-export async function substractRaporttiChunk(id: number, dbConnection: DBConnection) {
+export async function substractRaporttiChunk(
+  id: number,
+  dbConnection: DBConnection,
+) {
   const { schema, sql } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
-
-
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -338,7 +280,10 @@ export async function substractRaporttiChunk(id: number, dbConnection: DBConnect
   }
 }
 
-export async function raporttiChunksToProcess(id: number, dbConnection: DBConnection) {
+export async function raporttiChunksToProcess(
+  id: number,
+  dbConnection: DBConnection,
+) {
   const { schema, sql } = dbConnection;
   try {
     const chunks = await sql`SELECT chunks_to_process FROM ${sql(
@@ -370,7 +315,6 @@ export async function insertRaporttiData(
     chunks_to_process: -1,
     events: null,
   };
-
 
   const { schema, sql } = dbConnection;
   try {
