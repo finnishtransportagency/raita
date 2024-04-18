@@ -79,7 +79,9 @@ export async function handleCSVMassImportFileEvent(
           true,
         );
         const keyData = getKeyData(key);
-        const zipFile = getOriginalZipNameFromPath(keyData.path);
+
+        await adminLogger.init('data-csv-mass-import', keyData.keyWithoutSuffix);
+
 
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
