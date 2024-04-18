@@ -11,43 +11,50 @@ import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
 import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { IAdminLogger } from '../../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,
-  runningDate: Date,
   reportId: number,
   key: KeyData,
   chunkNumber: number,
-  dbConnection: DBConnection,
 ) {
+  try {
+    await adminLogger.init('data-csv-mass-import', key.keyWithoutSuffix);
+    const pathString = key.path.slice(0, key.path.length - 1).join('/');
+    const outFileName =
+      pathString +
+      '/chunkFile_' +
+      reportId +
+      '_' +
+      chunkNumber +
+      '_' +
+      key.fileName;
 
-  const pathString = key.path.slice(0, key.path.length - 1).join('/');
-  const outFileName =
-    pathString +
-    '/chunkFile_' +
-    reportId +
-    '_' +
-    chunkNumber +
-    '_' +
-    key.fileName;
+    log.info('outFileName ' + outFileName);
 
-  log.info('outFileName ' + outFileName);
+    const config = getLambdaConfigOrFail();
 
-  const config = getLambdaConfigOrFail();
+    log.debug('config.targetBucketName' + config.inspectionBucket);
 
-  log.debug('config.targetBucketName' + config.inspectionBucket);
-
-  const command = new PutObjectCommand({
-    Bucket: config.csvBucket,
-    Key: outFileName,
-    ContentType: 'text/csv',
-    Body: Buffer.from(inputFileChunkBody),
-  });
-  const s3Client = new S3Client({});
-  const a = await s3Client.send(command);
-  log.info('PutObjectCommand output');
-  log.info(a);
-
+    const command = new PutObjectCommand({
+      Bucket: config.csvBucket,
+      Key: outFileName,
+      ContentType: 'text/csv',
+      Body: Buffer.from(inputFileChunkBody),
+    });
+    const s3Client = new S3Client({});
+    const putObjectCommandOutput = await s3Client.send(command);
+    log.info('PutObjectCommand output');
+    log.info(putObjectCommandOutput);
+  } catch (e) {
+    log.error('Error in writeFileChunkToQueueS3');
+    adminLogger.error('Error in writeFileChunkToQueueS3');
+    throw e;
+  }
   return;
 }
 
@@ -138,18 +145,16 @@ export async function chopCSVFileStream(
 
             await writeFileChunkToQueueS3(
               csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-              runningDate,
               reportId,
               originalKeyData,
               chunkCounter,
-              dbConnection,
             );
             //  log.debug("handled bufferd: " + handleCounter);
           }
         }
       });
       rl.on('error', () => {
-        log.warn('error ');
+        log.error('readline error ' + originalKeyData.keyWithoutSuffix);
       });
       rl.on('close', function () {
         log.debug('closed');
@@ -173,11 +178,9 @@ export async function chopCSVFileStream(
       chunkCounter++;
       await writeFileChunkToQueueS3(
         csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-        runningDate,
         reportId,
         originalKeyData,
         chunkCounter,
-        dbConnection,
       );
     }
 

@@ -27,6 +27,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
   dbConnection = await getDBConnection();
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
+
   try {
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
@@ -48,7 +49,7 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
           currentKey = key;
           log.debug({ fileName: key }, 'Start csv file handler');
           log.debug(eventRecord);
-
+          await adminLogger.init('data-csv', key);
           const fileStreamResult = await files.getFileStream(
             eventRecord,
             false,
