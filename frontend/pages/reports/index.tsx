@@ -32,6 +32,7 @@ import { ZipDownload } from 'components/zip-download';
 
 import { RaitaRole, useUser } from 'shared/user';
 import { Tooltip } from 'react-tooltip';
+import { gql, useLazyQuery } from '@apollo/client';
 
 //
 
@@ -63,6 +64,20 @@ const initialState: ReportsState = {
 };
 
 //
+const SEARCH = gql`
+  query search($file_name: String) {
+    search_raportti(file_name: $file_name) {
+      id
+      file_name
+      key
+    }
+  }
+`;
+const HELLO_WORLD = gql`
+  query hello {
+    hello
+  }
+`;
 
 const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
@@ -70,7 +85,10 @@ const ReportsIndex: RaitaNextPage = () => {
   const router = useRouter();
 
   const user = useUser();
-
+  const [
+    getSearch,
+    { loading: searchLoading, error: searchError, data: searchData },
+  ] = useLazyQuery(SEARCH);
   const isDebug = !!(router.query['debug'] === '1');
 
   const [state, setState] = useState<ReportsState>(initialState);
@@ -169,6 +187,7 @@ const ReportsIndex: RaitaNextPage = () => {
   const doSearch = () => {
     setState(R.assocPath(['paging', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateMutation'], true));
+    getSearch({ variables: { file_name: state.text } });
   };
 
   const resetSearch = () => {
@@ -259,6 +278,15 @@ const ReportsIndex: RaitaNextPage = () => {
         bannerType={BannerType.INFO}
         text={t('common:rights_restriction_info')}
       />
+
+      <ul>
+        {searchData &&
+          searchData.search.map(
+            (
+              raportti: any, // TODO: typing?
+            ) => <li key={raportti.id}>{raportti.key}</li>,
+          )}
+      </ul>
 
       <div className="container mx-auto px-16 py-6">
         {resultsData?.total && resultsData.total >= 10000 && (

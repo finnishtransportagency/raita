@@ -13,8 +13,19 @@ import { useUser } from 'shared/user';
 import { RaitaPages } from 'shared/pageRoutes';
 import Error from 'next/error';
 import LoadingOverlay from 'components/loading-overlay';
+import {
+  ApolloClient,
+  ApolloProvider,
+  InMemoryCache,
+  gql,
+} from '@apollo/client';
 
 const client = new QueryClient();
+
+const apolloClient = new ApolloClient({
+  uri: 'http://localhost:3000/api/test',
+  cache: new InMemoryCache(),
+});
 
 function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const { t } = useTranslation(['common']);
@@ -48,7 +59,9 @@ function RaitaApp({ Component, pageProps }: RaitaAppProps) {
 
 const RaitaAppWithQuery = (props: RaitaAppProps) => (
   <QueryClientProvider {...{ client }}>
-    <RaitaApp {...props} />
+    <ApolloProvider client={apolloClient}>
+      <RaitaApp {...props} />
+    </ApolloProvider>
     <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );
