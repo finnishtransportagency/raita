@@ -1,0 +1,12 @@
+# TODO: use ID type for id? but it is serialized as string
+type Raportti {
+  id: Int!
+  file_name: String
+  key: String
+  # TODO: database fields need to be added here manually (from schema-prisma?)
+}
+
+type Query {
+  hello: String
+  search_raportti(file_name: String): [Raportti]
+}

@@ -11,6 +11,7 @@ import {
 } from './types';
 import { formatSummary } from './adminLogUtils';
 import { format } from 'date-fns';
+import { getPrismaClient } from '../prismaClient';
 
 /**
  * Get logs for a single event, defined by date and invocationId
@@ -22,31 +23,52 @@ export async function getSingleEventLogs(
   pageSize: number,
   pageIndex: number,
 ): Promise<SingleEventLogsResponse> {
-  const password = await getSecretsManagerSecret('database_password');
-  const sql = await postgres({ password });
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const prisma = await getPrismaClient();
   const startTimestamp = `${format(date, 'yyyy-MM-dd')}T00:00:00Z`;
   const endTimestamp = `${format(date, 'yyyy-MM-dd')}T23:59:59Z`;
 
-  const sizeResult = await sql`
-  SELECT COUNT(*) AS size
-  FROM ${sql(schema)}.logging
-  WHERE log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
-  AND invocation_id = ${invocationId}
-  AND source IN ${sql(sources)};`;
-
   const pageOffset = pageIndex * pageSize;
-  const logsResult = await sql`
-  SELECT *
-  FROM ${sql(schema)}.logging
-  WHERE log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
-  AND invocation_id = ${invocationId}
-  AND source IN ${sql(sources)}
-  ORDER BY log_timestamp ASC
-  LIMIT ${pageSize} OFFSET ${pageOffset};`;
+
+  const sizeResult2 = await prisma.logging.count({
+    where: {
+      log_timestamp: {
+        gte: startTimestamp,
+        lte: endTimestamp,
+      },
+      invocation_id: {
+        equals: invocationId,
+      },
+      source: {
+        in: sources,
+      },
+    },
+  });
+
+  const logsResult2 = await prisma.logging.findMany({
+    where: {
+      log_timestamp: {
+        gte: startTimestamp,
+        lte: endTimestamp,
+      },
+      invocation_id: {
+        equals: invocationId,
+      },
+      source: {
+        in: sources,
+      },
+    },
+    orderBy: {
+      log_timestamp: 'desc',
+    },
+    skip: pageOffset,
+    take: pageSize,
+  });
+
+  await prisma.$disconnect();
+
   return {
-    totalSize: sizeResult[0].size,
-    logs: logsResult as any as RawLogRow[],
+    totalSize: sizeResult2,
+    logs: logsResult2 as any as RawLogRow[],
     pageSize,
     pageIndex,
   };
