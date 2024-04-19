@@ -674,6 +674,12 @@ export class DataProcessStack extends NestedStack {
     raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
+    // any events that fail cause lambda to fail twice will be written here
+    // currently nothing is done to this queue
+    const massCSVDeadLetterQueue = new Queue(
+      this,
+      'csv-mass-deadletter',
+    );
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 3072,
@@ -703,6 +709,7 @@ export class DataProcessStack extends NestedStack {
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
+      deadLetterQueue: massCSVDeadLetterQueue,
     });
   }
 
