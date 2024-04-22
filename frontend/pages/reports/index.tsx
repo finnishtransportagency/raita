@@ -281,7 +281,8 @@ const ReportsIndex: RaitaNextPage = () => {
 
       <ul>
         {searchData &&
-          searchData.search.map(
+          searchData.search_raportti &&
+          searchData.search_raportti.map(
             (
               raportti: any, // TODO: typing?
             ) => <li key={raportti.id}>{raportti.key}</li>,
