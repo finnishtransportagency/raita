@@ -152,4 +152,5 @@ export const prismaBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
       `rm -r ${o}/node_modules/prisma/*debian*`,
     ],
   },
+  loader: { '.graphql': 'text' },
 };

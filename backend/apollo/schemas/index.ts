@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
+import raporttiTypeDefs from './raportti.graphql';
 
-export const raporttiTypeDefs = readFileSync('./raportti.graphql', {
-  encoding: 'utf-8',
-});
+export { raporttiTypeDefs };
