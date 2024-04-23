@@ -132,10 +132,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TEST_FROMNAME_112233',
     };
+
     const params = {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -165,10 +168,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
+
     const params = {
       keyData,
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -194,10 +200,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'csv',
       keyWithoutSuffix: 'TOO/LONG/PATH/HERE/TEST_FROMNAME_112233',
     };
+
     const params = {
       keyData,
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -227,10 +236,13 @@ describe('parseFileMetadata', () => {
       fileSuffix: 'txt',
       keyWithoutSuffix: 'test/path/FROMPATH/TOO_MAY_NAME_SEGMENTS_HERE',
     };
+
     const params = {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -262,7 +274,10 @@ describe('parseFileMetadata', () => {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
+
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: true,
@@ -294,7 +309,10 @@ describe('parseFileMetadata', () => {
       keyData,
       fileStream: stringToStream('dummy'),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
+
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: false, // TODO: should this report errors if no metadata is found?
@@ -326,7 +344,10 @@ describe('parseFileMetadata', () => {
       keyData,
       fileStream: stringToStream(testFileBody),
       spec: extractionSpec,
+      doCSVParsing: false,
+      dbConnection: undefined,
     };
+
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: false,

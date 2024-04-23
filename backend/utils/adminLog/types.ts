@@ -1,7 +1,9 @@
 export type AdminLogSource =
   | 'delete-process'
   | 'data-inspection'
-  | 'data-reception';
+  | 'data-reception'
+  | 'data-csv'
+  | 'data-csv-mass-import';
 
 export type AdminLogLevel = 'info' | 'warn' | 'error';
 

@@ -17,19 +17,30 @@ import {
 import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import {
+  DBConnection,
+  getDBConnection,
+  updateRaporttiMetadata,
+} from '../csvCommon/db/dbUtil';
+import { ENVIRONMENTS } from '../../../../constants';
 
-function getLambdaConfigOrFail() {
+export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
+    inspectionBucket: getEnv('INSPECTION_BUCKET'),
+    csvBucket: getEnv('CSV_BUCKET'),
     openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
+    environment: getEnv('ENVIRONMENT'),
+    allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
 
 const adminLogger: IAdminLogger = new PostgresLogger();
+let dbConnection: DBConnection | undefined = undefined;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
@@ -47,6 +58,12 @@ export async function handleInspectionFileEvent(
   event: SQSEvent,
 ): Promise<void> {
   const config = getLambdaConfigOrFail();
+  const doCSVParsing =
+    config.allowCSVInProd === 'true' ||
+    config.environment !== ENVIRONMENTS.prod;
+  if (doCSVParsing) {
+    dbConnection = await getDBConnection();
+  }
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
   try {
@@ -60,10 +77,13 @@ export async function handleInspectionFileEvent(
         eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
-        log.info({ fileName: key }, 'Start handler');
-        const file = await backend.files.getFileStream(eventRecord);
+        log.info({ fileName: key }, 'Start inspection file handler');
+        const fileStreamResult = await backend.files.getFileStream(
+          eventRecord,
+          true,
+        );
         const keyData = getKeyData(key);
-        const s3MetaData = file.metaData;
+        const s3MetaData = fileStreamResult.metaData;
         const requireNewerParserVersion =
           s3MetaData['require-newer-parser-version'] !== undefined &&
           Number(s3MetaData['require-newer-parser-version']) === 1;
@@ -110,8 +130,10 @@ export async function handleInspectionFileEvent(
         }
         const parseResults = await parseFileMetadata({
           keyData,
-          fileStream: file.fileStream,
+          fileStream: fileStreamResult.fileStream,
           spec,
+          doCSVParsing,
+          dbConnection,
         });
         if (parseResults.errors) {
           await adminLogger.error(
@@ -129,7 +151,8 @@ export async function handleInspectionFileEvent(
           size: eventRecord.s3.object.size,
           metadata: parseResults.metadata,
           hash: parseResults.hash,
-          tags: file.tags,
+          tags: fileStreamResult.tags,
+          reportId: parseResults.reportId,
           options: {
             skip_hash_check: skipHashCheck,
             require_newer_parser_version: requireNewerParserVersion,
@@ -143,6 +166,21 @@ export async function handleInspectionFileEvent(
       const entries = await Promise.all(recordResults).then(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
+
+      if (doCSVParsing) {
+        if (dbConnection) {
+          await updateRaporttiMetadata(
+            entries.filter(e => e.reportId),
+            dbConnection,
+          );
+        } else {
+          log.error(
+            'content parsing with called csv enabled and without dbconnection',
+          );
+        }
+      } else {
+        log.warn('CSV postgres blocked in prod');
+      }
       return await backend.metadataStorage.saveFileMetadata(entries);
     });
     const settled = await Promise.allSettled(sqsRecordResults);

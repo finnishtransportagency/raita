@@ -41,6 +41,7 @@ export const isProductionStack = (
   raitaEnv: RaitaEnvironment,
 ) => stackId === PRODUCTION_STACK_ID && raitaEnv === ENVIRONMENTS.prod;
 
+
 /**
  * Returns whether the stack is one of the two permanent Raita stacks
  * - development main stack that corresponds to development main branch in Github
@@ -89,43 +90,19 @@ export const getEnvDependentOsConfiguration = (
     dev: {
       removalPolicy: getRemovalPolicy(env),
       ebs: {
-        volumeSize: 200,
-        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3,
+        volumeSize: 50,
+        volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
       },
       capacity: {
-        masterNodes: 3,
-        masterNodeInstanceType: 'm6g.large.search',
-        dataNodes: 2,
-        dataNodeInstanceType: 'm6g.large.search',
-      },
-      // Must be enabled if VPC contains multiple private subnets.
-      zoneAwareness: {
-        enabled: true,
-        availabilityZoneCount: subnets.length,
+        dataNodes: 1,
+        dataNodeInstanceType: 't3.small.search',
       },
       vpcSubnets: [
         {
-          subnets: subnets,
+          subnets: subnets.slice(0, 1),
         },
       ],
     },
-    // OLD DEV CONF
-    // dev: {
-    //   removalPolicy: getRemovalPolicy(env),
-    //   ebs: {
-    //     volumeSize: 10,
-    //     volumeType: EbsDeviceVolumeType.GENERAL_PURPOSE_SSD,
-    //   },
-    //   capacity: {
-    //     dataNodes: 1,
-    //     dataNodeInstanceType: 't3.small.search',
-    //   },
-    //   vpcSubnets: [
-    //     {
-    //       subnets: subnets.slice(0, 1),
-    //     },
-    //   ],
-    // },
   };
   return envDependentProperties[env];
 };

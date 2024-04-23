@@ -38,6 +38,7 @@ import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -60,6 +61,10 @@ export class DataProcessStack extends NestedStack {
   public readonly inspectionDataBucket: Bucket;
   public readonly dataReceptionBucket: Bucket;
   public readonly handleInspectionFileEventFn: NodejsFunction;
+  public readonly handleCSVFileEventFn: NodejsFunction;
+  public readonly handleCSVFileMassImportEventFn: NodejsFunction;
+  public readonly csvMassImportDataBucket: Bucket;
+  public readonly csvDataBucket: Bucket;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -111,6 +116,18 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       raitaStackIdentifier,
       versioned: true,
+    });
+    this.csvDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'csv-data',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+    this.csvMassImportDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'csv-data-mass-import',
+      raitaEnv,
+      raitaStackIdentifier,
     });
 
     new BucketDeployment(this, 'ExtractionSpecDeployment', {
@@ -279,11 +296,14 @@ export class DataProcessStack extends NestedStack {
       name: 'dp-handler-inspection-file',
       openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
+      inspectionBucketName: this.inspectionDataBucket.bucketName,
+      csvBucketName: this.csvDataBucket.bucketName,
       openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
+      raitaEnv,
       databaseEnvironmentVariables,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
@@ -293,6 +313,7 @@ export class DataProcessStack extends NestedStack {
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
     this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
+    this.csvDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
     // Grant lamba permissions to OpenSearch index
     openSearchDomain.grantIndexReadWrite(
       openSearchMetadataIndex,
@@ -317,6 +338,73 @@ export class DataProcessStack extends NestedStack {
       ...inspectionAlarms,
       ...zipHandlerAlarms,
     ];
+
+    // Create csv data parser lambda, grant permissions and create event sources
+    this.handleCSVFileEventFn = this.createCsvFileEventHandler({
+      name: 'dp-handler-csv-file',
+      csvBucketName: this.csvDataBucket.bucketName,
+      configurationFile: parserConfigurationFile,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
+      raitaStackIdentifier,
+      vpc,
+      databaseEnvironmentVariables,
+    });
+    // Grant lambda permissions to bucket
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
+
+    // route csv bucket s3 events through a queue
+    const csvQueue = new Queue(this, 'csv-queue', {
+      visibilityTimeout: Duration.seconds(5*60),
+    });
+    this.csvDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(csvQueue),
+    );
+    const csvImportQueueSource = new SqsEventSource(csvQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 4,
+    });
+    this.handleCSVFileEventFn.addEventSource(csvImportQueueSource);
+
+    // Create csv data parser lambda for mass import that is triggered from csv-mass-import bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
+    this.handleCSVFileMassImportEventFn =
+      this.createCsvFileMassImportEventHandler({
+        openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
+        inspectionBucketName: this.inspectionDataBucket.bucketName,
+        openSearchMetadataIndex: openSearchMetadataIndex,
+        name: 'dp-handler-csv-file-mass-import',
+        csvMassImportBucketName: this.csvMassImportDataBucket.bucketName,
+        csvBucketName: this.csvDataBucket.bucketName,
+        configurationFile: parserConfigurationFile,
+        configurationBucketName: configurationBucket.bucketName,
+        lambdaRole: this.dataProcessorLambdaServiceRole,
+        raitaStackIdentifier,
+        vpc,
+        raitaEnv,
+        databaseEnvironmentVariables,
+      });
+    // Grant lambda permissions to bucket
+    this.csvDataBucket.grantReadWrite(this.handleCSVFileMassImportEventFn);
+    configurationBucket.grantRead(this.handleCSVFileMassImportEventFn);
+    this.csvMassImportDataBucket.grantReadWrite(
+      this.handleCSVFileMassImportEventFn,
+    );
+
+    // route csv mass import s3 events through a queue
+    const csvMassImportQueue = new Queue(this, 'csv-mass-import-queue', {
+      visibilityTimeout: Duration.seconds(240),
+    });
+    this.csvMassImportDataBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new SqsDestination(csvMassImportQueue),
+    );
+    const csvMassImportQueueSource = new SqsEventSource(csvMassImportQueue, {
+      batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
+      maxConcurrency: 10,
+    });
+    this.handleCSVFileMassImportEventFn.addEventSource(
+      csvMassImportQueueSource,
+    );
 
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
@@ -398,21 +486,27 @@ export class DataProcessStack extends NestedStack {
     name,
     openSearchDomainEndpoint,
     configurationBucketName,
+    inspectionBucketName,
+    csvBucketName,
     configurationFile,
     openSearchMetadataIndex,
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    raitaEnv,
     databaseEnvironmentVariables,
   }: {
     name: string;
     openSearchDomainEndpoint: string;
     configurationBucketName: string;
+    inspectionBucketName: string;
+    csvBucketName: string;
     configurationFile: string;
     lambdaRole: iam.Role;
     openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
   }) {
     // any events that fail cause lambda to fail twice will be written here
@@ -423,7 +517,7 @@ export class DataProcessStack extends NestedStack {
     );
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
+      memorySize: 3072,
       timeout: cdk.Duration.seconds(240),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleInspectionFileEvent',
@@ -435,9 +529,13 @@ export class DataProcessStack extends NestedStack {
       environment: {
         OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
+        INSPECTION_BUCKET: inspectionBucketName,
+        CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
+        ENVIRONMENT: raitaEnv,
+        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'false',
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
@@ -496,6 +594,123 @@ export class DataProcessStack extends NestedStack {
       }),
     });
     return [errorAlarm, anyErrorAlarm];
+  }
+
+  /**
+   * Creates the csv parser lambda and add csv S3 bucket as event sources,
+   * granting lambda read access to the bucket
+   */
+  private createCsvFileEventHandler({
+    name,
+    csvBucketName,
+    configurationFile,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    csvBucketName: string;
+    configurationFile: string;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 5120,
+      timeout: cdk.Duration.seconds(5 * 60),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCSVFileEvent',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent.ts`,
+      ),
+      environment: {
+        CSV_BUCKET: csvBucketName,
+        CONFIGURATION_FILE: configurationFile,
+        REGION: this.region,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+  }
+
+  /**
+   * Creates the csv parser lambda and add csv S3 bucket as event sources,
+   * granting lambda read access to the bucket
+   */
+  private createCsvFileMassImportEventHandler({
+    name,
+    csvMassImportBucketName,
+    csvBucketName,
+    configurationFile,
+    configurationBucketName,
+    openSearchMetadataIndex,
+    openSearchDomainEndpoint,
+    inspectionBucketName,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    raitaEnv,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    csvMassImportBucketName: string;
+    csvBucketName: string;
+    configurationFile: string;
+    configurationBucketName: string;
+    openSearchDomainEndpoint: string;
+    inspectionBucketName: string;
+    openSearchMetadataIndex: string;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    raitaEnv: string;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    // any events that fail cause lambda to fail twice will be written here
+    // currently nothing is done to this queue
+    const massCSVDeadLetterQueue = new Queue(
+      this,
+      'csv-mass-deadletter',
+    );
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 3072,
+      timeout: cdk.Duration.seconds(240),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCSVMassImportFileEvent',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVMassImportFileEvent.ts`,
+      ),
+      environment: {
+        CSV_BUCKET: csvBucketName,
+        CSV_MASS_IMPORT_BUCKET: csvMassImportBucketName,
+        CONFIGURATION_FILE: configurationFile,
+        CONFIGURATION_BUCKET: configurationBucketName,
+        REGION: this.region,
+        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
+        INSPECTION_BUCKET: inspectionBucketName,
+        METADATA_INDEX: openSearchMetadataIndex,
+        ENVIRONMENT: raitaEnv,
+        ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD: 'true',
+        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'undefined', //this has no effect here but cvsDataChopper needs it to be in the env
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      deadLetterQueue: massCSVDeadLetterQueue,
+    });
   }
 
   /**
