@@ -9,10 +9,5 @@ module.exports = {
   coverageReporters: ['text'],
   //for local db testing remove 'csvDataParser' from testPathIgnorePatterns
   //TODO some smart way to do db writing tests in dev
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    'csvDataParser',
-    'csvDataChopper',
-    '/zod-csv/',
-  ],
+  testPathIgnorePatterns: ['/node_modules/', 'csvDataChopper', '/zod-csv/'],
 };

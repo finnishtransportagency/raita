@@ -54,7 +54,7 @@ export async function handleCSVFileEvent(
         try {
           const key = getDecodedS3ObjectKey(eventRecord);
           currentKey = key;
-          log.debug({ fileName: key }, 'Start csv file handler');
+          log.info({ fileName: key }, 'Start csv file handler');
           log.debug(eventRecord);
           await adminLogger.init('data-csv', key);
           const fileStreamResult = await files.getFileStream(
