@@ -7,12 +7,15 @@ import {
   getRaitaSuccessResponse,
 } from '../../utils';
 import { getUser, validateReadUser } from '../../../utils/userService';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   return {
     dataBucket: getEnvOrFail('DATA_BUCKET', 'handleS3FileRequest)'),
   };
 }
+
+const withRequest = lambdaRequestTracker();
 
 /**
  * Returns a list of related images for a given S3 key.
@@ -21,6 +24,7 @@ export async function handleImagesRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { body } = event;
   try {
     const user = await getUser(event);

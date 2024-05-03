@@ -12,6 +12,7 @@ import { TextEncoder } from 'util';
 import { invocationTypeByteLimit } from './constants';
 import { S3Client } from '@aws-sdk/client-s3';
 import { ZipRequestBody, uploadDeHydratedToS3 } from './utils';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
@@ -31,7 +32,9 @@ async function getPayloadString(
   if (requestBodyString.length <= invocationTypeByteLimit) {
     return requestBodyString;
   } else {
-    const key = `dehydrate/${Date.now()}-${Math.floor(Math.random() * 100)}.json`;
+    const key = `dehydrate/${Date.now()}-${Math.floor(
+      Math.random() * 100,
+    )}.json`;
     await uploadDeHydratedToS3(targetBucket, key, s3Client, requestBodyString);
     const dehydratedPayload = {
       keys: [key],
@@ -42,10 +45,13 @@ async function getPayloadString(
   }
 }
 
+const withRequest = lambdaRequestTracker();
+
 export async function handleZipRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { body } = event;
   const s3Client = new S3Client({});
   try {

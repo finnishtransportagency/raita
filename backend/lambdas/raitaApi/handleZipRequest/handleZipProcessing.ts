@@ -17,6 +17,8 @@ import {
   createLazyDownloadStreamFrom,
   uploadZip,
 } from './utils';
+import { lambdaRequestTracker } from 'pino-lambda';
+import { Context } from 'aws-lambda';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
@@ -57,7 +59,13 @@ export function mapFileKeysToZipFileNames(keys: string[]) {
   return fileNames;
 }
 
-export async function handleZipProcessing(event: ZipRequestBody) {
+const withRequest = lambdaRequestTracker();
+
+export async function handleZipProcessing(
+  event: ZipRequestBody,
+  context: Context,
+) {
+  withRequest(event, context);
   const s3Client = new S3Client({});
   const s3 = new S3();
   const archive = archiver('zip', {
