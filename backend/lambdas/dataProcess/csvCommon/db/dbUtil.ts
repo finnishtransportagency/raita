@@ -213,6 +213,7 @@ export async function updateRaporttiMetadata(
 ) {
   const { schema, sql } = dbConnection;
   for (const metaDataEntry of data) {
+    const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
@@ -231,6 +232,14 @@ export async function updateRaporttiMetadata(
           log.error('Error updating metadata to db: ' + e);
           throw e;
         });
+        if (parsingErrors) {
+          await updateRaporttiStatus(
+            id,
+            'NEW STATUS? TODO',
+            'Generic error message here? There are possibly multiple error messages from parsing that can be passed here',
+            dbConnection,
+          );
+        }
       } catch (e) {
         log.error('Update error to raportti table: ' + e);
         await updateRaporttiStatus(id, 'ERROR', e.toString(), dbConnection);
