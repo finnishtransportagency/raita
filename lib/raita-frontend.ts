@@ -30,24 +30,13 @@ export class FrontendStack extends NestedStack {
       raitaStackIdentifier,
     });
 
-    // Deploy pipeline front end build products to S3 bucket
-    const buildDir = '../frontend/out';
-    new BucketDeployment(this, 'FrontendDeployment', {
-      sources: [Source.asset(path.join(__dirname, buildDir))],
-      destinationBucket: this.frontendBucket,
-    });
-
     this.maintenancePageBucket = createRaitaBucket({
       scope: this,
       name: 'maintenance-page',
       raitaEnv,
       raitaStackIdentifier,
     });
-    const maintenanceBuildDir = '../frontend/maintenance_page';
-    new BucketDeployment(this, 'MaintenancePageDeployment', {
-      sources: [Source.asset(path.join(__dirname, maintenanceBuildDir))],
-      destinationBucket: this.maintenancePageBucket,
-    });
+
     if (isDevelopmentPreMainStack(stackId, raitaEnv)) {
       // save bucket arn for use by main stack, in dev premain stack only
       new StringParameter(this, `bucket-arn-param`, {
