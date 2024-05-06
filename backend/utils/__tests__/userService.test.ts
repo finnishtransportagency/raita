@@ -15,7 +15,7 @@ describe('userService role checks', () => {
     expect(validateExtendedUser(readUser)).rejects.toBeTruthy();
     expect(validateAdminUser(readUser)).rejects.toBeTruthy();
   });
-  test('success: extended user user', () => {
+  test('success: extended user', () => {
     const extendedUser: RaitaUser = {
       uid: 'extended',
       roles: ['Raita_extended'],
@@ -24,7 +24,7 @@ describe('userService role checks', () => {
     expect(validateExtendedUser(extendedUser)).resolves.not.toThrow();
     expect(validateAdminUser(extendedUser)).rejects.toBeTruthy();
   });
-  test('success: extended user user', () => {
+  test('success: admin user', () => {
     const adminUser: RaitaUser = {
       uid: 'admin',
       roles: ['Raita_admin'],
