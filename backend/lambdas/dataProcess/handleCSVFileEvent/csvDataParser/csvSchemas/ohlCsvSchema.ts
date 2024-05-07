@@ -1,4 +1,4 @@
-import { zcsv } from '../../../../../utils/zod-csv/zcsv';
+import { zcsv } from 'zod-csv';
 import { z } from 'zod';
 
 /*
