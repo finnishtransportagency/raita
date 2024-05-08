@@ -128,11 +128,28 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
   return handleOidcRequest(headers);
 };
 
-const isReadUser = (user: RaitaUser) => user.roles?.includes(STATIC_ROLES.read);
-const isExtendedUser = (user: RaitaUser) =>
-  user.roles?.includes(STATIC_ROLES.extended);
-const isAdminUser = (user: RaitaUser) =>
-  user.roles?.includes(STATIC_ROLES.admin);
+const isReadUser = (user: RaitaUser) => {
+  const userRoles = user.roles ?? [];
+  const allowedRoles = [
+    STATIC_ROLES.read,
+    STATIC_ROLES.extended,
+    STATIC_ROLES.admin,
+  ];
+  const matchingRole = allowedRoles.find(role => userRoles.includes(role));
+  return !!matchingRole;
+};
+const isExtendedUser = (user: RaitaUser) => {
+  const userRoles = user.roles ?? [];
+  const allowedRoles = [STATIC_ROLES.extended, STATIC_ROLES.admin];
+  const matchingRole = allowedRoles.find(role => userRoles.includes(role));
+  return !!matchingRole;
+};
+const isAdminUser = (user: RaitaUser) => {
+  const userRoles = user.roles ?? [];
+  const allowedRoles = [STATIC_ROLES.admin];
+  const matchingRole = allowedRoles.find(role => userRoles.includes(role));
+  return !!matchingRole;
+};
 
 export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
   if (!STACK_ID || !ENVIRONMENT) {
