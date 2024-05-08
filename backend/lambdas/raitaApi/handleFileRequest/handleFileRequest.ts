@@ -8,12 +8,14 @@ import {
   getRaitaSuccessResponse,
   RaitaLambdaError,
 } from '../../utils';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   return {
     dataBucket: getEnvOrFail('DATA_BUCKET', 'handleS3FileRequest)'),
   };
 }
+const withRequest = lambdaRequestTracker();
 
 /**
  * Generates a pre-signed url for a file in S3 bucket.
@@ -23,6 +25,7 @@ export async function handleFileRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { body } = event;
   const s3 = new S3();
   try {

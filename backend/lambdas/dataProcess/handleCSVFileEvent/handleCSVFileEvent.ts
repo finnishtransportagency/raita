@@ -1,4 +1,4 @@
-import { S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import { log } from '../../../utils/logger';
 import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
@@ -7,7 +7,8 @@ import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
-import {DeleteObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -21,7 +22,13 @@ function getLambdaConfigOrFail() {
 const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection;
 
-export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
+const withRequest = lambdaRequestTracker();
+
+export async function handleCSVFileEvent(
+  event: SQSEvent,
+  context: Context,
+): Promise<void> {
+  withRequest(event, context);
   log.debug('Start csv file handler');
   log.debug(event);
   dbConnection = await getDBConnection();
@@ -57,7 +64,6 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
 
           const keyData = getKeyData(key);
 
-
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.debug(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
@@ -74,16 +80,17 @@ export async function handleCSVFileEvent(event: SQSEvent): Promise<void> {
               null,
               dbConnection,
             );
-            if(result == "success"){
+            if (result == 'success') {
               const config = getLambdaConfigOrFail();
-              log.debug('Success reading file, deleting: ' + keyData.fileBaseName);
+              log.debug(
+                'Success reading file, deleting: ' + keyData.fileBaseName,
+              );
               const command = new DeleteObjectCommand({
                 Bucket: config.csvBucket,
                 Key: keyData.keyWithoutSuffix + '.' + keyData.fileSuffix,
               });
               const s3Client = new S3Client({});
               const a = await s3Client.send(command);
-
             }
 
             return {

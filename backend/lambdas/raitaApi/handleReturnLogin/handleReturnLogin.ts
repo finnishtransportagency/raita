@@ -2,10 +2,14 @@ import { ALBEvent, Context } from 'aws-lambda';
 import { log } from '../../../utils/logger';
 import { getUser } from '../../../utils/userService';
 import { getRaitaLambdaErrorResponse } from '../../utils';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 const CLOUDFRONT_DOMAIN_NAME = process.env.CLOUDFRONT_DOMAIN_NAME;
 
+const withRequest = lambdaRequestTracker();
+
 export async function handleRequest(event: ALBEvent, _context: Context) {
+  withRequest(event, _context);
   try {
     const user = await getUser(event);
     log.info(user, 'Returning user back to frontpage.');

@@ -1,5 +1,6 @@
-import { S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
@@ -39,6 +40,8 @@ export function getLambdaConfigOrFail() {
   };
 }
 
+const withRequest = lambdaRequestTracker();
+
 const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
 
@@ -56,7 +59,9 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  */
 export async function handleInspectionFileEvent(
   event: SQSEvent,
+  context: Context,
 ): Promise<void> {
+  withRequest(event, context);
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||

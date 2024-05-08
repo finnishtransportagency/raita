@@ -10,8 +10,11 @@ import { getLogSummary } from '../../../utils/adminLog/pgLogReader';
 import { format } from 'date-fns';
 import { parseISO } from 'date-fns';
 import { AdminLogSource } from '../../../utils/adminLog/types';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 const MAXIMUM_SUMMARY_PAGE_SIZE = 200;
+
+const withRequest = lambdaRequestTracker();
 
 /**
  * Handle request to view admin log summary
@@ -20,6 +23,7 @@ export async function handleAdminLogsSummaryRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { queryStringParameters } = event;
   try {
     const user = await getUser(event);
