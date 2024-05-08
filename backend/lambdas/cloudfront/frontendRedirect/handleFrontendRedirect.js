@@ -12,6 +12,10 @@ function handler(event) {
     return request;
   }
 
+  if (!index && !isFile) {
+    request.uri = request.uri + '.html';
+  }
+
   /* Check for return cookie, if present then proceed with request */
   var isReturnedRequest = cookies && cookies['Return'];
   if (isReturnedRequest) {
