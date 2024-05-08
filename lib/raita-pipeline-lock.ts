@@ -106,7 +106,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 256,
       timeout: Duration.seconds(15),
-      runtime: Runtime.NODEJS_16_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleAcquirePipelineLock',
       entry: path.join(
         __dirname,
@@ -139,7 +139,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 256,
       timeout: Duration.seconds(15),
-      runtime: Runtime.NODEJS_16_X,
+      runtime: Runtime.NODEJS_20_X,
       handler: 'handleReleasePipelineLock',
       entry: path.join(
         __dirname,
@@ -158,7 +158,10 @@ export class RaitaPipelineLockStack extends NestedStack {
 }
 
 class RaitaLambdaStep extends Step implements ICodePipelineActionFactory {
-  constructor(id: string, private readonly fn: IFunction) {
+  constructor(
+    id: string,
+    private readonly fn: IFunction,
+  ) {
     super(id);
   }
   public produceAction(
