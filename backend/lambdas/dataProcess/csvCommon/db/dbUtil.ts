@@ -177,6 +177,21 @@ export async function updateRaporttiStatus(
     throw e;
   }
 }
+export async function updateRaporttiMetadataStatus(
+  id: number,
+  status: string,
+  dbConnection: DBConnection,
+) {
+  const { schema, sql } = dbConnection;
+  try {
+    const a = await sql`UPDATE ${sql(schema)}.raportti
+                            SET metadata_status = ${status}
+                            WHERE id = ${id};`;
+  } catch (error) {
+    log.error({ error }, 'Error updating raportti metadata_status');
+    throw error;
+  }
+}
 
 /*key": "Meeri/2022/Kamppis/20220202/20221020_TG_AMS_OHL_CW_Reports/554/KONVUS/1/2022/Over Head Line Geometry/20221020_144556/TextualReports/OHL_20221020_554_KONVUS_1_662_753.csv",
 "file_name": "OHL_20221020_554_KONVUS_1_662_753.csv",
@@ -213,6 +228,7 @@ export async function updateRaporttiMetadata(
 ) {
   const { schema, sql } = dbConnection;
   for (const metaDataEntry of data) {
+    const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
@@ -231,9 +247,14 @@ export async function updateRaporttiMetadata(
           log.error('Error updating metadata to db: ' + e);
           throw e;
         });
+        if (parsingErrors) {
+          await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
+        } else {
+          await updateRaporttiMetadataStatus(id, 'SUCCESS', dbConnection);
+        }
       } catch (e) {
         log.error('Update error to raportti table: ' + e);
-        await updateRaporttiStatus(id, 'ERROR', e.toString(), dbConnection);
+        await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
         throw e;
       }
     } catch (e) {

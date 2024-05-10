@@ -16,6 +16,7 @@ export interface FileMetadataEntry {
   metadata: ParseValueResult;
   hash: string | undefined;
   reportId?: number | undefined;
+  errors: boolean;
   options: {
     skip_hash_check?: boolean;
     require_newer_parser_version?: boolean;
