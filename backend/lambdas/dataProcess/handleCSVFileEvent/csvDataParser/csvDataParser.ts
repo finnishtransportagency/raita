@@ -347,6 +347,7 @@ export async function parseCSVFileStream(
         if (state == ReadState.READING_HEADER) {
           //running date on the firstline unless it's missing; then csv column headers on the first line
           //csv column headers on the second line when running date was found on the first
+          rl.pause();
           if (
             lineBuffer.length === 1 &&
             lineBuffer[0].search('Running Date') != -1
@@ -391,10 +392,13 @@ export async function parseCSVFileStream(
               csvHeaderLine,
             );
           }
+          rl.resume();
         }
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
+          await until(() => fileSchema != undefined);
+          console.log('BODY readlines ' + lineCounter);
+          if (lineBuffer.length > maxBufferSize && fileSchema) {
             rl.pause();
             handleCounter++;
 
@@ -405,16 +409,15 @@ export async function parseCSVFileStream(
             notWritten++;
 
             try {
-              fileSchema &&
-                (await handleBufferedLines(
-                  csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-                  fileNamePrefix,
-                  runningDate,
-                  reportId,
-                  fileBaseName,
-                  dbConnection,
-                  fileSchema,
-                ));
+              await handleBufferedLines(
+                csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+                fileNamePrefix,
+                runningDate,
+                reportId,
+                fileBaseName,
+                dbConnection,
+                fileSchema,
+              );
 
               notWritten--;
             } catch (e) {
@@ -447,16 +450,20 @@ export async function parseCSVFileStream(
     });
 
     // Last content of lineBuffer not handled yet
-    if (state == ReadState.READING_BODY && lineBuffer.length && fileSchema) {
-      await handleBufferedLines(
-        csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-        fileNamePrefix,
-        runningDate,
-        reportId,
-        fileBaseName,
-        dbConnection,
-        fileSchema,
-      );
+
+    await until(() => fileSchema != undefined);
+    if (state == ReadState.READING_BODY && fileSchema) {
+      if (lineBuffer.length) {
+        await handleBufferedLines(
+          csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+          fileNamePrefix,
+          runningDate,
+          reportId,
+          fileBaseName,
+          dbConnection,
+          fileSchema,
+        );
+      }
     }
 
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
