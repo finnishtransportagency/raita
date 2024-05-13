@@ -46,7 +46,7 @@ export async function handleFilesRequest(
         400,
       );
     }
-    log.info(user, `Querying for ${queryObject.query}`);
+    log.info({ user, query: queryObject.query }, 'Querying');
     const metadata = new MetadataPort({
       backend: 'openSearch',
       metadataIndex,
