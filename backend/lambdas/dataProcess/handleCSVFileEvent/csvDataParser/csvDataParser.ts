@@ -397,7 +397,6 @@ export async function parseCSVFileStream(
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
           await until(() => fileSchema != undefined);
-          console.log('BODY readlines ' + lineCounter);
           if (lineBuffer.length > maxBufferSize && fileSchema) {
             rl.pause();
             handleCounter++;
