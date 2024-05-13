@@ -139,6 +139,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -175,6 +176,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -207,6 +209,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -243,6 +246,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -276,6 +280,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
 
     const result = await parseFileMetadata(params);
@@ -311,6 +316,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
 
     const result = await parseFileMetadata(params);
@@ -346,6 +352,7 @@ describe('parseFileMetadata', () => {
       spec: extractionSpec,
       doCSVParsing: false,
       dbConnection: undefined,
+      reportId: -1,
     };
 
     const result = await parseFileMetadata(params);

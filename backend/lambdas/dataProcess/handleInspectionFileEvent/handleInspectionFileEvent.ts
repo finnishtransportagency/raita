@@ -21,6 +21,7 @@ import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
   getDBConnection,
+  insertRaporttiData,
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
@@ -133,12 +134,23 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
+
+        const reportId = dbConnection
+          ? await insertRaporttiData(
+              keyData.keyWithoutSuffix,
+              keyData.fileBaseName,
+              null,
+              dbConnection,
+            )
+          : -1;
+
         const parseResults = await parseFileMetadata({
           keyData,
           fileStream: fileStreamResult.fileStream,
           spec,
           doCSVParsing,
           dbConnection,
+          reportId,
         });
         if (parseResults.errors) {
           await adminLogger.error(
@@ -157,7 +169,7 @@ export async function handleInspectionFileEvent(
           metadata: parseResults.metadata,
           hash: parseResults.hash,
           tags: fileStreamResult.tags,
-          reportId: parseResults.reportId,
+          reportId,
           errors: parseResults.errors,
           options: {
             skip_hash_check: skipHashCheck,
@@ -175,10 +187,7 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          await updateRaporttiMetadata(
-            entries.filter(e => e.reportId),
-            dbConnection,
-          );
+          await updateRaporttiMetadata(entries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',

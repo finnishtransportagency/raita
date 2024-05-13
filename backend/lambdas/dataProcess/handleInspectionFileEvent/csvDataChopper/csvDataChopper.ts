@@ -78,13 +78,10 @@ export async function chopCSVFileStream(
   originalKeyData: KeyData,
   fileStream: Readable,
   dbConnection: DBConnection,
+  reportId: number,
 ) {
-  const reportId: number = await insertRaporttiData(
-    originalKeyData.keyWithoutSuffix,
-    originalKeyData.fileBaseName,
-    'CHOPPING',
-    dbConnection,
-  );
+  await updateRaporttiStatus(reportId, 'CHOPPING', null, dbConnection);
+
   log.debug('reportId: ' + reportId);
 
   try {
@@ -198,10 +195,10 @@ export async function chopCSVFileStream(
     await updateRaporttiStatus(reportId, 'PARSING', null, dbConnection);
     updateRaporttiChunks(reportId, chunkCounter, dbConnection);
     log.debug('Chopped file successfully: ' + originalKeyData.fileBaseName);
-    return reportId;
+    return true;
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());
     await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
-    return -1;
+    return false;
   }
 }

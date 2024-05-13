@@ -48,7 +48,7 @@ describe('parseFileNameParts', () => {
     expect(result).toEqual({
       name: 'testName',
       test: 'test',
-      isEmpty: true,
+      is_empty: true,
     });
   });
 });
