@@ -396,8 +396,7 @@ export async function parseCSVFileStream(
         }
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
-          await until(() => fileSchema != undefined);
-          if (lineBuffer.length > maxBufferSize && fileSchema) {
+          if (lineBuffer.length > maxBufferSize) {
             rl.pause();
             handleCounter++;
 
@@ -407,16 +406,18 @@ export async function parseCSVFileStream(
             rl.resume();
             notWritten++;
 
+            await until(() => fileSchema != undefined);
             try {
-              await handleBufferedLines(
-                csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-                fileNamePrefix,
-                runningDate,
-                reportId,
-                fileBaseName,
-                dbConnection,
-                fileSchema,
-              );
+              fileSchema &&
+                (await handleBufferedLines(
+                  csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
+                  fileNamePrefix,
+                  runningDate,
+                  reportId,
+                  fileBaseName,
+                  dbConnection,
+                  fileSchema,
+                ));
 
               notWritten--;
             } catch (e) {
