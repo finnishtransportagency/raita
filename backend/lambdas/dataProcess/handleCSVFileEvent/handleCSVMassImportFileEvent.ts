@@ -14,6 +14,7 @@ import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
   getDBConnection,
+  insertRaporttiData,
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
@@ -99,12 +100,22 @@ export async function handleCSVMassImportFileEvent(
         if (
           keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
         ) {
+          const reportId = dbConnection
+            ? await insertRaporttiData(
+                keyData.keyWithoutSuffix,
+                keyData.fileBaseName,
+                null,
+                dbConnection,
+              )
+            : -1;
+
           const parseResults = await parseFileMetadata({
             keyData,
             fileStream: fileStreamResult.fileStream,
             spec,
             doCSVParsing,
             dbConnection,
+            reportId,
           });
           if (parseResults.errors) {
             await adminLogger.error(
@@ -127,7 +138,7 @@ export async function handleCSVMassImportFileEvent(
             metadata: parseResults.metadata,
             hash: parseResults.hash,
             tags: fileStreamResult.tags,
-            reportId: parseResults.reportId,
+            reportId,
             errors: parseResults.errors,
             options: {
               skip_hash_check: skipHashCheck,
