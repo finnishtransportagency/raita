@@ -33,8 +33,8 @@ export async function handleAdminLogsRequest(
   const { queryStringParameters } = event;
   try {
     const user = await getUser(event);
+    log.info({ user, queryStringParameters });
     await validateAdminUser(user);
-
     if (
       !queryStringParameters?.invocationId ||
       !queryStringParameters?.date ||

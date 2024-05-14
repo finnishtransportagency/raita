@@ -178,6 +178,7 @@ export class CloudfrontStack extends Stack {
       }
       this.distribution = new cloudfront.Distribution(this, `cloudfront`, {
         domainNames: [cloudfrontDomainName],
+        enableLogging: true,
         certificate,
         defaultRootObject: 'reports.html',
         comment: `cloudfront for ${raitaStackIdentifier}`,

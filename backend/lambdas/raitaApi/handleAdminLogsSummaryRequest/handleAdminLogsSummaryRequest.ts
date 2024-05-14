@@ -27,6 +27,7 @@ export async function handleAdminLogsSummaryRequest(
   const { queryStringParameters } = event;
   try {
     const user = await getUser(event);
+    log.info({ user, queryStringParameters });
     await validateAdminUser(user);
 
     if (

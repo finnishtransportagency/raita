@@ -57,6 +57,7 @@ export async function handleZipRequest(
   try {
     const requestBody = body && JSON.parse(body);
     const user = await getUser(event);
+    log.info({ user, requestBody });
     await validateReadUser(user);
     const { zipProcessingFn, region, targetBucket } = getLambdaConfigOrFail();
     // With the 'InvocationType: Event', the limited payload size is
