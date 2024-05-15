@@ -128,6 +128,7 @@ export async function handleCSVMassImportFileEvent(
             hash: parseResults.hash,
             tags: fileStreamResult.tags,
             reportId: parseResults.reportId,
+            errors: parseResults.errors,
             options: {
               skip_hash_check: skipHashCheck,
             },

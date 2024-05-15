@@ -79,6 +79,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: false,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: undefined,
@@ -105,6 +106,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: false,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [
@@ -135,6 +137,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: false,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [
@@ -166,6 +169,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: true,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [
@@ -196,6 +200,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: true,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [
@@ -230,6 +235,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: false,
         require_newer_parser_version: false,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: undefined,
@@ -260,6 +266,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: false,
         require_newer_parser_version: true,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: undefined,
@@ -294,6 +301,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: true,
         require_newer_parser_version: true,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [
@@ -328,6 +336,7 @@ describe('OpenSearchRepository.upsertDocument', () => {
         skip_hash_check: true,
         require_newer_parser_version: true,
       },
+      errors: false,
     };
     const repo = getMockRepo({
       hashSearchResult: [

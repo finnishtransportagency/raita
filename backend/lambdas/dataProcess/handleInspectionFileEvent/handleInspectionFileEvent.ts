@@ -158,6 +158,7 @@ export async function handleInspectionFileEvent(
           hash: parseResults.hash,
           tags: fileStreamResult.tags,
           reportId: parseResults.reportId,
+          errors: parseResults.errors,
           options: {
             skip_hash_check: skipHashCheck,
             require_newer_parser_version: requireNewerParserVersion,
