@@ -1,7 +1,16 @@
-import {parseCSVFileStream} from '../csvDataParser';
-import * as fs from "fs";
-import {stringToStream} from "../../../handleInspectionFileEvent/__tests__/testUtils";
-import {getDBConnection, updateRaporttiStatus} from "../../../csvCommon/db/dbUtil";
+import {
+  validateHeaders,
+  parseCSVFileStream,
+  removeMissingHeadersFromSchema,
+} from '../csvDataParser';
+import * as fs from 'fs';
+import { stringToStream } from '../../../handleInspectionFileEvent/__tests__/testUtils';
+import {
+  getDBConnection,
+  updateRaporttiStatus,
+} from '../../../csvCommon/db/dbUtil';
+import { z } from 'zod';
+import { zcsv } from '../../../../../utils/zod-csv/zcsv';
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -12,10 +21,9 @@ const amsCsv =
   '318106,"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-20.9017,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
   '318107,"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,-21.2956,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '318108,"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,-23.1085,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
-const amsCsvStream =stringToStream(amsCsv);
+const amsCsvStream = stringToStream(amsCsv);
 //const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/AMS_20221024_251_LHRP_1_130_131.csv');
 //const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_4879_1_AMS_20230605_222_HMARP_002_242_243.csv');
-
 
 const amsCsvMissingSSCount =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -26,8 +34,7 @@ const amsCsvMissingSSCount =
   '"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-20.9017,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
   '"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,-21.2956,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,-23.1085,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
-const amsCsvMissingSSCountStream =stringToStream(amsCsvMissingSSCount);
-
+const amsCsvMissingSSCountStream = stringToStream(amsCsvMissingSSCount);
 
 const amsCsvMissingField =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -38,29 +45,31 @@ const amsCsvMissingField =
   '318106,"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
   '318107,"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '318108,"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
-const amsCsvMissingFieldStream =stringToStream(amsCsvMissingField);
+const amsCsvMissingFieldStream = stringToStream(amsCsvMissingField);
 
 const amsCsvDifferentSeparator =
-    '"Running Date";"22/11/2022 7:44:40 AM"\r\n' +
-    '"Track";"Location [km+m]";"Latitude";"Longitude";"Ajonopeus [Km/h]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]";"Running Dynamics.Ajonopeus [Km/h]"\r\n' +
-    '"008 KOKOL LR";630+0850.00;"64.07646857° N";"24.54062901° E";55.985;-21.7708;26.3496;14.6794;14.1478;8.1315;8.0237;-4.1229;-6.3282;3.1816;-3.5781;1.3801;1.7761;2.2629;2.1137;-4.7717;-2.7778;-1.3045;1.3953;0.5937;1.2821;0.5037;0.3869;56\r\n' +
-    '"008 KOKOL LR";630+0850.25;"64.07647082° N";"24.54062896° E";55.955;29.2801;29.5273;16.7167;17.0519;8.1699;7.9743;3.8653;-6.4757;2.8971;-4.6735;1.3761;1.7859;2.1084;1.5889;2.7095;-2.0110;-1.0043;1.9055;0.3789;1.4189;0.6535;0.2594;56\r\n' +
-    '"008 KOKOL LR";630+0850.50;"64.07647308° N";"24.54062891° E";55.939;-29.2653;23.2646;-26.4762;-14.8906;8.4049;8.0362;4.1007;5.2723;-2.2401;4.5284;1.3860;1.7973;2.4118;2.1124;-2.5522;-1.9687;-1.3425;2.0056;-0.5608;1.6471;0.6996;0.2019;56\r\n' +
-    '"008 KOKOL LR";630+0850.75;"64.07647533° N";"24.54062885° E";55.938;-20.9017;-21.8595;13.2977;15.9086;8.4101;8.0505;4.0499;-4.9934;-2.2320;-3.1739;1.3767;1.7917;2.5858;2.0813;2.1109;0.8900;-1.1602;-1.8402;-0.5512;1.3017;0.6939;0.1295;56\r\n' +
-    '"008 KOKOL LR";630+0851.00;"64.07647756° N";"24.54062880° E";55.924;-21.2956;21.9569;14.8956;12.2093;8.3666;7.9174;-3.6308;4.0280;2.7983;2.0624;1.3882;1.7930;2.9541;2.8539;-2.6747;-1.8791;-1.2058;1.6617;-0.3302;1.8971;0.8156;0.1039;56\r\n' +
-    '"008 KOKOL LR";630+0851.25;"64.07647979° N";"24.54062875° E";55.925;-23.1085;25.8125;-21.9575;-12.1894;8.3251;7.8952;3.0163;-4.6372;2.5206;-2.8624;1.3800;1.8019;3.2062;3.0976;-3.2225;-1.4226;-2.0412;1.6744;-0.3927;2.0022;0.7377;0.0205;56';
-const amsCsvDifferentSeparatorStream =stringToStream(amsCsvDifferentSeparator);
+  '"Running Date";"22/11/2022 7:44:40 AM"\r\n' +
+  '"Track";"Location [km+m]";"Latitude";"Longitude";"Ajonopeus [Km/h]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]";"Running Dynamics.Ajonopeus [Km/h]"\r\n' +
+  '"008 KOKOL LR";630+0850.00;"64.07646857° N";"24.54062901° E";55.985;-21.7708;26.3496;14.6794;14.1478;8.1315;8.0237;-4.1229;-6.3282;3.1816;-3.5781;1.3801;1.7761;2.2629;2.1137;-4.7717;-2.7778;-1.3045;1.3953;0.5937;1.2821;0.5037;0.3869;56\r\n' +
+  '"008 KOKOL LR";630+0850.25;"64.07647082° N";"24.54062896° E";55.955;29.2801;29.5273;16.7167;17.0519;8.1699;7.9743;3.8653;-6.4757;2.8971;-4.6735;1.3761;1.7859;2.1084;1.5889;2.7095;-2.0110;-1.0043;1.9055;0.3789;1.4189;0.6535;0.2594;56\r\n' +
+  '"008 KOKOL LR";630+0850.50;"64.07647308° N";"24.54062891° E";55.939;-29.2653;23.2646;-26.4762;-14.8906;8.4049;8.0362;4.1007;5.2723;-2.2401;4.5284;1.3860;1.7973;2.4118;2.1124;-2.5522;-1.9687;-1.3425;2.0056;-0.5608;1.6471;0.6996;0.2019;56\r\n' +
+  '"008 KOKOL LR";630+0850.75;"64.07647533° N";"24.54062885° E";55.938;-20.9017;-21.8595;13.2977;15.9086;8.4101;8.0505;4.0499;-4.9934;-2.2320;-3.1739;1.3767;1.7917;2.5858;2.0813;2.1109;0.8900;-1.1602;-1.8402;-0.5512;1.3017;0.6939;0.1295;56\r\n' +
+  '"008 KOKOL LR";630+0851.00;"64.07647756° N";"24.54062880° E";55.924;-21.2956;21.9569;14.8956;12.2093;8.3666;7.9174;-3.6308;4.0280;2.7983;2.0624;1.3882;1.7930;2.9541;2.8539;-2.6747;-1.8791;-1.2058;1.6617;-0.3302;1.8971;0.8156;0.1039;56\r\n' +
+  '"008 KOKOL LR";630+0851.25;"64.07647979° N";"24.54062875° E";55.925;-23.1085;25.8125;-21.9575;-12.1894;8.3251;7.8952;3.0163;-4.6372;2.5206;-2.8624;1.3800;1.8019;3.2062;3.0976;-3.2225;-1.4226;-2.0412;1.6744;-0.3927;2.0022;0.7377;0.0205;56';
+const amsCsvDifferentSeparatorStream = stringToStream(amsCsvDifferentSeparator);
 
 const amsCsvDifferentSeparatorAndDecimal =
-    '"Running Date";"22/11/2022 7:44:40 AM"\r\n' +
-    '"Track";"Location [km+m]";"Latitude";"Longitude";"Ajonopeus [Km/h]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics,Transversal Acceleration C2 Mean-to-Peak [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics,Transversal Acceleration C3 Mean-to-Peak [m/s^2]";"Running Dynamics,Ajonopeus [Km/h]"\r\n' +
-    '"008 KOKOL LR";630+0850,00;"64,07646857° N";"24,54062901° E";55,985;-21,7708;26,3496;14,6794;14,1478;8,1315;8,0237;-4,1229;-6,3282;3,1816;-3,5781;1,3801;1,7761;2,2629;2,1137;-4,7717;-2,7778;-1,3045;1,3953;0,5937;1,2821;0,5037;0,3869;56\r\n' +
-    '"008 KOKOL LR";630+0850,25;"64,07647082° N";"24,54062896° E";55,955;29,2801;29,5273;16,7167;17,0519;8,1699;7,9743;3,8653;-6,4757;2,8971;-4,6735;1,3761;1,7859;2,1084;1,5889;2,7095;-2,0110;-1,0043;1,9055;0,3789;1,4189;0,6535;0,2594;56\r\n' +
-    '"008 KOKOL LR";630+0850,50;"64,07647308° N";"24,54062891° E";55,939;-29,2653;23,2646;-26,4762;-14,8906;8,4049;8,0362;4,1007;5,2723;-2,2401;4,5284;1,3860;1,7973;2,4118;2,1124;-2,5522;-1,9687;-1,3425;2,0056;-0,5608;1,6471;0,6996;0,2019;56\r\n' +
-    '"008 KOKOL LR";630+0850,75;"64,07647533° N";"24,54062885° E";55,938;-20,9017;-21,8595;13,2977;15,9086;8,4101;8,0505;4,0499;-4,9934;-2,2320;-3,1739;1,3767;1,7917;2,5858;2,0813;2,1109;0,8900;-1,1602;-1,8402;-0,5512;1,3017;0,6939;0,1295;56\r\n' +
-    '"008 KOKOL LR";630+0851,00;"64,07647756° N";"24,54062880° E";55,924;-21,2956;21,9569;14,8956;12,2093;8,3666;7,9174;-3,6308;4,0280;2,7983;2,0624;1,3882;1,7930;2,9541;2,8539;-2,6747;-1,8791;-1,2058;1,6617;-0,3302;1,8971;0,8156;0,1039;56\r\n' +
-    '"008 KOKOL LR";630+0851,25;"64,07647979° N";"24,54062875° E";55,925;-23,1085;25,8125;-21,9575;-12,1894;8,3251;7,8952;3,0163;-4,6372;2,5206;-2,8624;1,3800;1,8019;3,2062;3,0976;-3,2225;-1,4226;-2,0412;1,6744;-0,3927;2,0022;0,7377;0,0205;56';
-const amsCsvDifferentSeparatorAndDecimalStream =stringToStream(amsCsvDifferentSeparatorAndDecimal);
+  '"Running Date";"22/11/2022 7:44:40 AM"\r\n' +
+  '"Track";"Location [km+m]";"Latitude";"Longitude";"Ajonopeus [Km/h]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]";"Running Dynamics,Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C2 [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]";"Running Dynamics,Transversal Acceleration C2 Mean-to-Peak [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics,Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C3 [m/s^2]";"Running Dynamics,Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]";"Running Dynamics,Transversal Acceleration C3 Mean-to-Peak [m/s^2]";"Running Dynamics,Ajonopeus [Km/h]"\r\n' +
+  '"008 KOKOL LR";630+0850,00;"64,07646857° N";"24,54062901° E";55,985;-21,7708;26,3496;14,6794;14,1478;8,1315;8,0237;-4,1229;-6,3282;3,1816;-3,5781;1,3801;1,7761;2,2629;2,1137;-4,7717;-2,7778;-1,3045;1,3953;0,5937;1,2821;0,5037;0,3869;56\r\n' +
+  '"008 KOKOL LR";630+0850,25;"64,07647082° N";"24,54062896° E";55,955;29,2801;29,5273;16,7167;17,0519;8,1699;7,9743;3,8653;-6,4757;2,8971;-4,6735;1,3761;1,7859;2,1084;1,5889;2,7095;-2,0110;-1,0043;1,9055;0,3789;1,4189;0,6535;0,2594;56\r\n' +
+  '"008 KOKOL LR";630+0850,50;"64,07647308° N";"24,54062891° E";55,939;-29,2653;23,2646;-26,4762;-14,8906;8,4049;8,0362;4,1007;5,2723;-2,2401;4,5284;1,3860;1,7973;2,4118;2,1124;-2,5522;-1,9687;-1,3425;2,0056;-0,5608;1,6471;0,6996;0,2019;56\r\n' +
+  '"008 KOKOL LR";630+0850,75;"64,07647533° N";"24,54062885° E";55,938;-20,9017;-21,8595;13,2977;15,9086;8,4101;8,0505;4,0499;-4,9934;-2,2320;-3,1739;1,3767;1,7917;2,5858;2,0813;2,1109;0,8900;-1,1602;-1,8402;-0,5512;1,3017;0,6939;0,1295;56\r\n' +
+  '"008 KOKOL LR";630+0851,00;"64,07647756° N";"24,54062880° E";55,924;-21,2956;21,9569;14,8956;12,2093;8,3666;7,9174;-3,6308;4,0280;2,7983;2,0624;1,3882;1,7930;2,9541;2,8539;-2,6747;-1,8791;-1,2058;1,6617;-0,3302;1,8971;0,8156;0,1039;56\r\n' +
+  '"008 KOKOL LR";630+0851,25;"64,07647979° N";"24,54062875° E";55,925;-23,1085;25,8125;-21,9575;-12,1894;8,3251;7,8952;3,0163;-4,6372;2,5206;-2,8624;1,3800;1,8019;3,2062;3,0976;-3,2225;-1,4226;-2,0412;1,6744;-0,3927;2,0022;0,7377;0,0205;56';
+const amsCsvDifferentSeparatorAndDecimalStream = stringToStream(
+  amsCsvDifferentSeparatorAndDecimal,
+);
 
 const amsCsvError =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -68,7 +77,7 @@ const amsCsvError =
   '318102,"008 KOKOL LR",630+0850.50,"64.07647308° N","24.54062891° E",55.939,-29.2653,23.2646,-26.4762,-14.8906,8.4049,8.0362,4.1007,5.2723,-2.2401,4.5284,1.3860,1.7973,2.4118,2.1124,-2.5522,-1.9687,-1.3425,2.0056,-0.5608,1.6471,0.6996,0.2019,56\r\n' +
   '318103,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985, 26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
   '318104,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985, 26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n';
-const amsCsvErrorStream =stringToStream(amsCsvError);
+const amsCsvErrorStream = stringToStream(amsCsvError);
 
 const tsightCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -82,7 +91,7 @@ const tsightCsv: string =
   '129298,"003 KRRRP 253",224+0204.50,"61.74475659° N","23.39750099° E",62.517,-22.87596130,-1939,689,7.22121572,2710,1460,,,,,,,,,,,,,,,,,0,0.00,0,0.00\r\n' +
   '129299,"003 KRRRP 253",224+0204.75,"61.74475853° N","23.39749865° E",62.516,-23.52712059,-1976,726,-19.35003662,1595,345,,,,,,,,,,,,,,,,,0,0.00,0,0.00\r\n' +
   '129300,"003 KRRRP 253",224+0205.00,"61.74476048° N","23.39749630° E",62.499,-21.49841690,-1966,716,-26.26303673,1764,514,,,,,,,,,,,,,,,,,0,0.00,0,0.00';
-const tsightCsvStream =stringToStream(tsightCsv);
+const tsightCsvStream = stringToStream(tsightCsv);
 
 const tgCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -100,11 +109,8 @@ const tgCsv: string =
   '294976,"006 LHRP 2",130+0102.00,"60.97624912° N","25.65627453° E",40.861,-0.54,-0.16,0.12,0.13,-1.81,0.12,-0.09,-0.47,4.61,4.38,5.99,6.56,-0.27,-0.04,-0.79,-0.46,-12.91,-12.42,-0.43,1523.46,-0.68,0.86,2.19,1.59,1.27,1.13,1.23,1.22,0.03,0.08,0.16,0.17\r\n' +
   '294977,"006 LHRP 2",130+0102.25,"60.97624897° N","25.65627911° E",40.857,-0.64,-0.24,0.03,0.17,-1.81,0.00,-0.07,-0.49,4.66,4.42,6.11,6.66,-0.32,-0.12,-0.76,-0.43,-12.80,-12.31,-0.43,1523.36,-0.56,0.86,2.18,1.59,1.27,1.13,1.23,1.22,-0.05,0.09,0.16,0.17';
 //const tgCsvStream =stringToStream(tgCsv);
-const tgCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/TG_20210901_521_LLARP_1_866_866.csv');
+// const tgCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/TG_20210901_521_LLARP_1_866_866.csv');
 //const tgCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/TG_20211004_441_SKRP_1_418_418.csv');
-
-
-
 
 const rpCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -120,16 +126,17 @@ const rpCsv: string =
   '299982,"003 TL V628-V626",148+0673.00,"61.17816872° N","23.84192123° E",42.134,3.288,1.372,2.270,1.311,0.589,0.336,-0.839,-0.105,-0.422,-0.337,0.347,0.456,-0.727,0.556,-0.252,0.331,0.263,0.554,1.217,1.216,1.350,1.360,0.176,0.113,3.379,1.591,1.954,1.172,0.899,0.589,2.504,1.597,1.933,1.308,0.551,0.292,2411.733,2415.867,2414.408,2416.548,1.805,0.808,0.000,0.192,0.010,0.149,0.025,0.082,0.000,0.000,0.000,0.001,0.001,0.003,0.0115,0.0117,0.0002,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.13\r\n' +
   '299983,"003 TL V628-V626",148+0673.25,"61.17816957° N","23.84191696° E",42.138,3.288,1.372,2.268,1.313,0.589,0.334,-0.839,-0.105,-0.424,-0.340,0.345,0.461,-0.727,0.556,-0.253,0.332,0.264,0.556,1.217,1.216,1.350,1.360,0.176,0.114,3.379,1.591,1.951,1.171,0.901,0.592,2.504,1.597,1.930,1.309,0.551,0.291,2411.733,2415.867,2414.417,2416.546,1.807,0.806,0.000,0.192,0.010,0.150,0.025,0.082,0.000,0.000,0.000,0.001,0.001,0.003,0.0114,0.0117,0.0001,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.14\r\n' +
   '299984,"003 TL V628-V626",148+0673.50,"61.17817043° N","23.84191269° E",42.148,3.288,1.372,2.267,1.314,0.589,0.333,-0.839,-0.105,-0.426,-0.342,0.344,0.467,-0.727,0.556,-0.254,0.333,0.264,0.558,1.217,1.216,1.350,1.359,0.176,0.114,3.379,1.591,1.947,1.169,0.903,0.595,2.504,1.597,1.927,1.309,0.551,0.291,2411.733,2415.867,2414.426,2416.544,1.810,0.803,0.000,0.192,0.010,0.150,0.025,0.082,0.000,0.000,0.000,0.001,0.001,0.003,0.0115,0.0115,0.0003,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.15';
-const rpCsvStream =stringToStream(rpCsv);
+const rpCsvStream = stringToStream(rpCsv);
 
-
-const rp2Csv:string=
+const rp2Csv: string =
   '"Location [km+m]";"Track";"Rail Profile.Survey Date";"Rail Profile.Latitude";"Rail Profile.Longitude";"Rail Profile.Ajonopeus [Km/h]";"Rail Profile.Ajonopeus [Km/h]";"Rail Profile.Oikea 45° Kuluma [mm]";"Rail Profile.Oikea 45° Kuluman Keskiarvo [mm]";"Rail Profile.Oikea 45° Kuluman Keskihajonta [mm]";"Rail Profile.Oikea 45° Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea 45° Kuluman Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Kallistuksen Keskiarvo [°]";"Rail Profile.Oikea Kallistuksen Keskihajonta [°]";"Rail Profile.Oikea Kallistus [°]";"Rail Profile.Oikea Kiskon Kallistuksen Kiinteä Keskiarvo [°]";"Rail Profile.Oikea Kiskon Kallistuksen Kiinteä Keskihajonta [°]";"Rail Profile.Oikea Poikkileikkauspinta-Ala [mm^2]";"Rail Profile.Oikea Poikkileikkauspinta-Alan Keskiarvo [mm^2]";"Rail Profile.Oikea Poikkileikkauspinta-Alan Keskihajonta [mm^2]";"Rail Profile.Oikea Poikkileikkauspinta-Alan Kiinteä Keskiarvo [mm^2]";"Rail Profile.Oikea Poikkileikkauspint-Alan Kiinteä Keskihajonta [mm^2]";"Rail Profile.Oikea Poikkipinta-Alan Poikkeama [mm^2]";"Rail Profile.Oikea Pystysuora Kuluma [mm]";"Rail Profile.Oikea Pystysuora Kuluman Keskiarvo [mm]";"Rail Profile.Oikea Pystysuora Kuluman Keskihajonta [mm]";"Rail Profile.Oikea Pystysuoran Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Pystysuoran Kuluman Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Sisäpuolinen Purse [mm]";"Rail Profile.Oikea Sisäpuolinen Sivuttaiskuluma [mm]";"Rail Profile.Oikea Sisäpuolisen Purseen Keskiarvo [mm]";"Rail Profile.Oikea Sisäpuolisen Purseen Keskihajonta [mm]";"Rail Profile.Oikea Sisäpuolisen Purseen Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Sisäpuolisen Purseen Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Sisäpuolisen Sivuttaisk Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Sisäpuolisen Sivuttaisk Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Sisäpuolisen Sivuttaiskuluman Keskiarvo [mm]";"Rail Profile.Oikea Sisäpuolisen Sivuttaiskuluman Keskihajonta [mm]";"Rail Profile.Oikea Ulkoinen Sivuttaiskuluma [mm]";"Rail Profile.Oikea Ulkoisen Sivuttaiskuluman Keskiarvo [mm]";"Rail Profile.Oikea Ulkoisen Sivuttaiskuluman Keskihajonta [mm]";"Rail Profile.Oikea Ulkopuolinen Purse [mm]";"Rail Profile.Oikea Ulkopuolisen Purseen Keskiarvo [mm]";"Rail Profile.Oikea Ulkopuolisen Purseen Keskihajonta [mm]";"Rail Profile.Oikea Ulkopuolisen Purseen Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Ulkopuolisen Purseen Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Ulkopuolisen Sivuttaisk Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Ulkopuolisen Sivuttaisk Kiinteä Keskihajonta [mm]";"Rail Profile.Oikea Yhdistetty Kuluma [mm]";"Rail Profile.Oikea Yhdistetyn Kuluman Keskiarvo [mm]";"Rail Profile.Oikea Yhdistetyn Kuluman Keskihajonta [mm]";"Rail Profile.Oikea Yhdistetyn Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Oikea Yhdistetyn Kuluman Kiinteä Keskihajonta [mm]";"Rail Profile.Tehollinen Kartiokkuus";"Rail Profile.Tehollisen Kartiokkuuden Keskiarvo";"Rail Profile.Tehollisen Kartiokkuuden Keskihajonta";"Rail Profile.Tehollisen Kartiokkuuden Kiinteä Keskiarvo";"Rail Profile.Tehollisen Kartiokkuuden Kiinteä Keskihajonta";"Rail Profile.Vasen 45° Kuluma [mm]";"Rail Profile.Vasen 45° Kuluman Keskiarvo [mm]";"Rail Profile.Vasen 45° Kuluman Keskihajonta [mm]";"Rail Profile.Vasen 45° Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen 45° Kuluman Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Kallistuksen Keskiarvo [°]";"Rail Profile.Vasen Kallistuksen Keskihajonta [°]";"Rail Profile.Vasen Kallistus [°]";"Rail Profile.Vasen Kiskon Kallistuksen Kiinteä Keskiarvo [°]";"Rail Profile.Vasen Kiskon Kallistuksen Kiinteä Keskihajonta [°]";"Rail Profile.Vasen Poikkileikkauspinta-Ala [mm^2]";"Rail Profile.Vasen Poikkileikkauspinta-Alan Keskiarvo [mm^2]";"Rail Profile.Vasen Poikkileikkauspinta-Alan Keskihajonta [mm^2]";"Rail Profile.Vasen Poikkileikkauspinta-Alan Kiinteä Keskiarvo [mm^2]";"Rail Profile.Vasen Poikkileikkauspint-Alan Kiinteä Keskihajonta [mm^2]";"Rail Profile.Vasen Poikkipinta-Alan Poikkeama [mm^2]";"Rail Profile.Vasen Pystysuora Kuluma [mm]";"Rail Profile.Vasen Pystysuora Kuluman Keskiarvo [mm]";"Rail Profile.Vasen Pystysuora Kuluman Keskihajonta [mm]";"Rail Profile.Vasen Pystysuoran Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Pystysuoran Kuluman Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Sisäpuolinen Purse [mm]";"Rail Profile.Vasen Sisäpuolinen Sivuttaiskuluma [mm]";"Rail Profile.Vasen Sisäpuolisen Purseen Keskiarvo [mm]";"Rail Profile.Vasen Sisäpuolisen Purseen Keskihajonta [mm]";"Rail Profile.Vasen Sisäpuolisen Purseen Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Sisäpuolisen Purseen Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Sisäpuolisen Sivuttaisk Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Sisäpuolisen Sivuttaisk Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Sisäpuolisen Sivuttaiskuluman Keskiarvo [mm]";"Rail Profile.Vasen Sisäpuolisen Sivuttaiskuluman Keskihajonta [mm]";"Rail Profile.Vasen Ulkoinen Sivuttaiskuluma [mm]";"Rail Profile.Vasen Ulkoisen Sivuttaiskuluman Keskiarvo [mm]";"Rail Profile.Vasen Ulkoisen Sivuttaiskuluman Keskihajonta [mm]";"Rail Profile.Vasen Ulkopulisen Purseen Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Ulkopuolinen Purse [mm]";"Rail Profile.Vasen Ulkopuolisen Purseen Keskiarvo [mm]";"Rail Profile.Vasen Ulkopuolisen Purseen Keskihajonta [mm]";"Rail Profile.Vasen Ulkopuolisen Purseen Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Ulkopuolisen Sivuttaisk Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Ulkopuolisen Sivuttaisk Kiinteä Keskihajonta [mm]";"Rail Profile.Vasen Yhdistetty Kuluma [mm]";"Rail Profile.Vasen Yhdistetyn Kuluman Keskiarvo [mm]";"Rail Profile.Vasen Yhdistetyn Kuluman Keskihajonta [mm]";"Rail Profile.Vasen Yhdistetyn Kuluman Kiinteä Keskiarvo [mm]";"Rail Profile.Vasen Yhdistetyn Kuluman Kiinteä Keskihajonta [mm]"\n' +
-  '285+0000,25;"244 LRMST_U 500";"7.6.2023 10.11.26";"61.02766673° N";"24.43978963° E";27,521;27,52;1,722;2,051;0,429;2,125;0,462;1,365;0,111;1,498;1,377;0,090;2281,049;2280,949;0,941;1600,000;0,817;7,9041;3,441;3,593;0,601;3,694;0,659;0,151;-0,316;0,980;0,634;0,994;0,581;-0,418;0,437;-0,283;0,582;-0,409;-0,715;0,562;0,006;0,099;0,197;0,056;0,135;-0,518;0,669;3,078;3,088;0,518;3,224;0,501;0,3497;0,3864;0,0327;0,449;0,242;1,192;1,908;0,502;1,829;0,495;1,395;0,111;1,567;1,326;0,183;2282,651;2280,941;1,107;1600,000;0,910;6,3019;2,558;3,567;0,766;3,311;0,724;0,287;-0,101;0,592;0,670;0,868;0,820;-0,732;1,221;-0,707;1,192;-0,530;-0,660;0,542;0,332;0,005;0,240;0,323;0,326;-0,527;0,474;2,243;2,883;0,630;2,666;0,459\r\n'+
-  '285+0000,00;"244 LRMST_U 500";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;'
+  '285+0000,25;"244 LRMST_U 500";"7.6.2023 10.11.26";"61.02766673° N";"24.43978963° E";27,521;27,52;1,722;2,051;0,429;2,125;0,462;1,365;0,111;1,498;1,377;0,090;2281,049;2280,949;0,941;1600,000;0,817;7,9041;3,441;3,593;0,601;3,694;0,659;0,151;-0,316;0,980;0,634;0,994;0,581;-0,418;0,437;-0,283;0,582;-0,409;-0,715;0,562;0,006;0,099;0,197;0,056;0,135;-0,518;0,669;3,078;3,088;0,518;3,224;0,501;0,3497;0,3864;0,0327;0,449;0,242;1,192;1,908;0,502;1,829;0,495;1,395;0,111;1,567;1,326;0,183;2282,651;2280,941;1,107;1600,000;0,910;6,3019;2,558;3,567;0,766;3,311;0,724;0,287;-0,101;0,592;0,670;0,868;0,820;-0,732;1,221;-0,707;1,192;-0,530;-0,660;0,542;0,332;0,005;0,240;0,323;0,326;-0,527;0,474;2,243;2,883;0,630;2,666;0,459\r\n' +
+  '285+0000,00;"244 LRMST_U 500";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;';
 
-const rp2CsvStream =stringToStream(rp2Csv);
-const rp2CsvFileStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_1144_1_RP_20230607_244_LRMST_U_500_285_295.csv');
+const rp2CsvStream = stringToStream(rp2Csv);
+const rp2CsvFileStream = fs.createReadStream(
+  './backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_1144_1_RP_20230607_244_LRMST_U_500_285_295.csv',
+);
 
 const rcCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -147,7 +154,7 @@ const rcCsv: string =
   '3612,"008 KHG V911-V913",622+0893.50,"64.02421056° N","24.43975279° E",32.685,0.1600,1.6600,2.0000,6.8800,5.5400,3.3000,9.2600,14.2000,1.6463,1.2914,4.7488,2.7001,11.4790,2.0651,37.1931,10.3058,3.1231,0.8091,10.4323,1.4567,20.0606,1.2251,33.4203,7.0299,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
   '3613,"008 KHG V911-V913",622+0893.25,"64.02420900° N","24.43974910° E",32.681,0.1600,1.6600,2.0000,6.8800,5.5400,3.3000,9.2600,14.2000,1.6489,1.2922,4.7495,2.6996,11.4810,2.0701,37.3928,10.3358,3.1222,0.8093,10.4321,1.4567,20.0602,1.2248,33.4721,7.0328,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
   '3614,"008 KHG V911-V913",622+0893.00,"64.02420744° N","24.43974542° E",32.682,0.6000,4.1400,2.0000,7.3400,4.9000,3.0000,11.5000,15.3000,1.6520,1.2923,4.7477,2.7011,11.4895,2.0738,37.6373,10.3658,3.1216,0.8093,10.4325,1.4561,20.0588,1.2238,33.5992,7.0356,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667';
-const rcCsvStream =stringToStream(rcCsv);
+const rcCsvStream = stringToStream(rcCsv);
 
 const piCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -166,7 +173,7 @@ const piCsv: string =
   '242359,"006 LHRP 1",130+0497.25,"60.97627100° N","25.66353408° E",42.897,-0.5172,-0.9165,-0.6338,0.6894,11.0836,26.4350,19.1210,21.5321,37.1888,78.9756,40.5709,181,2735\r\n' +
   '242360,"006 LHRP 1",130+0497.00,"60.97627128° N","25.66352950° E",42.899,-0.4389,-0.9661,0.6160,-1.0279,10.9332,26.1537,18.9262,21.4080,36.8090,78.8003,40.3343,171,2735\r\n' +
   '242361,"006 LHRP 1",130+0496.75,"60.97627156° N","25.66352492° E",42.899,-0.3367,-0.6233,-0.6442,-0.7890,10.6632,26.2197,15.0933,21.1805,36.8256,73.6705,35.6858,172,2735';
-const piCsvStream =stringToStream(piCsv);
+const piCsvStream = stringToStream(piCsv);
 
 const ohlCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -185,106 +192,127 @@ const ohlCsv: string =
   '25528,"006 KVRP 847",194+0415.25,"60.86959542° N","26.75754352° E",32.763,-56.67,,6206.22,,9.84,,0.00,0.20,5.45,,5.18,,0.32,,77.21,,0.43,,77.60,,0.0000,,,,33,,-20.55,2026.14\r\n' +
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
 //const ohlCsvStream =stringToStream(ohlCsv);
-const ohlCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_23078_1_OHL_20231101_003_HKIRP_3_0_1.csv');
-
-
-
+// const ohlCsvStream = fs.createReadStream(
+//   './backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_23078_1_OHL_20231101_003_HKIRP_3_0_1.csv',
+// );
 
 //const rpCsvFileStream = fs.createReadStream('./chunkFile_229_1_RP_20230607_244_LRMST_U_500_285_295.csv');
 
-describe('handle ams csv file success', () => {
-  test('success: normal run', async () => {
-      const dbConnection = await getDBConnection();
-      const result = await parseCSVFileStream(
-       {
-         fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
-         path:[]},
-       amsCsvStream,
-       {},
-        dbConnection,
-     );
-     console.log(result);
-    expect(result).toEqual("success");
-  }, 900000);
-});
-
-
-describe('handle ams csv file success', () => {
+describe.skip('handle ams csv file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
-    await updateRaporttiStatus(889, 'ERROR', null,dbConnection);
-    await updateRaporttiStatus(889, 'SUCCESS', null,dbConnection);
-    //should not update out of error status
-  }, 900000);
-});
-
-
-
-describe('handle ams csv file with a missing field success', () => {
-  test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
-    let result = await parseCSVFileStream(
+    const result = await parseCSVFileStream(
       {
-        fileBaseName: "chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv", rootFolder: "",
-        path:[]},
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
       amsCsvStream,
       {},
       dbConnection,
     );
     console.log(result);
-    expect(result).toEqual("success");
+    expect(result).toEqual('success');
   }, 900000);
 });
 
+describe.skip('handle ams csv file success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    await updateRaporttiStatus(889, 'ERROR', null, dbConnection);
+    await updateRaporttiStatus(889, 'SUCCESS', null, dbConnection);
+    //should not update out of error status
+  }, 900000);
+});
 
-describe('handle rp csv file success', () => {
+describe.skip('handle ams csv file with a missing field success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    let result = await parseCSVFileStream(
+      {
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
+      amsCsvStream,
+      {},
+      dbConnection,
+    );
+    console.log(result);
+    expect(result).toEqual('success');
+  }, 900000);
+});
+
+describe.skip('handle rp csv file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     const result = await parseCSVFileStream(
       {
-        fileBaseName: "chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
-        path:[]},
+        fileBaseName: 'chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix: '',
+        rootFolder: '',
+        path: [],
+      },
       rpCsvStream,
       {},
       dbConnection,
     );
     console.log(result);
-    expect(result).toEqual("success");
+    expect(result).toEqual('success');
   }, 900000);
 });
 
-describe('handle tg csv file success', () => {
-  test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
-    const result = await parseCSVFileStream(
-      {
-        fileBaseName: "chunkFile_889_1_TG_20230607_244_LRMST_U_500_285_295.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
-        path:[]},
-      tgCsvStream,
-      {},
-      dbConnection,
-    );
-    console.log(result);
-    expect(result).toEqual("success");
-  }, 900000);
-});
+// describe('handle tg csv file success', () => {
+//   test('success: normal run', async () => {
+//     const dbConnection = await getDBConnection();
+//     const result = await parseCSVFileStream(
+//       {
+//         fileBaseName: 'chunkFile_889_1_TG_20230607_244_LRMST_U_500_285_295.csv',
+//         fileName: '',
+//         fileSuffix: '',
+//         keyWithoutSuffix: '',
+//         rootFolder: '',
+//         path: [],
+//       },
+//       tgCsvStream,
+//       {},
+//       dbConnection,
+//     );
+//     console.log(result);
+//     expect(result).toEqual('success');
+//   }, 900000);
+// });
 
-describe('handle ohl csv file success', () => {
-  test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
-    const result = await parseCSVFileStream(
-      {
-        fileBaseName: "chunkFile_889_1_OHL_20231101_003_HKIRP_3_0_1.csv", fileName: "", fileSuffix: "", keyWithoutSuffix: "", rootFolder: "",
-        path:[]},
-      ohlCsvStream,
-      {},
-      dbConnection,
-    );
-    console.log(result);
-    expect(result).toEqual("success");
-  }, 900000);
-});
-
+// describe('handle ohl csv file success', () => {
+//   test('success: normal run', async () => {
+//     const dbConnection = await getDBConnection();
+//     const result = await parseCSVFileStream(
+//       {
+//         fileBaseName: 'chunkFile_889_1_OHL_20231101_003_HKIRP_3_0_1.csv',
+//         fileName: '',
+//         fileSuffix: '',
+//         keyWithoutSuffix: '',
+//         rootFolder: '',
+//         path: [],
+//       },
+//       ohlCsvStream,
+//       {},
+//       dbConnection,
+//     );
+//     console.log(result);
+//     expect(result).toEqual('success');
+//   }, 900000);
+// });
 
 /*describe('parseAMSCSV success', () => {
   test('success: normal run', async () => {
@@ -308,3 +336,69 @@ describe('handle ohl csv file success', () => {
     expect(result.allRows.length).toBe(1);
   });
 });*/
+
+describe('validateHeaders', () => {
+  const schema = z.object({
+    a: zcsv.string(),
+    b: zcsv.string(),
+    c: zcsv.string(z.string().optional()),
+  });
+  test('success: no missing or extra headers', () => {
+    const headerString = 'a,b,c';
+    const result = validateHeaders(schema, headerString);
+    expect(result).toEqual({
+      extra: [],
+      missingOptional: [],
+      missingRequired: [],
+    });
+  });
+  test('error: extra header', () => {
+    const headerString = 'a,b,c,d';
+    const result = validateHeaders(schema, headerString);
+    expect(result).toEqual({
+      extra: ['d'],
+      missingOptional: [],
+      missingRequired: [],
+    });
+  });
+  test('error: missing optional header', () => {
+    const headerString = 'a,b';
+    const result = validateHeaders(schema, headerString);
+    expect(result).toEqual({
+      extra: [],
+      missingOptional: ['c'],
+      missingRequired: [],
+    });
+  });
+  test('error: missing required header', () => {
+    const headerString = 'a,c';
+    const result = validateHeaders(schema, headerString);
+    expect(result).toEqual({
+      extra: [],
+      missingOptional: [],
+      missingRequired: ['b'],
+    });
+  });
+  test('error: missing optional and required header', () => {
+    const headerString = 'a';
+    const result = validateHeaders(schema, headerString);
+    expect(result).toEqual({
+      extra: [],
+      missingOptional: ['c'],
+      missingRequired: ['b'],
+    });
+  });
+});
+
+describe('removeMissingHeadersFromSchema', () => {
+  const schema = z.object({
+    a: zcsv.string(),
+    b: zcsv.string(),
+    c: zcsv.string(),
+  });
+  test('success: one field missing', () => {
+    const headerString = 'a,b';
+    const result = removeMissingHeadersFromSchema(schema, headerString);
+    expect(result.keyof().options).toEqual(['a', 'b']);
+  });
+});

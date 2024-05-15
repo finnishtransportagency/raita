@@ -85,7 +85,6 @@ function constructRataosoite(track: string, location: string): Rataosoite {
   raide_numero integer, -- for example 2
   rata_kilometri integer, -- for example 130
   rata_metrit DECIMAL -- for example 100.00*/
-
   const splittedTrack = track.split(' ');
   let raideNumero = '';
   let rataosuusNimi = '';
@@ -330,4 +329,21 @@ export async function insertRaporttiData(
 
     throw e;
   }
+}
+
+export async function writeMissingColumnsToDb(
+  reportId: number,
+  columnNames: string[],
+  dbConnection: DBConnection,
+): Promise<void> {
+  const { schema, sql } = dbConnection;
+
+  const values = columnNames.map(name => ({
+    raportti_id: reportId,
+    column_name: name,
+  }));
+
+  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+    values,
+  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }

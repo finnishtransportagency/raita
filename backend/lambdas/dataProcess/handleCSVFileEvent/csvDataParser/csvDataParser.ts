@@ -6,6 +6,7 @@ import {
   raporttiChunksToProcess,
   substractRaporttiChunk,
   updateRaporttiStatus,
+  writeMissingColumnsToDb,
   writeRowsToDB,
 } from '../../csvCommon/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
@@ -207,39 +208,44 @@ async function handleBufferedLines(
   }
 }
 
-function createFileSchema(
-  fileNamePrefix: string,
-  csvHeaderLine: string,
-): ZodObject<any> {
-  let originalSchema: ZodObject<any>;
+function createFileSchema(fileNamePrefix: string): ZodObject<any> {
+  let schema: ZodObject<any>;
   switch (fileNamePrefix) {
     case 'AMS':
-      originalSchema = amsSchema;
+      schema = amsSchema;
       break;
     case 'OHL':
-      originalSchema = ohlSchema;
+      schema = ohlSchema;
       break;
     case 'PI':
-      originalSchema = piSchema;
+      schema = piSchema;
       break;
     case 'RC':
-      originalSchema = rcSchema;
+      schema = rcSchema;
       break;
     case 'RP':
-      originalSchema = rpSchema;
+      schema = rpSchema;
       break;
     case 'TG':
-      originalSchema = tgSchema;
+      schema = tgSchema;
       break;
     case 'TSIGHT':
-      originalSchema = tsightSchema;
+      schema = tsightSchema;
       break;
     default:
       log.warn('Unknown csv file prefix: ' + fileNamePrefix);
       throw new Error('Unknown csv file prefix:');
   }
+  return schema;
+}
 
-  //construct a schema with only the headers on file
+/**
+ * Get schema that only has headers that are in header line
+ */
+export function removeMissingHeadersFromSchema(
+  originalSchema: ZodObject<any>,
+  csvHeaderLine: string,
+): ZodObject<any> {
   const tidyHeaderLine = replaceSeparatorsInHeaderLine(
     tidyUpHeaderLine(csvHeaderLine),
   );
@@ -254,8 +260,46 @@ function createFileSchema(
       }
     }
   }
-
   return copySchema;
+}
+
+/**
+ * Get lists of required and missing headers according to schema
+ */
+export function validateHeaders(
+  schema: ZodObject<any>,
+  csvHeaderLine: string,
+): { extra: string[]; missingOptional: string[]; missingRequired: string[] } {
+  const tidyHeaderLine = replaceSeparatorsInHeaderLine(
+    tidyUpHeaderLine(csvHeaderLine),
+  );
+  const inputHeaders: string[] = tidyHeaderLine.split(',');
+
+  const schemaHeaders: string[] = schema.keyof().options; // get tuple of schema object keys
+
+  const extraHeaders = inputHeaders.filter(
+    header => !schemaHeaders.includes(header),
+  );
+
+  const optionalHeaders = schemaHeaders.filter((header: string) =>
+    schema.shape[header].isOptional(),
+  );
+  const requiredHeaders = schemaHeaders.filter(
+    (header: string) => !schema.shape[header].isOptional(),
+  );
+
+  const missingOptionalHeaders = optionalHeaders.filter(
+    (schemaHeader: string) => !inputHeaders.includes(schemaHeader),
+  );
+  const missingRequiredHeaders = requiredHeaders.filter(
+    (schemaHeader: string) => !inputHeaders.includes(schemaHeader),
+  );
+
+  return {
+    extra: extraHeaders,
+    missingOptional: missingOptionalHeaders,
+    missingRequired: missingRequiredHeaders,
+  };
 }
 
 export async function parseCSVFileStream(
@@ -268,7 +312,7 @@ export async function parseCSVFileStream(
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
-  if ((fileNamePrefix === 'VR')) {
+  if (fileNamePrefix === 'VR') {
     fileNamePrefix = fileNameParts[4];
   }
 
@@ -300,28 +344,56 @@ export async function parseCSVFileStream(
         lineBuffer.push(line);
         lineCounter++;
 
-        //running date on the firstline unless it's missing; then csv column headers on the first line
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 1) {
-          if (lineBuffer[0].search('Running Date') != -1) {
+        if (state == ReadState.READING_HEADER) {
+          //running date on the firstline unless it's missing; then csv column headers on the first line
+          //csv column headers on the second line when running date was found on the first
+          rl.pause();
+          if (
+            lineBuffer.length === 1 &&
+            lineBuffer[0].search('Running Date') != -1
+          ) {
             runningDate = readRunningDateFromLine(lineBuffer[0]);
           } else {
-            csvHeaderLine = lineBuffer[0];
+            csvHeaderLine = lineBuffer[lineBuffer.length - 1]; // line 1 or 2
             state = ReadState.READING_BODY;
             lineBuffer = [];
-            fileSchema = createFileSchema(fileNamePrefix, csvHeaderLine);
+            const originalSchema = createFileSchema(fileNamePrefix);
             log.debug('csvHeaderLine set: ' + csvHeaderLine);
+            const headerValidation = validateHeaders(
+              originalSchema,
+              csvHeaderLine,
+            );
+            if (headerValidation.missingRequired.length) {
+              log.error({
+                msg: 'Missing required fields',
+                missingRequired: headerValidation.missingRequired,
+              });
+              throw Error('Missing required fields');
+            }
+            if (headerValidation.missingOptional.length) {
+              log.warn({
+                msg: 'Missing optional fields',
+                missingOptional: headerValidation.missingOptional,
+              });
+              await writeMissingColumnsToDb(
+                reportId,
+                headerValidation.missingOptional,
+                dbConnection,
+              );
+            }
+            if (headerValidation.extra.length) {
+              log.warn({
+                msg: 'Extra header fields',
+                extra: headerValidation.extra,
+              });
+            }
+            fileSchema = removeMissingHeadersFromSchema(
+              originalSchema,
+              csvHeaderLine,
+            );
           }
+          rl.resume();
         }
-
-        //csv column headers on the second line when running date was found on the first
-        if (state == ReadState.READING_HEADER && lineBuffer.length === 2) {
-          csvHeaderLine = lineBuffer[1];
-          state = ReadState.READING_BODY;
-          lineBuffer = [];
-          fileSchema = createFileSchema(fileNamePrefix, csvHeaderLine);
-          log.debug('csvHeaderLine set: ' + csvHeaderLine);
-        }
-
         //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
         if (state == ReadState.READING_BODY) {
           if (lineBuffer.length > maxBufferSize) {
@@ -334,6 +406,7 @@ export async function parseCSVFileStream(
             rl.resume();
             notWritten++;
 
+            await until(() => fileSchema != undefined);
             try {
               fileSchema &&
                 (await handleBufferedLines(
@@ -377,16 +450,20 @@ export async function parseCSVFileStream(
     });
 
     // Last content of lineBuffer not handled yet
-    if (state == ReadState.READING_BODY && lineBuffer.length && fileSchema) {
-      await handleBufferedLines(
-        csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
-        fileNamePrefix,
-        runningDate,
-        reportId,
-        fileBaseName,
-        dbConnection,
-        fileSchema,
-      );
+
+    await until(() => fileSchema != undefined);
+    if (state == ReadState.READING_BODY && fileSchema) {
+      if (lineBuffer.length) {
+        await handleBufferedLines(
+          csvHeaderLine.concat('\r\n').concat(lineBuffer.join('\r\n')),
+          fileNamePrefix,
+          runningDate,
+          reportId,
+          fileBaseName,
+          dbConnection,
+          fileSchema,
+        );
+      }
     }
 
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
