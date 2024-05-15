@@ -164,6 +164,7 @@ export async function updateRaporttiStatus(
                             SET status = ${status},
                                 error  = ${errorSubstring}
                             WHERE id = ${id}
+                            AND status IS NOT NULL
                             AND status <> 'ERROR';`.catch(e => {
       log.error('Error updateRaporttiStatus: ' + e);
 
