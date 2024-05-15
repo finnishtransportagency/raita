@@ -21,7 +21,7 @@ export const parseFileNameParts = (
     // Handle the empty file indicator as special case.
     // Implementation depends on this incicator being in the end of the string.
     if (cur === EMPTY_FILE_INDICATOR) {
-      acc['isEmpty'] = true;
+      acc['is_empty'] = true;
       return acc;
     }
     // Line below relies on implicit casting number --> string. Note: Index is zero based, keys in dict start from 1
