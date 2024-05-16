@@ -1,4 +1,5 @@
-import { zcsv } from '../../../../../utils/zod-csv/zcsv';
+import { zcsv } from 'zod-csv';
+
 import { z } from 'zod';
 
 /*
@@ -20,16 +21,28 @@ export const rpSchema = z.object({
   oikea_pystysuora_kuluman_keskihajonta: zcsv.number(z.number().optional()),
   vasen_sisapuolinen_sivuttaiskuluma: zcsv.number(z.number().optional()),
   oikea_sisapuolinen_sivuttaiskuluma: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_sivuttaiskuluman_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_sivuttaiskuluman_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_sivuttaiskuluman_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_sivuttaiskuluman_keskihajonta: zcsv.number(z.number().optional()),
+  vasen_sisapuolisen_sivuttaiskuluman_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_sivuttaiskuluman_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_sisapuolisen_sivuttaiskuluman_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_sivuttaiskuluman_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
   vasen_ulkoinen_sivuttaiskuluma: zcsv.number(z.number().optional()),
   oikea_ulkoinen_sivuttaiskuluma: zcsv.number(z.number().optional()),
   vasen_ulkoisen_sivuttaiskuluman_keskiarvo: zcsv.number(z.number().optional()),
   oikea_ulkoisen_sivuttaiskuluman_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_ulkoisen_sivuttaiskuluman_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_ulkoisen_sivuttaiskuluman_keskihajonta: zcsv.number(z.number().optional()),
+  vasen_ulkoisen_sivuttaiskuluman_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_ulkoisen_sivuttaiskuluman_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
   vasen_kallistus: zcsv.number(z.number().optional()),
   oikea_kallistus: zcsv.number(z.number().optional()),
   vasen_kallistuksen_keskiarvo: zcsv.number(z.number().optional()),
@@ -52,8 +65,12 @@ export const rpSchema = z.object({
   oikea_poikkileikkauspinta_ala: zcsv.number(z.number().optional()),
   vasen_poikkileikkauspinta_alan_keskiarvo: zcsv.number(z.number().optional()),
   oikea_poikkileikkauspinta_alan_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_poikkileikkauspinta_alan_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_poikkileikkauspinta_alan_keskihajonta: zcsv.number(z.number().optional()),
+  vasen_poikkileikkauspinta_alan_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_poikkileikkauspinta_alan_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
   vasen_sisapuolinen_purse: zcsv.number(z.number().optional()),
   oikea_sisapuolinen_purse: zcsv.number(z.number().optional()),
   vasen_sisapuolisen_purseen_keskiarvo: zcsv.number(z.number().optional()),
@@ -69,44 +86,112 @@ export const rpSchema = z.object({
   tehollinen_kartiokkuus: zcsv.number(z.number().optional()),
   tehollisen_kartiokkuuden_keskiarvo: zcsv.number(z.number().optional()),
   tehollisen_kartiokkuuden_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_kiskon_kallistuksen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_kiskon_kallistuksen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_kiskon_kallistuksen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_kiskon_kallistuksen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_pystysuoran_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_pystysuoran_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_pystysuoran_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_pystysuoran_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_ulkopuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_ulkopuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_ulkopuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_ulkopuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(z.number().optional()),
+  vasen_kiskon_kallistuksen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_kiskon_kallistuksen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_kiskon_kallistuksen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_kiskon_kallistuksen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_pystysuoran_kuluman_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_pystysuoran_kuluman_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_pystysuoran_kuluman_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_pystysuoran_kuluman_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
   vasen_45_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
   oikea_45_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
   vasen_45_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
   oikea_45_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_yhdistetyn_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_yhdistetyn_kuluman_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_yhdistetyn_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_yhdistetyn_kuluman_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_poikkileikkauspinta_alan_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_poikkileikkauspinta_alan_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_poikkileikkauspint_alan_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_poikkileikkauspint_alan_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_purseen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_purseen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_sisapuolisen_purseen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_sisapuolisen_purseen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_ulkopuolisen_purseen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_ulkopuolisen_purseen_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_ulkopulisen_purseen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_ulkopuolisen_purseen_kiintea_keskihajonta: zcsv.number(z.number().optional()),
-  tehollisen_kartiokkuuden_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  tehollisen_kartiokkuuden_kiintea_keskihajonta: zcsv.number(z.number().optional()),
+  vasen_yhdistetyn_kuluman_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_yhdistetyn_kuluman_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_yhdistetyn_kuluman_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_yhdistetyn_kuluman_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_poikkileikkauspinta_alan_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_poikkileikkauspinta_alan_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_poikkileikkauspint_alan_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_poikkileikkauspint_alan_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_sisapuolisen_purseen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_purseen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_sisapuolisen_purseen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_sisapuolisen_purseen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_ulkopuolisen_purseen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_ulkopuolisen_purseen_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  vasen_ulkopulisen_purseen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  oikea_ulkopuolisen_purseen_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
+  tehollisen_kartiokkuuden_kiintea_keskiarvo: zcsv.number(
+    z.number().optional(),
+  ),
+  tehollisen_kartiokkuuden_kiintea_keskihajonta: zcsv.number(
+    z.number().optional(),
+  ),
   vasen_poikkipinta_alan_poikkeama: zcsv.number(z.number().optional()),
   oikea_poikkipinta_alan_poikkeama: zcsv.number(z.number().optional()),
   rp_ajonopeus: zcsv.number(z.number().optional()),

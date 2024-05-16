@@ -10,7 +10,9 @@ import {
   updateRaporttiStatus,
 } from '../../../csvCommon/db/dbUtil';
 import { z } from 'zod';
-import { zcsv } from '../../../../../utils/zod-csv/zcsv';
+import {parseCSVContent,zcsv} from '../../../../../../external/zod-csv/zcsv';
+import {amsSchema} from "../csvSchemas/amsCsvSchema";
+
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -24,6 +26,12 @@ const amsCsv =
 const amsCsvStream = stringToStream(amsCsv);
 //const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/AMS_20221024_251_LHRP_1_130_131.csv');
 //const amsCsvStream = fs.createReadStream('./backend/lambdas/dataProcess/handleCSVFileEvent/csvDataParser/__tests__/chunkFile_4879_1_AMS_20230605_222_HMARP_002_242_243.csv');
+
+const amsCsvWithDifferentColumnOrder =
+  'track,sscount,location,latitude,longitude,ajonopeus,oikea_pystysuuntainen_kiihtyvyys_c1,vasen_pystysuuntainen_kiihtyvyys_c1,oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu,vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu,oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta,vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta,oikea_poikittainen_kiihtyvyys_c1,vasen_poikittainen_kiihtyvyys_c1,oikea_poikittainen_kiihtyvyys_c1_suodatettu,vasen_poikittainen_kiihtyvyys_c1_suodatettu,oikea_poikittainen_kiihtyvyys_c1_keskihajonta,vasen_poikittainen_kiihtyvyys_c1_keskihajonta,pystysuuntainen_kiihtyvyys_c2,pystysuuntainen_kiihtyvyys_c2_suodatettu,poikittainen_kiihtyvyys_c2,poikittainen_kiihtyvyys_c2_suodatettu,transversal_acceleration_c2_mean_to_peak,pystysuuntainen_kiihtyvyys_c3,pystysuuntainen_kiihtyvyys_c3_suodatettu,poikittainen_kiihtyvyys_c3,poikittainen_kiihtyvyys_c3_suodatettu,transversal_acceleration_c3_mean_to_peak,ams_ajonopeus\r\n' +
+  '"008 KOKOL LR",318103,630+0850.00,"64.07646857° N","24.54062901° E",55.985,-21.7708,26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
+  '"008 KOKOL LR",318103,630+0850.25,"64.07647082° N","24.54062896° E",55.955,29.2801,29.5273,16.7167,17.0519,8.1699,7.9743,3.8653,-6.4757,2.8971,-4.6735,1.3761,1.7859,2.1084,1.5889,2.7095,-2.0110,-1.0043,1.9055,0.3789,1.4189,0.6535,0.2594,56\r\n' +
+  '"008 KOKOL LR",318103,630+0850.50,"64.07647308° N","24.54062891° E",55.939,-29.2653,23.2646,-26.4762,-14.8906,8.4049,8.0362,4.1007,5.2723,-2.2401,4.5284,1.3860,1.7973,2.4118,2.1124,-2.5522,-1.9687,-1.3425,2.0056,-0.5608,1.6471,0.6996,0.2019,56\r\n' ;
 
 const amsCsvMissingSSCount =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -75,8 +83,8 @@ const amsCsvError =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]","Running Dynamics.Ajonopeus [Km/h]"\r\n' +
   '318102,"008 KOKOL LR",630+0850.50,"64.07647308° N","24.54062891° E",55.939,-29.2653,23.2646,-26.4762,-14.8906,8.4049,8.0362,4.1007,5.2723,-2.2401,4.5284,1.3860,1.7973,2.4118,2.1124,-2.5522,-1.9687,-1.3425,2.0056,-0.5608,1.6471,0.6996,0.2019,56\r\n' +
-  '318103,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985, 26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
-  '318104,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985, 26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n';
+  '318103,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985,26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
+  '318104,"008 KOKOL LR",630+0850.00,"","24.54062901° E",55.985,26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n';
 const amsCsvErrorStream = stringToStream(amsCsvError);
 
 const tsightCsv: string =
@@ -198,8 +206,8 @@ const ohlCsv: string =
 
 //const rpCsvFileStream = fs.createReadStream('./chunkFile_229_1_RP_20230607_244_LRMST_U_500_285_295.csv');
 
-describe.skip('handle ams csv file success', () => {
-  test('success: normal run', async () => {
+describe.skip('handle ams csv file success',() => {
+  test('success: normal run',async () => {
     const dbConnection = await getDBConnection();
     const result = await parseCSVFileStream(
       {
@@ -217,20 +225,20 @@ describe.skip('handle ams csv file success', () => {
     );
     console.log(result);
     expect(result).toEqual('success');
-  }, 900000);
+  },900000);
 });
 
-describe.skip('handle ams csv file success', () => {
-  test('success: normal run', async () => {
+describe.skip('handle ams csv file success',() => {
+  test('success: normal run',async () => {
     const dbConnection = await getDBConnection();
-    await updateRaporttiStatus(889, 'ERROR', null, dbConnection);
-    await updateRaporttiStatus(889, 'SUCCESS', null, dbConnection);
+    await updateRaporttiStatus(889,'ERROR',null,dbConnection);
+    await updateRaporttiStatus(889,'SUCCESS',null,dbConnection);
     //should not update out of error status
-  }, 900000);
+  },900000);
 });
 
-describe.skip('handle ams csv file with a missing field success', () => {
-  test('success: normal run', async () => {
+describe.skip('handle ams csv file with a missing field success',() => {
+  test('success: normal run',async () => {
     const dbConnection = await getDBConnection();
     let result = await parseCSVFileStream(
       {
@@ -248,11 +256,11 @@ describe.skip('handle ams csv file with a missing field success', () => {
     );
     console.log(result);
     expect(result).toEqual('success');
-  }, 900000);
+  },900000);
 });
 
-describe.skip('handle rp csv file success', () => {
-  test('success: normal run', async () => {
+describe.skip('handle rp csv file success',() => {
+  test('success: normal run',async () => {
     const dbConnection = await getDBConnection();
     const result = await parseCSVFileStream(
       {
@@ -269,11 +277,11 @@ describe.skip('handle rp csv file success', () => {
     );
     console.log(result);
     expect(result).toEqual('success');
-  }, 900000);
+  },900000);
 });
 
-// describe('handle tg csv file success', () => {
-//   test('success: normal run', async () => {
+// describe('handle tg csv file success',() => {
+//   test('success: normal run',async () => {
 //     const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
 //       {
@@ -290,11 +298,11 @@ describe.skip('handle rp csv file success', () => {
 //     );
 //     console.log(result);
 //     expect(result).toEqual('success');
-//   }, 900000);
+//   },900000);
 // });
 
-// describe('handle ohl csv file success', () => {
-//   test('success: normal run', async () => {
+// describe('handle ohl csv file success',() => {
+//   test('success: normal run',async () => {
 //     const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
 //       {
@@ -311,12 +319,12 @@ describe.skip('handle rp csv file success', () => {
 //     );
 //     console.log(result);
 //     expect(result).toEqual('success');
-//   }, 900000);
+//   },900000);
 // });
 
-/*describe('parseAMSCSV success', () => {
-  test('success: normal run', async () => {
-    const result = await parseCSVFileStream(amsCsv, 3, "ams_mittaus", amsSchema);
+/*describe('parseAMSCSV success',() => {
+  test('success: normal run',async () => {
+    const result = await parseCSVFileStream(amsCsv,3,"ams_mittaus",amsSchema);
     expect(result.success).toBe(true);
     expect(result.header[6]).toBe('oikea_pystysuuntainen_kiihtyvyys_c1');
     expect(result.validRows[5].oikea_poikittainen_kiihtyvyys_c1).toBe(3.0163);
@@ -325,8 +333,8 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-/*describe('parseAMSCSV error', () => {
-  test('success: error run', async () => {
+/*describe('parseAMSCSV error',() => {
+  test('success: error run',async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
     if (!(result.success)) {
@@ -337,51 +345,51 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-describe('validateHeaders', () => {
+describe('validateHeaders',() => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
     c: zcsv.string(z.string().optional()),
   });
-  test('success: no missing or extra headers', () => {
+  test('success: no missing or extra headers',() => {
     const headerString = 'a,b,c';
-    const result = validateHeaders(schema, headerString);
+    const result = validateHeaders(schema,headerString);
     expect(result).toEqual({
       extra: [],
       missingOptional: [],
       missingRequired: [],
     });
   });
-  test('error: extra header', () => {
+  test('error: extra header',() => {
     const headerString = 'a,b,c,d';
-    const result = validateHeaders(schema, headerString);
+    const result = validateHeaders(schema,headerString);
     expect(result).toEqual({
       extra: ['d'],
       missingOptional: [],
       missingRequired: [],
     });
   });
-  test('error: missing optional header', () => {
+  test('error: missing optional header',() => {
     const headerString = 'a,b';
-    const result = validateHeaders(schema, headerString);
+    const result = validateHeaders(schema,headerString);
     expect(result).toEqual({
       extra: [],
       missingOptional: ['c'],
       missingRequired: [],
     });
   });
-  test('error: missing required header', () => {
+  test('error: missing required header',() => {
     const headerString = 'a,c';
-    const result = validateHeaders(schema, headerString);
+    const result = validateHeaders(schema,headerString);
     expect(result).toEqual({
       extra: [],
       missingOptional: [],
       missingRequired: ['b'],
     });
   });
-  test('error: missing optional and required header', () => {
+  test('error: missing optional and required header',() => {
     const headerString = 'a';
-    const result = validateHeaders(schema, headerString);
+    const result = validateHeaders(schema,headerString);
     expect(result).toEqual({
       extra: [],
       missingOptional: ['c'],
@@ -390,15 +398,27 @@ describe('validateHeaders', () => {
   });
 });
 
-describe('removeMissingHeadersFromSchema', () => {
+describe('removeMissingHeadersFromSchema',() => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
     c: zcsv.string(),
   });
-  test('success: one field missing', () => {
+  test('success: one field missing',() => {
     const headerString = 'a,b';
-    const result = removeMissingHeadersFromSchema(schema, headerString);
-    expect(result.keyof().options).toEqual(['a', 'b']);
+    const result = removeMissingHeadersFromSchema(schema,headerString);
+    expect(result.keyof().options).toEqual(['a','b']);
   });
+});
+
+// test that zod-csv parser handles different column order in csv vs schema.
+// We are using our modified copy of zod-csv to achive this: external/zod-csv/csv.ts:94
+describe('parseCSVContent',() => {
+  test('success: different column order',async () => {
+    const parsedCSVContent = parseCSVContent(amsCsvWithDifferentColumnOrder,amsSchema);
+
+    console.log(parsedCSVContent);
+    expect(parsedCSVContent.success).toEqual(true);
+
+  },900000);
 });

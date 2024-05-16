@@ -24,7 +24,7 @@ import {
   tidyUpFileBody,
   tidyUpHeaderLine,
 } from '../../csvCommon/csvConversionUtils';
-import { parseCSVContent } from '../../../../utils/zod-csv/csv';
+import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';

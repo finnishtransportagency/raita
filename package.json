@@ -71,6 +71,6 @@
     "postgres": "^3.4.3",
     "unzipper": "^0.10.14",
     "zod": "^3.22.4",
-    "zod-csv": "^0.0.8"
+    "zod-csv": "file:./external/zod-csv"
   }
 }
