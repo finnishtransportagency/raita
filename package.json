@@ -21,9 +21,15 @@
     "s3:put:cloud:file:to-reception": "aws s3 cp s3://$RAITA_TEST_DATA_BUCKET/$npm_config_folder/$npm_config_file s3://$RAITA_RECEPTION_S3/Meeri/2022/TestKamppis/20220202/$npm_config_file",
     "parser:logs:tail": "aws logs tail $RAITA_LOG_GROUP_PATH --follow --region $RAITA_REGION",
     "pipeline:deploy": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk --app \"ts-node bin/raita-pipeline\" deploy stack-pipeline-raita-$npm_config_stackid",
-    "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk synth"
+    "pipeline:synth": "cross-env ENVIRONMENT=$npm_config_environment BRANCH=$npm_config_branch STACK_ID=$npm_config_stackid cdk synth",
+    "prisma:create-schema": "./create-prisma-schema.sh",
+    "prisma:generate": "prisma generate --schema=backend/db/prisma/schema.prisma",
+    "graphql:codegen": "graphql-codegen --config codegen.ts"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "5.0.2",
+    "@graphql-codegen/typescript": "4.0.6",
+    "@graphql-codegen/typescript-resolvers": "4.0.6",
     "@types/archiver": "^6.0.2",
     "@types/aws-lambda": "^8.10.130",
     "@types/cloneable-readable": "^2.0.3",
@@ -40,11 +46,14 @@
     "jest": "^29.7.0",
     "lint-staged": "^15.2.0",
     "prettier": "^3.1.1",
+    "prisma": "^5.12.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@apollo/server": "^4.10.3",
+    "@as-integrations/aws-lambda": "^3.1.0",
     "@aws-sdk/client-ecs": "^3.470.0",
     "@aws-sdk/client-lambda": "^3.470.0",
     "@aws-sdk/client-opensearch": "^3.470.0",
@@ -52,6 +61,7 @@
     "@aws-sdk/credential-provider-node": "^3.470.0",
     "@aws-sdk/lib-storage": "^3.470.0",
     "@opensearch-project/opensearch": "^2.4.0",
+    "@prisma/client": "^5.12.1",
     "archiver": "^6.0.1",
     "aws-cdk-lib": "^2.114.1",
     "aws-lambda": "^1.0.7",
@@ -62,6 +72,7 @@
     "csv-string": "^4.1.1",
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
+    "graphql": "^16.8.1",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "jwk-to-pem": "^2.0.5",

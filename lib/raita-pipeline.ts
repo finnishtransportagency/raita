@@ -133,7 +133,11 @@ export class RaitaPipelineStack extends Stack {
         codePipeline: pipeline,
         synth: new ShellStep('Synth', {
           input: githubSource,
-          installCommands: ['npm ci', 'npm --prefix frontend ci'],
+          installCommands: [
+            'npm ci',
+            'npm --prefix frontend ci',
+            'npm run prisma:generate',
+          ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
           },
@@ -145,7 +149,7 @@ export class RaitaPipelineStack extends Stack {
         dockerEnabledForSynth: true,
         codeBuildDefaults: {
           buildEnvironment: {
-            buildImage: LinuxBuildImage.STANDARD_6_0,
+            buildImage: LinuxBuildImage.STANDARD_7_0,
           },
           // TODO: Cacheing not working currently
           cache: Cache.local(
