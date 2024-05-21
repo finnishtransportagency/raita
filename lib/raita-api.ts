@@ -350,7 +350,7 @@ export class RaitaApiStack extends NestedStack {
       });
 
     this.handleV2FilesRequest = this.createV2FilesRequestHandler({
-      name: 'api-handler-meta-test',
+      name: 'api-handler-v2-files',
       raitaStackIdentifier,
       raitaEnv,
       stackId,
