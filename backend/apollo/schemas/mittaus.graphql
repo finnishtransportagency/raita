@@ -1,0 +1,60 @@
+type Mittaus {
+  Id: Int!
+  raportti_id: Int!
+  running_date: String! # TODO date
+  jarjestelma: String # TODO enum
+  sscount: Int
+  # sijainti TODO later
+  ajonopeus: Float
+  track: String
+  location: String
+  latitude: String
+  longitude: String
+  rataosuus_numero: String
+  rataosuus_nimi: String
+  raide_numero: String
+  rata_kilometri: Int
+  rata_metrit: Float
+  lat: Float
+  long: Float
+  # created TODO are these parsing timestamps useful here?
+  # modified
+}
+
+# Miten eri mittaustaulut halutaan esittää tässä?
+# Mallinnetaanko graphql:ään kokonaan?
+# Tarvitseeko graphql apin kautta palauttaa ollenkaan raakaa mittausdataa?
+
+type MittausCountResponse {
+  row_count: Int
+  size_estimate: Int # In bytes
+}
+
+type MittausGenerateResponse {
+  polling_url: Int
+}
+
+input MittausInput {
+  ## raportti input fields: TODO define these in a reusable type?
+  file_name: String
+  key: String
+  inspection_datetime: DateTimeIntervalInput
+  system: [String!]
+  report_type: [String!]
+  track_part: [String!]
+  tilirataosanumero: [String!]
+  file_type: [String!]
+  page: Int!
+  page_size: Int!
+  ##
+  ## Mittaus common fields?
+  ## Mittaus system specific fields?
+}
+
+type Query {
+  mittaus_row_count(mittaus: MittausInput!): MittausCountResponse!
+}
+
+type Mutation {
+  generate_mittaus_csv(mittaus: MittausInput!): MittausGenerateResponse!
+}

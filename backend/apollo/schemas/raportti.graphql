@@ -45,11 +45,6 @@ type SearchRaporttiResponse {
   page_size: Int!
 }
 
-input DateTimeIntervalInput {
-  start: String
-  end: String
-}
-
 type FieldAggregation {
   value: String!
   count: Int!
