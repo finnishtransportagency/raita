@@ -22,9 +22,9 @@ import {
   getDatabaseEnvironmentVariables,
   isDevelopmentMainStack,
   isDevelopmentPreMainStack,
+  prismaBundlingOptions,
 } from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -64,16 +64,13 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
   public readonly handleAdminLogsRequestFn: NodejsFunction;
+  public readonly handleV2FilesRequest: NodejsFunction;
   public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: RaitaApiStackProps,
-  ) {
+  constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
@@ -352,6 +349,17 @@ export class RaitaApiStack extends NestedStack {
         databaseEnvironmentVariables,
       });
 
+    this.handleV2FilesRequest = this.createV2FilesRequestHandler({
+      name: 'api-handler-v2-files',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      vpc,
+      databaseEnvironmentVariables,
+    });
+
     const handleReturnLogin = this.createReturnLoginHandler({
       name: 'api-handler-return-login',
       raitaStackIdentifier,
@@ -438,6 +446,13 @@ export class RaitaApiStack extends NestedStack {
         priority: 350,
         path: [`${apiBaseUrl}/admin/logs`],
         targetName: 'admin-logs',
+      },
+      {
+        // TODO: path names for v2 graphql api
+        lambda: this.handleV2FilesRequest,
+        priority: 2300,
+        path: [`${apiBaseUrl}/v2/files`],
+        targetName: 'v2-files',
       },
       {
         lambda: handleReturnLogin,
@@ -1006,6 +1021,7 @@ export class RaitaApiStack extends NestedStack {
         ENVIRONMENT: raitaEnv,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1053,6 +1069,55 @@ export class RaitaApiStack extends NestedStack {
         ENVIRONMENT: raitaEnv,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for admin log request
+   */
+  private createV2FilesRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(60), // TODO
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleV2FilesRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/v2/handleV2FilesRequest.ts/handleV2FilesRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        ...databaseEnvironmentVariables,
+      },
+      bundling: prismaBundlingOptions,
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1154,6 +1219,7 @@ export class RaitaApiStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1202,6 +1268,7 @@ export class RaitaApiStack extends NestedStack {
         INSPECTION_BUCKET: inspectionBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
       role: lambdaRole,
       vpc,
       vpcSubnets: {

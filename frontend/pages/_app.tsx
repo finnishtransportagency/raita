@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { appWithTranslation, useTranslation } from 'next-i18next';
+import { ApolloProvider } from '@apollo/client';
 
 import { RaitaAppProps } from 'shared/types';
 import nextI18nConfig from '../next-i18next.config';
@@ -13,6 +14,7 @@ import { useUser } from 'shared/user';
 import { RaitaPages } from 'shared/pageRoutes';
 import Error from 'next/error';
 import LoadingOverlay from 'components/loading-overlay';
+import { apolloClient } from 'shared/graphql/client';
 
 const client = new QueryClient();
 
@@ -48,7 +50,9 @@ function RaitaApp({ Component, pageProps }: RaitaAppProps) {
 
 const RaitaAppWithQuery = (props: RaitaAppProps) => (
   <QueryClientProvider {...{ client }}>
-    <RaitaApp {...props} />
+    <ApolloProvider client={apolloClient}>
+      <RaitaApp {...props} />
+    </ApolloProvider>
     <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );

@@ -41,6 +41,10 @@ Run the unit tests using
 npm run test
 ```
 
+## GraphQL
+
+Whenever GraphQL query definitions are changed in frontend/shared/graphql/queries, run `npm run graphql:codegen` to update typescript type definitions
+
 # Production build
 
 ```bash

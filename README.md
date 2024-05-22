@@ -16,7 +16,7 @@ Instructions for running the frontend locally are in the [Frontend README](/fron
 ### Local dev
 
 Check node version. You can use `nvm use` to automatically set the right version.
-Run ` npm i`
+Run ` npm i` and `npm run prisma:generate`
 
 ### Pipeline
 
@@ -106,6 +106,17 @@ nohup sudo socat TCP4-LISTEN:LISTEN_PORT_TO_FIX,reuseaddr,fork TCP:DNS_TO_REDIRE
 where `LISTEN_PORT_TO_FIX` is the port you want to listen on (e.g. 3004), `DNS_TO_REDIRECT` is where you want to redirect to and `PORT_TO_PIPE` is port in the receiving end. With ALB, the port that ALB listens to is port 80 and DNS is the DNS of the ALB (check AWS console).
 
 ## Scripts
+
+- prisma:create-schema
+  Create the prisma schema from scratch. This will initialize a new postgres database with docker and create tables with the flyway migration scripts. The Prisma client will inspect the database and create the schema from that. Requires sudo permissions.
+
+  Prisma does not support table inheritance so this will remove the id definitions from mittaus tables with inheritance. Those need to be fixed by hand if this script is rerun. TODO: how to fix this.
+
+- prisma:generate
+  Generate the prisma client library based on Prisma schema file. This needs to be run along with npm install and whenever Prisma schema changes.
+
+- graphql:codegen
+  Generate types for Apollo server. This needs to be rerun whenever the .graphql files are changed.
 
 ## Tests
 
