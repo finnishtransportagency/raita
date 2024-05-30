@@ -6,11 +6,9 @@ import * as readline from 'readline';
 function tidyUpDataLines(csvDataLines: string): string {
   //log.info('csvDataLines: ' + csvDataLines.length);
   const tidyedLines = csvDataLines
-    //TODO non numeric handling
-    .replace(/NaN/g, '')
-    .replace(/epäluku/g, '')
-    //∞ replaced with max numeric
-    .replace(/∞/g, '9999999999999999999')
+    //replace non numeric
+    //note that non numeric info column values are constructed later from original csv data lines
+    //.replace(/[^0-9.\-]/g, 'NaN')
 
     //remove semicolon sometimes at the end of file
     .replace(/;/g, '');
@@ -83,6 +81,13 @@ export function readRunningDateFromLine(inputFirstLine: string) {
   return runningDate;
 }
 
+function addNanInfo(tidyDataLines: string) {
+  let resultLines ="";
+  const lines = tidyDataLines.split('\n')
+
+  return resultLines;
+}
+
 export function tidyUpFileBody(csvFileBody: string) {
   // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
@@ -101,7 +106,7 @@ export function tidyUpFileBody(csvFileBody: string) {
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
   //log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
-
+  //const tidyDataLinesWithNanInfo = addNanInfo(tidyDataLines);
   return tidyHeaderLine.concat(tidyDataLines);
 }
 
@@ -113,9 +118,9 @@ export function isSemicolonSeparatorLine(line: string) {
 
 export function isSemicolonSeparator(fileBody: string) {
   //we have to find out what is the csv separator; we look at second line (first data line) and count if many semicolons
-  const firstNewLinePos = fileBody.search(/\r\n|\r|\n/);
-  let temp = fileBody.replace(/\r\n|\r|\n/, '');
-  const secondNewLinePos = temp.search(/\r\n|\r|\n/);
+  const firstNewLinePos = fileBody.search(/\n/);
+  let temp = fileBody.replace(/\n/, '');
+  const secondNewLinePos = temp.search(/\n/);
   const secondLine = temp.slice(firstNewLinePos, secondNewLinePos);
 
   return isSemicolonSeparatorLine(secondLine);
@@ -123,16 +128,18 @@ export function isSemicolonSeparator(fileBody: string) {
 
 export function replaceSeparators(fileBody: string) {
   const isSemicolonSeparated = isSemicolonSeparator(fileBody);
+  let resultFileBody = fileBody.replace(/\r\n|\r|\n/g,'\n');
+
   if (isSemicolonSeparated) {
     //replace decimal commas with points; both styles in incoming csv files
-    let resultFileBody: string = fileBody.replace(/,/g, '.');
+    resultFileBody = resultFileBody.replace(/,/g, '.');
 
     //replace semicolons with commas; both styles in incoming csv files
     resultFileBody = resultFileBody.replace(/;/g, ',');
     return resultFileBody;
   }
 
-  return fileBody;
+  return resultFileBody;
 }
 
 export function replaceSeparatorsInHeaderLine(line: string) {
