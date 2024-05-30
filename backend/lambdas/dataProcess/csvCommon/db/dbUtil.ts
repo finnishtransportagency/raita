@@ -11,12 +11,18 @@ let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getDBConnection(): Promise<{
-  schema: string;
-  sql: postgres.Sql<{}>;
-}> {
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const sql = await getConnection();
+export async function getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
+  let schema;
+
+  let sql: postgres.Sql<{}>;
+  //  if (isLocalDevStack()) { (ei toiminut)
+  if (process.env.ENVIRONMENT == 'kalle') {
+    schema = 'public';
+    sql = await getConnectionLocalDev();
+  } else {
+    schema = getEnvOrFail('RAITA_PGSCHEMA');
+    sql = await getConnection();
+  }
   return { schema, sql };
 }
 
