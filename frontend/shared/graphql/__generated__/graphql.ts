@@ -31,31 +31,90 @@ export type MetaResponse = {
   __typename?: 'MetaResponse';
   file_type: Array<FieldAggregation>;
   latest_inspection: Scalars['String']['output'];
+  mittaus_systems: Array<MittausSystemDescription>;
   report_type: Array<FieldAggregation>;
   system: Array<FieldAggregation>;
   tilirataosanumero: Array<FieldAggregation>;
   track_part: Array<FieldAggregation>;
 };
 
+export type Mittaus = {
+  __typename?: 'Mittaus';
+  Id: Scalars['Int']['output'];
+  ajonopeus?: Maybe<Scalars['Float']['output']>;
+  jarjestelma?: Maybe<Scalars['String']['output']>;
+  lat?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars['String']['output']>;
+  location?: Maybe<Scalars['String']['output']>;
+  long?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars['String']['output']>;
+  raide_numero?: Maybe<Scalars['String']['output']>;
+  raportti_id: Scalars['Int']['output'];
+  rata_kilometri?: Maybe<Scalars['Int']['output']>;
+  rata_metrit?: Maybe<Scalars['Float']['output']>;
+  rataosuus_nimi?: Maybe<Scalars['String']['output']>;
+  rataosuus_numero?: Maybe<Scalars['String']['output']>;
+  running_date: Scalars['String']['output'];
+  sscount?: Maybe<Scalars['Int']['output']>;
+  track?: Maybe<Scalars['String']['output']>;
+};
+
+export type MittausCountResponse = {
+  __typename?: 'MittausCountResponse';
+  row_count: Scalars['Int']['output'];
+  size_estimate: Scalars['Float']['output'];
+};
+
+export type MittausGenerateResponse = {
+  __typename?: 'MittausGenerateResponse';
+  polling_url: Scalars['String']['output'];
+};
+
+export type MittausInput = {
+  rata_kilometri?: InputMaybe<Scalars['Int']['input']>;
+  rata_metrit?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type MittausSystemDescription = {
+  __typename?: 'MittausSystemDescription';
+  columns: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+};
+
+export type Mutation = {
+  __typename?: 'Mutation';
+  generate_mittaus_csv: MittausGenerateResponse;
+};
+
+
+export type MutationGenerate_Mittaus_CsvArgs = {
+  columns: Array<Scalars['String']['input']>;
+  mittaus: MittausInput;
+  raportti?: InputMaybe<RaporttiInput>;
+  raportti_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type Query = {
   __typename?: 'Query';
   meta: MetaResponse;
+  search_mittaus_count: MittausCountResponse;
   search_raportti: SearchRaporttiResponse;
 };
 
 
+export type QuerySearch_Mittaus_CountArgs = {
+  columns: Array<Scalars['String']['input']>;
+  mittaus: MittausInput;
+  raportti?: InputMaybe<RaporttiInput>;
+  raportti_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
 export type QuerySearch_RaporttiArgs = {
-  file_name?: InputMaybe<Scalars['String']['input']>;
-  file_type?: InputMaybe<Array<Scalars['String']['input']>>;
-  inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
-  key?: InputMaybe<Scalars['String']['input']>;
   order_by_variable?: InputMaybe<Scalars['String']['input']>;
   page: Scalars['Int']['input'];
   page_size: Scalars['Int']['input'];
-  report_type?: InputMaybe<Array<Scalars['String']['input']>>;
-  system?: InputMaybe<Array<Scalars['String']['input']>>;
-  tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']>>;
-  track_part?: InputMaybe<Array<Scalars['String']['input']>>;
+  raportti: RaporttiInput;
 };
 
 export type Raportti = {
@@ -98,6 +157,17 @@ export type Raportti = {
   zip_reception__year?: Maybe<Scalars['String']['output']>;
 };
 
+export type RaporttiInput = {
+  file_name?: InputMaybe<Scalars['String']['input']>;
+  file_type?: InputMaybe<Array<Scalars['String']['input']>>;
+  inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
+  key?: InputMaybe<Scalars['String']['input']>;
+  report_type?: InputMaybe<Array<Scalars['String']['input']>>;
+  system?: InputMaybe<Array<Scalars['String']['input']>>;
+  tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']>>;
+  track_part?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type SearchRaporttiResponse = {
   __typename?: 'SearchRaporttiResponse';
   count: Scalars['Int']['output'];
@@ -106,22 +176,49 @@ export type SearchRaporttiResponse = {
   raportti?: Maybe<Array<Raportti>>;
 };
 
+export type Search_Mittaus_CountQueryVariables = Exact<{
+  raportti: RaporttiInput;
+  raportti_keys: Array<Scalars['String']['input']> | Scalars['String']['input'];
+  mittaus: MittausInput;
+  columns: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+
+export type Search_Mittaus_CountQuery = { __typename?: 'Query', search_mittaus_count: { __typename?: 'MittausCountResponse', row_count: number, size_estimate: number } };
+
+export type Generate_Mittaus_CsvMutationVariables = Exact<{
+  raportti: RaporttiInput;
+  raportti_keys: Array<Scalars['String']['input']> | Scalars['String']['input'];
+  mittaus: MittausInput;
+  columns: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+
+export type Generate_Mittaus_CsvMutation = { __typename?: 'Mutation', generate_mittaus_csv: { __typename?: 'MittausGenerateResponse', polling_url: string } };
+
+export type Search_Csv_Raportti_DetailsQueryVariables = Exact<{
+  raportti: RaporttiInput;
+  page: Scalars['Int']['input'];
+  page_size: Scalars['Int']['input'];
+}>;
+
+
+export type Search_Csv_Raportti_DetailsQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, page: number, page_size: number, raportti?: Array<{ __typename?: 'Raportti', key?: string | null, file_name?: string | null, inspection_date?: string | null, inspection_datetime?: string | null }> | null } };
+
+export type Mittaus_MetaQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type Mittaus_MetaQuery = { __typename?: 'Query', meta: { __typename?: 'MetaResponse', latest_inspection: string, report_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, file_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, system: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, track_part: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, tilirataosanumero: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, mittaus_systems: Array<{ __typename?: 'MittausSystemDescription', name: string, columns: Array<string> }> } };
+
 export type Search_RaporttiQueryVariables = Exact<{
-  file_name?: InputMaybe<Scalars['String']['input']>;
-  key?: InputMaybe<Scalars['String']['input']>;
-  file_type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
-  system?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  report_type?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  track_part?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
-  tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  raportti: RaporttiInput;
   page: Scalars['Int']['input'];
   page_size: Scalars['Int']['input'];
   order_by_variable?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type Search_RaporttiQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, page: number, page_size: number, raportti?: Array<{ __typename?: 'Raportti', id: number, file_name?: string | null, key?: string | null, file_type?: string | null, source_system?: string | null, zip_name?: string | null, campaign?: string | null, track_number?: string | null, track_part?: string | null, track_id?: string | null, km_start?: number | null, km_end?: number | null, system?: string | null, nonparsed_inspection_datetime?: string | null, report_category?: string | null, parser_version?: string | null, size?: number | null, zip_reception__year?: string | null, zip_reception__date?: string | null, year?: number | null, extra_information?: string | null, maintenance_area?: string | null, is_empty?: boolean | null, length?: number | null, tilirataosanumero?: string | null, report_type?: string | null, temperature?: number | null, measurement_start_location?: string | null, measurement_end_location?: string | null, measurement_direction?: string | null, maintenance_level?: string | null, status?: string | null, inspection_date?: string | null, parsed_at_datetime?: string | null, inspection_datetime?: string | null, metadata_changed_at_datetime?: string | null }> | null } };
+export type Search_RaporttiQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, page: number, page_size: number, raportti?: Array<{ __typename?: 'Raportti', file_name?: string | null, key?: string | null, file_type?: string | null, source_system?: string | null, zip_name?: string | null, campaign?: string | null, track_number?: string | null, track_part?: string | null, track_id?: string | null, km_start?: number | null, km_end?: number | null, system?: string | null, nonparsed_inspection_datetime?: string | null, report_category?: string | null, parser_version?: string | null, size?: number | null, zip_reception__year?: string | null, zip_reception__date?: string | null, year?: number | null, extra_information?: string | null, maintenance_area?: string | null, is_empty?: boolean | null, length?: number | null, tilirataosanumero?: string | null, report_type?: string | null, temperature?: number | null, measurement_start_location?: string | null, measurement_end_location?: string | null, measurement_direction?: string | null, maintenance_level?: string | null, status?: string | null, inspection_date?: string | null, parsed_at_datetime?: string | null, inspection_datetime?: string | null, metadata_changed_at_datetime?: string | null }> | null } };
 
 export type MetaQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -129,5 +226,9 @@ export type MetaQueryVariables = Exact<{ [key: string]: never; }>;
 export type MetaQuery = { __typename?: 'Query', meta: { __typename?: 'MetaResponse', latest_inspection: string, report_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, file_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, system: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, track_part: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, tilirataosanumero: Array<{ __typename?: 'FieldAggregation', value: string, count: number }> } };
 
 
-export const Search_RaporttiDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_raportti"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"file_name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"key"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"file_type"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"inspection_datetime"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"DateTimeIntervalInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"system"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"report_type"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"track_part"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"tilirataosanumero"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_raportti"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"file_name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"file_name"}}},{"kind":"Argument","name":{"kind":"Name","value":"key"},"value":{"kind":"Variable","name":{"kind":"Name","value":"key"}}},{"kind":"Argument","name":{"kind":"Name","value":"file_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"file_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"inspection_datetime"},"value":{"kind":"Variable","name":{"kind":"Name","value":"inspection_datetime"}}},{"kind":"Argument","name":{"kind":"Name","value":"system"},"value":{"kind":"Variable","name":{"kind":"Name","value":"system"}}},{"kind":"Argument","name":{"kind":"Name","value":"report_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"report_type"}}},{"kind":"Argument","name":{"kind":"Name","value":"track_part"},"value":{"kind":"Variable","name":{"kind":"Name","value":"track_part"}}},{"kind":"Argument","name":{"kind":"Name","value":"tilirataosanumero"},"value":{"kind":"Variable","name":{"kind":"Name","value":"tilirataosanumero"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"page_size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}}},{"kind":"Argument","name":{"kind":"Name","value":"order_by_variable"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raportti"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}},{"kind":"Field","name":{"kind":"Name","value":"source_system"}},{"kind":"Field","name":{"kind":"Name","value":"zip_name"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"}},{"kind":"Field","name":{"kind":"Name","value":"track_number"}},{"kind":"Field","name":{"kind":"Name","value":"track_part"}},{"kind":"Field","name":{"kind":"Name","value":"track_id"}},{"kind":"Field","name":{"kind":"Name","value":"km_start"}},{"kind":"Field","name":{"kind":"Name","value":"km_end"}},{"kind":"Field","name":{"kind":"Name","value":"system"}},{"kind":"Field","name":{"kind":"Name","value":"nonparsed_inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"report_category"}},{"kind":"Field","name":{"kind":"Name","value":"parser_version"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__year"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__date"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"extra_information"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_area"}},{"kind":"Field","name":{"kind":"Name","value":"is_empty"}},{"kind":"Field","name":{"kind":"Name","value":"length"}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"}},{"kind":"Field","name":{"kind":"Name","value":"report_type"}},{"kind":"Field","name":{"kind":"Name","value":"temperature"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_start_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_end_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_direction"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_level"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_date"}},{"kind":"Field","name":{"kind":"Name","value":"parsed_at_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_changed_at_datetime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"page_size"}}]}}]}}]} as unknown as DocumentNode<Search_RaporttiQuery, Search_RaporttiQueryVariables>;
+export const Search_Mittaus_CountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_mittaus_count"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MittausInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columns"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_mittaus_count"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"raportti_keys"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}}},{"kind":"Argument","name":{"kind":"Name","value":"mittaus"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}}},{"kind":"Argument","name":{"kind":"Name","value":"columns"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columns"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"row_count"}},{"kind":"Field","name":{"kind":"Name","value":"size_estimate"}}]}}]}}]} as unknown as DocumentNode<Search_Mittaus_CountQuery, Search_Mittaus_CountQueryVariables>;
+export const Generate_Mittaus_CsvDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"generate_mittaus_csv"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MittausInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columns"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"generate_mittaus_csv"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"raportti_keys"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}}},{"kind":"Argument","name":{"kind":"Name","value":"mittaus"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}}},{"kind":"Argument","name":{"kind":"Name","value":"columns"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columns"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"polling_url"}}]}}]}}]} as unknown as DocumentNode<Generate_Mittaus_CsvMutation, Generate_Mittaus_CsvMutationVariables>;
+export const Search_Csv_Raportti_DetailsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_csv_raportti_details"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_raportti"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"page_size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raportti"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_date"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_datetime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"page_size"}}]}}]}}]} as unknown as DocumentNode<Search_Csv_Raportti_DetailsQuery, Search_Csv_Raportti_DetailsQueryVariables>;
+export const Mittaus_MetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"mittaus_meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"report_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"file_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"track_part"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"mittaus_systems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"columns"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latest_inspection"}}]}}]}}]} as unknown as DocumentNode<Mittaus_MetaQuery, Mittaus_MetaQueryVariables>;
+export const Search_RaporttiDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_raportti"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_raportti"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"page_size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}}},{"kind":"Argument","name":{"kind":"Name","value":"order_by_variable"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raportti"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}},{"kind":"Field","name":{"kind":"Name","value":"source_system"}},{"kind":"Field","name":{"kind":"Name","value":"zip_name"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"}},{"kind":"Field","name":{"kind":"Name","value":"track_number"}},{"kind":"Field","name":{"kind":"Name","value":"track_part"}},{"kind":"Field","name":{"kind":"Name","value":"track_id"}},{"kind":"Field","name":{"kind":"Name","value":"km_start"}},{"kind":"Field","name":{"kind":"Name","value":"km_end"}},{"kind":"Field","name":{"kind":"Name","value":"system"}},{"kind":"Field","name":{"kind":"Name","value":"nonparsed_inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"report_category"}},{"kind":"Field","name":{"kind":"Name","value":"parser_version"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__year"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__date"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"extra_information"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_area"}},{"kind":"Field","name":{"kind":"Name","value":"is_empty"}},{"kind":"Field","name":{"kind":"Name","value":"length"}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"}},{"kind":"Field","name":{"kind":"Name","value":"report_type"}},{"kind":"Field","name":{"kind":"Name","value":"temperature"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_start_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_end_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_direction"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_level"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_date"}},{"kind":"Field","name":{"kind":"Name","value":"parsed_at_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_changed_at_datetime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"page_size"}}]}}]}}]} as unknown as DocumentNode<Search_RaporttiQuery, Search_RaporttiQueryVariables>;
 export const MetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"report_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"file_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"track_part"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latest_inspection"}}]}}]}}]} as unknown as DocumentNode<MetaQuery, MetaQueryVariables>;

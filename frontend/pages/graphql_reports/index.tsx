@@ -17,7 +17,8 @@ import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
 
 import { useFileQuery } from '../../shared/hooks';
-import css from './reports.module.css';
+import css from '../reports/reports.module.css';
+
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
@@ -36,7 +37,7 @@ const initialState: ReportsState = {
   resetFilters: false,
   debug: false,
   waitingToUpdateSearchQuery: false,
-  queryVariables: { page: 1, page_size: cfg.paging.pageSize },
+  queryVariables: { page: 1, page_size: cfg.paging.pageSize, raportti: {} },
 };
 
 const ReportsIndex: RaitaNextPage = () => {
@@ -111,7 +112,10 @@ const ReportsIndex: RaitaNextPage = () => {
   const updateDateRange = (range: Range<Date>) => {
     if (!range.start && !range.end) {
       setState(
-        R.assocPath(['queryVariables', 'inspection_datetime'], undefined),
+        R.assocPath(
+          ['queryVariables', 'raportti', 'inspection_datetime'],
+          undefined,
+        ),
       );
       return;
     }
@@ -120,12 +124,14 @@ const ReportsIndex: RaitaNextPage = () => {
       end: range.end?.toISOString(),
     };
     // TODO: typing for setState is lost with R.assocPath
-    setState(R.assocPath(['queryVariables', 'inspection_datetime'], input));
+    setState(
+      R.assocPath(['queryVariables', 'raportti', 'inspection_datetime'], input),
+    );
     setState(R.assoc('resetFilters', false));
   };
 
   const updateSearchText = (text: string) => {
-    setState(R.assocPath(['queryVariables', 'file_name'], text));
+    setState(R.assocPath(['queryVariables', 'raportti', 'file_name'], text));
     setState(R.assoc('resetFilters', false));
   };
   //
@@ -168,11 +174,11 @@ const ReportsIndex: RaitaNextPage = () => {
 
   const inspectionDateRangeForSelector: Range<Date> = {
     // TODO: mapping function
-    start: state.queryVariables.inspection_datetime?.start
-      ? new Date(state.queryVariables.inspection_datetime.start)
+    start: state.queryVariables.raportti.inspection_datetime?.start
+      ? new Date(state.queryVariables.raportti.inspection_datetime.start)
       : undefined,
-    end: state.queryVariables.inspection_datetime?.end
-      ? new Date(state.queryVariables.inspection_datetime.end)
+    end: state.queryVariables.raportti.inspection_datetime?.end
+      ? new Date(state.queryVariables.raportti.inspection_datetime.end)
       : undefined,
   };
 
@@ -192,7 +198,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
             <TextInput
               onUpdate={updateSearchText}
-              value={state.queryVariables.file_name ?? ''}
+              value={state.queryVariables.raportti.file_name ?? ''}
               placeholder={t('common:search_by_filename')}
               resetSearchText={state.resetFilters}
             />
@@ -235,7 +241,7 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['queryVariables', 'report_type'],
+                        ['queryVariables', 'raportti', 'report_type'],
                         takeOptionValues(e.target.selectedOptions),
                       ),
                     );
@@ -258,7 +264,7 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['queryVariables', 'system'],
+                        ['queryVariables', 'raportti', 'system'],
                         takeOptionValues(e.target.selectedOptions),
                       ),
                     );
@@ -279,7 +285,7 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['queryVariables', 'track_part'],
+                        ['queryVariables', 'raportti', 'track_part'],
                         takeOptionValues(e.target.selectedOptions),
                       ),
                     );
@@ -299,7 +305,7 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['queryVariables', 'tilirataosanumero'],
+                        ['queryVariables', 'raportti', 'tilirataosanumero'],
                         takeOptionValues(e.target.selectedOptions),
                       ),
                     );
@@ -323,7 +329,7 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['queryVariables', 'file_type'],
+                        ['queryVariables', 'raportti', 'file_type'],
                         takeOptionValues(e.target.selectedOptions),
                       ),
                     );

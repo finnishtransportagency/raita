@@ -45,14 +45,14 @@ type SearchRaporttiResponse {
   page_size: Int!
 }
 
-input DateTimeIntervalInput {
-  start: String
-  end: String
-}
-
 type FieldAggregation {
   value: String!
   count: Int!
+}
+
+type MittausSystemDescription {
+  name: String!
+  columns: [String!]! # list of system specific columns
 }
 
 type MetaResponse {
@@ -61,20 +61,25 @@ type MetaResponse {
   system: [FieldAggregation!]!
   track_part: [FieldAggregation!]!
   tilirataosanumero: [FieldAggregation!]!
+  mittaus_systems: [MittausSystemDescription!]!
   latest_inspection: String!
+}
+
+input RaporttiInput {
+  file_name: String
+  key: String
+  inspection_datetime: DateTimeIntervalInput
+  system: [String!]
+  report_type: [String!]
+  track_part: [String!]
+  tilirataosanumero: [String!]
+  file_type: [String!]
 }
 
 # TODO: stronger validation for inputs: datetime strings, enums
 type Query {
   search_raportti(
-    file_name: String
-    key: String
-    inspection_datetime: DateTimeIntervalInput
-    system: [String!]
-    report_type: [String!]
-    track_part: [String!]
-    tilirataosanumero: [String!]
-    file_type: [String!]
+    raportti: RaporttiInput!
     page: Int!
     page_size: Int!
     order_by_variable: String

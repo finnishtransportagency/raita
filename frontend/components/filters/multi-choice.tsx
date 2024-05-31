@@ -10,7 +10,15 @@ export function MultiChoice(props: Props) {
   const ref = useRef<HTMLSelectElement>(null);
   const [searchValue, setSearchValue] = useState('');
 
-  const { items, onChange, resetFilters, label, inputId } = props;
+  const {
+    items,
+    onChange,
+    resetFilters,
+    label,
+    inputId,
+    optionClassName,
+    sortFn = (a, b) => (a.value > b.value ? 1 : -1),
+  } = props;
 
   useEffect(() => {
     if (ref.current && resetFilters) {
@@ -37,27 +45,25 @@ export function MultiChoice(props: Props) {
         multiple={true}
         ref={ref}
         onChange={onChange}
-        className={clsx(css.select)}
+        className={`${clsx(css.select)} ${optionClassName}`}
       >
         {searchValue === '' && (
           <option id="empty" value="">
             {t('common:no_choice')}
           </option>
         )}
-        {items
-          .sort((a, b) => (a.value > b.value ? 1 : -1))
-          .map((item, ix) => {
-            const visible = item.key.toLocaleLowerCase().includes(searchValue);
-            return (
-              <option
-                key={ix}
-                value={item.value}
-                className={visible ? '' : 'hidden'}
-              >
-                {item.key}
-              </option>
-            );
-          })}
+        {items.sort(sortFn).map((item, ix) => {
+          const visible = item.key.toLocaleLowerCase().includes(searchValue);
+          return (
+            <option
+              key={ix}
+              value={item.value}
+              className={visible ? '' : 'hidden'}
+            >
+              {item.key}
+            </option>
+          );
+        })}
       </select>
     </div>
   );
@@ -73,6 +79,8 @@ export type Props = {
   label: string;
   inputId: string;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+  optionClassName?: string;
+  sortFn?: (a: Item, b: Item) => number;
 };
 
 export type Item = {

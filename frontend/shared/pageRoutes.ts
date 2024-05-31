@@ -21,6 +21,11 @@ export const RaitaPages: PageDescription[] = [
     requiredRole: RaitaRole.Read,
   },
   {
+    labelTranslationKey: 'page_labels.csv',
+    href: '/csv',
+    requiredRole: RaitaRole.Read,
+  },
+  {
     labelTranslationKey: 'page_labels.admin.logs',
     href: '/admin/logs',
     requiredRole: RaitaRole.Admin,

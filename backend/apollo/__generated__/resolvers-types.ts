@@ -33,31 +33,90 @@ export type MetaResponse = {
   __typename?: 'MetaResponse';
   file_type: Array<FieldAggregation>;
   latest_inspection: Scalars['String']['output'];
+  mittaus_systems: Array<MittausSystemDescription>;
   report_type: Array<FieldAggregation>;
   system: Array<FieldAggregation>;
   tilirataosanumero: Array<FieldAggregation>;
   track_part: Array<FieldAggregation>;
 };
 
+export type Mittaus = {
+  __typename?: 'Mittaus';
+  Id: Scalars['Int']['output'];
+  ajonopeus?: Maybe<Scalars['Float']['output']>;
+  jarjestelma?: Maybe<Scalars['String']['output']>;
+  lat?: Maybe<Scalars['Float']['output']>;
+  latitude?: Maybe<Scalars['String']['output']>;
+  location?: Maybe<Scalars['String']['output']>;
+  long?: Maybe<Scalars['Float']['output']>;
+  longitude?: Maybe<Scalars['String']['output']>;
+  raide_numero?: Maybe<Scalars['String']['output']>;
+  raportti_id: Scalars['Int']['output'];
+  rata_kilometri?: Maybe<Scalars['Int']['output']>;
+  rata_metrit?: Maybe<Scalars['Float']['output']>;
+  rataosuus_nimi?: Maybe<Scalars['String']['output']>;
+  rataosuus_numero?: Maybe<Scalars['String']['output']>;
+  running_date: Scalars['String']['output'];
+  sscount?: Maybe<Scalars['Int']['output']>;
+  track?: Maybe<Scalars['String']['output']>;
+};
+
+export type MittausCountResponse = {
+  __typename?: 'MittausCountResponse';
+  row_count: Scalars['Int']['output'];
+  size_estimate: Scalars['Float']['output'];
+};
+
+export type MittausGenerateResponse = {
+  __typename?: 'MittausGenerateResponse';
+  polling_url: Scalars['String']['output'];
+};
+
+export type MittausInput = {
+  rata_kilometri?: InputMaybe<Scalars['Int']['input']>;
+  rata_metrit?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type MittausSystemDescription = {
+  __typename?: 'MittausSystemDescription';
+  columns: Array<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
+};
+
+export type Mutation = {
+  __typename?: 'Mutation';
+  generate_mittaus_csv: MittausGenerateResponse;
+};
+
+
+export type MutationGenerate_Mittaus_CsvArgs = {
+  columns: Array<Scalars['String']['input']>;
+  mittaus: MittausInput;
+  raportti?: InputMaybe<RaporttiInput>;
+  raportti_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type Query = {
   __typename?: 'Query';
   meta: MetaResponse;
+  search_mittaus_count: MittausCountResponse;
   search_raportti: SearchRaporttiResponse;
 };
 
 
+export type QuerySearch_Mittaus_CountArgs = {
+  columns: Array<Scalars['String']['input']>;
+  mittaus: MittausInput;
+  raportti?: InputMaybe<RaporttiInput>;
+  raportti_keys?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
 export type QuerySearch_RaporttiArgs = {
-  file_name?: InputMaybe<Scalars['String']['input']>;
-  file_type?: InputMaybe<Array<Scalars['String']['input']>>;
-  inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
-  key?: InputMaybe<Scalars['String']['input']>;
   order_by_variable?: InputMaybe<Scalars['String']['input']>;
   page: Scalars['Int']['input'];
   page_size: Scalars['Int']['input'];
-  report_type?: InputMaybe<Array<Scalars['String']['input']>>;
-  system?: InputMaybe<Array<Scalars['String']['input']>>;
-  tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']>>;
-  track_part?: InputMaybe<Array<Scalars['String']['input']>>;
+  raportti: RaporttiInput;
 };
 
 export type Raportti = {
@@ -98,6 +157,17 @@ export type Raportti = {
   zip_name?: Maybe<Scalars['String']['output']>;
   zip_reception__date?: Maybe<Scalars['String']['output']>;
   zip_reception__year?: Maybe<Scalars['String']['output']>;
+};
+
+export type RaporttiInput = {
+  file_name?: InputMaybe<Scalars['String']['input']>;
+  file_type?: InputMaybe<Array<Scalars['String']['input']>>;
+  inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
+  key?: InputMaybe<Scalars['String']['input']>;
+  report_type?: InputMaybe<Array<Scalars['String']['input']>>;
+  system?: InputMaybe<Array<Scalars['String']['input']>>;
+  tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']>>;
+  track_part?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type SearchRaporttiResponse = {
@@ -186,8 +256,15 @@ export type ResolversTypes = ResolversObject<{
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   MetaResponse: ResolverTypeWrapper<MetaResponse>;
+  Mittaus: ResolverTypeWrapper<Mittaus>;
+  MittausCountResponse: ResolverTypeWrapper<MittausCountResponse>;
+  MittausGenerateResponse: ResolverTypeWrapper<MittausGenerateResponse>;
+  MittausInput: MittausInput;
+  MittausSystemDescription: ResolverTypeWrapper<MittausSystemDescription>;
+  Mutation: ResolverTypeWrapper<{}>;
   Query: ResolverTypeWrapper<{}>;
   Raportti: ResolverTypeWrapper<raportti>;
+  RaporttiInput: RaporttiInput;
   SearchRaporttiResponse: ResolverTypeWrapper<Omit<SearchRaporttiResponse, 'raportti'> & { raportti?: Maybe<Array<ResolversTypes['Raportti']>> }>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
 }>;
@@ -200,8 +277,15 @@ export type ResolversParentTypes = ResolversObject<{
   Float: Scalars['Float']['output'];
   Int: Scalars['Int']['output'];
   MetaResponse: MetaResponse;
+  Mittaus: Mittaus;
+  MittausCountResponse: MittausCountResponse;
+  MittausGenerateResponse: MittausGenerateResponse;
+  MittausInput: MittausInput;
+  MittausSystemDescription: MittausSystemDescription;
+  Mutation: {};
   Query: {};
   Raportti: raportti;
+  RaporttiInput: RaporttiInput;
   SearchRaporttiResponse: Omit<SearchRaporttiResponse, 'raportti'> & { raportti?: Maybe<Array<ResolversParentTypes['Raportti']>> };
   String: Scalars['String']['output'];
 }>;
@@ -215,6 +299,7 @@ export type FieldAggregationResolvers<ContextType = any, ParentType extends Reso
 export type MetaResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MetaResponse'] = ResolversParentTypes['MetaResponse']> = ResolversObject<{
   file_type?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
   latest_inspection?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mittaus_systems?: Resolver<Array<ResolversTypes['MittausSystemDescription']>, ParentType, ContextType>;
   report_type?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
   system?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
   tilirataosanumero?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
@@ -222,9 +307,52 @@ export type MetaResponseResolvers<ContextType = any, ParentType extends Resolver
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type MittausResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mittaus'] = ResolversParentTypes['Mittaus']> = ResolversObject<{
+  Id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  ajonopeus?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  jarjestelma?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  lat?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  latitude?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  location?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  long?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  longitude?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  raide_numero?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  raportti_id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  rata_kilometri?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  rata_metrit?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  rataosuus_nimi?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  rataosuus_numero?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  running_date?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sscount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  track?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type MittausCountResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausCountResponse'] = ResolversParentTypes['MittausCountResponse']> = ResolversObject<{
+  row_count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  size_estimate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type MittausGenerateResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausGenerateResponse'] = ResolversParentTypes['MittausGenerateResponse']> = ResolversObject<{
+  polling_url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type MittausSystemDescriptionResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausSystemDescription'] = ResolversParentTypes['MittausSystemDescription']> = ResolversObject<{
+  columns?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = ResolversObject<{
+  generate_mittaus_csv?: Resolver<ResolversTypes['MittausGenerateResponse'], ParentType, ContextType, RequireFields<MutationGenerate_Mittaus_CsvArgs, 'columns' | 'mittaus'>>;
+}>;
+
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   meta?: Resolver<ResolversTypes['MetaResponse'], ParentType, ContextType>;
-  search_raportti?: Resolver<ResolversTypes['SearchRaporttiResponse'], ParentType, ContextType, RequireFields<QuerySearch_RaporttiArgs, 'page' | 'page_size'>>;
+  search_mittaus_count?: Resolver<ResolversTypes['MittausCountResponse'], ParentType, ContextType, RequireFields<QuerySearch_Mittaus_CountArgs, 'columns' | 'mittaus'>>;
+  search_raportti?: Resolver<ResolversTypes['SearchRaporttiResponse'], ParentType, ContextType, RequireFields<QuerySearch_RaporttiArgs, 'page' | 'page_size' | 'raportti'>>;
 }>;
 
 export type RaporttiResolvers<ContextType = any, ParentType extends ResolversParentTypes['Raportti'] = ResolversParentTypes['Raportti']> = ResolversObject<{
@@ -278,6 +406,11 @@ export type SearchRaporttiResponseResolvers<ContextType = any, ParentType extend
 export type Resolvers<ContextType = any> = ResolversObject<{
   FieldAggregation?: FieldAggregationResolvers<ContextType>;
   MetaResponse?: MetaResponseResolvers<ContextType>;
+  Mittaus?: MittausResolvers<ContextType>;
+  MittausCountResponse?: MittausCountResponseResolvers<ContextType>;
+  MittausGenerateResponse?: MittausGenerateResponseResolvers<ContextType>;
+  MittausSystemDescription?: MittausSystemDescriptionResolvers<ContextType>;
+  Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Raportti?: RaporttiResolvers<ContextType>;
   SearchRaporttiResponse?: SearchRaporttiResponseResolvers<ContextType>;

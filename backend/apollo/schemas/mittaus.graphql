@@ -1,0 +1,60 @@
+type Mittaus {
+  Id: Int!
+  raportti_id: Int!
+  running_date: String! # TODO date
+  jarjestelma: String # TODO enum
+  sscount: Int
+  # sijainti TODO later
+  ajonopeus: Float
+  track: String
+  location: String
+  latitude: String
+  longitude: String
+  rataosuus_numero: String
+  rataosuus_nimi: String
+  raide_numero: String
+  rata_kilometri: Int
+  rata_metrit: Float
+  lat: Float
+  long: Float
+  # created TODO are these parsing timestamps useful here?
+  # modified
+}
+
+type MittausCountResponse {
+  row_count: Int!
+  size_estimate: Float! # In bytes, can exceed 32 bit int size
+}
+
+type MittausGenerateResponse {
+  # status: String! TODO needed?
+  polling_url: String!
+}
+
+input MittausInput {
+  ## Mittaus common fields
+  # track: String
+  rata_kilometri: Int ## TODO: is it useful to search with these at all? they are not consistent between files
+  rata_metrit: Float
+  ## TODO: system specific fields
+}
+
+type Query {
+  ## either raportti or raportti_keys is mandatory
+  ## if raportti or raportti_keys is null or empty object/array, it means "choose all", no filtering done
+  search_mittaus_count(
+    raportti: RaporttiInput
+    raportti_keys: [String!]
+    mittaus: MittausInput!
+    columns: [String!]!
+  ): MittausCountResponse!
+}
+
+type Mutation {
+  generate_mittaus_csv(
+    raportti: RaporttiInput
+    raportti_keys: [String!]
+    mittaus: MittausInput!
+    columns: [String!]!
+  ): MittausGenerateResponse!
+}
