@@ -1,0 +1,11 @@
+.logBox {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min-content;
+}
+
+.logRow {
+  overflow: visible;
+  margin: 0;
+}
