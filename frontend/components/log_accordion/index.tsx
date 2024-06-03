@@ -25,7 +25,7 @@ import {
   ADMIN_LOG_SUMMARY_PAGE_SIZE,
 } from 'shared/constants';
 import ResultsPager from 'components/results-pager';
-import LogView from 'components/log_view'
+import LogView from 'components/log_view';
 
 type Props = {
   type: 'delete' | 'data-process';
@@ -78,15 +78,13 @@ function rowContainsWarnings(
     row.counts['data-inspection']?.warn > 0
   );
 }
-function rowIsEmpty(
-  row: AdminLogSummaryRow,
-  type: 'delete' | 'data-process',
-){
-  return (type === 'data-process' &&
-    !row.counts['data-inspection'] ||
+function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
+  return (
+    (type === 'data-process' && !row.counts['data-inspection']) ||
     (row.counts['data-inspection'].info === 0 &&
-    row.counts['data-inspection'].warn === 0 &&
-    row.counts['data-inspection'].error === 0));
+      row.counts['data-inspection'].warn === 0 &&
+      row.counts['data-inspection'].error === 0)
+  );
 }
 
 /**
@@ -195,18 +193,18 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
     setActiveEvents([...activeEvents, ...newElements]);
   };
 
-  const summaryRowsToShow = logSummary.summaryRows.filter(row =>{
+  const summaryRowsToShow = logSummary.summaryRows.filter(row => {
     const containsErrors = rowContainsErrors(row, type);
     const containsWarnings = rowContainsWarnings(row, type);
     const isEmpty = rowIsEmpty(row, type);
-  
+
     return (
       (!showErrorsOnly || containsErrors) &&
       (!showWarningsOnly || containsWarnings) &&
       (!showEmptyOnly || isEmpty)
-    );})
-   /* row => !showErrorsOnly || rowContainsErrors(row, type),
-  );*/
+    );
+  });
+
   return (
     <>
       {errorMessage && <p>{errorMessage}</p>}
@@ -218,8 +216,8 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
         !errorMessage &&
         logSummary.summaryRows.length > 0 && (
           <>
-            <div className='block py-4 flex flex-col'>
-              <label >
+            <div className="block py-4 flex flex-col">
+              <label>
                 <input
                   className="mx-1"
                   type="checkbox"
@@ -228,7 +226,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                 />
                 {t('admin:log_show_only_errors')}
               </label>
-              <label >
+              <label>
                 <input
                   className="mx-1"
                   type="checkbox"
@@ -237,7 +235,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                 />
                 {t('admin:log_show_only_warnings')}
               </label>
-              <label >
+              <label>
                 <input
                   className="mx-1"
                   type="checkbox"
@@ -346,7 +344,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                               )
                             }
                           />
-                          <LogView eventLogs={eventLogs} eventId={eventId}/>
+                          <LogView eventLogs={eventLogs} eventId={eventId} />
                         </>
                       )}
                     </AccordionItemPanel>
