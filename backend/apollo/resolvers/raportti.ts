@@ -220,9 +220,15 @@ export const raporttiResolvers: Resolvers = {
         orderBy[order_by_variable] = 'asc';
       }
       const where = getRaporttiWhereInput(raporttiInput);
-      const [count, raporttiResult] = await client.$transaction([
-        client.raportti.count({
+      const [sizeResult, raporttiResult] = await client.$transaction([
+        client.raportti.aggregate({
           where,
+          _count: {
+            id: true,
+          },
+          _sum: {
+            size: true,
+          },
         }),
         client.raportti.findMany({
           orderBy,
@@ -233,7 +239,8 @@ export const raporttiResolvers: Resolvers = {
       ]);
       return {
         raportti: raporttiResult,
-        count,
+        count: sizeResult._count.id,
+        total_size: sizeResult._sum.size ? Number(sizeResult._sum.size) : NaN,
         page_size,
         page,
       };

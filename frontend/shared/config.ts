@@ -19,6 +19,7 @@ export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 
 export const paging = {
   pageSize: 10,
+  allResultsPageSize: 50000, // max size to use for retrieving "all" results TODO: can this result in responses too large?
 } as const;
 
 // index of zip file name in file key
