@@ -1,5 +1,5 @@
 import { useTranslation } from 'next-i18next';
-import type { ReactNode, MouseEvent } from 'react';
+import { type ReactNode, type MouseEvent, useState } from 'react';
 
 import Button from './button';
 
@@ -17,6 +17,8 @@ export function ResultsPager(props: Props) {
     onGotoPage: gotoPage = a => {}, // just a placeholder for now
   } = props;
 
+  const [inputPage, setInputPage] = useState(currentPage);
+
   const pageCount = ceil(itemCount / pageSize);
 
   const isFirstPage = currentPage === 1;
@@ -26,6 +28,27 @@ export function ResultsPager(props: Props) {
 
   const prevPage = hasPrevPage ? currentPage - 1 : 1;
   const nextPage = hasNextPage ? currentPage + 1 : pageCount;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (inputPage > pageCount) {
+      setInputPage(pageCount);
+      gotoPage(pageCount);
+    } else if (inputPage <= 0) {
+      setInputPage(1);
+      gotoPage(1);
+    } else {
+      gotoPage(inputPage);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (!isNaN(Number(newValue))) {
+      setInputPage(Number(newValue));
+    }
+  };
 
   return (
     <nav className={css.root}>
@@ -50,8 +73,17 @@ export function ResultsPager(props: Props) {
         </li>
 
         <li className={css.item}>
-          <span className={css.itemLabel}>
-            {t('common:page_number_item', { number: currentPage })}
+          <span className="flex ">
+            <p>{t('common:page')} </p>
+
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                value={inputPage}
+                onChange={handleChange}
+                className="max-w-[5ch] text-center border rounded-lg border-thin"
+              ></input>
+            </form>
           </span>
         </li>
 

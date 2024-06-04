@@ -136,7 +136,10 @@ const ReportsIndex: RaitaNextPage = () => {
       makeQuery(
         newFilters,
         {
-          paging: { curPage: state.paging.page, size: cfg.paging.pageSize },
+          paging: {
+            curPage: state.paging.page,
+            size: state.paging.size,
+          },
         },
         Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
         state.text,
@@ -233,6 +236,17 @@ const ReportsIndex: RaitaNextPage = () => {
 
   const setPage = (n: number) => {
     setState(R.assocPath(['paging', 'page'], n));
+    setState(R.assocPath(['waitingToUpdateMutation'], true));
+  };
+
+  const handleChangePageSize = (newSize: number) => {
+    setState(prevState => ({
+      ...prevState,
+      paging: {
+        ...prevState.paging,
+        size: newSize,
+      },
+    }));
     setState(R.assocPath(['waitingToUpdateMutation'], true));
   };
 
@@ -462,6 +476,52 @@ const ReportsIndex: RaitaNextPage = () => {
                   )}
                 </div>
               )}
+
+              <div>
+                {mutation.isSuccess && (
+                  <div className="flex justify-between">
+                    <div className={css.headerRow}>
+                      <ul className={css.itemList}>
+                        <li className="text-base mr-2">
+                          {t('common:show_results')}
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={10}
+                            onClick={() => handleChangePageSize(PageSize.Ten)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={25}
+                            onClick={() =>
+                              handleChangePageSize(PageSize.TwentyFive)
+                            }
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={50}
+                            onClick={() => handleChangePageSize(PageSize.Fifty)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                      </ul>
+                    </div>
+                    <ResultsPager
+                      currentPage={state.paging.page}
+                      itemCount={mutation.data?.total || 0}
+                      pageSize={state.paging.size}
+                      onGotoPage={setPage}
+                    />
+                  </div>
+                )}
+              </div>
             </header>
 
             <section>
@@ -670,11 +730,17 @@ type ReportsState = {
   dateRange: Partial<Range<Date>>;
   reportTypes: string[];
   paging: {
-    size: number;
+    size: PageSize;
     page: number;
   };
   debug?: boolean;
   waitingToUpdateMutation: boolean;
 };
+
+export enum PageSize {
+  Ten = 10,
+  TwentyFive = 25,
+  Fifty = 50,
+}
 
 type ReportFilters = Record<string, string>;
