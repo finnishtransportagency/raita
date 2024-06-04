@@ -325,14 +325,14 @@ export async function raporttiChunksToProcess(
 
 export async function insertRaporttiData(
   key: string,
-  fileBaseName: string,
+  fileName: string,
   status: string | null,
   dbConnection: DBConnection,
 ): Promise<number> {
   const data: Raportti = {
     key,
     status,
-    file_name: fileBaseName,
+    file_name: fileName,
     chunks_to_process: -1,
     events: null,
   };

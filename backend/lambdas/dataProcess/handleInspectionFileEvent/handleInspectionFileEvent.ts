@@ -136,12 +136,7 @@ export async function handleInspectionFileEvent(
         }
 
         const reportId = dbConnection
-          ? await insertRaporttiData(
-              keyData.keyWithoutSuffix,
-              keyData.fileBaseName,
-              null,
-              dbConnection,
-            )
+          ? await insertRaporttiData(key, keyData.fileName, null, dbConnection)
           : -1;
 
         const parseResults = await parseFileMetadata({
