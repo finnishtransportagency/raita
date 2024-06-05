@@ -135,6 +135,17 @@ const ReportsIndex: RaitaNextPage = () => {
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
+  const handleChangePageSize = (newSize: number) => {
+    setState(prevState => ({
+      ...prevState,
+      queryVariables: {
+        ...prevState.queryVariables,
+        page_size: newSize,
+      },
+    }));
+    setState(R.assocPath(['waitingToUpdateMutation'], true));
+  };
+
   /**
    * Check whether any of our queries/mutations are loading,
    * so that we can do things like disable UI controls.
@@ -350,6 +361,52 @@ const ReportsIndex: RaitaNextPage = () => {
                   )} */}
                 </div>
               )}
+
+              <div>
+                {resultsData && (
+                  <div className="flex justify-between">
+                    <div className={css.headerRow}>
+                      <ul className={css.itemList}>
+                        <li className="text-base mr-2">
+                          {t('common:show_results')}
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={10}
+                            onClick={() => handleChangePageSize(PageSize.Ten)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={25}
+                            onClick={() =>
+                              handleChangePageSize(PageSize.TwentyFive)
+                            }
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={50}
+                            onClick={() => handleChangePageSize(PageSize.Fifty)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                      </ul>
+                    </div>
+                    <ResultsPager
+                      currentPage={state.queryVariables.page}
+                      itemCount={resultsData.count || 0}
+                      pageSize={state.queryVariables.page_size}
+                      onGotoPage={setPage}
+                    />
+                  </div>
+                )}
+              </div>
             </header>
 
             <section>
@@ -529,5 +586,11 @@ type ReportsState = {
   waitingToUpdateSearchQuery: boolean;
   queryVariables: Search_RaporttiQueryVariables;
 };
+
+export enum PageSize {
+  Ten = 10,
+  TwentyFive = 25,
+  Fifty = 50,
+}
 
 type ReportFilters = Record<string, string>;
