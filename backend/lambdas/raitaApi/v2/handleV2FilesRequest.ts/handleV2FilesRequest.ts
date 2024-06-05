@@ -2,7 +2,8 @@ import {
   startServerAndCreateLambdaHandler,
   handlers,
 } from '@as-integrations/aws-lambda';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, ApolloServerPlugin } from '@apollo/server';
+import { lambdaRequestTracker } from 'pino-lambda';
 import {
   raporttiTypeDefs,
   commonTypeDefs,
@@ -10,9 +11,29 @@ import {
 } from '../../../../apollo/schemas';
 import { raporttiResolvers } from '../../../../apollo/resolvers/raportti';
 import { mittausResolvers } from '../../../../apollo/resolvers/mittaus';
-import { getUser, validateReadUser } from '../../../../utils/userService';
-import { getRaitaLambdaErrorResponse } from '../../../utils';
+import {
+  RaitaUser,
+  getUser,
+  validateReadUser,
+} from '../../../../utils/userService';
 import { log } from '../../../../utils/logger';
+import { GraphQLError } from 'graphql';
+
+const logPlugin: ApolloServerPlugin<{}> = {
+  requestDidStart: async requestContext => {
+    return {
+      didResolveOperation: async requestContext => {
+        log.info(
+          {
+            operation: requestContext.operationName,
+            variables: requestContext.request.variables,
+          },
+          'Operation resolved',
+        );
+      },
+    };
+  },
+};
 
 const server = new ApolloServer({
   typeDefs: [raporttiTypeDefs, commonTypeDefs, mittausTypeDefs],
@@ -22,25 +43,33 @@ const server = new ApolloServer({
     Query: { ...raporttiResolvers.Query, ...mittausResolvers.Query },
     Mutation: { ...raporttiResolvers.Mutation, ...mittausResolvers.Mutation },
   },
+  plugins: [logPlugin],
 });
+
+const withRequest = lambdaRequestTracker();
 
 export const handleV2FilesRequest = startServerAndCreateLambdaHandler(
   server,
   handlers.createALBEventRequestHandler(),
   {
-    middleware: [
-      async event => {
-        // if middleware returns something that is not a function, it is returned immediately and apollo handler is not called
-        // use this to return authorization errors
-        try {
-          const user = await getUser(event);
-          await validateReadUser(user);
-          return;
-        } catch (err) {
-          log.error(err);
-          return getRaitaLambdaErrorResponse(err);
-        }
-      },
-    ],
+    context: async ({ event, context }) => {
+      try {
+        withRequest(event, context);
+        const user = await getUser(event);
+        await validateReadUser(user);
+        log.info({ user }, 'Request start');
+        return { user };
+      } catch (error) {
+        log.error({ event, error }, 'Error in context handler');
+        const status = error.statusCode ?? 500;
+        throw new GraphQLError('Auth error', {
+          extensions: {
+            http: {
+              status,
+            },
+          },
+        });
+      }
+    },
   },
 );
