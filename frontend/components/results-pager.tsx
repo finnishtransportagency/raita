@@ -58,7 +58,10 @@ export function ResultsPager(props: Props) {
             size="sm"
             type="secondary"
             disabled={isFirstPage}
-            onClick={() => gotoPage(1)}
+            onClick={() => {
+              gotoPage(1);
+              setInputPage(1);
+            }}
             label={t('common:first_page', { number: 1 })}
           />
         </li>
@@ -67,7 +70,10 @@ export function ResultsPager(props: Props) {
             size="sm"
             type="secondary"
             disabled={!hasPrevPage}
-            onClick={() => gotoPage(prevPage)}
+            onClick={() => {
+              gotoPage(prevPage);
+              setInputPage(prevPage);
+            }}
             label={t('common:previous_page', { number: prevPage })}
           />
         </li>
@@ -92,7 +98,10 @@ export function ResultsPager(props: Props) {
             size="sm"
             type="secondary"
             disabled={!hasNextPage}
-            onClick={() => gotoPage(nextPage)}
+            onClick={() => {
+              gotoPage(nextPage);
+              setInputPage(nextPage);
+            }}
             label={t('common:next_page', { number: nextPage })}
           />
         </li>
@@ -101,7 +110,10 @@ export function ResultsPager(props: Props) {
             size="sm"
             type="secondary"
             disabled={isLastPage}
-            onClick={() => gotoPage(pageCount)}
+            onClick={() => {
+              gotoPage(pageCount);
+              setInputPage(pageCount);
+            }}
             label={t('common:last_page', { number: pageCount })}
           />
         </li>
