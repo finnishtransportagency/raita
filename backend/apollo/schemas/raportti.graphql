@@ -43,6 +43,7 @@ type SearchRaporttiResponse {
   count: Int!
   page: Int!
   page_size: Int!
+  orderBy: String
 }
 
 input DateTimeIntervalInput {

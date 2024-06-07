@@ -1,4 +1,4 @@
-import { useState, Fragment, useEffect } from 'react';
+import { useState, Fragment, useEffect, SyntheticEvent } from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
@@ -9,7 +9,7 @@ import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { Button, TextInput, CopyToClipboard } from 'components';
+import { Button, TextInput, CopyToClipboard, Dropdown } from 'components';
 import { DateRange } from 'components';
 import MultiChoice from 'components/filters/multi-choice';
 import ResultsPager from 'components/results-pager';
@@ -134,6 +134,14 @@ const ReportsIndex: RaitaNextPage = () => {
     setState(R.assocPath(['queryVariables', 'page'], n));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
+  const updateSort = (event: SyntheticEvent<HTMLSelectElement, Event>) => {
+    console.log(event.currentTarget.value);
+
+    setState(
+      R.assocPath(['queryVariables', 'orderBy'], event.currentTarget.value),
+    );
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+  };
 
   const handleChangePageSize = (newSize: number) => {
     setState(prevState => ({
@@ -143,7 +151,7 @@ const ReportsIndex: RaitaNextPage = () => {
         page_size: newSize,
       },
     }));
-    setState(R.assocPath(['waitingToUpdateMutation'], true));
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
   /**
@@ -364,7 +372,23 @@ const ReportsIndex: RaitaNextPage = () => {
 
               <div>
                 {resultsData && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-end">
+                    <div className={css.headerRow + ' text-base'}>
+                      <Dropdown
+                        label="Järjestä"
+                        items={[
+                          {
+                            key: 'Tarkastusajankohta',
+                            value: 'Tarkastusajankohta',
+                          },
+                          {
+                            key: 'Aloitus, ratakilometri',
+                            value: 'Aloitus, ratakilometri',
+                          },
+                        ]}
+                        onChange={updateSort}
+                      />
+                    </div>
                     <div className={css.headerRow}>
                       <ul className={css.itemList}>
                         <li className="text-base mr-2">
@@ -540,17 +564,6 @@ const ReportsIndex: RaitaNextPage = () => {
                   </ul>
                 </div>
               )}
-
-              <footer className="space-y-2 flex justify-center mt-2">
-                {!searchQuery.error && searchQuery.data && (
-                  <ResultsPager
-                    currentPage={state.queryVariables.page}
-                    itemCount={resultsData?.count || 0}
-                    pageSize={state.queryVariables.page_size}
-                    onGotoPage={setPage}
-                  />
-                )}
-              </footer>
             </section>
           </section>
         </div>

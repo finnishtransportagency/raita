@@ -100,6 +100,7 @@ export type Raportti = {
 export type SearchRaporttiResponse = {
   __typename?: 'SearchRaporttiResponse';
   count: Scalars['Int']['output'];
+  orderBy?: Maybe<Scalars['String']['output']>;
   page: Scalars['Int']['output'];
   page_size: Scalars['Int']['output'];
   raportti?: Maybe<Array<Raportti>>;

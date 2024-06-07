@@ -43,3 +43,13 @@
     minmax(127px, min-content) 1fr minmax(127px, min-content)
     1fr;
 }
+
+.headerRow {
+  @apply my-4;
+}
+
+.itemList {
+  @apply flex justify-center;
+  @apply space-x-2;
+  @apply text-base items-center;
+}
