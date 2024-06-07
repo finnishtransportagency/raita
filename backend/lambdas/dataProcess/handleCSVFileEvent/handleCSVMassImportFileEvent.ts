@@ -155,7 +155,7 @@ export async function handleCSVMassImportFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
       if (doCSVParsing) {
-        await updateRaporttiMetadata(entries, dbConnection);
+        await dbUtil.updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }
