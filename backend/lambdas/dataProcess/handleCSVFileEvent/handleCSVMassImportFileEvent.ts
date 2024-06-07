@@ -100,7 +100,7 @@ export async function handleCSVMassImportFileEvent(
           keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
         ) {
           const reportId = dbConnection
-            ? await insertRaporttiData(
+            ? await dbUtil.insertRaporttiData(
                 keyData.keyWithoutSuffix,
                 keyData.fileBaseName,
                 null,
@@ -155,7 +155,7 @@ export async function handleCSVMassImportFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
       if (doCSVParsing) {
-        await updateRaporttiMetadata(entries, dbConnection);
+        await dbUtil.updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }
