@@ -57,10 +57,12 @@ export function tidyUpHeaderLine(csvHeaderLine: string): string {
     //removeDoubleQuotes
     .replace(/\"/g, '')
     //replace zero-width chars
-    .replace(/([\u200B]+|[\u200C]+|[\u200D]+|[\u200E]+|[\u200F]+|[\uFEFF]+)/g, '');
+    .replace(
+      /([\u200B]+|[\u200C]+|[\u200D]+|[\u200E]+|[\u200F]+|[\uFEFF]+)/g,
+      '',
+    );
 
-
-  return tidyedHeaderLine;
+  return replaceKnownMisspellings(tidyedHeaderLine);
 }
 
 export function readRunningDateFromLine(inputFirstLine: string) {
@@ -82,8 +84,8 @@ export function readRunningDateFromLine(inputFirstLine: string) {
 }
 
 function addNanInfo(tidyDataLines: string) {
-  let resultLines ="";
-  const lines = tidyDataLines.split('\n')
+  let resultLines = '';
+  const lines = tidyDataLines.split('\n');
 
   return resultLines;
 }
@@ -128,7 +130,7 @@ export function isSemicolonSeparator(fileBody: string) {
 
 export function replaceSeparators(fileBody: string) {
   const isSemicolonSeparated = isSemicolonSeparator(fileBody);
-  let resultFileBody = fileBody.replace(/\r\n|\r|\n/g,'\n');
+  let resultFileBody = fileBody.replace(/\r\n|\r|\n/g, '\n');
 
   if (isSemicolonSeparated) {
     //replace decimal commas with points; both styles in incoming csv files
@@ -174,3 +176,34 @@ export function readRunningDate(csvFileBody: string) {
   const runningDate = new Date(Number(year), Number(month), Number(day));
   return runningDate;
 }
+
+function replaceKnownMisspellings(tidyedHeaderLine: string): string {
+  let result = tidyedHeaderLine
+    .replace(/oikean_/g, 'oikea_')
+    .replace(/45kuluma/g, '45_kuluma')
+    .replace(
+      /vasen_ulkopuolisen_purseen_kiintea_keskihajonta/g,
+      'vasen_ulkopulisen_purseen_kiintea_keskihajonta',
+    )
+    .replace(/left_rms_rail_corr_/g, 'vasen_raiteen_aallonrms')
+    .replace(/right_rms_rail_corr_/g, 'oikea_raiteen_aallonrms')
+    .replace(/10_30mm_fixed_mean/g, '10_30mm_kiintea_keskiarvo')
+    .replace(/10_30mm_fixed_stddev/g, '10_30mm_kiintea_keskihaj')
+
+    .replace(/30_100mm_fixed_mean/g, '30_100mm_kiintea_keskiarv')
+    .replace(/30_100mm_fixed_stddev/g, '30_100mm_kiintea_keskihaj')
+
+    .replace(/100_300mm_fixed_mean/g, '100_300mm_kiintea_keskiar')
+    .replace(/100_300mm_fixed_stddev/g, '100_300mm_kiintea_keskiha')
+
+    .replace(/300_1000mm_fixed_mean/g, '300_1000mm_kiintea_keskia')
+    .replace(/300_1000mm_fixed_stddev/g, '300_1000mm_kiintea_keskih')
+
+
+    .replace(/45kuluma/g, '45_kuluma')
+    .replace(/tg_slave_/g, '');
+
+
+  return result;
+}
+
