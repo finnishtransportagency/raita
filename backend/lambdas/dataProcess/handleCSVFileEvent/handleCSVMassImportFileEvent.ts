@@ -13,9 +13,7 @@ import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
-  getDBConnection,
-  insertRaporttiData,
-  updateRaporttiMetadata,
+  DBUtil,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
 import {
@@ -56,7 +54,8 @@ export async function handleCSVMassImportFileEvent(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  dbConnection = await getDBConnection();
+  const dbUtil = new DBUtil();
+  dbConnection = await dbUtil.getDBConnection();
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
