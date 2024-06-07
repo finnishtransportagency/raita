@@ -18,18 +18,17 @@ export const raporttiResolvers: Resolvers = {
         file_type,
         page,
         page_size,
+        orderByVariable,
       },
       context,
     ) => {
       const client = await getPrismaClient();
-
-      // Define the order criteria
-      const orderBy: Prisma.raporttiOrderByInput = {};
-      if (orderBy && orderBy == 'Tarkastusajankohta') {
-        orderBy.inspection_date = 'asc';
-      }
-      if (orderBy && orderBy == 'Aloitus, ratakilometri') {
-        orderBy.km_start = 'asc';
+      const orderBy: Prisma.raporttiOrderByWithRelationInput = {};
+      if (
+        orderByVariable === 'inspection_date' ||
+        orderByVariable === 'km_start'
+      ) {
+        orderBy[orderByVariable] = 'asc';
       }
 
       const where: Prisma.raporttiWhereInput = {};

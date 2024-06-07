@@ -379,11 +379,11 @@ const ReportsIndex: RaitaNextPage = () => {
                         items={[
                           {
                             key: 'Tarkastusajankohta',
-                            value: 'Tarkastusajankohta',
+                            value: 'inspection_date',
                           },
                           {
                             key: 'Aloitus, ratakilometri',
-                            value: 'Aloitus, ratakilometri',
+                            value: 'km_start',
                           },
                         ]}
                         onChange={updateSort}

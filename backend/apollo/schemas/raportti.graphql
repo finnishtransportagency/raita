@@ -43,7 +43,6 @@ type SearchRaporttiResponse {
   count: Int!
   page: Int!
   page_size: Int!
-  orderBy: String
 }
 
 input DateTimeIntervalInput {
@@ -78,6 +77,7 @@ type Query {
     file_type: [String!]
     page: Int!
     page_size: Int!
+    orderByVariable: String
   ): SearchRaporttiResponse!
 
   meta: MetaResponse!

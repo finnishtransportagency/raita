@@ -51,6 +51,7 @@ export type QuerySearch_RaporttiArgs = {
   file_type?: InputMaybe<Array<Scalars['String']['input']>>;
   inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
   key?: InputMaybe<Scalars['String']['input']>;
+  orderByVariable?: InputMaybe<Scalars['String']['input']>;
   page: Scalars['Int']['input'];
   page_size: Scalars['Int']['input'];
   report_type?: InputMaybe<Array<Scalars['String']['input']>>;
