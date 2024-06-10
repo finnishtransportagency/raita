@@ -139,7 +139,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
     setState(
       R.assocPath(
-        ['queryVariables', 'orderByVariable'],
+        ['queryVariables', 'order_by_variable'],
         event.currentTarget.value,
       ),
     );
