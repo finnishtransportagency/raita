@@ -135,8 +135,6 @@ const ReportsIndex: RaitaNextPage = () => {
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
   const updateSort = (event: SyntheticEvent<HTMLSelectElement, Event>) => {
-    console.log(event.currentTarget.value);
-
     setState(
       R.assocPath(
         ['queryVariables', 'order_by_variable'],
