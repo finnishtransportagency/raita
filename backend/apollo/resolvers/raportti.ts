@@ -18,17 +18,17 @@ export const raporttiResolvers: Resolvers = {
         file_type,
         page,
         page_size,
-        orderByVariable,
+        order_by_variable,
       },
       context,
     ) => {
       const client = await getPrismaClient();
       const orderBy: Prisma.raporttiOrderByWithRelationInput = {};
       if (
-        orderByVariable === 'inspection_datetime' ||
-        orderByVariable === 'km_start'
+        order_by_variable === 'inspection_datetime' ||
+        order_by_variable === 'km_start'
       ) {
-        orderBy[orderByVariable] = 'asc';
+        orderBy[order_by_variable] = 'asc';
       }
 
       const where: Prisma.raporttiWhereInput = {};

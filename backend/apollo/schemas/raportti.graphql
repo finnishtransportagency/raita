@@ -77,7 +77,7 @@ type Query {
     file_type: [String!]
     page: Int!
     page_size: Int!
-    orderByVariable: String
+    order_by_variable: String
   ): SearchRaporttiResponse!
 
   meta: MetaResponse!
