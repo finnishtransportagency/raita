@@ -25,7 +25,7 @@ export const raporttiResolvers: Resolvers = {
       const client = await getPrismaClient();
       const orderBy: Prisma.raporttiOrderByWithRelationInput = {};
       if (
-        orderByVariable === 'inspection_date' ||
+        orderByVariable === 'inspection_datetime' ||
         orderByVariable === 'km_start'
       ) {
         orderBy[orderByVariable] = 'asc';

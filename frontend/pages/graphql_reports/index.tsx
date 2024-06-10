@@ -138,7 +138,10 @@ const ReportsIndex: RaitaNextPage = () => {
     console.log(event.currentTarget.value);
 
     setState(
-      R.assocPath(['queryVariables', 'orderBy'], event.currentTarget.value),
+      R.assocPath(
+        ['queryVariables', 'orderByVariable'],
+        event.currentTarget.value,
+      ),
     );
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
@@ -379,7 +382,7 @@ const ReportsIndex: RaitaNextPage = () => {
                         items={[
                           {
                             key: 'Tarkastusajankohta',
-                            value: 'inspection_date',
+                            value: 'inspection_datetime',
                           },
                           {
                             key: 'Aloitus, ratakilometri',
