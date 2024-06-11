@@ -437,7 +437,7 @@ describe('handle ams csv file with a missing field success', () => {
         rootFolder: '',
         path: [],
       },
-      amsCsvStream,
+      amsCsvMissingSSCountStream,
       {},
       dbConnection,
     );
