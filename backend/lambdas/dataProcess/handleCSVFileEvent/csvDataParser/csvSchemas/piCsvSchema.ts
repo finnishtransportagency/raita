@@ -7,55 +7,25 @@ import { z } from 'zod';
 */
 
 export const piSchema = z.object({
-  sscount: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
+  sscount: zcsv.number(z.number().optional()),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
   longitude: zcsv.string(z.string().optional()),
-  ajonopeus: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  accz_1_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  accz_1_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  accz_2_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  accz_2_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  f_1_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  f_1_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  f_2_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  f_2_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  fint: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  fcomp: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  fext: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  stagger: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
-  height_ws: zcsv.number(
-    z.number().or(z.nan()).optional(),
-  ),
+  ajonopeus: zcsv.number(z.number().optional()),
+  accz_1_1: zcsv.number(z.number().optional()),
+  accz_1_2: zcsv.number(z.number().optional()),
+  accz_2_1: zcsv.number(z.number().optional()),
+  accz_2_2: zcsv.number(z.number().optional()),
+  f_1_1: zcsv.number(z.number().optional()),
+  f_1_2: zcsv.number(z.number().optional()),
+  f_2_1: zcsv.number(z.number().optional()),
+  f_2_2: zcsv.number(z.number().optional()),
+  fint: zcsv.number(z.number().optional()),
+  fcomp: zcsv.number(z.number().optional()),
+  fext: zcsv.number(z.number().optional()),
+  stagger: zcsv.number(z.number().optional()),
+  height_ws: zcsv.number(z.number().optional()),
 });
 
 export type IPi = z.infer<typeof piSchema>;

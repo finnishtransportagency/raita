@@ -26,6 +26,7 @@ export const number: InputType<ZodNumber> = (schema = z.number()) =>
                 z
                     .string()
                     .transform((val) => Number(val))
+                    .refine((val) => !Number.isNaN(val)),
             ])
         ),
         schema
