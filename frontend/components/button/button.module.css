@@ -3,7 +3,6 @@
   @apply hover:bg-opacity-80;
   @apply disabled:bg-main-gray-50 disabled:cursor-not-allowed disabled:opacity-70;
   @apply whitespace-nowrap;
-  @apply border border-2 border-transparent;
 }
 
 .buttonSmall {
