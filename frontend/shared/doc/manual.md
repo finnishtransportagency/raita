@@ -10,7 +10,7 @@ Järjestelmä on aktiivisessa kehitysvaiheessa ja uusia päivityksiä tulee kuuk
 
 ## Käytön aloittaminen
 
-Raporttien haku kannattaa aloittaa antamalla vain yksi tai kaksi hakukriteeriä pudotusvalikoiden takana oleviin kohtiin. Silloin saat listaukseen esimerkin siitä, minkälaisia tiedostoja ja mitä metatietoja raportteihin löytyy. Tämän jälkeen hakua on helppoa tarkentaa.
+Raporttien haku kannattaa aloittaa antamalla vain yksi tai kaksi hakukriteeriä pudotusvalikoiden takana oleviin kohtiin. Silloin saat listaukseen esimerkin siitä, minkälaisia tiedostoja ja mitä metatietoja raportteihin löytyy. Tämän jälkeen hakua on helppoa tarkentaa. Hakutoiminnon suoritettuasi voit järjestää tulokset tarkastusajankohdan tai ratakilometrin mukaan.
 
 Käyttö kannattaa aloittaa kokeilevasti "yritä ja onnistu" -menetelmällä.
 
@@ -18,8 +18,9 @@ Käyttö kannattaa aloittaa kokeilevasti "yritä ja onnistu" -menetelmällä.
 
 ### Pudotusvalikot
 
-Pudotusvalikoista löytyy suodattimet sekä raporttien
+Pudotusvalikoista löytyy suodattimet
 
+- Tarkastusajankohdan perusteella
 - Sisällön osalta (järjestelmät ja raporttityypit)
 - Mittauspaikan perusteella (Raportointiosuudet ja tilirataosanumerot)
   - Raportointiosuudet ovat lyhenteitä, esim KOKYV on väli Kokkola Ylivieska.

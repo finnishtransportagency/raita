@@ -393,7 +393,11 @@ const ReportsIndex: RaitaNextPage = () => {
                           <Button
                             label={10}
                             onClick={() => handleChangePageSize(PageSize.Ten)}
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size == PageSize.Ten
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
@@ -403,7 +407,12 @@ const ReportsIndex: RaitaNextPage = () => {
                             onClick={() =>
                               handleChangePageSize(PageSize.TwentyFive)
                             }
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size ==
+                              PageSize.TwentyFive
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
@@ -411,7 +420,11 @@ const ReportsIndex: RaitaNextPage = () => {
                           <Button
                             label={50}
                             onClick={() => handleChangePageSize(PageSize.Fifty)}
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size == PageSize.Fifty
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
