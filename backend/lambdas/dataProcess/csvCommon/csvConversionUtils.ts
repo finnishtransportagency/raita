@@ -85,13 +85,6 @@ export function readRunningDateFromLine(inputFirstLine: string) {
   return runningDate;
 }
 
-function addNanInfo(tidyDataLines: string) {
-  let resultLines = '';
-  const lines = tidyDataLines.split('\n');
-
-  return resultLines;
-}
-
 export function tidyUpFileBody(csvFileBody: string) {
   // const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
   const firstNewLinePos = csvFileBody.search(/\r\n|\r|\n/);
@@ -110,7 +103,6 @@ export function tidyUpFileBody(csvFileBody: string) {
   let tidyHeaderLine = tidyUpHeaderLine(csvHeaderLine);
   //log.info('tidyHeaderLine: ' + tidyHeaderLine.length);
   let tidyDataLines = tidyUpDataLines(csvDataLines);
-  //const tidyDataLinesWithNanInfo = addNanInfo(tidyDataLines);
   return tidyHeaderLine.concat(tidyDataLines);
 }
 
