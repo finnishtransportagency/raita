@@ -147,13 +147,7 @@ const ReportsIndex: RaitaNextPage = () => {
   };
 
   const handleChangePageSize = (newSize: number) => {
-    setState(prevState => ({
-      ...prevState,
-      queryVariables: {
-        ...prevState.queryVariables,
-        page_size: newSize,
-      },
-    }));
+    setState(R.assocPath(['queryVariables', 'page_size'], newSize));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
@@ -378,14 +372,14 @@ const ReportsIndex: RaitaNextPage = () => {
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
-                        label="Järjestä"
+                        label={t('common:sort')}
                         items={[
                           {
-                            key: 'Tarkastusajankohta',
+                            key: t('metadata:label_inspection_datetime'),
                             value: 'inspection_datetime',
                           },
                           {
-                            key: 'Aloitus, ratakilometri',
+                            key: t('metadata:label_km_start'),
                             value: 'km_start',
                           },
                         ]}
