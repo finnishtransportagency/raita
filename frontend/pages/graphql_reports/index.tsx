@@ -1,4 +1,4 @@
-import { useState, Fragment, useEffect } from 'react';
+import { useState, Fragment, useEffect, SyntheticEvent } from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
@@ -9,7 +9,7 @@ import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { Button, TextInput, CopyToClipboard } from 'components';
+import { Button, TextInput, CopyToClipboard, Dropdown } from 'components';
 import { DateRange } from 'components';
 import MultiChoice from 'components/filters/multi-choice';
 import ResultsPager from 'components/results-pager';
@@ -132,6 +132,20 @@ const ReportsIndex: RaitaNextPage = () => {
 
   const setPage = (n: number) => {
     setState(R.assocPath(['queryVariables', 'page'], n));
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+  };
+  const updateSort = (event: SyntheticEvent<HTMLSelectElement, Event>) => {
+    setState(
+      R.assocPath(
+        ['queryVariables', 'order_by_variable'],
+        event.currentTarget.value,
+      ),
+    );
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+  };
+
+  const handleChangePageSize = (newSize: number) => {
+    setState(R.assocPath(['queryVariables', 'page_size'], newSize));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
@@ -350,6 +364,68 @@ const ReportsIndex: RaitaNextPage = () => {
                   )} */}
                 </div>
               )}
+
+              <div>
+                {resultsData && (
+                  <div className="flex justify-between items-end">
+                    <div className={css.headerRow + ' text-base'}>
+                      <Dropdown
+                        label={t('common:sort')}
+                        items={[
+                          {
+                            key: t('metadata:label_inspection_datetime'),
+                            value: 'inspection_datetime',
+                          },
+                          {
+                            key: t('metadata:label_km_start'),
+                            value: 'km_start',
+                          },
+                        ]}
+                        onChange={updateSort}
+                      />
+                    </div>
+                    <div className={css.headerRow}>
+                      <ul className={css.itemList}>
+                        <li className="text-base mr-2">
+                          {t('common:show_results')}
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={10}
+                            onClick={() => handleChangePageSize(PageSize.Ten)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={25}
+                            onClick={() =>
+                              handleChangePageSize(PageSize.TwentyFive)
+                            }
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                        <li className={css.item}>
+                          <Button
+                            label={50}
+                            onClick={() => handleChangePageSize(PageSize.Fifty)}
+                            type="secondary"
+                            size="sm"
+                          />
+                        </li>
+                      </ul>
+                    </div>
+                    <ResultsPager
+                      currentPage={state.queryVariables.page}
+                      itemCount={resultsData.count || 0}
+                      pageSize={state.queryVariables.page_size}
+                      onGotoPage={setPage}
+                    />
+                  </div>
+                )}
+              </div>
             </header>
 
             <section>
@@ -483,17 +559,6 @@ const ReportsIndex: RaitaNextPage = () => {
                   </ul>
                 </div>
               )}
-
-              <footer className="space-y-2 flex justify-center mt-2">
-                {!searchQuery.error && searchQuery.data && (
-                  <ResultsPager
-                    currentPage={state.queryVariables.page}
-                    itemCount={resultsData?.count || 0}
-                    pageSize={state.queryVariables.page_size}
-                    onGotoPage={setPage}
-                  />
-                )}
-              </footer>
             </section>
           </section>
         </div>
@@ -529,5 +594,11 @@ type ReportsState = {
   waitingToUpdateSearchQuery: boolean;
   queryVariables: Search_RaporttiQueryVariables;
 };
+
+export enum PageSize {
+  Ten = 10,
+  TwentyFive = 25,
+  Fifty = 50,
+}
 
 type ReportFilters = Record<string, string>;

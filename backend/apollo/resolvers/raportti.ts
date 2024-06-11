@@ -18,10 +18,19 @@ export const raporttiResolvers: Resolvers = {
         file_type,
         page,
         page_size,
+        order_by_variable,
       },
       context,
     ) => {
       const client = await getPrismaClient();
+      const orderBy: Prisma.raporttiOrderByWithRelationInput = {};
+      if (
+        order_by_variable === 'inspection_datetime' ||
+        order_by_variable === 'km_start'
+      ) {
+        orderBy[order_by_variable] = 'asc';
+      }
+
       const where: Prisma.raporttiWhereInput = {};
       if (file_name) {
         where.file_name = {
@@ -80,6 +89,7 @@ export const raporttiResolvers: Resolvers = {
           where,
         }),
         client.raportti.findMany({
+          orderBy,
           skip: (page - 1) * page_size,
           take: page_size,
           where,

@@ -12,6 +12,7 @@ export const SEARCH_RAPORTTI = gql(`
     $tilirataosanumero: [String!]
     $page: Int!,
     $page_size: Int!
+    $order_by_variable: String
     ) {
     search_raportti(
       file_name: $file_name,
@@ -24,6 +25,7 @@ export const SEARCH_RAPORTTI = gql(`
       tilirataosanumero: $tilirataosanumero,
       page: $page,
       page_size: $page_size,
+      order_by_variable: $order_by_variable
       ) {
       raportti {
         id

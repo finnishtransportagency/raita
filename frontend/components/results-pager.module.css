@@ -5,4 +5,5 @@
 .itemList {
   @apply flex justify-center;
   @apply space-x-2;
+  @apply text-base items-center;
 }

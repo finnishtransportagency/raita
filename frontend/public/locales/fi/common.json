@@ -33,6 +33,7 @@
   "no_selection": "-- Tyhjä --",
   "clear": "Tyhjennä",
   "close": "Sulje",
+  "sort": "Järjestä",
   "add_filter": "Lisää",
   "remove_filter": "Poista",
   "preview": "Esikatsele",
@@ -80,5 +81,7 @@
   "copied": "Kopioitu",
   "zip_path_label": "Zipin tiedostopolku",
   "start_date": "Aloituspäivä",
-  "end_date": "Lopetuspäivä"
+  "end_date": "Lopetuspäivä",
+  "page": "Sivu",
+  "show_results": "Näytetään tuloksia"
 }
