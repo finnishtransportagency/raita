@@ -70,7 +70,10 @@ const getCSVHeaderErrors = <T extends z.ZodTypeAny>(
       header: missingHeaders.join(JOINER),
     } as const;
   }
-  const extraHeaders = csvHeaders
+
+
+  // Uncomment this to retuen error on non-schema headers
+  /*const extraHeaders = csvHeaders
     .map(header => header.trim())
     .filter(header => !expectedHeaders.includes(header.trim()));
   if (extraHeaders.length) {
@@ -78,7 +81,7 @@ const getCSVHeaderErrors = <T extends z.ZodTypeAny>(
       errorCode: ERROR_CODES.HEADER.EXTRA_COLUMN,
       header: extraHeaders.join(JOINER),
     } as const;
-  }
+  }*/
   return {} as const;
 };
 
