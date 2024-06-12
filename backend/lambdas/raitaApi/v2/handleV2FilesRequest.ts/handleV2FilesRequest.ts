@@ -3,15 +3,25 @@ import {
   handlers,
 } from '@as-integrations/aws-lambda';
 import { ApolloServer } from '@apollo/server';
-import { raporttiTypeDefs } from '../../../../apollo/schemas';
+import {
+  raporttiTypeDefs,
+  commonTypeDefs,
+  mittausTypeDefs,
+} from '../../../../apollo/schemas';
 import { raporttiResolvers } from '../../../../apollo/resolvers/raportti';
+import { mittausResolvers } from '../../../../apollo/resolvers/mittaus';
 import { getUser, validateReadUser } from '../../../../utils/userService';
 import { getRaitaLambdaErrorResponse } from '../../../utils';
 import { log } from '../../../../utils/logger';
 
 const server = new ApolloServer({
-  typeDefs: raporttiTypeDefs,
-  resolvers: raporttiResolvers,
+  typeDefs: [raporttiTypeDefs, commonTypeDefs, mittausTypeDefs],
+  resolvers: {
+    ...raporttiResolvers,
+    ...mittausResolvers,
+    Query: { ...raporttiResolvers.Query, ...mittausResolvers.Query },
+    Mutation: { ...raporttiResolvers.Mutation, ...mittausResolvers.Mutation },
+  },
 });
 
 export const handleV2FilesRequest = startServerAndCreateLambdaHandler(

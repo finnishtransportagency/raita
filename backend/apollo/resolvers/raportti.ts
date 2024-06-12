@@ -1,25 +1,82 @@
 import { Prisma, jarjestelma } from '@prisma/client';
 import { getPrismaClient } from '../../utils/prismaClient';
-import { Resolvers } from '../__generated__/resolvers-types';
+import { RaporttiInput, Resolvers } from '../__generated__/resolvers-types';
 import { compareAsc } from 'date-fns';
+
+export const getRaporttiWhereInput = (
+  raportti: RaporttiInput,
+): Prisma.raporttiWhereInput => {
+  const where: Prisma.raporttiWhereInput = {};
+  const {
+    file_name,
+    key,
+    inspection_datetime,
+    system,
+    report_type,
+    track_part,
+    tilirataosanumero,
+    file_type,
+  } = raportti;
+  if (file_name) {
+    where.file_name = {
+      contains: file_name,
+    };
+  }
+  if (key) {
+    where.key = {
+      contains: key,
+    };
+  }
+  if (inspection_datetime) {
+    // check both inspection time timestamps
+    where.OR = [
+      {
+        inspection_datetime: {
+          gte: inspection_datetime?.start ?? undefined,
+          lte: inspection_datetime?.end ?? undefined,
+        },
+      },
+      {
+        inspection_date: {
+          gte: inspection_datetime?.start ?? undefined,
+          lte: inspection_datetime?.end ?? undefined,
+        },
+      },
+    ];
+  }
+  if (system && system.length) {
+    where.system = {
+      in: system.map(s => s as jarjestelma),
+    };
+  }
+  if (report_type && report_type.length) {
+    where.report_type = {
+      in: report_type,
+    };
+  }
+  if (track_part && track_part.length) {
+    where.track_part = {
+      in: track_part,
+    };
+  }
+  if (tilirataosanumero && tilirataosanumero.length) {
+    where.tilirataosanumero = {
+      in: tilirataosanumero,
+    };
+  }
+  if (file_type && file_type.length) {
+    where.file_type = {
+      in: file_type,
+    };
+  }
+  return where;
+};
 
 export const raporttiResolvers: Resolvers = {
   Query: {
     search_raportti: async (
       parent,
-      {
-        file_name,
-        key,
-        inspection_datetime,
-        system,
-        report_type,
-        track_part,
-        tilirataosanumero,
-        file_type,
-        page,
-        page_size,
-        order_by_variable,
-      },
+      { raportti: raporttiInput, page, page_size, order_by_variable },
       context,
     ) => {
       const client = await getPrismaClient();
@@ -30,61 +87,8 @@ export const raporttiResolvers: Resolvers = {
       ) {
         orderBy[order_by_variable] = 'asc';
       }
-
-      const where: Prisma.raporttiWhereInput = {};
-      if (file_name) {
-        where.file_name = {
-          contains: file_name,
-        };
-      }
-      if (key) {
-        where.key = {
-          contains: key,
-        };
-      }
-      if (inspection_datetime) {
-        // check both inspection time timestamps
-        where.OR = [
-          {
-            inspection_datetime: {
-              gte: inspection_datetime?.start ?? undefined,
-              lte: inspection_datetime?.end ?? undefined,
-            },
-          },
-          {
-            inspection_date: {
-              gte: inspection_datetime?.start ?? undefined,
-              lte: inspection_datetime?.end ?? undefined,
-            },
-          },
-        ];
-      }
-      if (system && system.length) {
-        where.system = {
-          in: system.map(s => s as jarjestelma),
-        };
-      }
-      if (report_type && report_type.length) {
-        where.report_type = {
-          in: report_type,
-        };
-      }
-      if (track_part && track_part.length) {
-        where.track_part = {
-          in: track_part,
-        };
-      }
-      if (tilirataosanumero && tilirataosanumero.length) {
-        where.tilirataosanumero = {
-          in: tilirataosanumero,
-        };
-      }
-      if (file_type && file_type.length) {
-        where.file_type = {
-          in: file_type,
-        };
-      }
-      const [count, raportti] = await client.$transaction([
+      const where = getRaporttiWhereInput(raporttiInput);
+      const [count, raporttiResult] = await client.$transaction([
         client.raportti.count({
           where,
         }),
@@ -96,7 +100,7 @@ export const raporttiResolvers: Resolvers = {
         }),
       ]);
       return {
-        raportti,
+        raportti: raporttiResult,
         count,
         page_size,
         page,
@@ -105,27 +109,38 @@ export const raporttiResolvers: Resolvers = {
     meta: async () => {
       const client = await getPrismaClient();
 
-      // TODO: aggregate all in one query?
-      const reportTypes = await client.raportti.groupBy({
-        by: 'report_type',
-        _count: true,
-      });
-      const fileTypes = await client.raportti.groupBy({
-        by: 'file_type',
-        _count: true,
-      });
-      const systems = await client.raportti.groupBy({
-        by: 'system',
-        _count: true,
-      });
-      const trackParts = await client.raportti.groupBy({
-        by: 'track_part',
-        _count: true,
-      });
-      const tilirataosanumerot = await client.raportti.groupBy({
-        by: 'tilirataosanumero',
-        _count: true,
-      });
+      // TODO: aggregate all in one query or move them to separate resolvers so that only fields that are queried are fetched from database
+      const reportTypes = (
+        await client.raportti.groupBy({
+          by: 'report_type',
+          _count: true,
+        })
+      ).filter(row => row.report_type !== null);
+
+      const fileTypes = (
+        await client.raportti.groupBy({
+          by: 'file_type',
+          _count: true,
+        })
+      ).filter(row => row.file_type !== null);
+      const systems = (
+        await client.raportti.groupBy({
+          by: 'system',
+          _count: true,
+        })
+      ).filter(row => row.system !== null);
+      const trackParts = (
+        await client.raportti.groupBy({
+          by: 'track_part',
+          _count: true,
+        })
+      ).filter(row => row.track_part !== null);
+      const tilirataosanumerot = (
+        await client.raportti.groupBy({
+          by: 'tilirataosanumero',
+          _count: true,
+        })
+      ).filter(row => row.tilirataosanumero !== null);
 
       const latestInspection = await client.raportti.aggregate({
         _max: {
@@ -140,39 +155,83 @@ export const raporttiResolvers: Resolvers = {
         compareAsc(latestDate, latestDateTime) === 1
           ? latestDate
           : latestDateTime;
+
+      // get lists of columns that are unique for each subtype of mittaus
+      // bit of a hack here: get names of columns by inspecting the inner data representation of generated prisma library
+      // TODO: is there a better way to do this that is not hardcoding field names?
+      const getFields = (tableName: string) =>
+        Prisma.dmmf.datamodel.models
+          .find(model => model.name === tableName)
+          ?.fields.map(field => field.name) ?? [];
+
+      const commonFields = getFields('mittaus');
+      const mittausSystems = [
+        {
+          name: 'AMS',
+          columns: getFields('ams_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'OHL',
+          columns: getFields('ohl_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'PI',
+          columns: getFields('pi_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'RC',
+          columns: getFields('rc_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'RP',
+          columns: getFields('rp_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'TG',
+          columns: getFields('tg_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+        {
+          name: 'TSIGHT',
+          columns: getFields('tsight_mittaus').filter(
+            field => !commonFields.includes(field),
+          ),
+        },
+      ];
       return {
-        // filter out non nulls
-        report_type: reportTypes
-          .filter(row => !!row.report_type)
-          .map(row => ({
-            value: row.report_type,
-            count: row._count,
-          })),
-        file_type: fileTypes
-          .filter(row => !!row.file_type)
-          .map(row => ({
-            value: row.file_type,
-            count: row._count,
-          })),
-        system: systems
-          .filter(row => !!row.system)
-          .map(row => ({
-            value: row.system,
-            count: row._count,
-          })),
-        track_part: trackParts
-          .filter(row => !!row.track_part)
-          .map(row => ({
-            value: row.track_part,
-            count: row._count,
-          })),
-        tilirataosanumero: tilirataosanumerot
-          .filter(row => !!row.tilirataosanumero)
-          .map(row => ({
-            value: row.tilirataosanumero,
-            count: row._count,
-          })),
+        report_type: reportTypes.map(row => ({
+          value: row.report_type!,
+          count: row._count,
+        })),
+        file_type: fileTypes.map(row => ({
+          value: row.file_type!,
+          count: row._count,
+        })),
+        system: systems.map(row => ({
+          value: row.system!,
+          count: row._count,
+        })),
+        track_part: trackParts.map(row => ({
+          value: row.track_part!,
+          count: row._count,
+        })),
+        tilirataosanumero: tilirataosanumerot.map(row => ({
+          value: row.tilirataosanumero!,
+          count: row._count,
+        })),
         latest_inspection: realLatest.toISOString(),
+        mittaus_systems: mittausSystems,
       };
     },
   },

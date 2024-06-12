@@ -1,0 +1,4 @@
+input DateTimeIntervalInput {
+  start: String
+  end: String
+}

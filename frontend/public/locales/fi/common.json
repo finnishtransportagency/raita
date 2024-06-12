@@ -83,5 +83,12 @@
   "start_date": "Aloituspäivä",
   "end_date": "Lopetuspäivä",
   "page": "Sivu",
-  "show_results": "Näytetään tuloksia"
+  "show_results": "Näytetään tuloksia",
+  "csv_row_count": "Mittausrivien määrä: {{ count }}",
+  "csv_size_estimate": "Arvio generoidun tiedoston koosta: {{ sizeEstimate }}",
+  "csv_search": "Hae mittauksien tietoja",
+  "choose_columns": "Valitse sarakkeet",
+  "choose_reports": "Valitse raportit",
+  "search_csv": "Hae mittausrivien määrä",
+  "generate_csv": "Generoi CSV-tiedosto"
 }

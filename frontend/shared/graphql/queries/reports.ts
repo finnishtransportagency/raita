@@ -2,33 +2,18 @@ import { gql } from '../__generated__';
 
 export const SEARCH_RAPORTTI = gql(`
   query search_raportti(
-    $file_name: String,
-    $key: String,
-    $file_type: [String!],
-    $inspection_datetime: DateTimeIntervalInput,
-    $system: [String!],
-    $report_type: [String!],
-    $track_part: [String!],
-    $tilirataosanumero: [String!]
+    $raportti: RaporttiInput!,
     $page: Int!,
     $page_size: Int!
     $order_by_variable: String
     ) {
     search_raportti(
-      file_name: $file_name,
-      key: $key,
-      file_type: $file_type,
-      inspection_datetime: $inspection_datetime,
-      system: $system,
-      report_type: $report_type,
-      track_part: $track_part,
-      tilirataosanumero: $tilirataosanumero,
+      raportti: $raportti,
       page: $page,
       page_size: $page_size,
       order_by_variable: $order_by_variable
       ) {
       raportti {
-        id
         file_name
         key
         file_type
