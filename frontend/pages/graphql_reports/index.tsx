@@ -492,8 +492,9 @@ const ReportsIndex: RaitaNextPage = () => {
                                 {Object.entries(document)
                                   .filter(
                                     ([k, v]) =>
-                                      !adminOnlyMetadataFields.includes(k) ||
-                                      showAdminFields,
+                                      (!adminOnlyMetadataFields.includes(k) ||
+                                        showAdminFields) &&
+                                      v != null,
                                   )
                                   .map(([k, v], index) => (
                                     <Fragment key={index}>
