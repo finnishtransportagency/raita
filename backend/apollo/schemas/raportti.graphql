@@ -74,6 +74,29 @@ input RaporttiInput {
   track_part: [String!]
   tilirataosanumero: [String!]
   file_type: [String!]
+  campaign: String
+  extra_information: String
+  is_empty: Boolean
+  km_start: IntIntervalInput
+  km_end: IntIntervalInput
+  length: IntIntervalInput
+  maintenance_area: String
+  maintenance_level: String
+  measurement_start_location: String
+  measurement_end_location: String
+  measurement_direction: String
+  metadata_changed_at_datetime: DateTimeIntervalInput
+  parsed_at_datetime: DateTimeIntervalInput
+  parser_version: String
+  report_category: String
+  source_system: String
+  temperature: FloatIntervalInput
+  track_number: String
+  track_id: String
+  year: Int
+  zip_name: String
+  # zip_reception__year: String TODO: are these useful?
+  # zip_reception__date: String
 }
 
 # TODO: stronger validation for inputs: datetime strings, enums

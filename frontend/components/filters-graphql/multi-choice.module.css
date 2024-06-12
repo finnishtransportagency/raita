@@ -1,0 +1,16 @@
+.select {
+  @apply border-2 border-gray-500;
+  @apply rounded;
+  @apply w-full;
+}
+
+.select option {
+  @apply px-2 py-1;
+}
+
+.search {
+  @apply border-2 border-gray-500;
+  @apply rounded;
+  @apply w-full;
+  @apply px-2 py-1;
+}
