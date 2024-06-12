@@ -535,7 +535,7 @@ export class DataProcessStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
-        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'false',
+        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'true',
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
