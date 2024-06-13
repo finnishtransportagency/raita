@@ -21,7 +21,7 @@ import { useFileQuery } from '../../shared/hooks';
 import css from '../reports/reports.module.css';
 
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
-import { ZipDownload } from 'components/zip-download';
+import { ZipDownload } from 'components/zip-download-graphql';
 
 import { RaitaRole, useUser } from 'shared/user';
 import { Tooltip } from 'react-tooltip';
@@ -413,15 +413,15 @@ const ReportsIndex: RaitaNextPage = () => {
                       count: resultsData?.count,
                     })}
                   </div>
-                  {/* {resultsData?.totalSize && resultsData?.totalSize > 0 && (
+                  {resultsData?.total_size && resultsData?.total_size > 0 && (
                     <div className="ml-2">
                       <ZipDownload
-                        aggregationSize={resultsData?.total}
-                        usedQuery={query} TODO: need to change query format and opensearch query under the hood
-                        resultTotalSize={resultsData?.totalSize}
+                        aggregationSize={resultsData?.count}
+                        usedQuery={state.queryVariables}
+                        resultTotalSize={resultsData?.total_size}
                       />
                     </div>
-                  )} */}
+                  )}
                 </div>
               )}
 

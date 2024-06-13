@@ -41,6 +41,7 @@ type Raportti {
 type SearchRaporttiResponse {
   raportti: [Raportti!]
   count: Int!
+  total_size: Float! # in bytes, can exceed Int size
   page: Int!
   page_size: Int!
 }
