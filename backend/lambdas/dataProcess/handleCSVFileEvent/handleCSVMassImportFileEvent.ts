@@ -100,7 +100,7 @@ export async function handleCSVMassImportFileEvent(
           keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
         ) {
           const reportId = dbConnection
-            ? await insertRaporttiData(
+            ? await dbUtil.insertRaporttiData(
                 key,
                 keyData.fileName,
                 null,

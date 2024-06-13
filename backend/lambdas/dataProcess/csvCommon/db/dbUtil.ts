@@ -346,26 +346,26 @@ export class DBUtil {
     }
   }
 
-export async function insertRaporttiData(
-  key: string,
-  fileName: string,
-  status: string | null,
-  dbConnection: DBConnection,
-): Promise<number> {
-  const data: Raportti = {
-    key,
-    status,
-    file_name: fileName,
-    chunks_to_process: -1,
-    events: null,
-  };
-
-  const { schema, sql } = dbConnection;
-  try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
-    log.debug(id);
+  async insertRaporttiData(
+    key: string,
+    fileName: string,
+    status: string | null,
+    dbConnection: DBConnection,
+  ): Promise<number> {
+    const data: Raportti = {
+      key,
+      status,
+      file_name: fileName,
+      chunks_to_process: -1,
+      events: null,
+    };
+    if (dbConnection) {
+      const { schema, sql } = dbConnection;
+      try {
+        const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
+          data,
+        )} returning id`;
+        log.debug(id);
 
         return id.id;
       } catch (e) {
