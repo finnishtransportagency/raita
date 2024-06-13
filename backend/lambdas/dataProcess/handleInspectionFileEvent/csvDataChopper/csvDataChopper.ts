@@ -1,9 +1,7 @@
 import { log } from '../../../../utils/logger';
 import {
   DBConnection,
-  insertRaporttiData,
-  updateRaporttiChunks,
-  updateRaporttiStatus,
+  DBUtil,
 } from '../../csvCommon/db/dbUtil';
 import { Readable } from 'stream';
 import * as readline from 'readline';
@@ -15,6 +13,7 @@ import { IAdminLogger } from '../../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
 
 const adminLogger: IAdminLogger = new PostgresLogger();
+const dbUtil = new DBUtil();
 
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,
@@ -80,7 +79,7 @@ export async function chopCSVFileStream(
   dbConnection: DBConnection,
   reportId: number,
 ) {
-  await updateRaporttiStatus(reportId, 'CHOPPING', null, dbConnection);
+  await dbUtil.updateRaporttiStatus(reportId, 'CHOPPING', null, dbConnection);
 
   log.debug('reportId: ' + reportId);
 
@@ -192,13 +191,13 @@ export async function chopCSVFileStream(
         ' ' +
         chunkCounter,
     );
-    await updateRaporttiStatus(reportId, 'PARSING', null, dbConnection);
-    updateRaporttiChunks(reportId, chunkCounter, dbConnection);
+    await dbUtil.updateRaporttiStatus(reportId, 'PARSING', null, dbConnection);
+    dbUtil.updateRaporttiChunks(reportId, chunkCounter, dbConnection);
     log.debug('Chopped file successfully: ' + originalKeyData.fileBaseName);
     return true;
   } catch (e) {
     log.warn('csv chopping error ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
+    await dbUtil.updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
     return false;
   }
 }
