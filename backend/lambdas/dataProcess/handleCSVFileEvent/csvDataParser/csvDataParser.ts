@@ -23,6 +23,7 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
+import {Mittaus} from "../../csvCommon/db/model/Mittaus";
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -55,8 +56,10 @@ async function parseCsvAndWriteToDb(
   if (parsedCSVContent.success) {
     const dbRows: any[] = [];
 
-    parsedCSVContent.validRows.forEach((row: any) =>
-      dbRows.push(dbUtil.convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
+    parsedCSVContent.validRows.forEach((row: any) => {
+        const convertedRow = dbUtil.convertToDBRow(row, runningDate, reportId, fileNamePrefix);
+        dbRows.push(dbUtil.handleNan(convertedRow));
+      }
     );
 
     try {
