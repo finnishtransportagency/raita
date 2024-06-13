@@ -6,12 +6,6 @@ import * as readline from 'readline';
 function tidyUpDataLines(csvDataLines: string): string {
   //log.info('csvDataLines: ' + csvDataLines.length);
   const tidyedLines = csvDataLines
-    //TODO non numeric handling
-    .replace(/NaN/g, '')
-    .replace(/epäluku/g, '')
-    //∞ replaced with max numeric
-    .replace(/∞/g, '9999999999999999999')
-
     //remove semicolon sometimes at the end of file
     .replace(/;/g, '');
   //log.info('tidyedLines: ' + tidyedLines.length);

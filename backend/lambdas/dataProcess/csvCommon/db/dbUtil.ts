@@ -248,6 +248,40 @@ export async function updateRaporttiMetadata(
       throw e;
     }
   }
+
+  handleNan(row: any) {
+    //skip common mittaus fields
+    const {
+      id,
+      raportti_id,
+      running_date,
+      jarjestelma,
+      sscount,
+      rataosoite,
+      sijainti,
+      ajonopeus,
+      track,
+      location,
+      latitude,
+      longitude,
+      lat,
+      long,
+      raide_numero,
+      rata_kilometri,
+      rata_metrit,
+      rataosuus_nimi,
+      rataosuus_numero,
+      ...measurements
+    } = row;
+    console.log('measurements', measurements);
+
+    for(const [k,v] of Object.entries(measurements)){
+      console.log(k);
+      console.log(v);
+    }
+
+    return { ...row };
+  }
 }
 
 export async function updateRaporttiChunks(
