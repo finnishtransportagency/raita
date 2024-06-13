@@ -15,6 +15,7 @@ import MetadataPort from '../../../ports/metadataPort';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { getPrismaClient } from '../../../utils/prismaClient';
 
 function getLambdaConfigOrFail() {
   return {
@@ -34,6 +35,7 @@ const setTimeoutPromise = (delay: number) =>
   });
 
 const withRequest = lambdaRequestTracker();
+const prisma = getPrismaClient();
 
 /**
  * Handle an incoming delete request
@@ -86,6 +88,7 @@ export async function handleDeleteRequest(
     let receptionDeleteCount = 0;
     let inspectionDeleteCount = 0;
     let metadataDeleteCount = 0;
+    let postgresDeleteCount = 0;
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
@@ -111,6 +114,7 @@ export async function handleDeleteRequest(
         region,
         openSearchDomain,
       );
+      postgresDeleteCount = await deleteFromPostgres(prefix);
     }
     if (
       deleteFrom.inspection &&
@@ -261,6 +265,22 @@ async function deleteFromMetadata(
   } catch (err: any) {
     throw new RaitaLambdaError(
       `Error deleting from metadata: ${err.message}`,
+      500,
+    );
+  }
+}
+
+async function deleteFromPostgres(prefix: string) {
+  try {
+    const response = await (
+      await prisma
+    ).raportti.deleteMany({
+      where: { key: { startsWith: prefix } },
+    });
+    return response.count;
+  } catch (err: any) {
+    throw new RaitaLambdaError(
+      `Error deleting from Postgre metadata: ${err.message}`,
       500,
     );
   }
