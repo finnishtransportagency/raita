@@ -61,6 +61,7 @@ async function parseCsvAndWriteToDb(
         dbRows.push(dbUtil.handleNan(convertedRow));
       }
     );
+    console.log('dbRows',dbRows);
 
     try {
       //disable here if needed stop database
