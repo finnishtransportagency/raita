@@ -63,6 +63,7 @@ async function parseCsvAndWriteToDb(
     parsedCSVContent.validRows.forEach((row: any) =>
       dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
+    console.log('dbRows',dbRows);
 
     try {
       //disable here if needed stop database

@@ -2,17 +2,13 @@ import {
   validateHeaders,
   parseCSVFileStream,
   removeMissingHeadersFromSchema,
-} from '../csvDataParser';
+} from '../../csvDataParser';
 import * as fs from 'fs';
-import { stringToStream } from '../../../handleInspectionFileEvent/__tests__/testUtils';
-import {
-  DBConnection,
-  getDBConnection,
-  updateRaporttiStatus,
-} from '../../../csvCommon/db/dbUtil';
+import { stringToStream } from '../../../../handleInspectionFileEvent/__tests__/testUtils';
+import { DBConnection, DBUtil } from '../../../../csvCommon/db/dbUtil';
 import { z } from 'zod';
-import { parseCSVContent, zcsv } from '../../../../../../external/zod-csv';
-import { amsSchema } from '../csvSchemas/amsCsvSchema';
+import { parseCSVContent, zcsv } from '../../../../../../../external/zod-csv';
+import { amsSchema } from '../../csvSchemas/amsCsvSchema';
 
 const ohlWithSurveyDate =
   '"Track";"Location [km+m]";"Over Head Line Geometry and Wear.Survey Date";"Over Head Line Geometry and Wear.Latitude";"Over Head Line Geometry and Wear.Longitude";"Over Head Line Geometry and Wear.Ajonopeus [Km/h]";"Over Head Line Geometry and Wear.Ajonopeus [Km/h]";"Over Head Line Geometry and Wear.Height Box_OHL [mm]";"Over Head Line Geometry and Wear.Height Gradient [mm/m]";"Over Head Line Geometry and Wear.Jäännöspaksuus 1 [mm]";"Over Head Line Geometry and Wear.Jäännöspaksuus 2 [mm]";"Over Head Line Geometry and Wear.Jäännöspinta-ala 1 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-ala 2 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 1 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 2 [mm^2]";"Over Head Line Geometry and Wear.Korkeuden Poikkeama [mm]";"Over Head Line Geometry and Wear.Korkeus 1 [mm]";"Over Head Line Geometry and Wear.Korkeus 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveys 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveys 2 [mm]";"Over Head Line Geometry and Wear.Pituuskaltevuus [mm/m]";"Over Head Line Geometry and Wear.Pole";"Over Head Line Geometry and Wear.Residual Area StdDev 1 [mm^2]";"Over Head Line Geometry and Wear.Residual Area StdDev 2 [mm^2]";"Over Head Line Geometry and Wear.Right Wire Wear 2 [mm]";"Over Head Line Geometry and Wear.Risteävien Ajolankojen Etäisyys [mm]";"Over Head Line Geometry and Wear.Siksak 1 [mm]";"Over Head Line Geometry and Wear.Siksak 2 [mm]";"Over Head Line Geometry and Wear.Siksakkin Poikkeama [mm]";"Over Head Line Geometry and Wear.Stagger Box_OHL [mm]"\n' +
@@ -72,7 +68,7 @@ const amsCsvStream = stringToStream(amsCsv);
 const amsWithNansCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]","Running Dynamics.Ajonopeus [Km/h]"\r\n' +
-  '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985,NaN,,,epäluku,∞, 8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
+  '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985,NaN, ,,epäluku,∞, 8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n' +
   '318104,"008 KOKOL LR",630+0850.25,"64.07647082° N","24.54062896° E",55.955,29.2801,29.5273,16.7167,17.0519,8.1699,7.9743,3.8653,-6.4757,2.8971,-4.6735,1.3761,1.7859,2.1084,1.5889,2.7095,-2.0110,-1.0043,1.9055,0.3789,1.4189,0.6535,0.2594,56\r\n' +
   '318105,"008 KOKOL LR",630+0850.50,"64.07647308° N","24.54062891° E",55.939,-29.2653,23.2646,-26.4762,-14.8906,8.4049,8.0362,4.1007,5.2723,-2.2401,4.5284,1.3860,1.7973,2.4118,2.1124,-2.5522,-1.9687,-1.3425,2.0056,-0.5608,1.6471,0.6996,0.2019,56\r\n' +
   '318106,"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-20.9017,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
@@ -268,22 +264,11 @@ const ohlCsv: string =
 
 //const rpCsvFileStream = fs.createReadStream('./chunkFile_229_1_RP_20230607_244_LRMST_U_500_285_295.csv');
 
-//mock worked only with class DBUtil witch opened too much connection in real use
-/*beforeAll(()=>{
-  jest.spyOn(DBUtil.prototype,"writeRowsToDB").mockReturnValue(new Promise((resolve, reject)=>resolve(0)));
-  jest.spyOn(DBUtil.prototype,"updateRaporttiStatus").mockReturnValue(new Promise((resolve, reject)=>resolve()));
-  jest.spyOn(DBUtil.prototype,"substractRaporttiChunk").mockReturnValue(new Promise((resolve, reject)=>resolve()));
-  jest.spyOn(DBUtil.prototype,"raporttiChunksToProcess").mockReturnValue(new Promise((resolve, reject)=>resolve(0)));
-  jest.spyOn(DBUtil.prototype,"writeMissingColumnsToDb").mockReturnValue(new Promise((resolve, reject)=>resolve()));
-})
+const dbUtil = new DBUtil();
 
-afterAll(() => {
-  jest.clearAllMocks();
-})*/
-
-describe.skip('handle ams csv file success', () => {
+describe('handle ams csv file success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
@@ -304,24 +289,9 @@ describe.skip('handle ams csv file success', () => {
   }, 900000);
 });
 
-//typo: "oikea_pystysuuntainen_kiityvyys_c1"
-describe.skip('handle ams csv file unknow misspelled field success', () => {
+describe('handle ams with Nans csv file success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
-    let missingColNames;
-    /*jest
-      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
-      .mockImplementation(
-        (
-          reportId: number,
-          columnNames: string[],
-          dbConnection: DBConnection,
-        ) => {
-          missingColNames = columnNames;
-          return new Promise((resolve, reject) => resolve());
-        },
-      );
-*/
+    const dbConnection = await dbUtil.getDBConnection();
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
@@ -339,13 +309,51 @@ describe.skip('handle ams csv file unknow misspelled field success', () => {
     console.log(result);
 
     expect(result).toEqual('success');
+  }, 900000);
+});
+
+//typo: "oikea_pystysuuntainen_kiityvyys_c1"
+describe('handle ams csv file unknow misspelled field success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await dbUtil.getDBConnection();
+    let missingColNames;
+    jest
+      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
+      .mockImplementation(
+        (
+          reportId: number,
+          columnNames: string[],
+          dbConnection: DBConnection | undefined,
+        ) => {
+          missingColNames = columnNames;
+          return new Promise((resolve, reject) => resolve());
+        },
+      );
+
+    const result = await parseCSVFileStream(
+      {
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
+      stringToStream(amsCsvWithUnkownMisspelledField),
+      {},
+      dbConnection,
+    );
+    console.log(result);
+    console.log(missingColNames);
+    expect(result).toEqual('success');
     expect(missingColNames).toEqual(['oikea_pystysuuntainen_kiihtyvyys_c1']);
   }, 900000);
 });
 
-describe.skip('handle ohlWithSurveyDate success', () => {
+describe('handle ohlWithSurveyDate success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_OHL_20211125_003_YLORP_002_000_000.csv',
@@ -365,22 +373,22 @@ describe.skip('handle ohlWithSurveyDate success', () => {
   }, 900000);
 });
 
-describe.skip('handle rcWithSomeEnglishColNames success', () => {
+describe('handle rcWithSomeEnglishColNames success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /*    jest
+    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
           reportId: number,
           columnNames: string[],
-          dbConnection: DBConnection,
+          dbConnection: DBConnection | undefined,
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
         },
-      );*/
+      );
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_RC_20211125_003_YLORP_002_000_000.csv',
@@ -402,22 +410,22 @@ describe.skip('handle rcWithSomeEnglishColNames success', () => {
 });
 
 //typo: "oikean_raiteen_aallon_rms_10_30mm_keskihajonta"
-describe.skip('handle rcWithOikeaGenetiveForm success', () => {
+describe('handle rcWithOikeaGenetiveForm success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /*  jest
+    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
           reportId: number,
           columnNames: string[],
-          dbConnection: DBConnection,
+          dbConnection: DBConnection | undefined,
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
         },
-      );*/
+      );
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_RC_20211125_003_YLORP_002_000_000.csv',
@@ -439,22 +447,22 @@ describe.skip('handle rcWithOikeaGenetiveForm success', () => {
 });
 
 //typos: ["vasen_45kuluman_keskihajonta","vasen_ulkopuolisen_purseen_kiintea_keskihajonta"]
-describe.skip('handle rpWithSomeTypo success', () => {
+describe('handle rpWithSomeTypo success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /*    jest
-        .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
-         .mockImplementation(
-           (
-             reportId: number,
-             columnNames: string[],
-             dbConnection: DBConnection,
-           ) => {
-             missingColNames = columnNames;
-             return new Promise((resolve, reject) => resolve());
-           },
-         );*/
+    jest
+      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
+      .mockImplementation(
+        (
+          reportId: number,
+          columnNames: string[],
+          dbConnection: DBConnection | undefined,
+        ) => {
+          missingColNames = columnNames;
+          return new Promise((resolve, reject) => resolve());
+        },
+      );
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_RP_20211125_003_YLORP_002_000_000.csv',
@@ -476,22 +484,22 @@ describe.skip('handle rpWithSomeTypo success', () => {
 });
 
 //typo: ["vasen_45kuluman_keskihajonta"]}
-describe.skip('handle rpWithSomeTypo2 success', () => {
+describe('handle rpWithSomeTypo2 success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /*    jest
+    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
           reportId: number,
           columnNames: string[],
-          dbConnection: DBConnection,
+          dbConnection: DBConnection | undefined,
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
         },
-      );*/
+      );
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_RP_20211125_003_YLORP_002_000_000.csv',
@@ -512,22 +520,22 @@ describe.skip('handle rpWithSomeTypo2 success', () => {
   }, 900000);
 });
 
-describe.skip('handle tgSlave success', () => {
+describe('handle tgSlave success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /*    jest
+    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
           reportId: number,
           columnNames: string[],
-          dbConnection: DBConnection,
+          dbConnection: DBConnection | undefined,
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
         },
-      );*/
+      );
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_TG_20211125_003_YLORP_002_000_000.csv',
@@ -553,31 +561,31 @@ describe.skip('handle tgSlave success', () => {
   }, 900000);
 });
 
-describe.skip('handle ams csv file success', () => {
+describe('handle ams csv file success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
-    await updateRaporttiStatus(889, 'ERROR', null, dbConnection);
-    await updateRaporttiStatus(889, 'SUCCESS', null, dbConnection);
+    const dbConnection = await dbUtil.getDBConnection();
+    await dbUtil.updateRaporttiStatus(889, 'ERROR', null, dbConnection);
+    await dbUtil.updateRaporttiStatus(889, 'SUCCESS', null, dbConnection);
     //should not update out of error status
   }, 900000);
 });
 
-describe.skip('handle ams csv file with a missing field success', () => {
+describe('handle ams csv file with a missing field success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     let missingColNames;
-    /* jest
+    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
           reportId: number,
           columnNames: string[],
-          dbConnection: DBConnection,
+          dbConnection: DBConnection | undefined,
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
         },
-      );*/
+      );
     let result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
@@ -598,9 +606,9 @@ describe.skip('handle ams csv file with a missing field success', () => {
   }, 900000);
 });
 
-describe.skip('handle rp csv file success', () => {
+describe('handle rp csv file success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await getDBConnection();
+    const dbConnection = await dbUtil.getDBConnection();
     const result = await parseCSVFileStream(
       {
         fileBaseName: 'chunkFile_889_1_RP_20230607_244_LRMST_U_500_285_295.csv',
@@ -619,9 +627,9 @@ describe.skip('handle rp csv file success', () => {
   }, 900000);
 });
 
-// describe.skip('handle tg csv file success',() => {
+// describe('handle tg csv file success',() => {
 //   test('success: normal run',async () => {
-//      const dbConnection = await getDBConnection();
+//     const dbConnection = await dbUtil.getDBConnection();
 //     const result = await parseCSVFileStream(
 //       {
 //         fileBaseName: 'chunkFile_889_1_TG_20230607_244_LRMST_U_500_285_295.csv',
@@ -640,9 +648,9 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-// describe.skip('handle ohl csv file success',() => {
+// describe('handle ohl csv file success',() => {
 //   test('success: normal run',async () => {
-//      const dbConnection = await getDBConnection();
+//     const dbConnection = await dbUtil.getDBConnection();
 //     const result = await parseCSVFileStream(
 //       {
 //         fileBaseName: 'chunkFile_889_1_OHL_20231101_003_HKIRP_3_0_1.csv',
@@ -661,7 +669,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-/*describe.skip('parseAMSCSV success',() => {
+/*describe('parseAMSCSV success',() => {
   test('success: normal run',async () => {
     const result = await parseCSVFileStream(amsCsv,3,"ams_mittaus",amsSchema);
     expect(result.success).toBe(true);
@@ -672,7 +680,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-/*describe.skip('parseAMSCSV error',() => {
+/*describe('parseAMSCSV error',() => {
   test('success: error run',async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
@@ -684,7 +692,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-describe.skip('validateHeaders', () => {
+describe('validateHeaders', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -737,7 +745,7 @@ describe.skip('validateHeaders', () => {
   });
 });
 
-describe.skip('removeMissingHeadersFromSchema', () => {
+describe('removeMissingHeadersFromSchema', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -752,7 +760,7 @@ describe.skip('removeMissingHeadersFromSchema', () => {
 
 // test that zod-csv parser handles different column order in csv vs schema.
 // We are using our modified copy of zod-csv to achive this: external/zod-csv/csv.ts:94
-describe.skip('parseCSVContent', () => {
+describe('parseCSVContent', () => {
   test('success: different column order', async () => {
     const parsedCSVContent = parseCSVContent(
       amsCsvWithDifferentColumnOrder,
