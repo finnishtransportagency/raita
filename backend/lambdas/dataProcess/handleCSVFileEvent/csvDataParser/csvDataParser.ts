@@ -1,9 +1,6 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
-import {
-  DBConnection,
-  DBUtil
-} from '../../csvCommon/db/dbUtil';
+import { DBConnection, DBUtil } from '../../csvCommon/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
 import { amsSchema } from './csvSchemas/amsCsvSchema';
 import { piSchema } from './csvSchemas/piCsvSchema';
@@ -23,7 +20,6 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-import {Mittaus} from "../../csvCommon/db/model/Mittaus";
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -49,7 +45,7 @@ async function parseCsvAndWriteToDb(
   table: string,
   csvSchema: ZodObject<any>,
   fileNamePrefix: string,
-  dbConnection: DBConnection|undefined,
+  dbConnection: DBConnection | undefined,
 ) {
   const dbUtil = new DBUtil();
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
@@ -57,11 +53,11 @@ async function parseCsvAndWriteToDb(
     const dbRows: any[] = [];
 
     parsedCSVContent.validRows.forEach((row: any) => {
-        const convertedRow = dbUtil.convertToDBRow(row, runningDate, reportId, fileNamePrefix);
-        dbRows.push(dbUtil.handleNan(convertedRow));
-      }
-    );
-    console.log('dbRows',dbRows);
+      dbRows.push(
+        dbUtil.convertToDBRow(row, runningDate, reportId, fileNamePrefix),
+      );
+    });
+    console.log('dbRows', dbRows);
 
     try {
       //disable here if needed stop database
@@ -106,7 +102,7 @@ async function handleBufferedLines(
   runningDate: Date,
   reportId: number,
   fileBaseName: string,
-  dbConnection: DBConnection|undefined,
+  dbConnection: DBConnection | undefined,
   fileSchema: ZodObject<any>,
 ) {
   try {
@@ -473,15 +469,28 @@ export async function parseCSVFileStream(
     );
 
     await dbUtil.substractRaporttiChunk(reportId, dbConnection);
-    const chunksLeft = await dbUtil.raporttiChunksToProcess(reportId, dbConnection);
+    const chunksLeft = await dbUtil.raporttiChunksToProcess(
+      reportId,
+      dbConnection,
+    );
     if (chunksLeft == 0) {
-      await dbUtil.updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+      await dbUtil.updateRaporttiStatus(
+        reportId,
+        'SUCCESS',
+        null,
+        dbConnection,
+      );
     }
 
     return 'success';
   } catch (e) {
     log.error('csv parsing error, updating status ' + e.toString());
-    await dbUtil.updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
+    await dbUtil.updateRaporttiStatus(
+      reportId,
+      'ERROR',
+      e.toString(),
+      dbConnection,
+    );
     return 'error';
   }
 }

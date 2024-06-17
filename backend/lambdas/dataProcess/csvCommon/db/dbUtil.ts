@@ -14,10 +14,47 @@ export class DBUtil {
   private connCount = 0;
   private connReuseCount = 0;
 
-  async getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
-    const schema = getEnvOrFail('RAITA_PGSCHEMA');
-    const sql = await this.getConnection();
+  private async getConnectionLocalDev() {
+    if (this.connection) {
+      return this.connection;
+    }
+    const password = 'password';
+    this.connection = postgres({
+      password,
+      username: 'postgres',
+      transform: { undefined: null },
+      idle_timeout: 20,
+      max_lifetime: 30,
+    });
+    return this.connection;
+  }
 
+  async getConnection() {
+    if (this.connection != undefined) {
+      this.connReuseCount++;
+      return this.connection;
+    }
+    const password = await getSecretsManagerSecret('database_password');
+    this.connection = postgres({
+      password,
+      transform: { undefined: null },
+    });
+    this.connCount++;
+    return this.connection;
+  }
+
+  async getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
+    let schema;
+
+    let sql: postgres.Sql<{}>;
+    //  if (isLocalDevStack()) { (ei toiminut)
+    if (process.env.ENVIRONMENT == 'kalle') {
+      schema = 'public';
+      sql = await this.getConnectionLocalDev();
+    } else {
+      schema = getEnvOrFail('RAITA_PGSCHEMA');
+      sql = await this.getConnection();
+    }
     return { schema, sql };
   }
 
@@ -47,20 +84,6 @@ export class DBUtil {
     } else {
       throw new Error('No db connection');
     }
-  }
-
-  async getConnection() {
-    if (this.connection != undefined) {
-      this.connReuseCount++;
-      return this.connection;
-    }
-    const password = await getSecretsManagerSecret('database_password');
-    this.connection = postgres({
-      password,
-      transform: { undefined: null },
-    });
-    this.connCount++;
-    return this.connection;
   }
 
   private constructRataosoite(track: string, location: string): Rataosoite {
@@ -127,7 +150,7 @@ export class DBUtil {
       long = this.convertCoord(row.longitude);
     }
 
-    return {
+    const convertedRow = {
       ...row,
       raportti_id: reportId,
       running_date: runningDate,
@@ -136,6 +159,7 @@ export class DBUtil {
       long,
       ...rataosoite,
     };
+    return { ...convertedRow, ...this.handleNan(convertedRow) };
   }
 
   async updateRaporttiStatus(
@@ -424,13 +448,35 @@ export class DBUtil {
       rataosuus_numero,
       ...measurements
     } = row;
-    console.log('measurements', measurements);
 
-    for(const [k,v] of Object.entries(measurements)){
-      console.log(k);
-      console.log(v);
+    let nanFields = {};
+    const NAN_REASON_POSTFIX = '_nan_reason';
+    for (const [key, value] of Object.entries(measurements)) {
+      if (value && isNaN(Number(value))) {
+        const stringValue = value as string;
+        if (stringValue == '∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
+        } else if (stringValue == '-∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
+        } else if (stringValue.toLowerCase() == 'inv') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
+        } else if (stringValue.toLowerCase() == 'nan') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
+        } else if (stringValue.toLowerCase() == 'null') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
+        } else {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+        }
+        //Measurement fields will be set to NaN.
+        measurements[key] = Number(value);
+      }
     }
-
-    return { ...row };
+    return { ...measurements, ...nanFields };
   }
 }
