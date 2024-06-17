@@ -16,6 +16,27 @@ export const getRaporttiWhereInput = (
     track_part,
     tilirataosanumero,
     file_type,
+    campaign,
+    extra_information,
+    is_empty,
+    km_start,
+    km_end,
+    length,
+    maintenance_area,
+    maintenance_level,
+    measurement_start_location,
+    measurement_end_location,
+    measurement_direction,
+    metadata_changed_at_datetime,
+    parsed_at_datetime,
+    parser_version,
+    report_category,
+    source_system,
+    temperature,
+    track_number,
+    track_id,
+    year,
+    zip_name,
   } = raportti;
   if (file_name) {
     where.file_name = {
@@ -69,6 +90,117 @@ export const getRaporttiWhereInput = (
       in: file_type,
     };
   }
+  if (campaign) {
+    where.campaign = {
+      contains: campaign,
+    };
+  }
+  if (extra_information) {
+    where.extra_information = {
+      contains: extra_information,
+    };
+  }
+  if (is_empty !== undefined) {
+    where.is_empty = {
+      equals: is_empty,
+    };
+  }
+  if (km_start) {
+    where.km_start = {
+      gte: km_start?.start ?? undefined,
+      lte: km_start?.end ?? undefined,
+    };
+  }
+  if (km_end) {
+    where.km_end = {
+      gte: km_end?.start ?? undefined,
+      lte: km_end?.end ?? undefined,
+    };
+  }
+  if (length) {
+    where.length = {
+      gte: length?.start ?? undefined,
+      lte: length?.end ?? undefined,
+    };
+  }
+  if (maintenance_area) {
+    where.maintenance_area = {
+      contains: maintenance_area,
+    };
+  }
+  if (maintenance_level) {
+    where.maintenance_level = {
+      contains: maintenance_level,
+    };
+  }
+  if (measurement_start_location) {
+    where.measurement_start_location = {
+      contains: measurement_start_location,
+    };
+  }
+  if (measurement_end_location) {
+    where.measurement_end_location = {
+      contains: measurement_end_location,
+    };
+  }
+  if (measurement_direction) {
+    where.measurement_direction = {
+      contains: measurement_direction,
+    };
+  }
+  if (metadata_changed_at_datetime) {
+    where.metadata_changed_at_datetime = {
+      gte: metadata_changed_at_datetime?.start ?? undefined,
+      lte: metadata_changed_at_datetime?.end ?? undefined,
+    };
+  }
+  if (parsed_at_datetime) {
+    where.parsed_at_datetime = {
+      gte: parsed_at_datetime?.start ?? undefined,
+      lte: parsed_at_datetime?.end ?? undefined,
+    };
+  }
+  if (parser_version) {
+    where.parser_version = {
+      contains: parser_version,
+    };
+  }
+  if (report_category) {
+    where.report_category = {
+      contains: report_category,
+    };
+  }
+  if (source_system) {
+    where.source_system = {
+      contains: source_system,
+    };
+  }
+  if (temperature) {
+    where.temperature = {
+      gte: temperature?.start ?? undefined,
+      lte: temperature?.end ?? undefined,
+    };
+  }
+  if (track_number) {
+    where.track_number = {
+      contains: track_number,
+    };
+  }
+  if (track_id) {
+    where.track_id = {
+      contains: track_id,
+    };
+  }
+  if (year) {
+    where.year = {
+      equals: year,
+    };
+  }
+  if (zip_name) {
+    where.zip_name = {
+      contains: zip_name,
+    };
+  }
   return where;
 };
 
@@ -88,9 +220,15 @@ export const raporttiResolvers: Resolvers = {
         orderBy[order_by_variable] = 'asc';
       }
       const where = getRaporttiWhereInput(raporttiInput);
-      const [count, raporttiResult] = await client.$transaction([
-        client.raportti.count({
+      const [sizeResult, raporttiResult] = await client.$transaction([
+        client.raportti.aggregate({
           where,
+          _count: {
+            id: true,
+          },
+          _sum: {
+            size: true,
+          },
         }),
         client.raportti.findMany({
           orderBy,
@@ -101,7 +239,8 @@ export const raporttiResolvers: Resolvers = {
       ]);
       return {
         raportti: raporttiResult,
-        count,
+        count: sizeResult._count.id,
+        total_size: sizeResult._sum.size ? Number(sizeResult._sum.size) : NaN,
         page_size,
         page,
       };

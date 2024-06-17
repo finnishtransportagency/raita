@@ -11,7 +11,8 @@ import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { Button, TextInput, CopyToClipboard, Dropdown } from 'components';
 import { DateRange } from 'components';
-import MultiChoice from 'components/filters/multi-choice';
+import FilterSelector from 'components/filters-graphql';
+import MultiChoice from 'components/filters-graphql/multi-choice';
 import ResultsPager from 'components/results-pager';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
@@ -20,7 +21,7 @@ import { useFileQuery } from '../../shared/hooks';
 import css from '../reports/reports.module.css';
 
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
-import { ZipDownload } from 'components/zip-download';
+import { ZipDownload } from 'components/zip-download-graphql';
 
 import { RaitaRole, useUser } from 'shared/user';
 import { Tooltip } from 'react-tooltip';
@@ -28,8 +29,14 @@ import { useLazyQuery, useQuery } from '@apollo/client';
 import { META, SEARCH_RAPORTTI } from 'shared/graphql/queries/reports';
 import {
   DateTimeIntervalInput,
+  RaporttiInput,
   Search_RaporttiQueryVariables,
 } from 'shared/graphql/__generated__/graphql';
+import {
+  FieldDict,
+  SelectorSupportedType,
+} from 'components/filters-graphql/selector';
+import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 
 //
 
@@ -38,7 +45,21 @@ const initialState: ReportsState = {
   debug: false,
   waitingToUpdateSearchQuery: false,
   queryVariables: { page: 1, page_size: cfg.paging.pageSize, raportti: {} },
+  extraRaporttiQueryVariables: {},
 };
+
+/**
+ * Fields that should not be shown in extra fields dropdown
+ */
+const disabledExtraFields = [
+  'file_name',
+  'inspection_date',
+  'inspection_datetime',
+  'system',
+  'track_part',
+  'tilirataosanumero',
+  'file_type',
+];
 
 const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
@@ -60,7 +81,15 @@ const ReportsIndex: RaitaNextPage = () => {
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
-    triggerInitialSearch({ variables: state.queryVariables });
+    triggerInitialSearch({
+      variables: {
+        ...state.queryVariables,
+        raportti: {
+          ...state.queryVariables.raportti,
+          ...state.extraRaporttiQueryVariables,
+        },
+      },
+    });
   };
 
   const resetSearch = () => {
@@ -104,7 +133,13 @@ const ReportsIndex: RaitaNextPage = () => {
   // make sure mutation is updated only after query object is changed
   useEffect(() => {
     if (state.waitingToUpdateSearchQuery) {
-      searchQuery.refetch(state.queryVariables);
+      searchQuery.refetch({
+        ...state.queryVariables,
+        raportti: {
+          ...state.queryVariables.raportti,
+          ...state.extraRaporttiQueryVariables,
+        },
+      });
       setState(R.assoc('waitingToUpdateSearchQuery', false));
     }
   }, [state.waitingToUpdateSearchQuery]);
@@ -182,6 +217,18 @@ const ReportsIndex: RaitaNextPage = () => {
       : undefined,
   };
 
+  const extraFields: FieldDict = {};
+  meta.data?.__type?.inputFields?.forEach(fieldInfo => {
+    if (!fieldInfo.type.name) {
+      return;
+    }
+    if (disabledExtraFields.includes(fieldInfo.name)) {
+      return;
+    }
+    extraFields[fieldInfo.name] = {
+      type: fieldInfo.type.name! as SelectorSupportedType,
+    };
+  });
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
       <InfoBanner
@@ -206,15 +253,22 @@ const ReportsIndex: RaitaNextPage = () => {
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
-
-                {/*
-                TODO: implement with graphql
                 <FilterSelector
                   filters={[]}
-                  onChange={updateFilterList}
-                  fields={meta.data?.fields!}
+                  onChange={entries => {
+                    const inputVariables =
+                      getInputVariablesFromEntries(entries);
+                    // replace the whole
+                    setState(
+                      R.assocPath(
+                        ['extraRaporttiQueryVariables'],
+                        inputVariables,
+                      ),
+                    );
+                  }}
+                  fields={extraFields}
                   resetFilterSelector={state.resetFilters}
-                /> */}
+                />
               </section>
 
               {/* Search date range */}
@@ -359,15 +413,15 @@ const ReportsIndex: RaitaNextPage = () => {
                       count: resultsData?.count,
                     })}
                   </div>
-                  {/* {resultsData?.totalSize && resultsData?.totalSize > 0 && (
+                  {resultsData?.total_size && resultsData?.total_size > 0 && (
                     <div className="ml-2">
                       <ZipDownload
-                        aggregationSize={resultsData?.total}
-                        usedQuery={query} TODO: need to change query format and opensearch query under the hood
-                        resultTotalSize={resultsData?.totalSize}
+                        aggregationSize={resultsData?.count}
+                        usedQuery={state.queryVariables}
+                        resultTotalSize={resultsData?.total_size}
                       />
                     </div>
-                  )} */}
+                  )}
                 </div>
               )}
 
@@ -613,6 +667,11 @@ type ReportsState = {
   debug?: boolean;
   waitingToUpdateSearchQuery: boolean;
   queryVariables: Search_RaporttiQueryVariables;
+  /**
+   * For "extra variables" that are chosen separately from the filter selectors.
+   * Separate variable to simplify state management on deletions
+   */
+  extraRaporttiQueryVariables: RaporttiInput;
 };
 
 export enum PageSize {

@@ -29,6 +29,16 @@ export type FieldAggregation = {
   value: Scalars['String']['output'];
 };
 
+export type FloatIntervalInput = {
+  end?: InputMaybe<Scalars['Float']['input']>;
+  start?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type IntIntervalInput = {
+  end?: InputMaybe<Scalars['Int']['input']>;
+  start?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type MetaResponse = {
   __typename?: 'MetaResponse';
   file_type: Array<FieldAggregation>;
@@ -160,14 +170,35 @@ export type Raportti = {
 };
 
 export type RaporttiInput = {
+  campaign?: InputMaybe<Scalars['String']['input']>;
+  extra_information?: InputMaybe<Scalars['String']['input']>;
   file_name?: InputMaybe<Scalars['String']['input']>;
   file_type?: InputMaybe<Array<Scalars['String']['input']>>;
   inspection_datetime?: InputMaybe<DateTimeIntervalInput>;
+  is_empty?: InputMaybe<Scalars['Boolean']['input']>;
   key?: InputMaybe<Scalars['String']['input']>;
+  km_end?: InputMaybe<IntIntervalInput>;
+  km_start?: InputMaybe<IntIntervalInput>;
+  length?: InputMaybe<IntIntervalInput>;
+  maintenance_area?: InputMaybe<Scalars['String']['input']>;
+  maintenance_level?: InputMaybe<Scalars['String']['input']>;
+  measurement_direction?: InputMaybe<Scalars['String']['input']>;
+  measurement_end_location?: InputMaybe<Scalars['String']['input']>;
+  measurement_start_location?: InputMaybe<Scalars['String']['input']>;
+  metadata_changed_at_datetime?: InputMaybe<DateTimeIntervalInput>;
+  parsed_at_datetime?: InputMaybe<DateTimeIntervalInput>;
+  parser_version?: InputMaybe<Scalars['String']['input']>;
+  report_category?: InputMaybe<Scalars['String']['input']>;
   report_type?: InputMaybe<Array<Scalars['String']['input']>>;
+  source_system?: InputMaybe<Scalars['String']['input']>;
   system?: InputMaybe<Array<Scalars['String']['input']>>;
+  temperature?: InputMaybe<FloatIntervalInput>;
   tilirataosanumero?: InputMaybe<Array<Scalars['String']['input']>>;
+  track_id?: InputMaybe<Scalars['String']['input']>;
+  track_number?: InputMaybe<Scalars['String']['input']>;
   track_part?: InputMaybe<Array<Scalars['String']['input']>>;
+  year?: InputMaybe<Scalars['Int']['input']>;
+  zip_name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type SearchRaporttiResponse = {
@@ -176,6 +207,7 @@ export type SearchRaporttiResponse = {
   page: Scalars['Int']['output'];
   page_size: Scalars['Int']['output'];
   raportti?: Maybe<Array<Raportti>>;
+  total_size: Scalars['Float']['output'];
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -254,7 +286,9 @@ export type ResolversTypes = ResolversObject<{
   DateTimeIntervalInput: DateTimeIntervalInput;
   FieldAggregation: ResolverTypeWrapper<FieldAggregation>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
+  FloatIntervalInput: FloatIntervalInput;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  IntIntervalInput: IntIntervalInput;
   MetaResponse: ResolverTypeWrapper<MetaResponse>;
   Mittaus: ResolverTypeWrapper<Mittaus>;
   MittausCountResponse: ResolverTypeWrapper<MittausCountResponse>;
@@ -275,7 +309,9 @@ export type ResolversParentTypes = ResolversObject<{
   DateTimeIntervalInput: DateTimeIntervalInput;
   FieldAggregation: FieldAggregation;
   Float: Scalars['Float']['output'];
+  FloatIntervalInput: FloatIntervalInput;
   Int: Scalars['Int']['output'];
+  IntIntervalInput: IntIntervalInput;
   MetaResponse: MetaResponse;
   Mittaus: Mittaus;
   MittausCountResponse: MittausCountResponse;
@@ -400,6 +436,7 @@ export type SearchRaporttiResponseResolvers<ContextType = any, ParentType extend
   page?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   page_size?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   raportti?: Resolver<Maybe<Array<ResolversTypes['Raportti']>>, ParentType, ContextType>;
+  total_size?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

@@ -2,3 +2,13 @@ input DateTimeIntervalInput {
   start: String
   end: String
 }
+
+input IntIntervalInput {
+  start: Int
+  end: Int
+}
+
+input FloatIntervalInput {
+  start: Float
+  end: Float
+}

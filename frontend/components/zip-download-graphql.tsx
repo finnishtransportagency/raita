@@ -1,18 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as R from 'rambda';
+import * as cfg from 'shared/config';
 
-import {
-  getKeysOfFiles,
-  getPollingProgress,
-  triggerZipLambda,
-} from 'shared/rest';
-import { getKeyAggregations, sizeformatter } from 'shared/util';
+import { getPollingProgress, triggerZipLambda } from 'shared/rest';
+import { sizeformatter } from 'shared/util';
 import Button from './button';
 import { Spinner } from './spinner';
 import { ProgressStatus } from 'shared/types';
+import { Search_RaporttiQueryVariables } from 'shared/graphql/__generated__/graphql';
+import { useLazyQuery } from '@apollo/client';
+import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
 
 const initialState: ZipState = {
   shouldPoll: false,
@@ -22,20 +22,25 @@ const initialState: ZipState = {
   isLoading: false,
 };
 
-// This version of zip-download is using old opensearch
-// TODO: remove this when not using opensearch
+// Copied from zip-download.tsx
+// TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
   const { aggregationSize, usedQuery, resultTotalSize } = props;
   const [state, setState] = useState<ZipState>(initialState);
   const { zipUrl, error, isLoading } = state;
 
+  const maxSize = 5000000000;
+  const bigSize = 1000000000;
+
   const { t } = useTranslation(['common']);
   const resultTooBigToCompress =
-    resultTotalSize && resultTotalSize > 5000000000 ? true : false;
+    resultTotalSize && resultTotalSize > maxSize ? true : false;
   const bigCompression =
-    resultTotalSize && resultTotalSize > 1000000000 && !resultTooBigToCompress
+    resultTotalSize && resultTotalSize > bigSize && !resultTooBigToCompress
       ? true
       : false;
+
+  const [triggerKeyQuery, keyQuery] = useLazyQuery(SEARCH_RAPORTTI_KEYS_ONLY);
 
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
@@ -72,18 +77,32 @@ export function ZipDownload(props: Props) {
     },
   );
 
-  const triggerZipping = async () => {
+  const triggerKeyFetching = () => {
+    triggerKeyQuery({
+      variables: {
+        raportti: usedQuery.raportti,
+        page: 1,
+        page_size: cfg.paging.allResultsPageSize,
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (keyQuery.data && keyQuery.data.search_raportti) {
+      const keys =
+        keyQuery.data.search_raportti.raportti
+          ?.filter(raportti => raportti.key)
+          .map(raportti => `${raportti.key}`) ?? [];
+      triggerZipping(keys);
+    }
+  }, [keyQuery.data]);
+
+  const triggerZipping = async (keys: string[]) => {
     setState(initialState);
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     setState(R.assoc('pollingFileKey', pollingFileKey));
     setState(R.assoc('isLoading', true));
-    const keyAggs = getKeyAggregations(aggregationSize);
     try {
-      const keys = await getKeysOfFiles({
-        ...usedQuery,
-        aggs: keyAggs,
-        size: 0,
-      });
       triggerZipLambda(keys, pollingFileKey).then(() =>
         setState(R.assoc('shouldPoll', true)),
       );
@@ -108,7 +127,7 @@ export function ZipDownload(props: Props) {
               `${t('common:compress_all')} ${sizeformatter(resultTotalSize)}`
             )
           }
-          onClick={() => triggerZipping()}
+          onClick={() => triggerKeyFetching()}
         />
       ) : (
         <Button
@@ -134,7 +153,7 @@ export function ZipDownload(props: Props) {
 
 type Props = {
   aggregationSize: number | undefined;
-  usedQuery: object;
+  usedQuery: Search_RaporttiQueryVariables;
   resultTotalSize: number | undefined;
 };
 

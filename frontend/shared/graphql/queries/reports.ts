@@ -51,8 +51,29 @@ export const SEARCH_RAPORTTI = gql(`
         metadata_changed_at_datetime
       }
       count
+      total_size
       page
       page_size
+    }
+  }
+`);
+
+export const SEARCH_RAPORTTI_KEYS_ONLY = gql(`
+  query search_raportti_keys_only(
+    $raportti: RaporttiInput!,
+    $page: Int!,
+    $page_size: Int!
+    ) {
+    search_raportti(
+      raportti: $raportti,
+      page: $page,
+      page_size: $page_size,
+      ) {
+      raportti {
+        key
+      }
+      count
+      total_size
     }
   }
 `);
@@ -66,6 +87,20 @@ export const META = gql(`
       track_part { value count }
       tilirataosanumero { value count }
       latest_inspection
+    }
+    __type(name: "RaporttiInput") {
+      name
+      inputFields {
+        name
+        type {
+          name
+          inputFields {
+            name
+            type { name }
+          }
+        }
+
+      }
     }
   }
 `);
