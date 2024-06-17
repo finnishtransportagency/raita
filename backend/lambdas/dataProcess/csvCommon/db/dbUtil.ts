@@ -123,16 +123,17 @@ export function convertToDBRow(
     long = convertCoord(row.longitude);
   }
 
-  return {
-    ...row,
-    raportti_id: reportId,
-    running_date: runningDate,
-    jarjestelma: fileNamePrefix,
-    lat,
-    long,
-    ...rataosoite,
-  };
-}
+    const convertedRow = {
+      ...row,
+      raportti_id: reportId,
+      running_date: runningDate,
+      jarjestelma: fileNamePrefix,
+      lat,
+      long,
+      ...rataosoite,
+    };
+    return { ...convertedRow, ...this.handleNan(convertedRow) };
+  }
 
 export async function updateRaporttiStatus(
   id: number,
@@ -385,7 +386,65 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
-    values,
-  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+      await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+        values,
+      )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+
+  }
+
+  handleNan(row: any) {
+    //skip common mittaus fields
+    const {
+      id,
+      raportti_id,
+      running_date,
+      jarjestelma,
+      sscount,
+      rataosoite,
+      sijainti,
+      ajonopeus,
+      track,
+      location,
+      latitude,
+      longitude,
+      lat,
+      long,
+      raide_numero,
+      rata_kilometri,
+      rata_metrit,
+      rataosuus_nimi,
+      rataosuus_numero,
+      ...measurements
+    } = row;
+
+    let nanFields = {};
+    const NAN_REASON_POSTFIX = '_nan_reason';
+    for (const [key, value] of Object.entries(measurements)) {
+      if (value && isNaN(Number(value))) {
+        const stringValue = value as string;
+        if (stringValue == '∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
+        } else if (stringValue == '-∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
+        } else if (stringValue.toLowerCase() == 'inv') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
+        } else if (stringValue.toLowerCase() == 'nan') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
+        } else if (stringValue.toLowerCase() == 'null') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
+        } else {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+        }
+        //Measurement fields will be set to NaN.
+        measurements[key] = Number(value);
+      }
+    }
+    return { ...measurements, ...nanFields };
+  }
 }

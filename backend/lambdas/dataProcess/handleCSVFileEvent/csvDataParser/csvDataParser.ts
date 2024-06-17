@@ -28,7 +28,6 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-import {Mittaus} from "../../csvCommon/db/model/Mittaus";
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
