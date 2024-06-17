@@ -14,47 +14,10 @@ export class DBUtil {
   private connCount = 0;
   private connReuseCount = 0;
 
-  private async getConnectionLocalDev() {
-    if (this.connection) {
-      return this.connection;
-    }
-    const password = 'password';
-    this.connection = postgres({
-      password,
-      username: 'postgres',
-      transform: { undefined: null },
-      idle_timeout: 20,
-      max_lifetime: 30,
-    });
-    return this.connection;
-  }
-
-  async getConnection() {
-    if (this.connection != undefined) {
-      this.connReuseCount++;
-      return this.connection;
-    }
-    const password = await getSecretsManagerSecret('database_password');
-    this.connection = postgres({
-      password,
-      transform: { undefined: null },
-    });
-    this.connCount++;
-    return this.connection;
-  }
-
   async getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
-    let schema;
+    const schema = getEnvOrFail('RAITA_PGSCHEMA');
+    const sql = await this.getConnection();
 
-    let sql: postgres.Sql<{}>;
-    //  if (isLocalDevStack()) { (ei toiminut)
-    if (process.env.ENVIRONMENT == 'kalle') {
-      schema = 'public';
-      sql = await this.getConnectionLocalDev();
-    } else {
-      schema = getEnvOrFail('RAITA_PGSCHEMA');
-      sql = await this.getConnection();
-    }
     return { schema, sql };
   }
 
@@ -84,6 +47,20 @@ export class DBUtil {
     } else {
       throw new Error('No db connection');
     }
+  }
+
+  async getConnection() {
+    if (this.connection != undefined) {
+      this.connReuseCount++;
+      return this.connection;
+    }
+    const password = await getSecretsManagerSecret('database_password');
+    this.connection = postgres({
+      password,
+      transform: { undefined: null },
+    });
+    this.connCount++;
+    return this.connection;
   }
 
   private constructRataosoite(track: string, location: string): Rataosoite {
@@ -424,7 +401,7 @@ export class DBUtil {
     }
   }
 
-  handleNan(row: any) {
+  private handleNan(row: any) {
     //skip common mittaus fields
     const {
       id,
