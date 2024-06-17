@@ -392,7 +392,7 @@ export async function writeMissingColumnsToDb(
 
   }
 
-  handleNan(row: any) {
+  private handleNan(row: any) {
     //skip common mittaus fields
     const {
       id,
