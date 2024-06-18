@@ -133,12 +133,13 @@ export async function handleDeleteRequest(
       },
     });
     await adminLogger.info(
-      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}`,
+      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}, Postgre ${postgresDeleteCount}`,
     );
     return getRaitaSuccessResponse({
       receptionDeleteCount,
       inspectionDeleteCount,
       metadataDeleteCount,
+      postgresDeleteCount
     });
   } catch (err: any) {
     log.error(`Error in handleDeleteRequest: ${err.message}`);
