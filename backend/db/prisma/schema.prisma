@@ -56,6 +56,8 @@ model ams_mittaus {
   created                                          DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                         DateTime?                 @db.Timestamp(6)
   raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 model data_process_lock {
@@ -150,6 +152,8 @@ model ohl_mittaus {
   created                         DateTime?                 @default(now()) @db.Timestamp(6)
   modified                        DateTime?                 @db.Timestamp(6)
   raportti                        raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -188,6 +192,8 @@ model pi_mittaus {
   created          DateTime?                 @default(now()) @db.Timestamp(6)
   modified         DateTime?                 @db.Timestamp(6)
   raportti         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 model raportti {
@@ -233,15 +239,15 @@ model raportti {
   measurement_end_location      String?            @db.VarChar(20)
   measurement_direction         String?            @db.VarChar(20)
   maintenance_level             String?            @db.VarChar(20)
-  ams_mittaus                   ams_mittaus[]
+  ams_mittaus                   ams_mittaus[]      @ignore
   mittaus                       mittaus[]
-  ohl_mittaus                   ohl_mittaus[]
-  pi_mittaus                    pi_mittaus[]
+  ohl_mittaus                   ohl_mittaus[]      @ignore
+  pi_mittaus                    pi_mittaus[]       @ignore
   puuttuva_kolumni              puuttuva_kolumni[]
-  rc_mittaus                    rc_mittaus[]
-  rp_mittaus                    rp_mittaus[]
-  tg_mittaus                    tg_mittaus[]
-  tsight_mittaus                tsight_mittaus[]
+  rc_mittaus                    rc_mittaus[]       @ignore
+  rp_mittaus                    rp_mittaus[]       @ignore
+  tg_mittaus                    tg_mittaus[]       @ignore
+  tsight_mittaus                tsight_mittaus[]   @ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -307,6 +313,8 @@ model rc_mittaus {
   created                                          DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                         DateTime?                 @db.Timestamp(6)
   raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -430,6 +438,8 @@ model rp_mittaus {
   created                                            DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                           DateTime?                 @db.Timestamp(6)
   raportti                                           raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -496,6 +506,8 @@ model tg_mittaus {
   created                                DateTime?                 @default(now()) @db.Timestamp(6)
   modified                               DateTime?                 @db.Timestamp(6)
   raportti                               raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -547,13 +559,15 @@ model tsight_mittaus {
   created                             DateTime?                 @default(now()) @db.Timestamp(6)
   modified                            DateTime?                 @db.Timestamp(6)
   raportti                            raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@ignore
 }
 
 model puuttuva_kolumni {
   id          Int       @id @default(autoincrement())
   raportti_id Int?
   column_name String?   @db.VarChar
-  raportti    raportti? @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "puuttuva_kolumni_id_fkey")
+  raportti    raportti? @relation(fields: [raportti_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "puuttuva_kolumni_id_fkey")
 
   @@unique([raportti_id, column_name])
 }
