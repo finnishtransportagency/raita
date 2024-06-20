@@ -1,8 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { getPrismaClient } from '../../utils/prismaClient';
 import { Resolvers } from '../__generated__/resolvers-types';
-import { getRaporttiWhereInput } from './raportti';
 import { RaitaLambdaError } from '../../lambdas/utils';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/handleCsvGeneration';
+import { getRaporttiWhereInput } from '../utils';
 
 /**
  * Return estimate of result file size in bytes
@@ -55,11 +57,35 @@ export const mittausResolvers: Resolvers = {
     },
   },
   Mutation: {
-    generate_mittaus_csv: async (parent, { raportti, mittaus, columns }) => {
-      raportti;
-      // TODO: launch csv generation process here, new lambda?
+    generate_mittaus_csv: async (parent, params, context) => {
+      const { csvGenerationLambda, region } = context;
+      if (!csvGenerationLambda || !region) {
+        throw new Error('Missing env vars');
+      }
+
+      // TODO: file name
+      const fileBaseName = `test-${Date.now()}`;
+      const progressKey = `csv/progress/${fileBaseName}.json`;
+      const csvKey = `csv/data/${fileBaseName}.csv`;
+      const event: CsvGenerationEvent = {
+        searchParameters: params,
+        progressKey,
+        csvKey,
+      };
+      const payloadJson = JSON.stringify(event);
+      const payload = new TextEncoder().encode(payloadJson);
+
+      const lambdaClient = new LambdaClient({ region });
+
+      const command = new InvokeCommand({
+        FunctionName: csvGenerationLambda,
+        Payload: payload,
+        InvocationType: 'Event',
+      });
+      await lambdaClient.send(command);
+
       return {
-        polling_url: 'not implemented',
+        polling_key: progressKey,
       };
     },
   },

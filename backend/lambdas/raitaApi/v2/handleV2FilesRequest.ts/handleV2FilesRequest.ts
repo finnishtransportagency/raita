@@ -18,6 +18,15 @@ import {
 } from '../../../../utils/userService';
 import { log } from '../../../../utils/logger';
 import { GraphQLError } from 'graphql';
+import { getGetEnvWithPreassignedContext } from '../../../../../utils';
+
+function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext('handleV2FilesRequest');
+  return {
+    csvGenerationLambda: getEnv('CSV_GENERATION_LAMBDA'),
+    region: getEnv('REGION'),
+  };
+}
 
 const logPlugin: ApolloServerPlugin<{}> = {
   requestDidStart: async requestContext => {
@@ -55,10 +64,15 @@ export const handleV2FilesRequest = startServerAndCreateLambdaHandler(
     context: async ({ event, context }) => {
       try {
         withRequest(event, context);
+        const config = getLambdaConfigOrFail();
         const user = await getUser(event);
         await validateReadUser(user);
         log.info({ user }, 'Request start');
-        return { user };
+        return {
+          user,
+          region: config.region,
+          csvGenerationLambda: config.csvGenerationLambda,
+        };
       } catch (error) {
         log.error({ event, error }, 'Error in context handler');
         const status = error.statusCode ?? 500;

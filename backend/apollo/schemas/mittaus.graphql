@@ -28,7 +28,7 @@ type MittausCountResponse {
 
 type MittausGenerateResponse {
   # status: String! TODO needed?
-  polling_url: String!
+  polling_key: String!
 }
 
 input MittausInput {

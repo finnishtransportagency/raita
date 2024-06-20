@@ -168,6 +168,14 @@ export class ApplicationStack extends NestedStack {
       actions: ['lambda:invokeFunction'],
     });
 
+    this.createManagedPolicy({
+      name: 'GraphqlCsvGenerationInvokePolicy',
+      raitaStackIdentifier,
+      serviceRoles: [raitaApiStack.raitaApiGraphqlLambdaServiceRole],
+      resources: [raitaApiStack.handleCsvGenerationFn.functionArn],
+      actions: ['lambda:invokeFunction'],
+    });
+
     // Allow connections to OpenSearch
     openSearchDomain.connections.allowFrom(
       raitaSecurityGroup,
