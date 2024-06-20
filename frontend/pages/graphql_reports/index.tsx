@@ -61,6 +61,16 @@ const disabledExtraFields = [
   'file_type',
 ];
 
+const getQueryVariables = (state: ReportsState) => {
+  return {
+    ...state.queryVariables,
+    raportti: {
+      ...state.queryVariables.raportti,
+      ...state.extraRaporttiQueryVariables,
+    },
+  };
+};
+
 const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
   const meta = useQuery(META);
@@ -82,13 +92,7 @@ const ReportsIndex: RaitaNextPage = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
     triggerInitialSearch({
-      variables: {
-        ...state.queryVariables,
-        raportti: {
-          ...state.queryVariables.raportti,
-          ...state.extraRaporttiQueryVariables,
-        },
-      },
+      variables: getQueryVariables(state),
     });
   };
 
@@ -133,13 +137,7 @@ const ReportsIndex: RaitaNextPage = () => {
   // make sure mutation is updated only after query object is changed
   useEffect(() => {
     if (state.waitingToUpdateSearchQuery) {
-      searchQuery.refetch({
-        ...state.queryVariables,
-        raportti: {
-          ...state.queryVariables.raportti,
-          ...state.extraRaporttiQueryVariables,
-        },
-      });
+      searchQuery.refetch(getQueryVariables(state));
       setState(R.assoc('waitingToUpdateSearchQuery', false));
     }
   }, [state.waitingToUpdateSearchQuery]);
@@ -417,7 +415,7 @@ const ReportsIndex: RaitaNextPage = () => {
                     <div className="ml-2">
                       <ZipDownload
                         aggregationSize={resultsData?.count}
-                        usedQuery={state.queryVariables}
+                        usedQueryVariables={getQueryVariables(state)}
                         resultTotalSize={resultsData?.total_size}
                       />
                     </div>
