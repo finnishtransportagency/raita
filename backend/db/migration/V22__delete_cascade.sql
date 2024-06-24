@@ -61,14 +61,6 @@ ADD CONSTRAINT ams_mittaus_raportti_id_fkey
 FOREIGN KEY (raportti_id) REFERENCES raportti(id)
 ON DELETE CASCADE;
 
--- puuttuva_kolumni table
-ALTER TABLE puuttuva_kolumni
-DROP CONSTRAINT IF EXISTS puuttuva_kolumni_raportti_id_fkey;
-
-ALTER TABLE puuttuva_kolumni
-ADD CONSTRAINT puuttuva_kolumni_raportti_id_fkey
-FOREIGN KEY (raportti_id) REFERENCES raportti(id)
-ON DELETE CASCADE;
 
 -- rp_mittaus table
 ALTER TABLE rp_mittaus
