@@ -70,3 +70,16 @@ ALTER TABLE rp_mittaus
 ADD CONSTRAINT rp_mittaus_raportti_id_fkey
 FOREIGN KEY (raportti_id) REFERENCES raportti(id)
 ON DELETE CASCADE;
+
+-- Drop the existing foreign key constraints
+ALTER TABLE puuttuva_kolumni
+DROP CONSTRAINT IF EXISTS puuttuva_kolumni_id_fkey;
+
+ALTER TABLE puuttuva_kolumni
+DROP CONSTRAINT IF EXISTS puuttuva_kolumni_raportti_id_fkey;
+
+-- Add the foreign key constraint with ON DELETE CASCADE
+ALTER TABLE puuttuva_kolumni
+ADD CONSTRAINT puuttuva_kolumni_raportti_id_fkey
+FOREIGN KEY (raportti_id) REFERENCES raportti(id)
+ON DELETE CASCADE;
