@@ -25,7 +25,7 @@ const initialState: ZipState = {
 // Copied from zip-download.tsx
 // TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
-  const { aggregationSize, usedQuery, resultTotalSize } = props;
+  const { aggregationSize, usedQueryVariables, resultTotalSize } = props;
   const [state, setState] = useState<ZipState>(initialState);
   const { zipUrl, error, isLoading } = state;
 
@@ -76,13 +76,12 @@ export function ZipDownload(props: Props) {
       },
     },
   );
-
   const triggerKeyFetching = () => {
     triggerKeyQuery({
       variables: {
-        raportti: usedQuery.raportti,
+        raportti: usedQueryVariables.raportti,
         page: 1,
-        page_size: cfg.paging.allResultsPageSize,
+        page_size: cfg.paging.maxZipPageSize,
       },
     });
   };
@@ -153,7 +152,7 @@ export function ZipDownload(props: Props) {
 
 type Props = {
   aggregationSize: number | undefined;
-  usedQuery: Search_RaporttiQueryVariables;
+  usedQueryVariables: Search_RaporttiQueryVariables;
   resultTotalSize: number | undefined;
 };
 
