@@ -16,6 +16,30 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  rewrites: () => {
+    const currentMetadataDatabase =
+      process.env.NEXT_PUBLIC_METADATA_DATABASE || '';
+    if (currentMetadataDatabase === 'opensearch') {
+      return {
+        beforeFiles: [
+          {
+            source: '/graphql_reports',
+            destination: '/reports',
+          },
+        ],
+      };
+    } else if (currentMetadataDatabase === 'postgres') {
+      return {
+        beforeFiles: [
+          {
+            source: '/reports',
+            destination: '/graphql_reports',
+          },
+        ],
+      };
+    }
+    return [];
+  },
 };
 
 module.exports = nextConfig;

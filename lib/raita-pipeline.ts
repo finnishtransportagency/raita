@@ -38,6 +38,7 @@ import {
 } from './utils';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { RaitaPipelineLockStack } from './raita-pipeline-lock';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 /**
  * The stack that defines the application pipeline
@@ -49,6 +50,16 @@ export class RaitaPipelineStack extends Stack {
       ...props,
       tags: config.tags,
     });
+
+    // temporary flags for opensearch/postgres transition
+    const currentMetadataDatabase = StringParameter.valueForStringParameter(
+      scope,
+      'raita-metadata-database',
+    );
+    const enableCsvPage = StringParameter.valueForStringParameter(
+      scope,
+      'raita-enable-csv-page',
+    );
 
     // Get config based on Raita environment
     const vpcConfig = getAccountVpcResourceConfig(config.env);
@@ -140,6 +151,9 @@ export class RaitaPipelineStack extends Stack {
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
+            NEXT_PUBLIC_METADATA_DATABASE:
+              currentMetadataDatabase ?? 'opensearch',
+            NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage ?? '',
           },
           commands: [
             'npm run --prefix frontend build',
