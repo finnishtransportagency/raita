@@ -153,7 +153,7 @@ export class RaitaPipelineStack extends Stack {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
             NEXT_PUBLIC_METADATA_DATABASE:
               currentMetadataDatabase ?? 'opensearch',
-            NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage ?? '',
+            NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage === '1' ? '1' : '',
           },
           commands: [
             'npm run --prefix frontend build',
