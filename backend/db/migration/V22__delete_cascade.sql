@@ -1,5 +1,3 @@
--- V3__cascade_delete_constraints.sql
-
 -- tg_mittaus table
 ALTER TABLE tg_mittaus
 DROP CONSTRAINT IF EXISTS tg_mittaus_raportti_id_fkey;

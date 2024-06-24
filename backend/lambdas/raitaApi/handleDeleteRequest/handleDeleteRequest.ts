@@ -139,7 +139,7 @@ export async function handleDeleteRequest(
       receptionDeleteCount,
       inspectionDeleteCount,
       metadataDeleteCount,
-      postgresDeleteCount
+      postgresDeleteCount,
     });
   } catch (err: any) {
     log.error(`Error in handleDeleteRequest: ${err.message}`);
