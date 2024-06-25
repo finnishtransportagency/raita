@@ -19,8 +19,10 @@ import { parseFileMetadata } from './parseFileMetadata';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
-  DBUtil,
   DBConnection,
+  getDBConnection,
+  insertRaporttiData,
+  updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
 
@@ -43,7 +45,6 @@ const withRequest = lambdaRequestTracker();
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
-const dbUtil = new DBUtil();
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
@@ -67,7 +68,7 @@ export async function handleInspectionFileEvent(
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
   if (doCSVParsing) {
-    dbConnection = await dbUtil.getDBConnection();
+    dbConnection = await getDBConnection();
   }
   const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
@@ -135,7 +136,7 @@ export async function handleInspectionFileEvent(
         }
 
         const reportId = dbConnection
-          ? await dbUtil.insertRaporttiData(key, keyData.fileName, null, dbConnection)
+          ? await insertRaporttiData(key, keyData.fileName, null, dbConnection)
           : -1;
 
         const parseResults = await parseFileMetadata({
@@ -181,7 +182,7 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          await dbUtil.updateRaporttiMetadata(entries, dbConnection);
+          await updateRaporttiMetadata(entries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',
