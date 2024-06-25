@@ -28,16 +28,6 @@ const DeleteIndex: RaitaNextPage = () => {
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteIsConfirmed, setDeleteIsConfirmed] = useState(false);
 
-  //const filesToDeleteMutation = useSearch();
-
-  /* const fetchFilesToBeDeleted = () => {
-    const query = makeQuery(
-      [{ field: 'key.keyword', type: 'prefix', value: prefixInput }],
-      { paging: { size: 0, curPage: 1 }, keyFn: s => s },
-    );
-    filesToDeleteMutation.mutate(query);
-  };*/
-
   const { loading, error, data, refetch } = useQuery(
     SEARCH_RAPORTTI_KEYS_ONLY,
     {
@@ -80,7 +70,6 @@ const DeleteIndex: RaitaNextPage = () => {
     if (deleteInProgress) {
       return;
     }
-    //filesToDeleteMutation.reset();
     setConfirmModalOpen(false);
     setDeleteIsConfirmed(false);
     setConfirmInput('');
