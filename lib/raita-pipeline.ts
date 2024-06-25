@@ -190,13 +190,7 @@ export class RaitaPipelineStack extends Stack {
         },
       },
     );
-    codePipeline.synthProject.addToRolePolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['ssm:GetParameter'],
-        resources: ['*'],
-      }),
-    );
+
     const preSteps: Step[] = [
       new ShellStep('UnitTest', {
         input: githubSource,
@@ -255,6 +249,14 @@ export class RaitaPipelineStack extends Stack {
         pre: Step.sequence(preSteps),
         post: Step.sequence(postSteps),
       },
+    );
+    codePipeline.buildPipeline();
+    codePipeline.synthProject.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['ssm:GetParameter'],
+        resources: ['*'],
+      }),
     );
   }
 }
