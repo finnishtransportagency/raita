@@ -61,20 +61,6 @@ async function getConnection() {
   return connection;
 }
 
-export async function getConnectionLocalDev() {
-  if (connection) {
-    return connection;
-  }
-  const password = 'password';
-  connection = postgres({
-    password,
-    username: 'postgres',
-    transform: { undefined: null },
-    idle_timeout: 20,
-    max_lifetime: 30,
-  });
-  return connection;
-}
 
 function constructRataosoite(track: string, location: string): Rataosoite {
   //Track: "008 KOKOL LR"
