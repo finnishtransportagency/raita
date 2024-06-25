@@ -86,13 +86,6 @@ export class RaitaPipelineStack extends Stack {
         resources: ['*'],
       }),
     );
-    pipeline.addToRolePolicy(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        actions: ['ssm:GetParameter'],
-        resources: ['*'],
-      }),
-    );
 
     // Get existing VPC based on predetermined attributes
     const raitaVPC = ec2.Vpc.fromVpcAttributes(this, 'raita-vpc', {
@@ -178,6 +171,13 @@ export class RaitaPipelineStack extends Stack {
             LocalCacheMode.SOURCE,
             LocalCacheMode.DOCKER_LAYER,
           ),
+          rolePolicy: [
+            new PolicyStatement({
+              effect: Effect.ALLOW,
+              actions: ['ssm:GetParameter'],
+              resources: ['*'],
+            }),
+          ],
         },
       },
     );
