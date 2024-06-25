@@ -204,6 +204,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
   // some fields are hidden on non-admin users
   const adminOnlyMetadataFields = ['parser_version'];
+  const hiddenMetadataFields = ['__typename', 'key', 'file_name', 'status'];
 
   const inspectionDateRangeForSelector: Range<Date> = {
     // TODO: mapping function
@@ -546,6 +547,7 @@ const ReportsIndex: RaitaNextPage = () => {
                                     ([k, v]) =>
                                       (!adminOnlyMetadataFields.includes(k) ||
                                         showAdminFields) &&
+                                      !hiddenMetadataFields.includes(k) &&
                                       v != null,
                                   )
                                   .map(([k, v], index) => (
