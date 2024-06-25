@@ -55,6 +55,7 @@ model ams_mittaus {
   long                                             Decimal?                  @db.Decimal
   created                                          DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                         DateTime?                 @db.Timestamp(6)
+  mittaus                                          mittaus                   @relation(fields: [id], references: [id])
   raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -98,6 +99,13 @@ model mittaus {
   long             Decimal?                  @db.Decimal
   created          DateTime?                 @default(now()) @db.Timestamp(6)
   modified         DateTime?                 @db.Timestamp(6)
+  ams_mittaus      ams_mittaus? // These are added manually
+  ohl_mittaus      ohl_mittaus?
+  pi_mittaus       pi_mittaus?
+  rc_mittaus       rc_mittaus?
+  rp_mittaus       rp_mittaus?
+  tg_mittaus       tg_mittaus?
+  tsight_mittaus   tsight_mittaus?
   raportti         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -151,6 +159,7 @@ model ohl_mittaus {
   long                            Decimal?                  @db.Decimal
   created                         DateTime?                 @default(now()) @db.Timestamp(6)
   modified                        DateTime?                 @db.Timestamp(6)
+  mittaus                         mittaus                   @relation(fields: [id], references: [id])
   raportti                        raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -191,6 +200,8 @@ model pi_mittaus {
   long             Decimal?                  @db.Decimal
   created          DateTime?                 @default(now()) @db.Timestamp(6)
   modified         DateTime?                 @db.Timestamp(6)
+  mittaus          mittaus                   @relation(fields: [id], references: [id])
+
   raportti         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -312,6 +323,7 @@ model rc_mittaus {
   long                                             Decimal?                  @db.Decimal
   created                                          DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                         DateTime?                 @db.Timestamp(6)
+  mittaus                                          mittaus                   @relation(fields: [id], references: [id])
   raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -437,6 +449,8 @@ model rp_mittaus {
   long                                               Decimal?                  @db.Decimal
   created                                            DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                           DateTime?                 @db.Timestamp(6)
+  mittaus                                            mittaus                   @relation(fields: [id], references: [id])
+
   raportti                                           raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -505,6 +519,8 @@ model tg_mittaus {
   long                                   Decimal?                  @db.Decimal
   created                                DateTime?                 @default(now()) @db.Timestamp(6)
   modified                               DateTime?                 @db.Timestamp(6)
+  mittaus                                mittaus                   @relation(fields: [id], references: [id])
+
   raportti                               raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
@@ -558,6 +574,8 @@ model tsight_mittaus {
   long                                Decimal?                  @db.Decimal
   created                             DateTime?                 @default(now()) @db.Timestamp(6)
   modified                            DateTime?                 @db.Timestamp(6)
+  mittaus                             mittaus                   @relation(fields: [id], references: [id])
+
   raportti                            raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
 
