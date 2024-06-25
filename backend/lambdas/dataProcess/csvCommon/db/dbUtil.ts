@@ -4,16 +4,12 @@ import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
-import { FileMetadataEntry, ParseValueResult } from '../../../../types';
+import { FileMetadataEntry } from '../../../../types';
 import { Raportti } from './model/Raportti';
 
 export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
 
 export class DBUtil {
-  private connection: postgres.Sql | undefined;
-  private connCount = 0;
-  private connReuseCount = 0;
-
   async getDBConnection(): Promise<{ schema: string; sql: postgres.Sql<{}> }> {
     const schema = getEnvOrFail('RAITA_PGSCHEMA');
     const sql = await this.getConnection();
@@ -50,17 +46,11 @@ export class DBUtil {
   }
 
   async getConnection() {
-    if (this.connection != undefined) {
-      this.connReuseCount++;
-      return this.connection;
-    }
     const password = await getSecretsManagerSecret('database_password');
-    this.connection = postgres({
+    return postgres({
       password,
       transform: { undefined: null },
     });
-    this.connCount++;
-    return this.connection;
   }
 
   private constructRataosoite(track: string, location: string): Rataosoite {
