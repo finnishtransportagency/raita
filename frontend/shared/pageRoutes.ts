@@ -13,19 +13,11 @@ export type PageDescription = {
 export const getRaitaPages: () => PageDescription[] = () => {
   let pages: PageDescription[] = [];
 
-  if (currentMetadataDatabase === 'postgres') {
-    pages.push({
-      labelTranslationKey: 'page_labels.reports',
-      href: '/graphql_reports',
-      requiredRole: RaitaRole.Read,
-    });
-  } else {
-    pages.push({
-      labelTranslationKey: 'page_labels.reports',
-      href: '/reports',
-      requiredRole: RaitaRole.Read,
-    });
-  }
+  pages.push({
+    labelTranslationKey: 'page_labels.reports',
+    href: '/reports',
+    requiredRole: RaitaRole.Read,
+  });
 
   if (enableCsvPage) {
     pages.push({
