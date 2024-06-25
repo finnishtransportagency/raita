@@ -70,7 +70,6 @@ const DeleteIndex: RaitaNextPage = () => {
     if (deleteInProgress) {
       return;
     }
-
     setConfirmModalOpen(false);
     setDeleteIsConfirmed(false);
     setConfirmInput('');
