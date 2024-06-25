@@ -52,11 +52,10 @@ export class RaitaPipelineStack extends Stack {
     });
 
     // temporary flags for opensearch/postgres transition
-    const currentMetadataDatabase = StringParameter.fromStringParameterName(
+    const currentMetadataDatabase = StringParameter.valueFromLookup(
       this,
-      'raita-metadata-database-param',
       'raita-metadata-database',
-    ).stringValue;
+    );
     const enableCsvPage = StringParameter.valueForStringParameter(
       this,
       'raita-enable-csv-page',
