@@ -51,12 +51,12 @@ export class RaitaPipelineStack extends Stack {
       tags: config.tags,
     });
 
-    // temporary flags for opensearch/postgres transition
+    // temporary flags for opensearch/postgres transition. TODO: remove later
     const currentMetadataDatabase = StringParameter.valueFromLookup(
       this,
       'raita-metadata-database',
     );
-    const enableCsvPage = StringParameter.valueForStringParameter(
+    const enableCsvPage = StringParameter.valueFromLookup(
       this,
       'raita-enable-csv-page',
     );
@@ -250,7 +250,7 @@ export class RaitaPipelineStack extends Stack {
         post: Step.sequence(postSteps),
       },
     );
-    codePipeline.buildPipeline();
+    codePipeline.buildPipeline(); // needed to access synthProject. TODO: remove when policy not needed?
     codePipeline.synthProject.addToRolePolicy(
       new PolicyStatement({
         effect: Effect.ALLOW,
