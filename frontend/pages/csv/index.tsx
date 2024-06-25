@@ -26,6 +26,7 @@ import {
   SEARCH_CSV_RAPORTTI_DETAILS,
   SEARCH_MITTAUS_COUNT,
 } from 'shared/graphql/queries/csv';
+import { CsvDownload } from 'components/csv-download';
 
 //
 
@@ -45,17 +46,15 @@ const CsvIndex: RaitaNextPage = () => {
   const meta = useQuery(MITTAUS_META);
   const [triggerMittausCountSearch, mittausCountQuery] =
     useLazyQuery(SEARCH_MITTAUS_COUNT);
-
   const [triggerRaporttiSearch, raporttiQuery] = useLazyQuery(
     SEARCH_CSV_RAPORTTI_DETAILS,
   );
 
-  const [mutateGenerateCsv, generateCsvStatus] =
-    useMutation(GENERATE_MITTAUS_CSV);
-
   const [state, setState] = useState<CsvState>(initialState);
 
   const doSearch = () => {
+    setState(R.assocPath(['queryVariables', 'columns'], []));
+    setState(R.assocPath(['queryVariables', 'query_variables'], []));
     triggerRaporttiSearch({
       variables: {
         raportti: state.queryVariables.raportti,
@@ -99,12 +98,6 @@ const CsvIndex: RaitaNextPage = () => {
   const triggerCountSearch = () => {
     // TODO: initial query vs refetch? need to fix state management of the different queries
     triggerMittausCountSearch({ variables: state.queryVariables });
-  };
-
-  const startCsvGeneration = () => {
-    // TODO: make sure variables don't change between size query and csv generation. If user changed variables, force new size query first
-    mutateGenerateCsv({ variables: state.queryVariables });
-    // TODO: poll for file generation when implemented
   };
 
   /**
@@ -272,8 +265,8 @@ const CsvIndex: RaitaNextPage = () => {
                   <MultiChoice
                     label={t('common:choose_columns')}
                     inputId="column-choice"
-                    items={columnChoices}
-                    resetFilters={state.resetFilters}
+                    items={raporttiQuery.loading ? [] : columnChoices}
+                    resetFilters={state.resetFilters || raporttiQuery.loading}
                     optionClassName="h-48"
                     onChange={e => {
                       setState(
@@ -291,13 +284,16 @@ const CsvIndex: RaitaNextPage = () => {
                   <MultiChoice
                     label={t('common:choose_reports')}
                     inputId="keys-choice"
-                    items={(raporttiQuery.data.search_raportti.raportti || [])
+                    items={(raporttiQuery.loading
+                      ? []
+                      : raporttiQuery.data.search_raportti.raportti || []
+                    )
                       .filter(raportti => raportti.key && raportti.file_name)
                       .map(raportti => ({
                         key: `${raportti.file_name} ${raportti.inspection_date}`,
                         value: raportti.key?.toString()!,
                       }))}
-                    resetFilters={state.resetFilters}
+                    resetFilters={state.resetFilters || raporttiQuery.loading}
                     optionClassName="h-48"
                     onChange={e => {
                       setState(
@@ -317,7 +313,10 @@ const CsvIndex: RaitaNextPage = () => {
               </>
             )}
 
-            {mittausCountQuery.data &&
+            {!raporttiQuery.loading &&
+              raporttiQuery.data &&
+              !mittausCountQuery.loading &&
+              mittausCountQuery.data &&
               mittausCountQuery.data.search_mittaus_count && (
                 <>
                   <div>
@@ -337,23 +336,14 @@ const CsvIndex: RaitaNextPage = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Button
-                      label={t('common:generate_csv')}
-                      onClick={startCsvGeneration}
-                    />
-                  </div>
-                  <div>
-                    {generateCsvStatus.data && (
-                      <>
-                        <Button
-                          label={t('common:loading')}
-                          disabled
-                          onClick={() => {}}
-                        />
-                      </>
-                    )}
-                  </div>
+                  <CsvDownload
+                    resetState={
+                      raporttiQuery.loading ||
+                      state.resetFilters ||
+                      mittausCountQuery.loading
+                    }
+                    queryVariables={state.queryVariables}
+                  />
                 </>
               )}
           </section>

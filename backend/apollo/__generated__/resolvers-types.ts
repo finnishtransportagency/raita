@@ -79,7 +79,7 @@ export type MittausCountResponse = {
 
 export type MittausGenerateResponse = {
   __typename?: 'MittausGenerateResponse';
-  polling_url: Scalars['String']['output'];
+  polling_key: Scalars['String']['output'];
 };
 
 export type MittausInput = {
@@ -371,7 +371,7 @@ export type MittausCountResponseResolvers<ContextType = any, ParentType extends 
 }>;
 
 export type MittausGenerateResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausGenerateResponse'] = ResolversParentTypes['MittausGenerateResponse']> = ResolversObject<{
-  polling_url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  polling_key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

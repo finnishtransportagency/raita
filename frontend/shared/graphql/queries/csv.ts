@@ -33,7 +33,7 @@ export const GENERATE_MITTAUS_CSV = gql(`
       mittaus: $mittaus,
       columns: $columns
       ) {
-      polling_url
+      polling_key
     }
   }
 `);
