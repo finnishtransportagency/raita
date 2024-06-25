@@ -5,7 +5,11 @@ import {
 } from '../csvDataParser';
 import * as fs from 'fs';
 import { stringToStream } from '../../../handleInspectionFileEvent/__tests__/testUtils';
-import {DBConnection, getDBConnection, updateRaporttiStatus} from '../../../csvCommon/db/dbUtil';
+import {
+  DBConnection,
+  getDBConnection,
+  updateRaporttiStatus,
+} from '../../../csvCommon/db/dbUtil';
 import { z } from 'zod';
 import { parseCSVContent, zcsv } from '../../../../../../external/zod-csv';
 import { amsSchema } from '../csvSchemas/amsCsvSchema';
@@ -355,7 +359,7 @@ describe.skip('handle rcWithSomeEnglishColNames success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-/*    jest
+    /*    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
@@ -392,7 +396,7 @@ describe.skip('handle rcWithOikeaGenetiveForm success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-  /*  jest
+    /*  jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
@@ -466,7 +470,7 @@ describe.skip('handle rpWithSomeTypo2 success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-/*    jest
+    /*    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
@@ -502,7 +506,7 @@ describe.skip('handle tgSlave success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-/*    jest
+    /*    jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
@@ -552,7 +556,7 @@ describe.skip('handle ams csv file with a missing field success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-   /* jest
+    /* jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (

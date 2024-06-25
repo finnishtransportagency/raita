@@ -12,7 +12,10 @@ import { getDecodedS3ObjectKey, getKeyData } from '../../utils';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
-  DBConnection, getDBConnection, insertRaporttiData, updateRaporttiMetadata,
+  DBConnection,
+  getDBConnection,
+  insertRaporttiData,
+  updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
 import {

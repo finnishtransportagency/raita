@@ -1,6 +1,8 @@
 import { log } from '../../../../utils/logger';
 import {
-  DBConnection, updateRaporttiChunks, updateRaporttiStatus,
+  DBConnection,
+  updateRaporttiChunks,
+  updateRaporttiStatus,
 } from '../../csvCommon/db/dbUtil';
 import { Readable } from 'stream';
 import * as readline from 'readline';
