@@ -6,7 +6,7 @@ import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
-import { DBConnection, DBUtil } from '../csvCommon/db/dbUtil';
+import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { lambdaRequestTracker } from 'pino-lambda';
 
@@ -31,8 +31,7 @@ export async function handleCSVFileEvent(
   withRequest(event, context);
   log.debug('Start csv file handler');
   log.debug(event);
-  const dbUtil = new DBUtil();
-  dbConnection = await dbUtil.getDBConnection();
+  dbConnection = await getDBConnection();
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
 

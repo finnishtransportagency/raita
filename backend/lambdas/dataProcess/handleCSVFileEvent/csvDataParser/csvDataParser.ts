@@ -1,8 +1,13 @@
 import { ParseValueResult } from '../../../../types';
 import { log } from '../../../../utils/logger';
 import {
+  convertToDBRow,
   DBConnection,
-  DBUtil
+  raporttiChunksToProcess,
+  substractRaporttiChunk,
+  updateRaporttiStatus,
+  writeMissingColumnsToDb,
+  writeRowsToDB,
 } from '../../csvCommon/db/dbUtil';
 import { ohlSchema } from './csvSchemas/ohlCsvSchema';
 import { amsSchema } from './csvSchemas/amsCsvSchema';
@@ -48,20 +53,19 @@ async function parseCsvAndWriteToDb(
   table: string,
   csvSchema: ZodObject<any>,
   fileNamePrefix: string,
-  dbConnection: DBConnection|undefined,
+  dbConnection: DBConnection,
 ) {
-  const dbUtil = new DBUtil();
   const parsedCSVContent = await parseCsvData(fileBody, csvSchema);
   if (parsedCSVContent.success) {
     const dbRows: any[] = [];
 
     parsedCSVContent.validRows.forEach((row: any) =>
-      dbRows.push(dbUtil.convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
+      dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
     );
 
     try {
       //disable here if needed stop database
-      return await dbUtil.writeRowsToDB(dbRows, table, dbConnection);
+      return await writeRowsToDB(dbRows, table, dbConnection);
       //return;
     } catch (e) {
       log.error('Error writing to db');
@@ -102,7 +106,7 @@ async function handleBufferedLines(
   runningDate: Date,
   reportId: number,
   fileBaseName: string,
-  dbConnection: DBConnection|undefined,
+  dbConnection: DBConnection,
   fileSchema: ZodObject<any>,
 ) {
   try {
@@ -302,10 +306,9 @@ export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
   metadata: ParseValueResult | null,
-  dbConnection: DBConnection | undefined,
+  dbConnection: DBConnection,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
-  const dbUtil = new DBUtil();
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
@@ -372,7 +375,7 @@ export async function parseCSVFileStream(
                 msg: 'Missing optional fields',
                 missingOptional: headerValidation.missingOptional,
               });
-              await dbUtil.writeMissingColumnsToDb(
+              await writeMissingColumnsToDb(
                 reportId,
                 headerValidation.missingOptional,
                 dbConnection,
@@ -468,16 +471,16 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    await dbUtil.substractRaporttiChunk(reportId, dbConnection);
-    const chunksLeft = await dbUtil.raporttiChunksToProcess(reportId, dbConnection);
+    await substractRaporttiChunk(reportId, dbConnection);
+    const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
     if (chunksLeft == 0) {
-      await dbUtil.updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+      await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
     }
 
     return 'success';
   } catch (e) {
     log.error('csv parsing error, updating status ' + e.toString());
-    await dbUtil.updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
+    await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
     return 'error';
   }
 }

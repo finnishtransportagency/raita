@@ -12,8 +12,7 @@ import { getDecodedS3ObjectKey, getKeyData } from '../../utils';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
-  DBConnection,
-  DBUtil,
+  DBConnection, getDBConnection, insertRaporttiData, updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
 import {
@@ -54,8 +53,7 @@ export async function handleCSVMassImportFileEvent(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  const dbUtil = new DBUtil();
-  dbConnection = await dbUtil.getDBConnection();
+  dbConnection = await getDBConnection();
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
@@ -100,7 +98,7 @@ export async function handleCSVMassImportFileEvent(
           keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
         ) {
           const reportId = dbConnection
-            ? await dbUtil.insertRaporttiData(
+            ? await insertRaporttiData(
                 key,
                 keyData.fileName,
                 null,
@@ -155,7 +153,7 @@ export async function handleCSVMassImportFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
       if (doCSVParsing) {
-        await dbUtil.updateRaporttiMetadata(entries, dbConnection);
+        await updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }
