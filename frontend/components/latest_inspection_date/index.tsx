@@ -2,19 +2,22 @@ import { useTranslation } from 'react-i18next';
 import { DATE_FMT_LATEST_MEASUREMENT } from 'shared/constants';
 
 import { format as formatDate } from 'date-fns/fp';
-import { useMetadataQuery } from 'shared/hooks';
+import { useQuery } from '@apollo/client';
+import { META } from 'shared/graphql/queries/reports';
 
 /**
  * Show latest inspection date
  */
 const LatestInspectionDate = (props: React.HTMLAttributes<HTMLDivElement>) => {
   const { t } = useTranslation(['common']);
-  const meta = useMetadataQuery();
+
+  const meta = useQuery(META);
+  const latest_inspection = meta.data?.meta.latest_inspection;
 
   let latestInspectionFormattedDate = '';
-  if (meta.data?.latestInspection) {
+  if (latest_inspection) {
     try {
-      const latestInspectionParsedDate = Date.parse(meta.data.latestInspection);
+      const latestInspectionParsedDate = Date.parse(latest_inspection);
       latestInspectionFormattedDate = formatDate(
         DATE_FMT_LATEST_MEASUREMENT,
         latestInspectionParsedDate,
@@ -22,7 +25,7 @@ const LatestInspectionDate = (props: React.HTMLAttributes<HTMLDivElement>) => {
     } catch (e) {
       console.warn(
         'Error parsing or formatting latest inspection date ' +
-          meta.data.latestInspection +
+          latest_inspection +
           ' ' +
           e,
       );
