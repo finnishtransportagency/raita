@@ -41,7 +41,7 @@ const nextConfig = {
           },
           {
             source: '/',
-            destination: '/reports',
+            destination: '/graphql_reports',
           },
         ],
       };
