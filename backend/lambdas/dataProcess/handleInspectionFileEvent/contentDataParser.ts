@@ -123,7 +123,7 @@ export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
   fileStream: Readable,
-  dbConnection: DBConnection | undefined,
+  dbConnection: DBConnection,
   doCSVParsing: boolean,
   reportId: number,
 ): Promise<{

@@ -19,7 +19,7 @@ export async function parseFileMetadata({
   fileStream: Readable | undefined;
   spec: IExtractionSpec;
   doCSVParsing: boolean;
-  dbConnection: DBConnection | undefined;
+  dbConnection: DBConnection;
   reportId: number;
 }): Promise<{
   metadata: any;

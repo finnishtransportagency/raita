@@ -44,7 +44,7 @@ export function getLambdaConfigOrFail() {
 const withRequest = lambdaRequestTracker();
 
 const adminLogger: IAdminLogger = new PostgresLogger();
-let dbConnection: DBConnection | undefined = undefined;
+let dbConnection: DBConnection;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
