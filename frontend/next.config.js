@@ -26,6 +26,10 @@ const nextConfig = {
             source: '/graphql_reports',
             destination: '/reports',
           },
+          {
+            source: '/',
+            destination: '/reports',
+          },
         ],
       };
     } else if (currentMetadataDatabase === 'postgres') {
@@ -34,6 +38,10 @@ const nextConfig = {
           {
             source: '/reports',
             destination: '/graphql_reports',
+          },
+          {
+            source: '/',
+            destination: '/reports',
           },
         ],
       };

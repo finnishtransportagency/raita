@@ -160,15 +160,6 @@ export class RaitaPipelineStack extends Stack {
             `npm run pipeline:synth --environment=${config.env} --branch=${config.branch} --stackid=${config.stackId}`,
           ],
         }),
-        // synthCodeBuildDefaults: {
-        //   rolePolicy: [
-        //     new PolicyStatement({
-        //       effect: Effect.ALLOW,
-        //       actions: ['ssm:GetParameter'],
-        //       resources: ['*'],
-        //     }),
-        //   ],
-        // },
         dockerEnabledForSynth: true,
         codeBuildDefaults: {
           buildEnvironment: {
@@ -180,13 +171,6 @@ export class RaitaPipelineStack extends Stack {
             LocalCacheMode.SOURCE,
             LocalCacheMode.DOCKER_LAYER,
           ),
-          // rolePolicy: [
-          //   new PolicyStatement({
-          //     effect: Effect.ALLOW,
-          //     actions: ['ssm:GetParameter'],
-          //     resources: ['*'],
-          //   }),
-          // ],
         },
       },
     );
