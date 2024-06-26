@@ -11,12 +11,14 @@ import 'react-tooltip/dist/react-tooltip.css';
 import { Header } from 'components';
 import Footer from 'components/footer';
 import { useUser } from 'shared/user';
-import { RaitaPages } from 'shared/pageRoutes';
+import { getRaitaPages } from 'shared/pageRoutes';
 import Error from 'next/error';
 import LoadingOverlay from 'components/loading-overlay';
 import { apolloClient } from 'shared/graphql/client';
 
 const client = new QueryClient();
+
+const raitaPages = getRaitaPages();
 
 function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const { t } = useTranslation(['common']);
@@ -28,7 +30,7 @@ function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   if (!user.loading && !user.user) {
     return <Error statusCode={500} title={t('error.user_info') || ''} />;
   }
-  const pages = RaitaPages.filter(
+  const pages = raitaPages.filter(
     page => user.user?.roles.includes(page.requiredRole),
   );
 
