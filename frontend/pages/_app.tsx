@@ -33,7 +33,6 @@ function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const pages = raitaPages.filter(
     page => user.user?.roles.includes(page.requiredRole),
   );
-  console.log({ pages });
 
   const requiredRole = Component.requiredRole;
   const pageContent = user.user?.roles.includes(requiredRole) ? (
