@@ -13,6 +13,12 @@ declare namespace NodeJS {
      * Set if serving the application from a subpath
      */
     NEXT_PUBLIC_RAITA_BASEURL: string;
+    /**
+     * Change metadata database to use
+     * TODO: remove later
+     */
+    NEXT_PUBLIC_METADATA_DATABASE: 'opensearch' | 'postgres';
+    NEXT_PUBLIC_ENABLE_CSV_PAGE: string;
   }
 }
 

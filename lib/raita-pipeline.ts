@@ -38,6 +38,7 @@ import {
 } from './utils';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { RaitaPipelineLockStack } from './raita-pipeline-lock';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 /**
  * The stack that defines the application pipeline
@@ -49,6 +50,17 @@ export class RaitaPipelineStack extends Stack {
       ...props,
       tags: config.tags,
     });
+
+    // temporary flag for opensearch/postgres transition. TODO: remove later
+    const currentMetadataDatabase = StringParameter.valueFromLookup(
+      this,
+      'raita-metadata-database',
+    );
+    //temporary flag to show csv page. TODO: remove later
+    const enableCsvPage = StringParameter.valueFromLookup(
+      this,
+      'raita-enable-csv-page',
+    );
 
     // Get config based on Raita environment
     const vpcConfig = getAccountVpcResourceConfig(config.env);
@@ -140,6 +152,9 @@ export class RaitaPipelineStack extends Stack {
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
+            NEXT_PUBLIC_METADATA_DATABASE:
+              currentMetadataDatabase ?? 'opensearch',
+            NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage === '1' ? '1' : '',
           },
           commands: [
             'npm run --prefix frontend build',
@@ -160,6 +175,7 @@ export class RaitaPipelineStack extends Stack {
         },
       },
     );
+
     const preSteps: Step[] = [
       new ShellStep('UnitTest', {
         input: githubSource,
@@ -218,6 +234,15 @@ export class RaitaPipelineStack extends Stack {
         pre: Step.sequence(preSteps),
         post: Step.sequence(postSteps),
       },
+    );
+    // These rows are needed to read ssm params at synth time. TODO: remove when the feature flags are not needed
+    codePipeline.buildPipeline();
+    codePipeline.synthProject.addToRolePolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        actions: ['ssm:GetParameter'],
+        resources: ['*'],
+      }),
     );
   }
 }
