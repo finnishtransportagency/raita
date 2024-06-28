@@ -1,0 +1,3 @@
+ALTER TABLE raportti
+ADD COLUMN hash VARCHAR(64);
+

@@ -250,10 +250,11 @@ model raportti {
   measurement_end_location      String?            @db.VarChar(20)
   measurement_direction         String?            @db.VarChar(20)
   maintenance_level             String?            @db.VarChar(20)
+  hash                          String?            @db.VarChar(64)
   ams_mittaus                   ams_mittaus[]
   mittaus                       mittaus[]
-  pi_mittaus                    pi_mittaus[]
   ohl_mittaus                   ohl_mittaus[]
+  pi_mittaus                    pi_mittaus[]
   puuttuva_kolumni              puuttuva_kolumni[]
   rc_mittaus                    rc_mittaus[]
   rp_mittaus                    rp_mittaus[]
