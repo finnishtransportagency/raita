@@ -76,15 +76,6 @@ export const decodeUriString = (uriString: string) => {
   }
 };
 
-export const getOpenSearchLambdaConfigOrFail = () => {
-  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
-  return {
-    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
-    region: getEnv('REGION'),
-    metadataIndex: getEnv('METADATA_INDEX'),
-  };
-};
-
 /**
  * Extract and decode key from S3 event record
  */
@@ -187,9 +178,7 @@ export function isExcelSuffix(arg: string): arg is ExcelSuffix {
 }
 
 export function isCsvSuffix(arg: string): arg is ExcelSuffix {
-  return (
-    fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg
-  );
+  return fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg;
 }
 
 export function getOriginalZipNameFromPath(path: string[]): string {

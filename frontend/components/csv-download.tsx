@@ -2,16 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import * as R from 'rambda';
 
-import {
-  getKeysOfFiles,
-  getPollingProgress,
-  triggerZipLambda,
-} from 'shared/rest';
-import { getKeyAggregations, sizeformatter } from 'shared/util';
+import { getPollingProgress } from 'shared/rest';
 import Button from './button';
-import { Spinner } from './spinner';
 import { ProgressStatus } from 'shared/types';
 import { Generate_Mittaus_CsvMutationVariables } from 'shared/graphql/__generated__/graphql';
 import { useMutation } from '@apollo/client';

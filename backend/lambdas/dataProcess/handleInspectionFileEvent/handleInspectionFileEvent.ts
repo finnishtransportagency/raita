@@ -33,7 +33,6 @@ export function getLambdaConfigOrFail() {
     configurationBucket: getEnv('CONFIGURATION_BUCKET'),
     inspectionBucket: getEnv('INSPECTION_BUCKET'),
     csvBucket: getEnv('CSV_BUCKET'),
-    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
     region: getEnv('REGION'),
     metadataIndex: getEnv('METADATA_INDEX'),
     environment: getEnv('ENVIRONMENT'),

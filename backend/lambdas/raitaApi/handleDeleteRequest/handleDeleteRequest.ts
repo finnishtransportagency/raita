@@ -11,7 +11,6 @@ import {
   isZipPath,
   RaitaLambdaError,
 } from '../../utils';
-import MetadataPort from '../../../ports/metadataPort';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { lambdaRequestTracker } from 'pino-lambda';
@@ -21,7 +20,6 @@ function getLambdaConfigOrFail() {
   return {
     receptionBucket: getEnvOrFail('RECEPTION_BUCKET', 'handleDeleteRequest'),
     inspectionBucket: getEnvOrFail('INSPECTION_BUCKET', 'handleDeleteRequest'),
-    openSearchDomain: getEnvOrFail('OPENSEARCH_DOMAIN', 'handleDeleteRequest'),
     region: getEnvOrFail('REGION', 'handleDeleteRequest'),
     metadataIndex: getEnvOrFail('METADATA_INDEX', 'handleDeleteRequest'),
   };
@@ -49,13 +47,8 @@ export async function handleDeleteRequest(
   try {
     const { body } = event;
     const s3 = new S3();
-    const {
-      receptionBucket,
-      inspectionBucket,
-      metadataIndex,
-      region,
-      openSearchDomain,
-    } = getLambdaConfigOrFail();
+    const { receptionBucket, inspectionBucket, metadataIndex, region } =
+      getLambdaConfigOrFail();
     const user = await getUser(event);
     await validateAdminUser(user);
     const requestBody = body && JSON.parse(body);
@@ -88,7 +81,6 @@ export async function handleDeleteRequest(
     let receptionDeleteCount = 0;
     let inspectionDeleteCount = 0;
     let metadataDeleteCount = 0;
-    let postgresDeleteCount = 0;
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
@@ -108,13 +100,7 @@ export async function handleDeleteRequest(
     }
 
     if (deleteFrom.metadata) {
-      metadataDeleteCount = await deleteFromMetadata(
-        prefix,
-        metadataIndex,
-        region,
-        openSearchDomain,
-      );
-      postgresDeleteCount = await deleteFromPostgres(prefix);
+      metadataDeleteCount = await deleteFromPostgres(prefix);
     }
     if (
       deleteFrom.inspection &&
@@ -133,13 +119,12 @@ export async function handleDeleteRequest(
       },
     });
     await adminLogger.info(
-      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}, Postgre ${postgresDeleteCount}`,
+      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}`,
     );
     return getRaitaSuccessResponse({
       receptionDeleteCount,
       inspectionDeleteCount,
       metadataDeleteCount,
-      postgresDeleteCount,
     });
   } catch (err: any) {
     log.error(`Error in handleDeleteRequest: ${err.message}`);
@@ -232,40 +217,6 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     });
     throw new RaitaLambdaError(
       `Error deleting from bucket ${bucket}: ${err.message}`,
-      500,
-    );
-  }
-}
-
-/**
- * Delete data keys starting with given prefix from metadata
- * @return amount of deleted metadata documents
- */
-async function deleteFromMetadata(
-  prefix: string,
-  metadataIndex: string,
-  region: string,
-  openSearchDomain: string,
-) {
-  try {
-    const metadata = new MetadataPort({
-      backend: 'openSearch',
-      metadataIndex,
-      region,
-      openSearchDomain,
-    });
-    const response = await metadata.deleteByKeyPrefix(prefix);
-    // TODO: response does not contain which documents were deleted. Is this info needed?
-    if (response.errors && response.errors.length) {
-      log.error(
-        { errors: response.errors },
-        'Errors with metadata delete request',
-      );
-    }
-    return response.deleted;
-  } catch (err: any) {
-    throw new RaitaLambdaError(
-      `Error deleting from metadata: ${err.message}`,
       500,
     );
   }
