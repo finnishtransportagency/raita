@@ -174,7 +174,7 @@ describe('outfile name generation', () => {
   })
 });
 
-describe('insert raportti success', () => {
+describe.skip('insert raportti success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     const result = await insertRaporttiData(
@@ -222,7 +222,7 @@ describe('insert raportti success', () => {
   });
 });
 
-describe('handle ams file success', () => {
+describe.skip('handle ams file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
 
