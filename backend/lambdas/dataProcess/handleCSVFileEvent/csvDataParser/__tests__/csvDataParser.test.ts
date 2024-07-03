@@ -532,7 +532,43 @@ describe('handle ams csv file success', () => {
   }, 900000);
 });
 
-describe('handle ams csv file with a missing field success', () => {
+describe('handle ams csv file with a missing oikea_pystysuuntainen_kiihtyvyys_c1 field success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = undefined;
+    let missingColNames;
+    jest
+      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
+      .mockImplementation(
+        (
+          reportId: number,
+          columnNames: string[],
+          dbConnection: DBConnection | undefined,
+        ) => {
+          missingColNames = columnNames;
+          return new Promise((resolve, reject) => resolve());
+        },
+      );
+    let result = await parseCSVFileStream(
+      {
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
+      amsCsvMissingFieldStream,
+      {},
+      dbConnection,
+    );
+
+    expect(result).toEqual('success');
+    expect(missingColNames).toEqual(['oikea_pystysuuntainen_kiihtyvyys_c1']);
+  }, 900000);
+});
+
+describe('handle ams csv file with a missing sscount field success', () => {
   test('success: normal run', async () => {
     const dbConnection = undefined;
     let missingColNames;
@@ -567,6 +603,8 @@ describe('handle ams csv file with a missing field success', () => {
     expect(missingColNames).toEqual(['sscount']);
   }, 900000);
 });
+
+
 
 describe('handle rp csv file success', () => {
   test('success: normal run', async () => {

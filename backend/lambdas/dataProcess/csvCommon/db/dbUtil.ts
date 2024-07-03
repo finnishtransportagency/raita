@@ -112,6 +112,7 @@ export class DBUtil {
     runningDate: Date,
     reportId: number,
     fileNamePrefix: string,
+    missingOptionalColumns: string[] | undefined,
   ) {
     const rataosoite: Rataosoite = this.constructRataosoite(
       row.track,
@@ -136,7 +137,10 @@ export class DBUtil {
       long,
       ...rataosoite,
     };
-    return { ...convertedRow, ...this.handleNan(convertedRow) };
+    return {
+      ...convertedRow,
+      ...this.handleNan(convertedRow, missingOptionalColumns),
+    };
   }
 
   async updateRaporttiStatus(
@@ -401,7 +405,7 @@ export class DBUtil {
     }
   }
 
-  private handleNan(row: any) {
+  private handleNan(row: any, missingOptionalColumns: string[] | undefined) {
     //skip common mittaus fields
     const {
       id,
@@ -426,34 +430,70 @@ export class DBUtil {
       ...measurements
     } = row;
 
+
     let nanFields = {};
     const NAN_REASON_POSTFIX = '_nan_reason';
+    let missingOptionalColumnsFields = {};
+    if (missingOptionalColumns) {
+      missingOptionalColumnsFields = this.handleNanMissingColumns(missingOptionalColumns, NAN_REASON_POSTFIX);
+    }
     for (const [key, value] of Object.entries(measurements)) {
-      if (value && isNaN(Number(value))) {
-        const stringValue = value as string;
-        if (stringValue == '∞') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
-        } else if (stringValue == '-∞') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
-        } else if (stringValue.toLowerCase() == 'inv') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
-        } else if (stringValue.toLowerCase() == 'nan') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
-        } else if (stringValue.toLowerCase() == 'null') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
-        } else {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+      if (value) {
+        if (isNaN(Number(value))) {
+          const stringValue = value as string;
+          if (stringValue == '∞') {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
+          } else if (stringValue == '-∞') {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
+          } else if (stringValue.toLowerCase() == 'inv') {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
+          } else if (stringValue.toLowerCase() == 'nan') {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
+          } else if (stringValue.toLowerCase() == 'null') {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
+          } else {
+            // @ts-ignore
+            nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+          }
+          //Measurement fields will be set to NaN.
+          measurements[key] = Number(value);
         }
+      } else {
+        // @ts-ignore
+        nanFields[key + NAN_REASON_POSTFIX] = 'EMPTY_VALUE';
         //Measurement fields will be set to NaN.
-        measurements[key] = Number(value);
+        measurements[key] = Number('NaN');
       }
     }
+    return { ...measurements, ...nanFields, ...missingOptionalColumnsFields};
+  }
+
+  private handleNanMissingColumns(
+    missingOptionalColumns: string[],
+    NAN_REASON_POSTFIX: string,
+  ) {
+    //skip common mittaus fields
+    const commonMittausFields:string[]= [
+      'id','raportti_id','running_date','jarjestelma','sscount','rataosoite','sijainti','ajonopeus','track','location','latitude','longitude','lat','long','raide_numero','rata_kilometri','rata_metrit','rataosuus_nimi','rataosuus_numero',
+    ]
+    let nanFields = {};
+    let measurements = {};
+
+    for (const missingOptionalColumn of missingOptionalColumns) {
+      if(!commonMittausFields.includes(missingOptionalColumn)) {
+        // @ts-ignore
+        nanFields[missingOptionalColumn + NAN_REASON_POSTFIX] = 'MISSING_COLUMN';
+        //Add measurement fields with NaN value.
+        // @ts-ignore
+        measurements[missingOptionalColumn] = Number('NaN');
+      }
+    }
+
     return { ...measurements, ...nanFields };
   }
 }
