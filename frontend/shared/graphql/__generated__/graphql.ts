@@ -32,6 +32,12 @@ export type FloatIntervalInput = {
   start?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type InputFieldDescription = {
+  __typename?: 'InputFieldDescription';
+  name: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type IntIntervalInput = {
   end?: InputMaybe<Scalars['Int']['input']>;
   start?: InputMaybe<Scalars['Int']['input']>;
@@ -40,6 +46,7 @@ export type IntIntervalInput = {
 export type MetaResponse = {
   __typename?: 'MetaResponse';
   file_type: Array<FieldAggregation>;
+  input_fields: Array<InputFieldDescription>;
   latest_inspection: Scalars['String']['output'];
   mittaus_systems: Array<MittausSystemDescription>;
   report_type: Array<FieldAggregation>;
@@ -208,113 +215,6 @@ export type SearchRaporttiResponse = {
   total_size: Scalars['Float']['output'];
 };
 
-/**
- * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
- *
- * Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
- */
-export type __Type = {
-  __typename?: '__Type';
-  kind: __TypeKind;
-  name?: Maybe<Scalars['String']['output']>;
-  description?: Maybe<Scalars['String']['output']>;
-  specifiedByURL?: Maybe<Scalars['String']['output']>;
-  fields?: Maybe<Array<__Field>>;
-  interfaces?: Maybe<Array<__Type>>;
-  possibleTypes?: Maybe<Array<__Type>>;
-  enumValues?: Maybe<Array<__EnumValue>>;
-  inputFields?: Maybe<Array<__InputValue>>;
-  ofType?: Maybe<__Type>;
-};
-
-
-/**
- * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
- *
- * Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
- */
-export type __TypeFieldsArgs = {
-  includeDeprecated?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
-
-/**
- * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
- *
- * Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
- */
-export type __TypeEnumValuesArgs = {
-  includeDeprecated?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
-
-/**
- * The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.
- *
- * Depending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types.
- */
-export type __TypeInputFieldsArgs = {
-  includeDeprecated?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
-/** An enum describing what kind of type a given `__Type` is. */
-export enum __TypeKind {
-  /** Indicates this type is a scalar. */
-  Scalar = 'SCALAR',
-  /** Indicates this type is an object. `fields` and `interfaces` are valid fields. */
-  Object = 'OBJECT',
-  /** Indicates this type is an interface. `fields`, `interfaces`, and `possibleTypes` are valid fields. */
-  Interface = 'INTERFACE',
-  /** Indicates this type is a union. `possibleTypes` is a valid field. */
-  Union = 'UNION',
-  /** Indicates this type is an enum. `enumValues` is a valid field. */
-  Enum = 'ENUM',
-  /** Indicates this type is an input object. `inputFields` is a valid field. */
-  InputObject = 'INPUT_OBJECT',
-  /** Indicates this type is a list. `ofType` is a valid field. */
-  List = 'LIST',
-  /** Indicates this type is a non-null. `ofType` is a valid field. */
-  NonNull = 'NON_NULL'
-}
-
-/** Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type. */
-export type __Field = {
-  __typename?: '__Field';
-  name: Scalars['String']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  args: Array<__InputValue>;
-  type: __Type;
-  isDeprecated: Scalars['Boolean']['output'];
-  deprecationReason?: Maybe<Scalars['String']['output']>;
-};
-
-
-/** Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type. */
-export type __FieldArgsArgs = {
-  includeDeprecated?: InputMaybe<Scalars['Boolean']['input']>;
-};
-
-/** Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value. */
-export type __InputValue = {
-  __typename?: '__InputValue';
-  name: Scalars['String']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  type: __Type;
-  /** A GraphQL-formatted string representing the default value for this input value. */
-  defaultValue?: Maybe<Scalars['String']['output']>;
-  isDeprecated: Scalars['Boolean']['output'];
-  deprecationReason?: Maybe<Scalars['String']['output']>;
-};
-
-/** One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string. */
-export type __EnumValue = {
-  __typename?: '__EnumValue';
-  name: Scalars['String']['output'];
-  description?: Maybe<Scalars['String']['output']>;
-  isDeprecated: Scalars['Boolean']['output'];
-  deprecationReason?: Maybe<Scalars['String']['output']>;
-};
-
 export type Search_Mittaus_CountQueryVariables = Exact<{
   raportti: RaporttiInput;
   raportti_keys: Array<Scalars['String']['input']> | Scalars['String']['input'];
@@ -371,7 +271,7 @@ export type Search_Raportti_Keys_OnlyQuery = { __typename?: 'Query', search_rapo
 export type MetaQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MetaQuery = { __typename?: 'Query', meta: { __typename?: 'MetaResponse', latest_inspection: string, report_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, file_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, system: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, track_part: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, tilirataosanumero: Array<{ __typename?: 'FieldAggregation', value: string, count: number }> }, __type?: { __typename?: '__Type', name?: string | null, inputFields?: Array<{ __typename?: '__InputValue', name: string, type: { __typename?: '__Type', name?: string | null, inputFields?: Array<{ __typename?: '__InputValue', name: string, type: { __typename?: '__Type', name?: string | null } }> | null } }> | null } | null };
+export type MetaQuery = { __typename?: 'Query', meta: { __typename?: 'MetaResponse', latest_inspection: string, report_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, file_type: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, system: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, track_part: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, tilirataosanumero: Array<{ __typename?: 'FieldAggregation', value: string, count: number }>, input_fields: Array<{ __typename?: 'InputFieldDescription', name: string, type: string }> } };
 
 
 export const Search_Mittaus_CountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_mittaus_count"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"MittausInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"columns"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_mittaus_count"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"raportti_keys"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti_keys"}}},{"kind":"Argument","name":{"kind":"Name","value":"mittaus"},"value":{"kind":"Variable","name":{"kind":"Name","value":"mittaus"}}},{"kind":"Argument","name":{"kind":"Name","value":"columns"},"value":{"kind":"Variable","name":{"kind":"Name","value":"columns"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"row_count"}},{"kind":"Field","name":{"kind":"Name","value":"size_estimate"}}]}}]}}]} as unknown as DocumentNode<Search_Mittaus_CountQuery, Search_Mittaus_CountQueryVariables>;
@@ -380,4 +280,4 @@ export const Search_Csv_Raportti_DetailsDocument = {"kind":"Document","definitio
 export const Mittaus_MetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"mittaus_meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"report_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"file_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"track_part"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"mittaus_systems"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"columns"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latest_inspection"}}]}}]}}]} as unknown as DocumentNode<Mittaus_MetaQuery, Mittaus_MetaQueryVariables>;
 export const Search_RaporttiDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_raportti"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_raportti"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"page_size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}}},{"kind":"Argument","name":{"kind":"Name","value":"order_by_variable"},"value":{"kind":"Variable","name":{"kind":"Name","value":"order_by_variable"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raportti"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"file_name"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"file_type"}},{"kind":"Field","name":{"kind":"Name","value":"source_system"}},{"kind":"Field","name":{"kind":"Name","value":"zip_name"}},{"kind":"Field","name":{"kind":"Name","value":"campaign"}},{"kind":"Field","name":{"kind":"Name","value":"track_number"}},{"kind":"Field","name":{"kind":"Name","value":"track_part"}},{"kind":"Field","name":{"kind":"Name","value":"track_id"}},{"kind":"Field","name":{"kind":"Name","value":"km_start"}},{"kind":"Field","name":{"kind":"Name","value":"km_end"}},{"kind":"Field","name":{"kind":"Name","value":"system"}},{"kind":"Field","name":{"kind":"Name","value":"nonparsed_inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"report_category"}},{"kind":"Field","name":{"kind":"Name","value":"parser_version"}},{"kind":"Field","name":{"kind":"Name","value":"size"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__year"}},{"kind":"Field","name":{"kind":"Name","value":"zip_reception__date"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"extra_information"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_area"}},{"kind":"Field","name":{"kind":"Name","value":"is_empty"}},{"kind":"Field","name":{"kind":"Name","value":"length"}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"}},{"kind":"Field","name":{"kind":"Name","value":"report_type"}},{"kind":"Field","name":{"kind":"Name","value":"temperature"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_start_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_end_location"}},{"kind":"Field","name":{"kind":"Name","value":"measurement_direction"}},{"kind":"Field","name":{"kind":"Name","value":"maintenance_level"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_date"}},{"kind":"Field","name":{"kind":"Name","value":"parsed_at_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"inspection_datetime"}},{"kind":"Field","name":{"kind":"Name","value":"metadata_changed_at_datetime"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"total_size"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"page_size"}}]}}]}}]} as unknown as DocumentNode<Search_RaporttiQuery, Search_RaporttiQueryVariables>;
 export const Search_Raportti_Keys_OnlyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"search_raportti_keys_only"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"RaporttiInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"search_raportti"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"raportti"},"value":{"kind":"Variable","name":{"kind":"Name","value":"raportti"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"page_size"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page_size"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"raportti"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}}]}},{"kind":"Field","name":{"kind":"Name","value":"count"}},{"kind":"Field","name":{"kind":"Name","value":"total_size"}}]}}]}}]} as unknown as DocumentNode<Search_Raportti_Keys_OnlyQuery, Search_Raportti_Keys_OnlyQueryVariables>;
-export const MetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"report_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"file_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"track_part"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latest_inspection"}}]}},{"kind":"Field","name":{"kind":"Name","value":"__type"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"name"},"value":{"kind":"StringValue","value":"RaporttiInput","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"inputFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"inputFields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<MetaQuery, MetaQueryVariables>;
+export const MetaDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"report_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"file_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"system"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"track_part"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tilirataosanumero"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"latest_inspection"}},{"kind":"Field","name":{"kind":"Name","value":"input_fields"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}}]}}]}}]}}]} as unknown as DocumentNode<MetaQuery, MetaQueryVariables>;

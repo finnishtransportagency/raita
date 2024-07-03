@@ -277,3 +277,43 @@ export const getMittausFieldsPerSystem: () => SystemColumnsDescription[] =
     ];
     return mittausSystems;
   };
+
+/**
+ * Description and input types of fields for frontend
+ */
+export const getInputFieldDescriptions: () => {
+  name: string;
+  type: string;
+}[] = () => {
+  return [
+    { name: 'file_name', type: 'String' },
+    { name: 'key', type: 'String' },
+    { name: 'inspection_datetime', type: 'DateTimeIntervalInput' },
+    { name: 'system', type: '[String]' },
+    { name: 'report_type', type: '[String]' },
+    { name: 'track_part', type: '[String]' },
+    { name: 'tilirataosanumero', type: '[String]' },
+    { name: 'file_type', type: '[String]' },
+    { name: 'campaign', type: 'String' },
+    { name: 'extra_information', type: 'String' },
+    { name: 'is_empty', type: 'Boolean' },
+    { name: 'km_start', type: 'IntIntervalInput' },
+    { name: 'km_end', type: 'IntIntervalInput' },
+    { name: 'length', type: 'IntIntervalInput' },
+    { name: 'maintenance_area', type: 'String' },
+    { name: 'maintenance_level', type: 'String' },
+    { name: 'measurement_start_location', type: 'String' },
+    { name: 'measurement_end_location', type: 'String' },
+    { name: 'measurement_direction', type: 'String' },
+    { name: 'metadata_changed_at_datetime', type: 'DateTimeIntervalInput' },
+    { name: 'parsed_at_datetime', type: 'DateTimeIntervalInput' },
+    { name: 'parser_version', type: 'String' },
+    { name: 'report_category', type: 'String' },
+    { name: 'source_system', type: 'String' },
+    { name: 'temperature', type: 'FloatIntervalInput' },
+    { name: 'track_number', type: 'String' },
+    { name: 'track_id', type: 'String' },
+    { name: 'year', type: 'Int' },
+    { name: 'zip_name', type: 'String' },
+  ];
+};

@@ -22,6 +22,7 @@ import {
   getDatabaseEnvironmentVariables,
   isDevelopmentMainStack,
   isDevelopmentPreMainStack,
+  isPermanentStack,
   prismaBundlingOptions,
 } from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
@@ -1193,7 +1194,7 @@ export class RaitaApiStack extends NestedStack {
   }: {
     name: string;
     raitaStackIdentifier: string;
-    raitaEnv: string;
+    raitaEnv: RaitaEnvironment;
     stackId: string;
     jwtTokenIssuer: string;
     lambdaRole: Role;
@@ -1218,6 +1219,9 @@ export class RaitaApiStack extends NestedStack {
         REGION: this.region,
         CSV_GENERATION_LAMBDA: csvGenerationFunction,
         ...databaseEnvironmentVariables,
+        NODE_ENV: isPermanentStack(stackId, raitaEnv)
+          ? 'production'
+          : 'development',
       },
       bundling: prismaBundlingOptions,
       role: lambdaRole,

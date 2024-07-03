@@ -34,6 +34,12 @@ export type FloatIntervalInput = {
   start?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type InputFieldDescription = {
+  __typename?: 'InputFieldDescription';
+  name: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
 export type IntIntervalInput = {
   end?: InputMaybe<Scalars['Int']['input']>;
   start?: InputMaybe<Scalars['Int']['input']>;
@@ -42,6 +48,7 @@ export type IntIntervalInput = {
 export type MetaResponse = {
   __typename?: 'MetaResponse';
   file_type: Array<FieldAggregation>;
+  input_fields: Array<InputFieldDescription>;
   latest_inspection: Scalars['String']['output'];
   mittaus_systems: Array<MittausSystemDescription>;
   report_type: Array<FieldAggregation>;
@@ -287,6 +294,7 @@ export type ResolversTypes = ResolversObject<{
   FieldAggregation: ResolverTypeWrapper<FieldAggregation>;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   FloatIntervalInput: FloatIntervalInput;
+  InputFieldDescription: ResolverTypeWrapper<InputFieldDescription>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   IntIntervalInput: IntIntervalInput;
   MetaResponse: ResolverTypeWrapper<MetaResponse>;
@@ -310,6 +318,7 @@ export type ResolversParentTypes = ResolversObject<{
   FieldAggregation: FieldAggregation;
   Float: Scalars['Float']['output'];
   FloatIntervalInput: FloatIntervalInput;
+  InputFieldDescription: InputFieldDescription;
   Int: Scalars['Int']['output'];
   IntIntervalInput: IntIntervalInput;
   MetaResponse: MetaResponse;
@@ -332,8 +341,15 @@ export type FieldAggregationResolvers<ContextType = any, ParentType extends Reso
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type InputFieldDescriptionResolvers<ContextType = any, ParentType extends ResolversParentTypes['InputFieldDescription'] = ResolversParentTypes['InputFieldDescription']> = ResolversObject<{
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type MetaResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MetaResponse'] = ResolversParentTypes['MetaResponse']> = ResolversObject<{
   file_type?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
+  input_fields?: Resolver<Array<ResolversTypes['InputFieldDescription']>, ParentType, ContextType>;
   latest_inspection?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   mittaus_systems?: Resolver<Array<ResolversTypes['MittausSystemDescription']>, ParentType, ContextType>;
   report_type?: Resolver<Array<ResolversTypes['FieldAggregation']>, ParentType, ContextType>;
@@ -442,6 +458,7 @@ export type SearchRaporttiResponseResolvers<ContextType = any, ParentType extend
 
 export type Resolvers<ContextType = any> = ResolversObject<{
   FieldAggregation?: FieldAggregationResolvers<ContextType>;
+  InputFieldDescription?: InputFieldDescriptionResolvers<ContextType>;
   MetaResponse?: MetaResponseResolvers<ContextType>;
   Mittaus?: MittausResolvers<ContextType>;
   MittausCountResponse?: MittausCountResponseResolvers<ContextType>;
