@@ -3,7 +3,7 @@ import { stringToStream } from '../../../__tests__/testUtils';
 import * as fs from 'fs';
 import { log } from '../../../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../../../types';
-import { DBUtil } from '../../../../csvCommon/db/dbUtil';
+import {getDBConnection, insertRaporttiData, updateRaporttiMetadata} from '../../../../csvCommon/db/dbUtil';
 
 
 const amsCsv =
@@ -165,12 +165,12 @@ const ohlCsv: string =
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
 const ohlCsvStream = stringToStream(ohlCsv);
 
-const dbUtil = new DBUtil();
+
 
 describe('insert raportti success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await dbUtil.getDBConnection();
-    const result = await dbUtil.insertRaporttiData(
+    const dbConnection = await getDBConnection();
+    const result = await insertRaporttiData(
       'polku ja tiedostonimi',
       'tiedostonimi',
       'CHOPPING',
@@ -211,13 +211,13 @@ describe('insert raportti success', () => {
       }
     };
     updateData.push(row);
-    await dbUtil.updateRaporttiMetadata(updateData, dbConnection);
+    await updateRaporttiMetadata(updateData, dbConnection);
   });
 });
 
 describe('handle ams file success', () => {
   test('success: normal run', async () => {
-    const dbConnection = await dbUtil.getDBConnection();
+    const dbConnection = await getDBConnection();
 
 
 

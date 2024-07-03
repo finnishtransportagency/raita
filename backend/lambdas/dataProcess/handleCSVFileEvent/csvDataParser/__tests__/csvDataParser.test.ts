@@ -247,7 +247,6 @@ const ohlCsv: string =
   '25528,"006 KVRP 847",194+0415.25,"60.86959542° N","26.75754352° E",32.763,-56.67,,6206.22,,9.84,,0.00,0.20,5.45,,5.18,,0.32,,77.21,,0.43,,77.60,,0.0000,,,,33,,-20.55,2026.14\r\n' +
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
 
-
 //mock worked only with class DBUtil witch opened too much connection in real use
 /*beforeAll(()=>{
   jest.spyOn(DBUtil.prototype,"writeRowsToDB").mockReturnValue(new Promise((resolve, reject)=>resolve(0)));
@@ -278,7 +277,6 @@ describe.skip('handle ams csv file success', () => {
       {},
       dbConnection,
     );
-
 
     expect(result).toEqual('success');
   }, 900000);
@@ -316,7 +314,6 @@ describe.skip('handle ams csv file unknow misspelled field success', () => {
       {},
       dbConnection,
     );
-
 
     expect(result).toEqual('success');
     expect(missingColNames).toEqual(['oikea_pystysuuntainen_kiihtyvyys_c1']);
@@ -541,7 +538,7 @@ describe.skip('handle ams csv file success', () => {
   }, 900000);
 });
 
-describe.skip('handle ams csv file with a missing field success', () => {
+describe.skip('handle ams csv file with a missing oikea_pystysuuntainen_kiihtyvyys_c1 field success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
@@ -555,6 +552,42 @@ describe.skip('handle ams csv file with a missing field success', () => {
         ) => {
           missingColNames = columnNames;
           return new Promise((resolve, reject) => resolve());
+        },
+      );*/
+    let result = await parseCSVFileStream(
+      {
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
+      amsCsvMissingFieldStream,
+      {},
+      dbConnection,
+    );
+
+    expect(result).toEqual('success');
+    expect(missingColNames).toEqual(['oikea_pystysuuntainen_kiihtyvyys_c1']);
+  }, 900000);
+});
+
+describe.skip('handle ams csv file with a missing sscount field success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    let missingColNames;
+   /* jest
+      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
+      .mockImplementation(
+        (
+          reportId: number,
+          columnNames: string[],
+          dbConnection: DBConnection | undefined,
+        ) => {
+          missingColNames = columnNames;
+          return new Promise((resolve, reject) => reso2lve());
         },
       );*/
     let result = await parseCSVFileStream(

@@ -61,7 +61,6 @@ async function getConnection() {
   return connection;
 }
 
-
 function constructRataosoite(track: string, location: string): Rataosoite {
   //Track: "008 KOKOL LR"
   //Location: "630+0850.00"
@@ -106,11 +105,124 @@ function convertCoord(coord: string) {
   return Number(coord.replace(/[^0-9$.,]/g, ''));
 }
 
+function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
+  //skip common mittaus fields
+  const {
+    id,
+    raportti_id,
+    running_date,
+    jarjestelma,
+    sscount,
+    rataosoite,
+    sijainti,
+    ajonopeus,
+    track,
+    location,
+    latitude,
+    longitude,
+    lat,
+    long,
+    raide_numero,
+    rata_kilometri,
+    rata_metrit,
+    rataosuus_nimi,
+    rataosuus_numero,
+    ...measurements
+  } = row;
+
+  let nanFields = {};
+  const NAN_REASON_POSTFIX = '_nan_reason';
+  let missingOptionalColumnsFields = {};
+  if (missingOptionalColumns) {
+    missingOptionalColumnsFields = handleNanMissingColumns(
+      missingOptionalColumns,
+      NAN_REASON_POSTFIX,
+    );
+  }
+  for (const [key, value] of Object.entries(measurements)) {
+    if (value) {
+      if (isNaN(Number(value))) {
+        const stringValue = value as string;
+        if (stringValue == '∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
+        } else if (stringValue == '-∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
+        } else if (stringValue.toLowerCase() == 'inv') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
+        } else if (stringValue.toLowerCase() == 'nan') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
+        } else if (stringValue.toLowerCase() == 'null') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
+        } else {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+        }
+        //Measurement fields will be set to NaN.
+        measurements[key] = Number(value);
+      }
+    } else {
+      // @ts-ignore
+      nanFields[key + NAN_REASON_POSTFIX] = 'EMPTY_VALUE';
+      //Measurement fields will be set to NaN.
+      measurements[key] = Number('NaN');
+    }
+  }
+  return { ...measurements, ...nanFields, ...missingOptionalColumnsFields };
+}
+
+function handleNanMissingColumns(
+  missingOptionalColumns: string[],
+  NAN_REASON_POSTFIX: string,
+) {
+  //skip common mittaus fields
+  const commonMittausFields: string[] = [
+    'id',
+    'raportti_id',
+    'running_date',
+    'jarjestelma',
+    'sscount',
+    'rataosoite',
+    'sijainti',
+    'ajonopeus',
+    'track',
+    'location',
+    'latitude',
+    'longitude',
+    'lat',
+    'long',
+    'raide_numero',
+    'rata_kilometri',
+    'rata_metrit',
+    'rataosuus_nimi',
+    'rataosuus_numero',
+  ];
+  let nanFields = {};
+  let measurements = {};
+
+  for (const missingOptionalColumn of missingOptionalColumns) {
+    if (!commonMittausFields.includes(missingOptionalColumn)) {
+      // @ts-ignore
+      nanFields[missingOptionalColumn + NAN_REASON_POSTFIX] = 'MISSING_COLUMN';
+      //Add measurement fields with NaN value.
+      // @ts-ignore
+      measurements[missingOptionalColumn] = Number('NaN');
+    }
+  }
+
+  return { ...measurements, ...nanFields };
+}
+
 export function convertToDBRow(
   row: Mittaus,
   runningDate: Date,
   reportId: number,
   fileNamePrefix: string,
+  missingOptionalColumns: string[] | undefined,
 ) {
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
   let lat = undefined;
@@ -123,17 +235,20 @@ export function convertToDBRow(
     long = convertCoord(row.longitude);
   }
 
-    const convertedRow = {
-      ...row,
-      raportti_id: reportId,
-      running_date: runningDate,
-      jarjestelma: fileNamePrefix,
-      lat,
-      long,
-      ...rataosoite,
-    };
-    return { ...convertedRow, ...this.handleNan(convertedRow) };
-  }
+  const convertedRow = {
+    ...row,
+    raportti_id: reportId,
+    running_date: runningDate,
+    jarjestelma: fileNamePrefix,
+    lat,
+    long,
+    ...rataosoite,
+  };
+  return {
+    ...convertedRow,
+    ...handleNan(convertedRow, missingOptionalColumns),
+  };
+}
 
 export async function updateRaporttiStatus(
   id: number,
@@ -249,40 +364,6 @@ export async function updateRaporttiMetadata(
       throw e;
     }
   }
-
-  handleNan(row: any) {
-    //skip common mittaus fields
-    const {
-      id,
-      raportti_id,
-      running_date,
-      jarjestelma,
-      sscount,
-      rataosoite,
-      sijainti,
-      ajonopeus,
-      track,
-      location,
-      latitude,
-      longitude,
-      lat,
-      long,
-      raide_numero,
-      rata_kilometri,
-      rata_metrit,
-      rataosuus_nimi,
-      rataosuus_numero,
-      ...measurements
-    } = row;
-    console.log('measurements', measurements);
-
-    for(const [k,v] of Object.entries(measurements)){
-      console.log(k);
-      console.log(v);
-    }
-
-    return { ...row };
-  }
 }
 
 export async function updateRaporttiChunks(
@@ -386,65 +467,7 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-      await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
-        values,
-      )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
-
-  }
-
-  private handleNan(row: any) {
-    //skip common mittaus fields
-    const {
-      id,
-      raportti_id,
-      running_date,
-      jarjestelma,
-      sscount,
-      rataosoite,
-      sijainti,
-      ajonopeus,
-      track,
-      location,
-      latitude,
-      longitude,
-      lat,
-      long,
-      raide_numero,
-      rata_kilometri,
-      rata_metrit,
-      rataosuus_nimi,
-      rataosuus_numero,
-      ...measurements
-    } = row;
-
-    let nanFields = {};
-    const NAN_REASON_POSTFIX = '_nan_reason';
-    for (const [key, value] of Object.entries(measurements)) {
-      if (value && isNaN(Number(value))) {
-        const stringValue = value as string;
-        if (stringValue == '∞') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
-        } else if (stringValue == '-∞') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
-        } else if (stringValue.toLowerCase() == 'inv') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
-        } else if (stringValue.toLowerCase() == 'nan') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
-        } else if (stringValue.toLowerCase() == 'null') {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
-        } else {
-          // @ts-ignore
-          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
-        }
-        //Measurement fields will be set to NaN.
-        measurements[key] = Number(value);
-      }
-    }
-    return { ...measurements, ...nanFields };
-  }
+  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+    values,
+  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }

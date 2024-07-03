@@ -238,7 +238,7 @@ describe('handle ams file success', () => {
         rootFolder: '',
         path: []
       },
-      amsCsvStream,
+      stringToStream(amsCsv),
       dbConnection,
       891,
     );

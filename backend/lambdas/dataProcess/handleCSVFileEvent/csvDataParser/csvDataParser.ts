@@ -32,7 +32,7 @@ import { KeyData } from '../../../utils';
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
     if (conditionFunction()) resolve();
-    else setTimeout(_ => poll(resolve), 400);
+    else setTimeout((_: any) => poll(resolve), 400);
   };
 
   // @ts-ignore
@@ -52,6 +52,7 @@ async function parseCsvAndWriteToDb(
   fileBaseName: string,
   table: string,
   csvSchema: ZodObject<any>,
+  missingOptionalColumns: string[] | undefined,
   fileNamePrefix: string,
   dbConnection: DBConnection,
 ) {
@@ -60,9 +61,17 @@ async function parseCsvAndWriteToDb(
     const dbRows: any[] = [];
 
     parsedCSVContent.validRows.forEach((row: any) =>
-      dbRows.push(convertToDBRow(row, runningDate, reportId, fileNamePrefix)),
+      dbRows.push(
+        convertToDBRow(
+          row,
+          runningDate,
+          reportId,
+          fileNamePrefix,
+          missingOptionalColumns,
+        ),
+      ),
     );
-    console.log('dbRows',dbRows);
+    console.log('dbRows', dbRows);
 
     try {
       //disable here if needed stop database
@@ -109,6 +118,7 @@ async function handleBufferedLines(
   fileBaseName: string,
   dbConnection: DBConnection,
   fileSchema: ZodObject<any>,
+  missingOptionalColumns: string[] | undefined,
 ) {
   try {
     const fileChunkBody = replaceSeparators(inputFileChunkBody);
@@ -122,6 +132,7 @@ async function handleBufferedLines(
           fileBaseName,
           'ams_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -134,6 +145,7 @@ async function handleBufferedLines(
           fileBaseName,
           'ohl_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -146,6 +158,7 @@ async function handleBufferedLines(
           fileBaseName,
           'pi_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -158,6 +171,7 @@ async function handleBufferedLines(
           fileBaseName,
           'rc_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -170,6 +184,7 @@ async function handleBufferedLines(
           fileBaseName,
           'rp_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -182,6 +197,7 @@ async function handleBufferedLines(
           fileBaseName,
           'tg_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -194,6 +210,7 @@ async function handleBufferedLines(
           fileBaseName,
           'tsight_mittaus',
           fileSchema,
+          missingOptionalColumns,
           fileNamePrefix,
           dbConnection,
         );
@@ -320,6 +337,7 @@ export async function parseCSVFileStream(
   const reportId: number = Number(fileNameParts[1]);
 
   let fileSchema: ZodObject<any> | undefined = undefined;
+  let missingOptionalColumns: string[] | undefined = undefined;
 
   try {
     let runningDate = new Date();
@@ -376,6 +394,7 @@ export async function parseCSVFileStream(
                 msg: 'Missing optional fields',
                 missingOptional: headerValidation.missingOptional,
               });
+              missingOptionalColumns = headerValidation.missingOptional;
               await writeMissingColumnsToDb(
                 reportId,
                 headerValidation.missingOptional,
@@ -418,6 +437,7 @@ export async function parseCSVFileStream(
                   fileBaseName,
                   dbConnection,
                   fileSchema,
+                  missingOptionalColumns,
                 ));
 
               notWritten--;
@@ -463,6 +483,7 @@ export async function parseCSVFileStream(
           fileBaseName,
           dbConnection,
           fileSchema,
+          missingOptionalColumns,
         );
       }
     }
