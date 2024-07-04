@@ -120,7 +120,6 @@ export const getRaitaStackConfig = (
   raitaEnv: RaitaEnvironment,
 ) => ({
   parserConfigurationFile: 'extractionSpec.json',
-  openSearchMetadataIndex: 'metadata',
   raitaSourceSystems: Object.values(raitaSourceSystems),
   cloudfrontCertificateArn: getSSMParameter(
     scope,

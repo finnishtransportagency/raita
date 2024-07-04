@@ -253,12 +253,8 @@ export async function handleInspectionFileEvent(
         return null;
       }
 
-      if (doCSVParsing) {
-        await updateRaporttiMetadata(entries, dbConnection);
-      } else {
-        log.warn('CSV postgres blocked in prod');
-      }
-      await backend.metadataStorage.saveFileMetadata(entries);
+      await updateRaporttiMetadata(entries, dbConnection);
+
       return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);

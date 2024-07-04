@@ -1,56 +1,10 @@
-import * as R from 'rambda';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { DependencyList, useState } from 'react';
-import { MsearchBody } from '@opensearch-project/opensearch/api/types';
 import { saveAs } from 'file-saver';
 
-import { getMeta, apiClient, getFile } from 'shared/rest';
-import { SearchResponse } from 'shared/types';
+import { getFile } from 'shared/rest';
 
 // #region Queries
-
-export function useMetadataQuery() {
-  return useQuery(['meta'], () =>
-    getMeta().then(
-      ({
-        trackNumbers,
-        trackParts,
-        tilirataosanumerot,
-        systems,
-        fileTypes,
-        fields,
-        reportTypes,
-        latestInspection,
-      }) => {
-        return {
-          fields: fields.reduce((o, x) => R.merge(o, x), {}),
-          reportTypes,
-          trackNumbers,
-          trackParts,
-          tilirataosanumerot,
-          systems,
-          fileTypes,
-          latestInspection,
-        };
-      },
-    ),
-  );
-}
-// #endregion
-// #region Mutations
-
-/**
- * Create a React Query mutation for performing searches on the API
- * @returns
- */
-export function useSearch() {
-  return useMutation((query: MsearchBody) => {
-    console.assert(query, 'Given search query is invalid; %o', { query });
-    return apiClient
-      .post<SearchResponse>('/files', query)
-      .then(res => res.data);
-  });
-}
 
 export function useFileQuery(saveFile = true) {
   return useMutation((opts: UseFileQueryArgs) => {
