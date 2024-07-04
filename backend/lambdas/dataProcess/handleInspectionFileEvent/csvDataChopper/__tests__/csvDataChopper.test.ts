@@ -245,26 +245,3 @@ describe.skip('handle ams file success', () => {
     log.debug('report inserted: ' + result);
   }, 900000);
 });
-
-/*describe('parseAMSCSV success', () => {
-  test('success: normal run', async () => {
-    const result = await parseCSVFileStream(amsCsv, 3, "ams_mittaus", amsSchema);
-    expect(result.success).toBe(true);
-    expect(result.header[6]).toBe('oikea_pystysuuntainen_kiihtyvyys_c1');
-    expect(result.validRows[5].oikea_poikittainen_kiihtyvyys_c1).toBe(3.0163);
-    expect(result.validRows.length).toBe(6);
-    expect(result.allRows.length).toBe(6);
-  });
-});*/
-
-/*describe('parseAMSCSV error', () => {
-  test('success: error run', async () => {
-    const result = await parseAMSCSVData(amsCsvError);
-    expect(result.success).toBe(false);
-    if (!(result.success)) {
-      expect(result.errors.header?.errorCode).toBe("MISSING_COLUMN");
-    }
-    expect(result.validRows.length).toBe(0);
-    expect(result.allRows.length).toBe(1);
-  });
-});*/
