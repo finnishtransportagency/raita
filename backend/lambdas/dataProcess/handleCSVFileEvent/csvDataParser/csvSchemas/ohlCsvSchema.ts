@@ -7,98 +7,98 @@ import { z } from 'zod';
 
 export const ohlSchema = z.object({
   sscount: zcsv.number(
-    z.number().or(z.nan()).optional(),
+    z.number().optional(),
   ),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
   longitude: zcsv.string(z.string().optional()),
-  ajonopeus: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  ajonopeus: zcsv.string(
+    z.string().optional(),
   ),
-  siksak_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  siksak_1: zcsv.string(
+    z.string().optional(),
   ),
-  siksak_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  siksak_2: zcsv.string(
+    z.string().optional(),
   ),
-  korkeus_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  korkeus_1: zcsv.string(
+    z.string().optional(),
   ),
-  korkeus_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  korkeus_2: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospaksuus_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospaksuus_1: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospaksuus_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospaksuus_2: zcsv.string(
+    z.string().optional(),
   ),
-  risteavien_ajolankojen_etaisyys: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  risteavien_ajolankojen_etaisyys: zcsv.string(
+    z.string().optional(),
   ),
-  height_gradient: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  height_gradient: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveys_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveys_1: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveys_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveys_2: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveyden_keskiarvo_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveyden_keskiarvo_1: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveyden_keskiarvo_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveyden_keskiarvo_2: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveyden_keskihajonta_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveyden_keskihajonta_1: zcsv.string(
+    z.string().optional(),
   ),
-  pinnan_leveyden_keskihajonta_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pinnan_leveyden_keskihajonta_2: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospinta_ala_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospinta_ala_1: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospinta_ala_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospinta_ala_2: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospinta_alan_keskiarvo_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospinta_alan_keskiarvo_1: zcsv.string(
+    z.string().optional(),
   ),
-  jaannospinta_alan_keskiarvo_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  jaannospinta_alan_keskiarvo_2: zcsv.string(
+    z.string().optional(),
   ),
-  residual_area_stddev_1: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  residual_area_stddev_1: zcsv.string(
+    z.string().optional(),
   ),
-  residual_area_stddev_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  residual_area_stddev_2: zcsv.string(
+    z.string().optional(),
   ),
-  pole: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pole: zcsv.string(
+    z.string().optional(),
   ),
-  korkeuden_poikkeama: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  korkeuden_poikkeama: zcsv.string(
+    z.string().optional(),
   ),
-  siksakkin_poikkeama: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  siksakkin_poikkeama: zcsv.string(
+    z.string().optional(),
   ),
-  pituuskaltevuus: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  pituuskaltevuus: zcsv.string(
+    z.string().optional(),
   ),
-  ohl_ajonopeus: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  ohl_ajonopeus: zcsv.string(
+    z.string().optional(),
   ),
-  right_wire_wear_2: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  right_wire_wear_2: zcsv.string(
+    z.string().optional(),
   ),
-  stagger_box_ohl: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  stagger_box_ohl: zcsv.string(
+    z.string().optional(),
   ),
-  height_box_ohl: zcsv.number(
-    z.number().or(z.nan()).optional(),
+  height_box_ohl: zcsv.string(
+    z.string().optional(),
   ),
 });
 

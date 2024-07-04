@@ -5,7 +5,7 @@ import { z } from 'zod';
 '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985,-21.7708,26.3496,14.6794,14.1478,8.1315,8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\n' +*/
 
 export const amsSchema = z.object({
-  sscount: zcsv.string(z.string().optional()),
+  sscount: zcsv.number(z.number().optional()),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
