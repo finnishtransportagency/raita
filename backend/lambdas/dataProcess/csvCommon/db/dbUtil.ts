@@ -163,13 +163,13 @@ function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
           nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
         }
         //Measurement fields will be set to NaN.
-        measurements[key] = Number(value);
+        measurements[key] = 'NaN';
       }
     } else {
       // @ts-ignore
       nanFields[key + NAN_REASON_POSTFIX] = 'EMPTY_VALUE';
       //Measurement fields will be set to NaN.
-      measurements[key] = Number('NaN');
+      measurements[key] = 'NaN';
     }
   }
   return { ...measurements, ...nanFields, ...missingOptionalColumnsFields };
@@ -210,7 +210,7 @@ function handleNanMissingColumns(
       nanFields[missingOptionalColumn + NAN_REASON_POSTFIX] = 'MISSING_COLUMN';
       //Add measurement fields with NaN value.
       // @ts-ignore
-      measurements[missingOptionalColumn] = Number('NaN');
+      measurements[missingOptionalColumn] = 'NaN';
     }
   }
 

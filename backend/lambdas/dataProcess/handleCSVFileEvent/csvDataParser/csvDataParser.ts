@@ -39,7 +39,7 @@ function until(conditionFunction: () => any) {
   return new Promise(poll);
 }
 
-async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
+export async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
@@ -226,7 +226,7 @@ async function handleBufferedLines(
   }
 }
 
-function createFileSchema(fileNamePrefix: string): ZodObject<any> {
+export function createFileSchema(fileNamePrefix: string): ZodObject<any> {
   let schema: ZodObject<any>;
   switch (fileNamePrefix) {
     case 'AMS':
@@ -349,7 +349,7 @@ export async function parseCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 500;
+    const maxBufferSize = 250;
 
     let state = ReadState.READING_HEADER as ReadState;
 

@@ -2,17 +2,23 @@ import {
   validateHeaders,
   parseCSVFileStream,
   removeMissingHeadersFromSchema,
+  parseCsvData,
+  createFileSchema,
 } from '../csvDataParser';
 import * as fs from 'fs';
 import { stringToStream } from '../../../handleInspectionFileEvent/__tests__/testUtils';
 import {
+  convertToDBRow,
   DBConnection,
   getDBConnection,
   updateRaporttiStatus,
+  writeMissingColumnsToDb,
 } from '../../../csvCommon/db/dbUtil';
 import { z } from 'zod';
 import { parseCSVContent, zcsv } from '../../../../../../external/zod-csv';
 import { amsSchema } from '../csvSchemas/amsCsvSchema';
+import { Mittaus } from '../../../csvCommon/db/model/Mittaus';
+import { log } from '../../../../../utils/logger';
 
 const ohlWithSurveyDate =
   '"Track";"Location [km+m]";"Over Head Line Geometry and Wear.Survey Date";"Over Head Line Geometry and Wear.Latitude";"Over Head Line Geometry and Wear.Longitude";"Over Head Line Geometry and Wear.Ajonopeus [Km/h]";"Over Head Line Geometry and Wear.Ajonopeus [Km/h]";"Over Head Line Geometry and Wear.Height Box_OHL [mm]";"Over Head Line Geometry and Wear.Height Gradient [mm/m]";"Over Head Line Geometry and Wear.Jäännöspaksuus 1 [mm]";"Over Head Line Geometry and Wear.Jäännöspaksuus 2 [mm]";"Over Head Line Geometry and Wear.Jäännöspinta-ala 1 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-ala 2 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 1 [mm^2]";"Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 2 [mm^2]";"Over Head Line Geometry and Wear.Korkeuden Poikkeama [mm]";"Over Head Line Geometry and Wear.Korkeus 1 [mm]";"Over Head Line Geometry and Wear.Korkeus 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 2 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveys 1 [mm]";"Over Head Line Geometry and Wear.Pinnan Leveys 2 [mm]";"Over Head Line Geometry and Wear.Pituuskaltevuus [mm/m]";"Over Head Line Geometry and Wear.Pole";"Over Head Line Geometry and Wear.Residual Area StdDev 1 [mm^2]";"Over Head Line Geometry and Wear.Residual Area StdDev 2 [mm^2]";"Over Head Line Geometry and Wear.Right Wire Wear 2 [mm]";"Over Head Line Geometry and Wear.Risteävien Ajolankojen Etäisyys [mm]";"Over Head Line Geometry and Wear.Siksak 1 [mm]";"Over Head Line Geometry and Wear.Siksak 2 [mm]";"Over Head Line Geometry and Wear.Siksakkin Poikkeama [mm]";"Over Head Line Geometry and Wear.Stagger Box_OHL [mm]"\n' +
@@ -24,9 +30,7 @@ const ohlWithSurveyDate =
 const rcWithSomeEnglishColNames =
   '"Running Date";"20/4/2022 10:42:33 AM"\n' +
   '"SSCount";"Track";"Location [km+m]";"Latitude";"Longitude";"Ajonopeus [Km/h]";"Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [100-300]mm [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000]mm [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm Keskiarvo [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm Keskiarvo [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm Keskiarvo [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm Keskiarvo [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [100-300]mm Keskiarvo [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm Keskiarvo [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm Keskiarvo [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000]mm Keskiarvo [µm]";"Rail Corrugation.Oikean Raiteen Aallon RMS [10-30]mm Keskihajonta [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm Keskihajonta [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm Keskihajonta [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm Keskihajonta [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [10-300]mm Keskihajonta [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm Keskihajonta [µm]";"Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm Keskihajonta [µm]";"Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000] Keskihajonta [µm]";"Rail Corrugation.Left RMS Rail Corr [10-30]mm Fixed Mean [µm]";"Rail Corrugation.Right RMS Rail Corr [10-30]mm Fixed Mean [µm]";"Rail Corrugation.Left RMS Rail Corr [10-30]mm Fixed StdDev [µm]";"Rail Corrugation.Right RMS Rail Corr [10-30]mm Fixed StdDev [µm]";"Rail Corrugation.Left RMS Rail Corr [30-100]mm Fixed Mean [µm]";"Rail Corrugation.Right RMS Rail Corr [30-100]mm Fixed Mean [µm]";"Rail Corrugation.Left RMS Rail Corr [30-100]mm Fixed StdDev [µm]";"Rail Corrugation.Right RMS Rail Corr [30-100]mm Fixed StdDev [µm]";"Rail Corrugation.Left RMS Rail Corr [100-300]mm Fixed Mean [µm]";"Rail Corrugation.Right RMS Rail Corr [100-300]mm Fixed Mean [µm]";"Rail Corrugation.Left RMS Rail Corr [100-300]mm Fixed StdDev [µm]";"Rail Corrugation.Right RMS Rail Corr [100-300]mm Fixed StdDev [µm]";"Rail Corrugation.Left RMS Rail Corr [300-1000]mm Fixed Mean [µm]";"Rail Corrugation.Right RMS Rail Corr [300-1000]mm Fixed Mean [µm]";"Rail Corrugation.Left RMS Rail Corr [300-1000]mm Fixed StdDev [µm]";"Rail Corrugation.Right RMS Rail Corr [300-1000]mm Fixed StdDev [µm]"\n' +
-  '1;"Track 47 ML 4";0+0555.00;"60.17508152° N";"24.94085348° E";0.007;0.0000;0.0000;0.0000;0.0000;0.0000;0.0000;3.9800;1.8000;0.0000;0.0000;0.0000;0.0000;2.5992;0.0249;6.7723;3.8797;0.0000;0.0000;0.0000;0.0000;0.8040;0.1448;1.0461;0.4167;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.013;2.301;0.103;0.643;4.049;5.956;0.443;1.128\n' +
-  '2;"Track 47 ML 4";0+0555.25;"60.17508379° N";"24.94085114° E";0.681;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.013;2.301;0.103;0.643;4.049;5.956;0.443;1.128\n' +
-  '3;"Track 47 ML 4";0+0555.50;"60.17508655° N";"24.94084892° E";1.087;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.013;2.301;0.103;0.643;4.049;5.956;0.443;1.128\n';
+  '3;"Track 47 ML 4";0+0555.50;"60.17508655° N";"24.94084892° E";1.087;1;NaN;epäluku;∞;;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;epäluku;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.000;0.013;2.301;0.103;0.643;4.049;5.956;0.443;1.128\n';
 
 const rcWithOikeaGenetiveForm =
   '"Running Date";"5/5/2022 8:47:01 AM"\n' +
@@ -69,8 +73,8 @@ const amsCsvStream = stringToStream(amsCsv);
 
 const amsWithNansCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
-  '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C3 Mean-to-Peak [m/s^2]","Running Dynamics.Ajonopeus [Km/h]"\r\n' +
-  '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985,NaN,,,epäluku,∞, 8.0237,-4.1229,-6.3282,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,0.3869,56\r\n';
+  '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Pystysuuntainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Suodatettu [m/s^2]","Running Dynamics.Oikea Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Vasen Poikittainen Kiihtyvyys C1 Keskihajonta [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C2 Suodatettu [m/s^2]","Running Dynamics.Transversal Acceleration C2 Mean-to-Peak [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Pystysuuntainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 [m/s^2]","Running Dynamics.Poikittainen Kiihtyvyys C3 Suodatettu [m/s^2]","Running Dynamics.Ajonopeus [Km/h]"\r\n' +
+  '318103,"008 KOKOL LR",630+0850.00,"64.07646857° N","24.54062901° E",55.985,NaN,,epäluku,∞,-∞,null,inv,3.1816,-3.5781,1.3801,1.7761,2.2629,2.1137,-4.7717,-2.7778,-1.3045,1.3953,0.5937,1.2821,0.5037,56\r\n';
 
 const amsCsvWithUnkownMisspelledField =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -159,7 +163,7 @@ const tsightCsvStream = stringToStream(tsightCsv);
 const tgCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","TG Master.Raideleveyden Poikkeama [mm]","TG Master.Kallistus [mm]","TG Master.Kallistuksen Poikkeama [mm]","TG Master.Kierous [mm]","TG Master.Kaarevuus [10000/m]","TG Master.Raideleveyden Poikkeaman Muutos [mm/m]","TG Master.Kierouden Poikkeama [mm]","TG Master.Vasen Korkeuspoikkeama D1 [mm]","TG Master.Vasen Korkeuspoikkeama D2 [mm]","TG Master.Oikea Korkeuspoikkeama D2 [mm]","TG Master.Vasen Korkeuspoikkeama D3 [mm]","TG Master.Oikea Korkeuspoikkeama D3 [mm]","TG Master.Vasen Nuolikorkeuspoikkeama D1 [mm]","TG Master.Oikea Nuolikorkeuspoikkeama D1 [mm]","TG Master.Vasen Nuolikorkeuspoikkeama D2 [mm]","TG Master.Oikea Nuolikorkeuspoikkeama D2 [mm]","TG Master.Vasen Nuolikorkeuspoikkeama D3 [mm]","TG Master.Oikea Nuolikorkeuspoikkeama D3 [mm]","TG Master.Gradient [‰]","TG Master.Raideleveyden [mm]","TG Master.Oikea Korkeuspoikkeama D1 [mm]","TG Master.Raideleveyden Keskihajonta [mm]","TG Master.Kallistus Keskihajonta [mm]","TG Master.Kierouden Keskihajonta [mm]","TG Master.Vasen Korkeuspoikkeama D1 Keskihajonta [mm]","TG Master.Oikea Korkeuspoikkeama D1 Keskihajonta [mm]","TG Master.Vasen Nuolikorkeus D1 Keskihajonta [mm]","TG Master.Oikea Nuolikorkeus D1 Keskihajonta [mm]","TG Master.Vasen Korkeuspoikkema D0 [mm]","TG Master.Oikea Korkeuspoikkema D0 [mm]","TG Master.Vasen Korkeuspoikkema D0 Keskihajonta [mm]","TG Master.Oikea Korkeuspoikkema D0 Keskihajonta [mm]"\r\n' +
-  '294966,"006 LHRP 2",130+0100.00,"60.97625075° N","25.65622864° E",40.872,-0.82,-0.76,-0.41,1.39,-1.82,0.08,1.29,-0.91,4.08,4.03,4.69,5.36,-0.13,0.43,-1.04,-0.69,-13.96,-13.50,-0.43,1523.18,-0.68,0.88,2.23,1.59,1.27,1.13,1.23,1.22,-0.10,0.03,0.16,0.17\r\n' +
+  '294966,"006 LHRP 2",130+0100.00,"60.97625075° N","25.65622864° E",40.872,inv,-0.76,-0.41,1.39,-1.82,0.08,1.29,-0.91,4.08,4.03,4.69,5.36,-0.13,0.43,-1.04,-0.69,-13.96,-13.50,-0.43,1523.18,-0.68,0.88,2.23,1.59,1.27,1.13,1.23,1.22,-0.10,0.03,0.16,0.17\r\n' +
   '294967,"006 LHRP 2",130+0100.25,"60.97625061° N","25.65623323° E",40.873,-0.79,-0.59,-0.24,1.30,-1.82,0.05,1.20,-0.83,4.13,4.07,4.83,5.49,-0.17,0.39,-1.02,-0.67,-13.86,-13.40,-0.43,1523.21,-0.77,0.88,2.22,1.59,1.27,1.13,1.23,1.22,-0.01,0.05,0.16,0.17\r\n' +
   '294968,"006 LHRP 2",130+0100.00,"60.97625046° N","25.65623782° E",40.867,-0.73,-0.40,-0.05,1.10,-1.82,-0.06,1.01,-0.74,4.19,4.10,4.97,5.62,-0.19,0.35,-1.00,-0.65,-13.76,-13.29,-0.43,1523.27,-0.86,0.88,2.22,1.59,1.27,1.13,1.23,1.22,0.05,-0.01,0.16,0.17\r\n' +
   '294969,"006 LHRP 2",130+0100.25,"60.97625031° N","25.65624241° E",40.863,-0.80,-0.17,0.17,1.00,-1.82,-0.05,0.90,-0.65,4.25,4.14,5.11,5.74,-0.20,0.31,-0.98,-0.63,-13.65,-13.18,-0.43,1523.20,-0.93,0.88,2.21,1.59,1.27,1.13,1.23,1.22,0.13,-0.08,0.16,0.17\r\n' +
@@ -175,7 +179,7 @@ const tgCsv: string =
 const rpCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Rail Profile.Vasen Pystysuora Kuluma [mm]","Rail Profile.Oikea Pystysuora Kuluma [mm]","Rail Profile.Vasen Pystysuora Kuluman Keskiarvo [mm]","Rail Profile.Oikea Pystysuora Kuluman Keskiarvo [mm]","Rail Profile.Vasen Pystysuora Kuluman Keskihajonta [mm]","Rail Profile.Oikea Pystysuora Kuluman Keskihajonta [mm]","Rail Profile.Vasen Sisäpuolinen Sivuttaiskuluma [mm]","Rail Profile.Oikea Sisäpuolinen Sivuttaiskuluma [mm]","Rail Profile.Vasen Sisäpuolisen Sivuttaiskuluman Keskiarvo [mm]","Rail Profile.Oikea Sisäpuolisen Sivuttaiskuluman Keskiarvo [mm]","Rail Profile.Vasen Sisäpuolisen Sivuttaiskuluman Keskihajonta [mm]","Rail Profile.Oikea Sisäpuolisen Sivuttaiskuluman Keskihajonta [mm]","Rail Profile.Vasen Ulkoinen Sivuttaiskuluma [mm]","Rail Profile.Oikea Ulkoinen Sivuttaiskuluma [mm]","Rail Profile.Vasen Ulkoisen Sivuttaiskuluman Keskiarvo [mm]","Rail Profile.Oikea Ulkoisen Sivuttaiskuluman Keskiarvo [mm]","Rail Profile.Vasen Ulkoisen Sivuttaiskuluman Keskihajonta [mm]","Rail Profile.Oikea Ulkoisen Sivuttaiskuluman Keskihajonta [mm]","Rail Profile.Vasen Kallistus [°]","Rail Profile.Oikea Kallistus [°]","Rail Profile.Vasen Kallistuksen Keskiarvo [°]","Rail Profile.Oikea Kallistuksen Keskiarvo [°]","Rail Profile.Vasen Kallistuksen Keskihajonta [°]","Rail Profile.Oikea Kallistuksen Keskihajonta [°]","Rail Profile.Vasen 45° Kuluma [mm]","Rail Profile.Oikea 45° Kuluma [mm]","Rail Profile.Vasen 45° Kuluman Keskiarvo [mm]","Rail Profile.Oikea 45° Kuluman Keskiarvo [mm]","Rail Profile.Vasen 45° Kuluman Keskihajonta [mm]","Rail Profile.Oikea 45° Kuluman Keskihajonta [mm]","Rail Profile.Vasen Yhdistetty Kuluma [mm]","Rail Profile.Oikea Yhdistetty Kuluma [mm]","Rail Profile.Vasen Yhdistetyn Kuluman Keskiarvo [mm]","Rail Profile.Oikea Yhdistetyn Kuluman Keskiarvo [mm]","Rail Profile.Vasen Yhdistetyn Kuluman Keskihajonta [mm]","Rail Profile.Oikea Yhdistetyn Kuluman Keskihajonta [mm]","Rail Profile.Vasen Poikkileikkauspinta-Ala [mm^2]","Rail Profile.Oikea Poikkileikkauspinta-Ala [mm^2]","Rail Profile.Vasen Poikkileikkauspinta-Alan Keskiarvo [mm^2]","Rail Profile.Oikea Poikkileikkauspinta-Alan Keskiarvo [mm^2]","Rail Profile.Vasen Poikkileikkauspinta-Alan Keskihajonta [mm^2]","Rail Profile.Oikea Poikkileikkauspinta-Alan Keskihajonta [mm^2]","Rail Profile.Vasen Sisäpuolinen Purse [mm]","Rail Profile.Oikea Sisäpuolinen Purse [mm]","Rail Profile.Vasen Sisäpuolisen Purseen Keskiarvo [mm]","Rail Profile.Oikea Sisäpuolisen Purseen Keskiarvo [mm]","Rail Profile.Vasen Sisäpuolisen Purseen Keskihajonta [mm]","Rail Profile.Oikea Sisäpuolisen Purseen Keskihajonta [mm]","Rail Profile.Vasen Ulkopuolinen Purse [mm]","Rail Profile.Oikea Ulkopuolinen Purse [mm]","Rail Profile.Vasen Ulkopuolisen Purseen Keskiarvo [mm]","Rail Profile.Oikea Ulkopuolisen Purseen Keskiarvo [mm]","Rail Profile.Vasen Ulkopuolisen Purseen Keskihajonta [mm]","Rail Profile.Oikea Ulkopuolisen Purseen Keskihajonta [mm]","Rail Profile.Tehollinen Kartiokkuus","Rail Profile.Tehollisen Kartiokkuuden Keskiarvo","Rail Profile.Tehollisen Kartiokkuuden Keskihajonta","Rail Profile.Vasen Kiskon Kallistuksen Kiinteä Keskiarvo [°]","Rail Profile.Oikea Kiskon Kallistuksen Kiinteä Keskiarvo [°]","Rail Profile.Vasen Kiskon Kallistuksen Kiinteä Keskihajonta [°]","Rail Profile.Oikea Kiskon Kallistuksen Kiinteä Keskihajonta [°]","Rail Profile.Vasen Pystysuoran Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Pystysuoran Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Pystysuoran Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Pystysuoran Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Vasen Sisäpuolisen Sivuttaisk Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Sisäpuolisen Sivuttaisk Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Sisäpuolisen Sivuttaisk Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Sisäpuolisen Sivuttaisk Kiinteä Keskihajonta [mm]","Rail Profile.Vasen Ulkopuolisen Sivuttaisk Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Ulkopuolisen Sivuttaisk Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Ulkopuolisen Sivuttaisk Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Ulkopuolisen Sivuttaisk Kiinteä Keskihajonta [mm]","Rail Profile.Vasen 45° Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Oikea 45° Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Vasen 45° Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Oikea 45° Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Vasen Yhdistetyn Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Yhdistetyn Kuluman Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Yhdistetyn Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Yhdistetyn Kuluman Kiinteä Keskihajonta [mm]","Rail Profile.Vasen Poikkileikkauspinta-Alan Kiinteä Keskiarvo [mm^2]","Rail Profile.Oikea Poikkileikkauspinta-Alan Kiinteä Keskiarvo [mm^2]","Rail Profile.Vasen Poikkileikkauspint-Alan Kiinteä Keskihajonta [mm^2]","Rail Profile.Oikea Poikkileikkauspint-Alan Kiinteä Keskihajonta [mm^2]","Rail Profile.Vasen Sisäpuolisen Purseen Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Sisäpuolisen Purseen Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Sisäpuolisen Purseen Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Sisäpuolisen Purseen Kiinteä Keskihajonta [mm]","Rail Profile.Vasen Ulkopuolisen Purseen Kiinteä Keskiarvo [mm]","Rail Profile.Oikea Ulkopuolisen Purseen Kiinteä Keskiarvo [mm]","Rail Profile.Vasen Ulkopulisen Purseen Kiinteä Keskihajonta [mm]","Rail Profile.Oikea Ulkopuolisen Purseen Kiinteä Keskihajonta [mm]","Rail Profile.Tehollisen Kartiokkuuden Kiinteä Keskiarvo","Rail Profile.Tehollisen Kartiokkuuden Kiinteä Keskihajonta","Rail Profile.Vasen Poikkipinta-Alan Poikkeama [mm^2]","Rail Profile.Oikea Poikkipinta-Alan Poikkeama [mm^2]","Rail Profile.Ajonopeus [Km/h]"\r\n' +
-  '299974,"003 TL V628-V626",148+0671.00,"61.17816172° N","23.84195551° E",42.151,3.288,1.372,2.284,1.302,0.588,0.346,-0.839,-0.105,-0.406,-0.313,0.358,0.409,-0.727,0.556,-0.246,0.319,0.258,0.540,1.217,1.216,1.349,1.365,0.176,0.110,3.379,1.591,1.986,1.187,0.887,0.564,2.504,1.597,1.959,1.305,0.549,0.298,2411.733,2415.867,2414.337,2416.562,1.784,0.828,0.000,0.192,0.010,0.145,0.025,0.084,0.000,0.000,0.000,0.001,0.001,0.003,0.0216,0.0158,0.0029,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.15\r\n' +
+  '299974,"003 TL V628-V626",148+0671.00,"61.17816172° N","23.84195551° E",42.151,3.288,1.372,2.284,1.302,,null,-0.839,-0.105,-0.406,-0.313,0.358,0.409,-0.727,0.556,-0.246,0.319,0.258,0.540,1.217,1.216,1.349,1.365,0.176,0.110,3.379,1.591,1.986,1.187,0.887,0.564,2.504,1.597,1.959,1.305,0.549,0.298,2411.733,2415.867,2414.337,2416.562,1.784,0.828,0.000,0.192,0.010,0.145,0.025,0.084,0.000,0.000,0.000,0.001,0.001,0.003,0.0216,0.0158,0.0029,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.15\r\n' +
   '299975,"003 TL V628-V626",148+0671.25,"61.17816258° N","23.84195121° E",42.149,3.288,1.372,2.283,1.303,0.588,0.345,-0.839,-0.105,-0.408,-0.316,0.357,0.415,-0.727,0.556,-0.247,0.320,0.259,0.542,1.217,1.216,1.349,1.364,0.176,0.110,3.379,1.591,1.982,1.185,0.888,0.568,2.504,1.597,1.955,1.305,0.550,0.297,2411.733,2415.867,2414.346,2416.560,1.787,0.826,0.000,0.192,0.010,0.146,0.025,0.083,0.000,0.000,0.000,0.001,0.001,0.003,0.0171,0.0152,0.0096,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.15\r\n' +
   '299976,"003 TL V628-V626",148+0671.50,"61.17816343° N","23.84194690° E",42.141,3.288,1.372,2.281,1.304,0.588,0.344,-0.839,-0.105,-0.410,-0.319,0.355,0.422,-0.727,0.556,-0.248,0.322,0.260,0.544,1.217,1.216,1.349,1.364,0.176,0.111,3.379,1.591,1.978,1.183,0.890,0.571,2.504,1.597,1.952,1.306,0.550,0.296,2411.733,2415.867,2414.355,2416.559,1.790,0.824,0.000,0.192,0.010,0.146,0.025,0.083,0.000,0.000,0.000,0.001,0.001,0.003,0.0363,0.0216,0.0086,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.14\r\n' +
   '299977,"003 TL V628-V626",148+0671.75,"61.17816428° N","23.84194260° E",42.137,3.288,1.372,2.279,1.305,0.588,0.342,-0.839,-0.105,-0.412,-0.322,0.354,0.428,-0.727,0.556,-0.248,0.323,0.260,0.546,1.217,1.216,1.350,1.363,0.176,0.111,3.379,1.591,1.974,1.181,0.891,0.574,2.504,1.597,1.949,1.306,0.550,0.296,2411.733,2415.867,2414.364,2416.557,1.792,0.821,0.000,0.192,0.010,0.147,0.025,0.083,0.000,0.000,0.000,0.001,0.001,0.003,0.0301,0.0171,0.0082,1.347,1.438,0.159,0.103,2.569,0.915,0.292,0.297,-0.046,-0.305,0.393,0.530,-0.225,0.501,0.201,0.472,2.489,0.851,0.403,0.376,2.434,1.013,0.261,0.286,1600.000,1600.000,0.753,0.892,0.009,0.077,0.025,0.087,0.001,0.000,0.001,0.001,0.094,0.064,8.5243,4.3905,42.14\r\n' +
@@ -196,7 +200,7 @@ const rp2Csv: string =
 const rcCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [100-300]mm [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000]mm [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm Keskiarvo [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm Keskiarvo [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm Keskiarvo [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm Keskiarvo [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [100-300]mm Keskiarvo [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm Keskiarvo [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm Keskiarvo [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000]mm Keskiarvo [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [10-30]mm Keskihajonta [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [10-30]mm Keskihajonta [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [30-100]mm Keskihajonta [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [30-100]mm Keskihajonta [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [10-300]mm Keskihajonta [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [100-300]mm Keskihajonta [µm]","Rail Corrugation.Oikea Raiteen Aallon RMS [300-1000]mm Keskihajonta [µm]","Rail Corrugation.Vasen Raiteen Aallon RMS [300-1000] Keskihajonta [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[10-30]mm Kiinteä Keskiarvo [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[10-30]mm Kiinteä Keskiarvo [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[10-30]mm Kiinteä Keskihaj [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[10-30]mm Kiinteä Keskihaj [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[30-100]mm Kiinteä Keskiarv [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[30-100]mm Kiinteä Keskiarv [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[30-100]mm Kiinteä Keskihaj [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[30-100]mm Kiinteä Keskihaj [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[100-300]mm Kiinteä Keskiar [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[100-300]mm Kiinteä Keskiar [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[100-300]mm Kiinteä Keskiha [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[100-300]mm Kiinteä Keskiha [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[300-1000]mm Kiinteä Keskia [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[300-1000]mm Kiinteä Keskia [µm]","Rail Corrugation.Vasen Raiteen AallonRMS[300-1000]mm Kiinteä Keskih [µm]","Rail Corrugation.Oikea Raiteen AallonRMS[300-1000]mm Kiinteä Keskih [µm]"\r\n' +
-  '3602,"008 KHG V911-V913",622+0896.00,"64.02422615° N","24.43978963° E",32.712,0.5800,3.5200,2.0000,6.4600,3.3000,5.8800,13.8200,10.0800,1.6353,1.2886,4.7452,2.7071,11.4934,2.0446,35.6436,10.0213,3.1258,0.8097,10.4332,1.4532,20.0564,1.2318,33.3636,6.9853,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
+  '3602,"008 KHG V911-V913",622+0896.00,"64.02422615° N","24.43978963° E",32.712,,xxx,2.0000,6.4600,3.3000,5.8800,13.8200,10.0800,1.6353,1.2886,4.7452,2.7071,11.4934,2.0446,35.6436,10.0213,3.1258,0.8097,10.4332,1.4532,20.0564,1.2318,33.3636,6.9853,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
   '3603,"008 KHG V911-V913",622+0895.75,"64.02422459° N","24.43978596° E",32.717,0.5800,3.5200,2.0000,6.4600,3.3000,5.8800,13.8200,10.0800,1.6356,1.2893,4.7466,2.7029,11.4979,2.0463,35.7666,10.0476,3.1258,0.8094,10.4329,1.4557,20.0556,1.2308,33.3447,6.9900,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
   '3604,"008 KHG V911-V913",622+0895.50,"64.02422303° N","24.43978229° E",32.718,0.0800,3.4800,1.7800,5.6000,3.2800,5.0000,11.3400,10.3400,1.6378,1.2886,4.7466,2.7026,11.4972,2.0472,35.9002,10.0751,3.1252,0.8098,10.4329,1.4559,20.0557,1.2302,33.3321,6.9956,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
   '3605,"008 KHG V911-V913",622+0895.25,"64.02422147° N","24.43977862° E",32.715,0.0800,3.4800,1.7800,5.6000,3.2800,5.0000,11.3400,10.3400,1.6400,1.2879,4.7466,2.7024,11.4966,2.0481,36.0337,10.1026,3.1247,0.8102,10.4329,1.4560,20.0559,1.2295,33.3191,7.0012,1.106,2.001,0.648,3.619,2.183,6.273,1.117,12.643,1.617,19.589,0.963,37.283,9.916,64.646,5.325,73.667\r\n' +
@@ -214,7 +218,7 @@ const rcCsvStream = stringToStream(rcCsv);
 const piCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Pantograph/Catenary Interaction.AccZ 1.1 [m/s^2]","Pantograph/Catenary Interaction.AccZ 1.2 [m/s^2]","Pantograph/Catenary Interaction.AccZ 2.1 [m/s^2]","Pantograph/Catenary Interaction.AccZ 2.2 [m/s^2]","Pantograph/Catenary Interaction.F 1.1 [N]","Pantograph/Catenary Interaction.F 1.2 [N]","Pantograph/Catenary Interaction.F 2.1 [N]","Pantograph/Catenary Interaction.F 2.2 [N]","Pantograph/Catenary Interaction.FInt [N]","Pantograph/Catenary Interaction.FComp [N]","Pantograph/Catenary Interaction.FExt [N]","Pantograph/Catenary Interaction.Stagger [mm]","Pantograph/Catenary Interaction.Height WS [mm]"\r\n' +
-  '242348,"006 LHRP 1",130+0500.00,"60.97626774° N","25.66358446° E",42.897,0.3274,0.8127,-0.1709,0.6935,11.7668,28.0949,18.9888,18.7523,39.7417,75.4279,37.7411,122,2735\r\n' +
+  '242348,"006 LHRP 1",130+0500.00,"60.97626774° N","25.66358446° E",42.897,0.3274,0.8127,-0.1709,,NaN,18.9888,18.7523,39.7417,75.4279,37.7411,122,2735\r\n' +
   '242349,"006 LHRP 1",130+0499.75,"60.97626803° N","25.66357989° E",42.906,0.3955,-0.4331,0.6089,0.8052,11.6976,28.1539,19.7476,20.0664,39.8515,77.1193,39.8140,114,2735\r\n' +
   '242350,"006 LHRP 1",130+0499.50,"60.97626831° N","25.66357530° E",42.912,0.3910,0.7564,0.7145,0.4417,12.5091,28.3903,20.3911,20.1408,40.8995,79.1892,40.4391,111,2735\r\n' +
   '242351,"006 LHRP 1",130+0499.25,"60.97626859° N","25.66357072° E",42.911,-0.4304,0.7583,-0.6698,0.3635,12.7121,29.0062,21.5986,20.7427,41.6554,85.0721,42.3413,117,2734\r\n' +
@@ -233,7 +237,7 @@ const piCsvStream = stringToStream(piCsv);
 const ohlCsv: string =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
   '"SSCount","Track","Location [km+m]","Latitude","Longitude","Ajonopeus [Km/h]","Over Head Line Geometry and Wear.Siksak 1 [mm]","Over Head Line Geometry and Wear.Siksak 2 [mm]","Over Head Line Geometry and Wear.Korkeus 1 [mm]","Over Head Line Geometry and Wear.Korkeus 2 [mm]","Over Head Line Geometry and Wear.Jäännöspaksuus 1 [mm]","Over Head Line Geometry and Wear.Jäännöspaksuus 2 [mm]","Over Head Line Geometry and Wear.Risteävien Ajolankojen Etäisyys [mm]","Over Head Line Geometry and Wear.Height Gradient [mm/m]","Over Head Line Geometry and Wear.Pinnan Leveys 1 [mm]","Over Head Line Geometry and Wear.Pinnan Leveys 2 [mm]","Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 1 [mm]","Over Head Line Geometry and Wear.Pinnan Leveyden Keskiarvo 2 [mm]","Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 1 [mm]","Over Head Line Geometry and Wear.Pinnan Leveyden Keskihajonta 2 [mm]","Over Head Line Geometry and Wear.Jäännöspinta-ala 1 [mm^2]","Over Head Line Geometry and Wear.Jäännöspinta-ala 2 [mm^2]","Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 1 [mm^2]","Over Head Line Geometry and Wear.Jäännöspinta-alan Keskiarvo 2 [mm^2]","Over Head Line Geometry and Wear.Residual Area StdDev 1 [mm^2]","Over Head Line Geometry and Wear.Residual Area StdDev 2 [mm^2]","Over Head Line Geometry and Wear.Pole","Over Head Line Geometry and Wear.Korkeuden Poikkeama [mm]","Over Head Line Geometry and Wear.Siksakkin Poikkeama [mm]","Over Head Line Geometry and Wear.Pituuskaltevuus [mm/m]","Over Head Line Geometry and Wear.Ajonopeus [Km/h]","Over Head Line Geometry and Wear.Right Wire Wear 2 [mm]","Over Head Line Geometry and Wear.Stagger Box_OHL [mm]","Over Head Line Geometry and Wear.Height Box_OHL [mm]"\r\n' +
-  '25517,"006 KVRP 847",194+0418.00,"60.86960023° N","26.75759324° E",32.731,-56.26,,6198.96,,9.84,,0.00,0.20,5.45,,5.24,,0.21,,77.21,,0.31,,77.54,,0.0000,,,,33,,-20.10,2016.15\r\n' +
+  '25517,"006 KVRP 847",194+0418.00,"60.86960023° N","26.75759324° E",32.731,-56.26,,6198.96,,9.84,,0.00,0.20,5.45,,5.24,,0.21,,77.21,,0.31,,77.54,,0.0000,,inv,,33,,-20.10,2016.15\r\n' +
   '25518,"006 KVRP 847",194+0417.75,"60.86959982° N","26.75758871° E",32.738,-57.17,,6199.19,,9.86,,0.00,0.20,5.41,,5.23,,0.21,,77.28,,0.31,,77.54,,0.0000,,,,33,,-19.93,2016.42\r\n' +
   '25519,"006 KVRP 847",194+0417.50,"60.86959938° N","26.75758420° E",32.728,-55.77,,6198.35,,9.85,,0.00,0.20,5.44,,5.24,,0.21,,77.23,,0.31,,77.54,,0.0000,,,,33,,-18.15,2015.61\r\n' +
   '25520,"006 KVRP 847",194+0417.25,"60.86959892° N","26.75757971° E",32.730,-56.39,,6200.31,,9.83,,0.00,0.20,5.50,,5.24,,0.21,,77.13,,0.30,,77.53,,0.0000,,,,33,,-18.42,2017.71\r\n' +
@@ -260,6 +264,172 @@ afterAll(() => {
   jest.clearAllMocks();
 })*/
 
+async function parseAndConvertRow(prefix: string, fileBody: string) {
+  const originalSchema = createFileSchema(prefix);
+  const csvHeaderLine = fileBody.split(/\r\n|\r|\n/)[1];
+  const fileSchema = removeMissingHeadersFromSchema(
+    originalSchema,
+    csvHeaderLine,
+  );
+  const headerValidation = validateHeaders(originalSchema, csvHeaderLine);
+  let missingOptionalColumns: string[] | undefined = [];
+  if (headerValidation.missingOptional.length) {
+    missingOptionalColumns = headerValidation.missingOptional;
+  }
+
+  const parsedCSVContent = await parseCsvData(fileBody, fileSchema);
+
+  // @ts-ignore
+  const row: Mittaus = parsedCSVContent.validRows[0];
+
+  const convertedRow = convertToDBRow(
+    row,
+    new Date(),
+    0,
+    prefix,
+    missingOptionalColumns,
+  );
+  return convertedRow;
+}
+
+describe('handle ams NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'AMS';
+    const fileBody = amsWithNansCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_pystysuuntainen_kiihtyvyys_c1_nan_reason":"NAN_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason":"EMPTY_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason":"UNKNOWN_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason":"INF_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason":"MINUS_INF_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_pystysuuntainen_kiihtyvyys_c1_nan_reason":"MISSING_COLUMN"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_poikittainen_kiihtyvyys_c1_nan_reason":"NULL_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_poikittainen_kiihtyvyys_c1_nan_reason":"INV_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_poikittainen_kiihtyvyys_c1_keskihajonta":"1.7761"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_pystysuuntainen_kiihtyvyys_c1":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","oikea_poikittainen_kiihtyvyys_c1":"NaN","vasen_poikittainen_kiihtyvyys_c1":"NaN"',
+    );
+  }, 900000);
+});
+
+describe('handle tsightCsv NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'TSIGHT';
+    const fileBody = tsightCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"ballast_slope_l":"-22.49492264"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"platform_center_h_l":"NaN"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"platform_center_h_l_nan_reason":"NAN_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"fin1_kin_min_distance_nan_reason":"EMPTY_VALUE"',
+    );
+  }, 900000);
+});
+
+describe('handle tg NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'TG';
+    const fileBody = tgCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"raideleveyden_poikkeama":"NaN","kallistus":"-0.76"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"raideleveyden_poikkeama_nan_reason":"INV_VALUE"',
+    );
+  }, 900000);
+});
+
+describe('handle rp NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'RP';
+    const fileBody = rpCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_pystysuora_kuluman_keskihajonta_nan_reason":"EMPTY_VALUE","oikea_pystysuora_kuluman_keskihajonta_nan_reason":"NULL_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_pystysuora_kuluman_keskiarvo":"1.302","vasen_pystysuora_kuluman_keskihajonta":"NaN","oikea_pystysuora_kuluman_keskihajonta":"NaN"',
+    );
+  }, 900000);
+});
+
+describe('handle rc NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'RC';
+    const fileBody = rcCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"vasen_raiteen_aallon_rms_10_30mm":"NaN","oikea_raiteen_aallon_rms_30_100mm":"2.0000"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"oikea_raiteen_aallon_rms_10_30mm_nan_reason":"EMPTY_VALUE","vasen_raiteen_aallon_rms_10_30mm_nan_reason":"UNKNOWN_VALUE"',
+    );
+  }, 900000);
+});
+
+describe('handle pi NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'PI';
+    const fileBody = piCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"accz_2_2_nan_reason":"EMPTY_VALUE","f_1_1_nan_reason":"NAN_VALUE","height_ws_nan_reason":"EMPTY_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"accz_2_1":"-0.1709","accz_2_2":"NaN","f_1_1":"NaN"',
+    );
+  }, 900000);
+});
+
+describe('handle ohl NaN vals ', () => {
+  test('success: normal run', async () => {
+    const prefix = 'OHL';
+    const fileBody = ohlCsv;
+    const convertedRow = await parseAndConvertRow(prefix, fileBody);
+    console.log('convertedRow ', JSON.stringify(convertedRow));
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"korkeuden_poikkeama_nan_reason":"EMPTY_VALUE","siksakkin_poikkeama_nan_reason":"INV_VALUE"',
+    );
+    expect(JSON.stringify(convertedRow)).toContain(
+      '"korkeus_1":"6198.96","korkeus_2":"NaN"',
+    );
+  }, 900000);
+});
+
+
+
+
 describe.skip('handle ams csv file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
@@ -282,8 +452,46 @@ describe.skip('handle ams csv file success', () => {
   }, 900000);
 });
 
+
 //typo: "oikea_pystysuuntainen_kiityvyys_c1"
 describe.skip('handle ams csv file unknow misspelled field success', () => {
+  test('success: normal run', async () => {
+    const dbConnection = await getDBConnection();
+    let missingColNames;
+    /*jest
+      .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
+      .mockImplementation(
+        (
+          reportId: number,
+          columnNames: string[],
+          dbConnection: DBConnection,
+        ) => {
+          missingColNames = columnNames;
+          return new Promise((resolve, reject) => resolve());
+        },
+      );
+*/
+    const result = await parseCSVFileStream(
+      {
+        fileBaseName: 'chunkFile_889_1_AMS_20211125_003_YLORP_002_000_000.csv',
+        fileName: '',
+        fileSuffix: '',
+        keyWithoutSuffix:
+          '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/AMS_20221122_008_KOKOL_LR_630_630.csv',
+        rootFolder: '',
+        path: [],
+      },
+      stringToStream(amsCsvWithUnkownMisspelledField),
+      {},
+      dbConnection,
+    );
+
+    expect(result).toEqual('success');
+    expect(missingColNames).toEqual(['oikea_pystysuuntainen_kiihtyvyys_c1']);
+  }, 900000);
+});
+
+describe.skip('handle ams csv file Nans', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
@@ -578,7 +786,7 @@ describe.skip('handle ams csv file with a missing sscount field success', () => 
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     let missingColNames;
-   /* jest
+    /* jest
       .spyOn(DBUtil.prototype, 'writeMissingColumnsToDb')
       .mockImplementation(
         (
@@ -631,7 +839,7 @@ describe.skip('handle rp csv file success', () => {
   }, 900000);
 });
 
-// describe.skip('handle tg csv file success',() => {
+// describe('handle tg csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -652,7 +860,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-// describe.skip('handle ohl csv file success',() => {
+// describe('handle ohl csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -673,7 +881,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-/*describe.skip('parseAMSCSV success',() => {
+/*describe('parseAMSCSV success',() => {
   test('success: normal run',async () => {
     const result = await parseCSVFileStream(amsCsv,3,"ams_mittaus",amsSchema);
     expect(result.success).toBe(true);
@@ -684,7 +892,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-/*describe.skip('parseAMSCSV error',() => {
+/*describe('parseAMSCSV error',() => {
   test('success: error run',async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
@@ -696,7 +904,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-describe.skip('validateHeaders', () => {
+describe('validateHeaders', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -749,7 +957,7 @@ describe.skip('validateHeaders', () => {
   });
 });
 
-describe.skip('removeMissingHeadersFromSchema', () => {
+describe('removeMissingHeadersFromSchema', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -764,7 +972,7 @@ describe.skip('removeMissingHeadersFromSchema', () => {
 
 // test that zod-csv parser handles different column order in csv vs schema.
 // We are using our modified copy of zod-csv to achive this: external/zod-csv/csv.ts:94
-describe.skip('parseCSVContent', () => {
+describe('parseCSVContent', () => {
   test('success: different column order', async () => {
     const parsedCSVContent = parseCSVContent(
       amsCsvWithDifferentColumnOrder,
