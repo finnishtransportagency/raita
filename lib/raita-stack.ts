@@ -40,7 +40,6 @@ export class RaitaStack extends Stack {
       jwtTokenIssuer: config.jwtTokenIssuer,
       vpc: raitaVPC,
       raitaSecurityGroup,
-      openSearchMetadataIndex: config.openSearchMetadataIndex,
       parserConfigurationFile: config.parserConfigurationFile,
       sftpPolicyAccountId: config.sftpPolicyAccountId,
       sftpPolicyUserId: config.sftpPolicyUserId,
