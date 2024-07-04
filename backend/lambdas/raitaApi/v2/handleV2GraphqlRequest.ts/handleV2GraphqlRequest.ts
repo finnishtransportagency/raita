@@ -21,7 +21,7 @@ import { GraphQLError } from 'graphql';
 import { getGetEnvWithPreassignedContext } from '../../../../../utils';
 
 function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('handleV2FilesRequest');
+  const getEnv = getGetEnvWithPreassignedContext('handleV2GraphqlRequest');
   return {
     csvGenerationLambda: getEnv('CSV_GENERATION_LAMBDA'),
     region: getEnv('REGION'),
@@ -57,7 +57,7 @@ const server = new ApolloServer({
 
 const withRequest = lambdaRequestTracker();
 
-export const handleV2FilesRequest = startServerAndCreateLambdaHandler(
+export const handleV2GraphqlRequest = startServerAndCreateLambdaHandler(
   server,
   handlers.createALBEventRequestHandler(),
   {

@@ -66,7 +66,7 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
   public readonly handleAdminLogsRequestFn: NodejsFunction;
-  public readonly handleV2FilesRequest: NodejsFunction;
+  public readonly handleV2GraphqlRequest: NodejsFunction;
   public readonly handleCsvGenerationFn: NodejsFunction;
   public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
   public readonly alb:
@@ -398,7 +398,7 @@ export class RaitaApiStack extends NestedStack {
       targetBucket: dataCollectionBucket,
     });
 
-    this.handleV2FilesRequest = this.createV2FilesRequestHandler({
+    this.handleV2GraphqlRequest = this.createV2GraphqlHandler({
       name: 'api-handler-v2-files',
       raitaStackIdentifier,
       raitaEnv,
@@ -498,11 +498,10 @@ export class RaitaApiStack extends NestedStack {
         targetName: 'admin-logs',
       },
       {
-        // TODO: path names for v2 graphql api
-        lambda: this.handleV2FilesRequest,
-        priority: 2300,
-        path: [`${apiBaseUrl}/v2/files`],
-        targetName: 'v2-files',
+        lambda: this.handleV2GraphqlRequest,
+        priority: 360,
+        path: [`${apiBaseUrl}/v2/graphql`],
+        targetName: 'v2-graphql',
       },
       {
         lambda: handleReturnLogin,
@@ -1180,7 +1179,7 @@ export class RaitaApiStack extends NestedStack {
   /**
    * Creates and returns handler for admin log request
    */
-  private createV2FilesRequestHandler({
+  private createV2GraphqlHandler({
     name,
     raitaStackIdentifier,
     raitaEnv,
@@ -1206,10 +1205,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(60), // TODO
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleV2FilesRequest',
+      handler: 'handleV2GraphqlRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/v2/handleV2FilesRequest.ts/handleV2FilesRequest.ts`,
+        `../backend/lambdas/raitaApi/v2/handleV2GraphqlRequest.ts/handleV2GraphqlRequest.ts`,
       ),
       environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
