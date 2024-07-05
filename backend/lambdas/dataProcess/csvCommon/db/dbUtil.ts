@@ -106,7 +106,7 @@ function convertCoord(coord: string) {
 }
 
 function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
-  //skip common mittaus fields
+  //skip common mittaus fields except ajonopeus
   const {
     id,
     raportti_id,
@@ -115,7 +115,6 @@ function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
     sscount,
     rataosoite,
     sijainti,
-    ajonopeus,
     track,
     location,
     latitude,
@@ -179,7 +178,7 @@ function handleNanMissingColumns(
   missingOptionalColumns: string[],
   NAN_REASON_POSTFIX: string,
 ) {
-  //skip common mittaus fields
+  //skip common mittaus fields except ajonopeus
   const commonMittausFields: string[] = [
     'id',
     'raportti_id',
@@ -188,7 +187,6 @@ function handleNanMissingColumns(
     'sscount',
     'rataosoite',
     'sijainti',
-    'ajonopeus',
     'track',
     'location',
     'latitude',
