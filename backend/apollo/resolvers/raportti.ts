@@ -45,6 +45,40 @@ export const raporttiResolvers: Resolvers = {
         page,
       };
     },
+    search_raportti_by_key_prefix: async (parent, { key, page, page_size }) => {
+      const client = await getPrismaClient();
+      const [sizeResult, raporttiResult] = await client.$transaction([
+        client.raportti.aggregate({
+          where: {
+            key: {
+              startsWith: key,
+            },
+          },
+          _count: {
+            id: true,
+          },
+          _sum: {
+            size: true,
+          },
+        }),
+        client.raportti.findMany({
+          where: {
+            key: {
+              startsWith: key,
+            },
+          },
+          skip: (page - 1) * page_size,
+          take: page_size,
+        }),
+      ]);
+      return {
+        raportti: raporttiResult,
+        count: sizeResult._count.id,
+        total_size: sizeResult._sum.size ? Number(sizeResult._sum.size) : NaN,
+        page_size,
+        page,
+      };
+    },
     meta: async () => {
       const client = await getPrismaClient();
 

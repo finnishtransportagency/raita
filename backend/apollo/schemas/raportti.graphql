@@ -109,5 +109,11 @@ type Query {
     order_by_variable: String
   ): SearchRaporttiResponse!
 
+  search_raportti_by_key_prefix(
+    key: String!
+    page: Int!
+    page_size: Int!
+  ): SearchRaporttiResponse!
+
   meta: MetaResponse!
 }

@@ -111,6 +111,7 @@ export type Query = {
   meta: MetaResponse;
   search_mittaus_count: MittausCountResponse;
   search_raportti: SearchRaporttiResponse;
+  search_raportti_by_key_prefix: SearchRaporttiResponse;
 };
 
 
@@ -127,6 +128,13 @@ export type QuerySearch_RaporttiArgs = {
   page: Scalars['Int']['input'];
   page_size: Scalars['Int']['input'];
   raportti: RaporttiInput;
+};
+
+
+export type QuerySearch_Raportti_By_Key_PrefixArgs = {
+  key: Scalars['String']['input'];
+  page: Scalars['Int']['input'];
+  page_size: Scalars['Int']['input'];
 };
 
 export type Raportti = {
@@ -389,6 +397,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   meta?: Resolver<ResolversTypes['MetaResponse'], ParentType, ContextType>;
   search_mittaus_count?: Resolver<ResolversTypes['MittausCountResponse'], ParentType, ContextType, RequireFields<QuerySearch_Mittaus_CountArgs, 'columns' | 'mittaus'>>;
   search_raportti?: Resolver<ResolversTypes['SearchRaporttiResponse'], ParentType, ContextType, RequireFields<QuerySearch_RaporttiArgs, 'page' | 'page_size' | 'raportti'>>;
+  search_raportti_by_key_prefix?: Resolver<ResolversTypes['SearchRaporttiResponse'], ParentType, ContextType, RequireFields<QuerySearch_Raportti_By_Key_PrefixArgs, 'key' | 'page' | 'page_size'>>;
 }>;
 
 export type RaporttiResolvers<ContextType = any, ParentType extends ResolversParentTypes['Raportti'] = ResolversParentTypes['Raportti']> = ResolversObject<{

@@ -58,6 +58,26 @@ export const SEARCH_RAPORTTI = gql(`
   }
 `);
 
+export const SEARCH_RAPORTTI_BY_KEY_PREFIX = gql(`
+  query search_raportti_by_key_prefix(
+    $key: String!,
+    $page: Int!,
+    $page_size: Int!
+    ) {
+    search_raportti_by_key_prefix(
+      key: $key,
+      page: $page,
+      page_size: $page_size,
+      ) {
+      raportti {
+        key
+      }
+      count
+      total_size
+    }
+  }
+`);
+
 export const SEARCH_RAPORTTI_KEYS_ONLY = gql(`
   query search_raportti_keys_only(
     $raportti: RaporttiInput!,

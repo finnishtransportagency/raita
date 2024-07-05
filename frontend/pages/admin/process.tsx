@@ -12,8 +12,10 @@ import { useSearch } from 'shared/hooks';
 import { postManualDataProcessRequest } from 'shared/rest';
 import { ManualDataProcessRequest, RaitaNextPage } from 'shared/types';
 import { RaitaRole } from 'shared/user';
+import { useQuery } from '@apollo/client';
+import { SEARCH_RAPORTTI_BY_KEY_PREFIX } from 'shared/graphql/queries/reports';
 
-const ProcessIndex: RaitaNextPage = () => {
+const ProcessPage: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
 
   const [prefixInput, setPrefixInput] = useState('');
@@ -27,14 +29,19 @@ const ProcessIndex: RaitaNextPage = () => {
   const [requireNewerParserVersion, setRequireNewerParserVersion] =
     useState(true);
 
-  const filesToProcessMutation = useSearch();
+  const { loading, error, data, refetch } = useQuery(
+    SEARCH_RAPORTTI_BY_KEY_PREFIX,
+    {
+      variables: {
+        key: prefixInput,
+        page: 1,
+        page_size: 10,
+      },
+    },
+  );
 
   const fetchFilesToBeProcessed = () => {
-    const query = makeQuery(
-      [{ field: 'key.keyword', type: 'prefix', value: prefixInput }],
-      { paging: { size: 0, curPage: 1 }, keyFn: s => s },
-    );
-    filesToProcessMutation.mutate(query);
+    refetch();
   };
 
   const showConfirmationModal = () => {
@@ -64,7 +71,6 @@ const ProcessIndex: RaitaNextPage = () => {
     if (processRequestInProgress) {
       return;
     }
-    filesToProcessMutation.reset();
     setConfirmModalOpen(false);
     setProcessRequestInProgress(false);
   };
@@ -78,8 +84,8 @@ const ProcessIndex: RaitaNextPage = () => {
 
   const readyToProcess =
     confirmModalOpen &&
-    filesToProcessMutation.data &&
-    filesToProcessMutation.data.total > 0 &&
+    data?.search_raportti_by_key_prefix.raportti &&
+    data.search_raportti_by_key_prefix.count > 0 &&
     !processRequestInProgress;
   return (
     <div className="container mx-auto px-16 py-6">
@@ -111,17 +117,16 @@ const ProcessIndex: RaitaNextPage = () => {
           <p className="mb-4">
             {t('admin:process_path_info', { path: prefixInput })}
           </p>
-          {filesToProcessMutation.isLoading && t('admin:process_files_loading')}
-          {!!filesToProcessMutation.error &&
-            t('admin:process_files_fetch_error')}
-          {filesToProcessMutation.data &&
-            (filesToProcessMutation.data.total === 0 ? (
+          {loading && t('admin:process_files_loading')}
+          {!!error && t('admin:process_files_fetch_error')}
+          {data &&
+            (data.search_raportti_by_key_prefix.count === 0 ? (
               <p>{t('admin:process_files_not_found')}</p>
             ) : (
               <>
                 <p>
                   {t('admin:process_counts_file', {
-                    count: filesToProcessMutation.data.total,
+                    count: data.search_raportti_by_key_prefix.count,
                   })}
                   <div className="mb-2">
                     {t('admin:process_skip_hash_check_label')}
@@ -212,6 +217,6 @@ const ProcessIndex: RaitaNextPage = () => {
   );
 };
 
-ProcessIndex.requiredRole = RaitaRole.Admin;
+ProcessPage.requiredRole = RaitaRole.Admin;
 
-export default ProcessIndex;
+export default ProcessPage;
