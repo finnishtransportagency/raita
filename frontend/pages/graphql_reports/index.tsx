@@ -217,15 +217,15 @@ const ReportsIndex: RaitaNextPage = () => {
   };
 
   const extraFields: FieldDict = {};
-  meta.data?.__type?.inputFields?.forEach(fieldInfo => {
-    if (!fieldInfo.type.name) {
+  meta.data?.meta.input_fields?.forEach(fieldInfo => {
+    if (!fieldInfo.name) {
       return;
     }
     if (disabledExtraFields.includes(fieldInfo.name)) {
       return;
     }
     extraFields[fieldInfo.name] = {
-      type: fieldInfo.type.name! as SelectorSupportedType,
+      type: fieldInfo.type! as SelectorSupportedType,
     };
   });
   return (

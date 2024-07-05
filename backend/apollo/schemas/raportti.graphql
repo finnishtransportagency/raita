@@ -56,6 +56,11 @@ type MittausSystemDescription {
   columns: [String!]! # list of system specific columns
 }
 
+type InputFieldDescription {
+  name: String!
+  type: String!
+}
+
 type MetaResponse {
   report_type: [FieldAggregation!]!
   file_type: [FieldAggregation!]!
@@ -64,6 +69,7 @@ type MetaResponse {
   tilirataosanumero: [FieldAggregation!]!
   mittaus_systems: [MittausSystemDescription!]!
   latest_inspection: String!
+  input_fields: [InputFieldDescription!]! # this should match fields of RaporttiInput, to be used by frontend
 }
 
 input RaporttiInput {

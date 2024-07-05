@@ -2,7 +2,11 @@ import { Prisma } from '@prisma/client';
 import { getPrismaClient } from '../../utils/prismaClient';
 import { Resolvers } from '../__generated__/resolvers-types';
 import { compareAsc } from 'date-fns';
-import { getRaporttiWhereInput, getMittausFieldsPerSystem } from '../utils';
+import {
+  getRaporttiWhereInput,
+  getMittausFieldsPerSystem,
+  getInputFieldDescriptions,
+} from '../utils';
 
 export const raporttiResolvers: Resolvers = {
   Query: {
@@ -153,6 +157,7 @@ export const raporttiResolvers: Resolvers = {
         })),
         latest_inspection: realLatest.toISOString(),
         mittaus_systems: mittausSystems,
+        input_fields: getInputFieldDescriptions(),
       };
     },
   },

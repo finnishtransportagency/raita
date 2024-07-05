@@ -107,20 +107,7 @@ export const META = gql(`
       track_part { value count }
       tilirataosanumero { value count }
       latest_inspection
-    }
-    __type(name: "RaporttiInput") {
-      name
-      inputFields {
-        name
-        type {
-          name
-          inputFields {
-            name
-            type { name }
-          }
-        }
-
-      }
+      input_fields { name type }
     }
   }
 `);
