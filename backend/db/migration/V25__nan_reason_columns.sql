@@ -1,5 +1,8 @@
 CREATE TYPE NAN_REASON AS ENUM  ('INV_VALUE','NAN_VALUE','NULL_VALUE','INF_VALUE','MINUS_INF_VALUE','UNKNOWN_VALUE','EMPTY_VALUE','MISSING_COLUMN');
 
+alter table mittaus
+  ADD COLUMN ajonopeus_nan_reason NAN_REASON;
+
 alter table ams_mittaus
 
   ADD COLUMN oikea_pystysuuntainen_kiihtyvyys_c1_nan_reason NAN_REASON,
@@ -29,8 +32,6 @@ alter table ams_mittaus
 
 
 alter table ohl_mittaus
-
-  ADD COLUMN ajonopeus_nan_reason NAN_REASON,
   ADD COLUMN siksak_1_nan_reason NAN_REASON,
   ADD COLUMN siksak_2_nan_reason NAN_REASON,
   ADD COLUMN korkeus_1_nan_reason NAN_REASON,
