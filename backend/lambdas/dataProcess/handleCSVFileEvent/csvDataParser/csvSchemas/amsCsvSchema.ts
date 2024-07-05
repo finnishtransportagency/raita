@@ -10,46 +10,46 @@ export const amsSchema = z.object({
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
   longitude: zcsv.string(z.string().optional()),
-  ajonopeus: zcsv.number(z.number().optional()),
-  oikea_pystysuuntainen_kiihtyvyys_c1: zcsv.number(z.number().optional()),
-  vasen_pystysuuntainen_kiihtyvyys_c1: zcsv.number(z.number().optional()),
-  oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu: zcsv.number(
-    z.number().optional(),
+  ajonopeus: zcsv.string(z.string().optional()),
+  oikea_pystysuuntainen_kiihtyvyys_c1: zcsv.string(z.string().optional()),
+  vasen_pystysuuntainen_kiihtyvyys_c1: zcsv.string(z.string().optional()),
+  oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu: zcsv.string(
+    z.string().optional(),
   ),
-  vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu: zcsv.number(
-    z.number().optional(),
+  vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu: zcsv.string(
+    z.string().optional(),
   ),
-  oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta: zcsv.number(
-    z.number().optional(),
+  oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta: zcsv.string(
+    z.string().optional(),
   ),
-  vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta: zcsv.number(
-    z.number().optional(),
+  vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta: zcsv.string(
+    z.string().optional(),
   ),
-  oikea_poikittainen_kiihtyvyys_c1: zcsv.number(z.number().optional()),
-  vasen_poikittainen_kiihtyvyys_c1: zcsv.number(z.number().optional()),
-  oikea_poikittainen_kiihtyvyys_c1_suodatettu: zcsv.number(
-    z.number().optional(),
+  oikea_poikittainen_kiihtyvyys_c1: zcsv.string(z.string().optional()),
+  vasen_poikittainen_kiihtyvyys_c1: zcsv.string(z.string().optional()),
+  oikea_poikittainen_kiihtyvyys_c1_suodatettu: zcsv.string(
+    z.string().optional(),
   ),
-  vasen_poikittainen_kiihtyvyys_c1_suodatettu: zcsv.number(
-    z.number().optional(),
+  vasen_poikittainen_kiihtyvyys_c1_suodatettu: zcsv.string(
+    z.string().optional(),
   ),
-  oikea_poikittainen_kiihtyvyys_c1_keskihajonta: zcsv.number(
-    z.number().optional(),
+  oikea_poikittainen_kiihtyvyys_c1_keskihajonta: zcsv.string(
+    z.string().optional(),
   ),
-  vasen_poikittainen_kiihtyvyys_c1_keskihajonta: zcsv.number(
-    z.number().optional(),
+  vasen_poikittainen_kiihtyvyys_c1_keskihajonta: zcsv.string(
+    z.string().optional(),
   ),
-  pystysuuntainen_kiihtyvyys_c2: zcsv.number(z.number().optional()),
-  pystysuuntainen_kiihtyvyys_c2_suodatettu: zcsv.number(z.number().optional()),
-  poikittainen_kiihtyvyys_c2: zcsv.number(z.number().optional()),
-  poikittainen_kiihtyvyys_c2_suodatettu: zcsv.number(z.number().optional()),
-  transversal_acceleration_c2_mean_to_peak: zcsv.number(z.number().optional()),
-  pystysuuntainen_kiihtyvyys_c3: zcsv.number(z.number().optional()),
-  pystysuuntainen_kiihtyvyys_c3_suodatettu: zcsv.number(z.number().optional()),
-  poikittainen_kiihtyvyys_c3: zcsv.number(z.number().optional()),
-  poikittainen_kiihtyvyys_c3_suodatettu: zcsv.number(z.number().optional()),
-  transversal_acceleration_c3_mean_to_peak: zcsv.number(z.number().optional()),
-  ams_ajonopeus: zcsv.number(z.number().optional()),
+  pystysuuntainen_kiihtyvyys_c2: zcsv.string(z.string().optional()),
+  pystysuuntainen_kiihtyvyys_c2_suodatettu: zcsv.string(z.string().optional()),
+  poikittainen_kiihtyvyys_c2: zcsv.string(z.string().optional()),
+  poikittainen_kiihtyvyys_c2_suodatettu: zcsv.string(z.string().optional()),
+  transversal_acceleration_c2_mean_to_peak: zcsv.string(z.string().optional()),
+  pystysuuntainen_kiihtyvyys_c3: zcsv.string(z.string().optional()),
+  pystysuuntainen_kiihtyvyys_c3_suodatettu: zcsv.string(z.string().optional()),
+  poikittainen_kiihtyvyys_c3: zcsv.string(z.string().optional()),
+  poikittainen_kiihtyvyys_c3_suodatettu: zcsv.string(z.string().optional()),
+  transversal_acceleration_c3_mean_to_peak: zcsv.string(z.string().optional()),
+  ams_ajonopeus: zcsv.string(z.string().optional()),
 });
 
 export type IAms = z.infer<typeof amsSchema>;

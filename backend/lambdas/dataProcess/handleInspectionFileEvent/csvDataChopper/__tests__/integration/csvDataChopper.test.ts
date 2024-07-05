@@ -1,10 +1,10 @@
-import { chopCSVFileStream } from '../csvDataChopper';
-import { stringToStream } from '../../__tests__/testUtils';
+import { chopCSVFileStream } from '../../csvDataChopper';
+import { stringToStream } from '../../../__tests__/testUtils';
 import * as fs from 'fs';
-import { log } from '../../../../../utils/logger';
-import { FileMetadataEntry } from '../../../../../types';
-import {getDBConnection, insertRaporttiData, updateRaporttiMetadata} from "../../../csvCommon/db/dbUtil";
-import {getKeyData} from "../../../../utils";
+import { log } from '../../../../../../utils/logger';
+import { FileMetadataEntry } from '../../../../../../types';
+import {getDBConnection, insertRaporttiData, updateRaporttiMetadata} from '../../../../csvCommon/db/dbUtil';
+
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -15,6 +15,10 @@ const amsCsv =
   '318106,"008 KOKOL LR",630+0850.75,"64.07647533° N","24.54062885° E",55.938,-20.9017,-21.8595,13.2977,15.9086,8.4101,8.0505,4.0499,-4.9934,-2.2320,-3.1739,1.3767,1.7917,2.5858,2.0813,2.1109,0.8900,-1.1602,-1.8402,-0.5512,1.3017,0.6939,0.1295,56\r\n' +
   '318107,"008 KOKOL LR",630+0851.00,"64.07647756° N","24.54062880° E",55.924,-21.2956,21.9569,14.8956,12.2093,8.3666,7.9174,-3.6308,4.0280,2.7983,2.0624,1.3882,1.7930,2.9541,2.8539,-2.6747,-1.8791,-1.2058,1.6617,-0.3302,1.8971,0.8156,0.1039,56\r\n' +
   '318108,"008 KOKOL LR",630+0851.25,"64.07647979° N","24.54062875° E",55.925,-23.1085,25.8125,-21.9575,-12.1894,8.3251,7.8952,3.0163,-4.6372,2.5206,-2.8624,1.3800,1.8019,3.2062,3.0976,-3.2225,-1.4226,-2.0412,1.6744,-0.3927,2.0022,0.7377,0.0205,56';
+//const amsCsvStream =stringToStream(amsCsv);
+const amsCsvStream = fs.createReadStream(
+  './AMS_20221024_251_LHRP_1_130_130.csv',
+);
 
 const amsCsvMissingSSCount =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -163,18 +167,7 @@ const ohlCsvStream = stringToStream(ohlCsv);
 
 
 
-describe('outfile name generation', () => {
-  test('success: normal run', async () => {
-    const key = getKeyData('Meeri/2021/Test/20210721/20210721_RP_Reports/005/ILMKON/1/2021/Rail+Profile/20210721_110925/TextualReports/RP_20210721_005_ILMKON_1_633_658.csv');
-    const pathString =  key.path.slice(0,key.path.length - 1).join('/');
-    const outFileName =
-      pathString + '/chunkFile_' + '123' + '_' + '1' + '_' + key.fileName;
-
-    console.log('outFileName ' + outFileName);
-  })
-});
-
-describe.skip('insert raportti success', () => {
+describe('insert raportti success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
     const result = await insertRaporttiData(
@@ -189,7 +182,7 @@ describe.skip('insert raportti success', () => {
       bucket_arn: '',
       bucket_name: '',
       file_name: '',
-      hash: undefined,
+      hash: '',
       key: '',
       size: 0,
       reportId: result,
@@ -222,7 +215,7 @@ describe.skip('insert raportti success', () => {
   });
 });
 
-describe.skip('handle ams file success', () => {
+describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
 
@@ -238,10 +231,11 @@ describe.skip('handle ams file success', () => {
         rootFolder: '',
         path: []
       },
-      stringToStream(amsCsv),
+      amsCsvStream,
       dbConnection,
       891,
     );
     log.debug('report inserted: ' + result);
   }, 900000);
 });
+
