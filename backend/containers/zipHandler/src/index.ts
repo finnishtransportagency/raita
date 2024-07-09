@@ -126,6 +126,9 @@ async function start() {
               'Kaikki tiedostot ohitettu, ei käsiteltävää',
             );
           }
+          // exit forcefully because sometimes the process would not exit. TODO: find out why
+          log.info('exiting');
+          process.exit(0);
         })
         .catch(err => {
           // Catches zip opening errors
