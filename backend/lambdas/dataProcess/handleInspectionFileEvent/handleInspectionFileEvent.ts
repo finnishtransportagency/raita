@@ -26,6 +26,7 @@ import {
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
 import { getPrismaClient } from '../../../utils/prismaClient';
+import { compareVersionStrings } from '../../../utils/compareVersionStrings';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -219,8 +220,13 @@ export async function handleInspectionFileEvent(
               if (foundReport.hash !== entry.hash) return true;
 
               if (requireNewerParserVersion) {
+                const newVersion = entry.metadata.parser_version;
+                const existingVersion = foundReport.parser_version as string;
                 return (
-                  !!entry.metadata.parser_version > !!foundReport.parser_version
+                  compareVersionStrings(
+                    newVersion as any as string,
+                    existingVersion,
+                  ) <= 0
                 );
               }
             }
