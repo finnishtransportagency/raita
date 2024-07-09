@@ -43,6 +43,20 @@ export function getLambdaConfigOrFail() {
   };
 }
 
+const prisma = getPrismaClient();
+
+const findReportByKey = async (key: string) => {
+  const foundReport = (await prisma).raportti.findFirst({
+    where: {
+      key: {
+        in: [key],
+      },
+    },
+  });
+
+  return foundReport;
+};
+
 const withRequest = lambdaRequestTracker();
 
 const adminLogger: IAdminLogger = new PostgresLogger();
@@ -137,15 +151,27 @@ export async function handleInspectionFileEvent(
           return null;
         }
 
-        const reportId =
-          dbConnection && !findReportByKey(key)
-            ? await insertRaporttiData(
-                key,
-                keyData.fileName,
-                null,
-                dbConnection,
-              )
-            : -1;
+        let reportId: number;
+
+        if (!dbConnection) {
+          // No DB connection
+          reportId = -1;
+        } else {
+          // DB connection exists
+          const foundReport = await findReportByKey(key);
+          if (foundReport) {
+            // Report found
+            reportId = foundReport.id;
+          } else {
+            // Report not found, insert new report
+            reportId = await insertRaporttiData(
+              key,
+              keyData.fileName,
+              null,
+              dbConnection,
+            );
+          }
+        }
 
         const parseResults = await parseFileMetadata({
           keyData,
@@ -188,25 +214,7 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
-      const prisma = getPrismaClient();
-
-      const findReportByKey = async (key: string) => {
-        try {
-          const foundReport = (await prisma).raportti.findFirst({
-            where: {
-              key: {
-                in: [key],
-              },
-            },
-          });
-
-          return foundReport;
-        } catch (error: any) {
-          throw new error(error);
-        }
-      };
-
-      const CheckExistingHash = await Promise.all(
+      const checkExistingHash = await Promise.all(
         entries.map(async entry => {
           if (entry.key) {
             const foundReport = await findReportByKey(entry.key);
@@ -221,24 +229,24 @@ export async function handleInspectionFileEvent(
 
               if (requireNewerParserVersion) {
                 const newVersion = entry.metadata.parser_version;
-                const existingVersion = foundReport.parser_version as string;
+                const existingVersion = foundReport.parser_version;
                 return (
                   compareVersionStrings(
                     newVersion as any as string,
-                    existingVersion,
+                    existingVersion as any as string,
                   ) <= 0
                 );
-              }
-            }
+              } else return false;
+            } else return true;
           }
-          return false;
+          return true;
         }),
       );
 
       if (doCSVParsing) {
         if (dbConnection) {
           const saveableEntries = entries.filter(
-            (entry, index) => CheckExistingHash[index],
+            (entry, index) => checkExistingHash[index],
           );
           await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
