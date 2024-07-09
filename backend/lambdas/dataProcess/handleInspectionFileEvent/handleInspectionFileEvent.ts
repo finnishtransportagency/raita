@@ -25,6 +25,7 @@ import {
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
+import { getPrismaClient } from '../../../utils/prismaClient';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -135,9 +136,15 @@ export async function handleInspectionFileEvent(
           return null;
         }
 
-        const reportId = dbConnection
-          ? await insertRaporttiData(key, keyData.fileName, null, dbConnection)
-          : -1;
+        const reportId =
+          dbConnection && !findReportByKey(key)
+            ? await insertRaporttiData(
+                key,
+                keyData.fileName,
+                null,
+                dbConnection,
+              )
+            : -1;
 
         const parseResults = await parseFileMetadata({
           keyData,
@@ -180,9 +187,54 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
+      const prisma = getPrismaClient();
+
+      const findReportByKey = async (key: string) => {
+        try {
+          const foundReport = (await prisma).raportti.findFirst({
+            where: {
+              key: {
+                in: [key],
+              },
+            },
+          });
+
+          return foundReport;
+        } catch (error: any) {
+          throw new error(error);
+        }
+      };
+
+      const CheckExistingHash = await Promise.all(
+        entries.map(async entry => {
+          if (entry.key) {
+            const foundReport = await findReportByKey(entry.key);
+            if (foundReport) {
+              const skipHashCheck = entry.options.skip_hash_check;
+              const requireNewerParserVersion =
+                entry.options.require_newer_parser_version;
+
+              if (skipHashCheck && foundReport.hash === entry.hash) return true;
+
+              if (foundReport.hash !== entry.hash) return true;
+
+              if (requireNewerParserVersion) {
+                return (
+                  !!entry.metadata.parser_version > !!foundReport.parser_version
+                );
+              }
+            }
+          }
+          return false;
+        }),
+      );
+
       if (doCSVParsing) {
         if (dbConnection) {
-          await updateRaporttiMetadata(entries, dbConnection);
+          const saveableEntries = entries.filter(
+            (entry, index) => CheckExistingHash[index],
+          );
+          await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',
