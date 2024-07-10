@@ -12,52 +12,76 @@ datasource db {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model ams_mittaus {
-  id                                               Int                       @id @default(autoincrement())
-  raportti_id                                      Int
-  running_date                                     DateTime                  @db.Timestamp(6)
-  jarjestelma                                      jarjestelma?
-  sscount                                          Int?
-  sijainti                                         Unsupported("geography")?
-  ajonopeus                                        Decimal?                  @db.Decimal
-  oikea_pystysuuntainen_kiihtyvyys_c1              Decimal?                  @db.Decimal
-  vasen_pystysuuntainen_kiihtyvyys_c1              Decimal?                  @db.Decimal
-  oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu   Decimal?                  @db.Decimal
-  vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu   Decimal?                  @db.Decimal
-  oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta Decimal?                  @db.Decimal
-  vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta Decimal?                  @db.Decimal
-  oikea_poikittainen_kiihtyvyys_c1                 Decimal?                  @db.Decimal
-  vasen_poikittainen_kiihtyvyys_c1                 Decimal?                  @db.Decimal
-  oikea_poikittainen_kiihtyvyys_c1_suodatettu      Decimal?                  @db.Decimal
-  vasen_poikittainen_kiihtyvyys_c1_suodatettu      Decimal?                  @db.Decimal
-  oikea_poikittainen_kiihtyvyys_c1_keskihajonta    Decimal?                  @db.Decimal
-  vasen_poikittainen_kiihtyvyys_c1_keskihajonta    Decimal?                  @db.Decimal
-  pystysuuntainen_kiihtyvyys_c2                    Decimal?                  @db.Decimal
-  pystysuuntainen_kiihtyvyys_c2_suodatettu         Decimal?                  @db.Decimal
-  poikittainen_kiihtyvyys_c2                       Decimal?                  @db.Decimal
-  poikittainen_kiihtyvyys_c2_suodatettu            Decimal?                  @db.Decimal
-  transversal_acceleration_c2_mean_to_peak         Decimal?                  @db.Decimal
-  pystysuuntainen_kiihtyvyys_c3                    Decimal?                  @db.Decimal
-  pystysuuntainen_kiihtyvyys_c3_suodatettu         Decimal?                  @db.Decimal
-  poikittainen_kiihtyvyys_c3                       Decimal?                  @db.Decimal
-  poikittainen_kiihtyvyys_c3_suodatettu            Decimal?                  @db.Decimal
-  transversal_acceleration_c3_mean_to_peak         Decimal?                  @db.Decimal
-  ams_ajonopeus                                    Decimal?                  @db.Decimal
-  track                                            String?                   @db.VarChar(40)
-  location                                         String?                   @db.VarChar(40)
-  latitude                                         String?                   @db.VarChar(40)
-  longitude                                        String?                   @db.VarChar(40)
-  rataosuus_numero                                 String?                   @db.VarChar(40)
-  rataosuus_nimi                                   String?                   @db.VarChar(40)
-  raide_numero                                     String?                   @db.VarChar(40)
-  rata_kilometri                                   Int?
-  rata_metrit                                      Decimal?                  @db.Decimal
-  lat                                              Decimal?                  @db.Decimal
-  long                                             Decimal?                  @db.Decimal
-  created                                          DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                                         DateTime?                 @db.Timestamp(6)
-  mittaus                                          mittaus                   @relation(fields: [id], references: [id])
-  raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                                          Int                       @id @default(autoincrement())
+  raportti_id                                                 Int
+  running_date                                                DateTime                  @db.Timestamp(6)
+  jarjestelma                                                 jarjestelma?
+  sscount                                                     Int?
+  sijainti                                                    Unsupported("geography")?
+  ajonopeus                                                   Decimal?                  @db.Decimal
+  oikea_pystysuuntainen_kiihtyvyys_c1                         Decimal?                  @db.Decimal
+  vasen_pystysuuntainen_kiihtyvyys_c1                         Decimal?                  @db.Decimal
+  oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu              Decimal?                  @db.Decimal
+  vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu              Decimal?                  @db.Decimal
+  oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta            Decimal?                  @db.Decimal
+  vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta            Decimal?                  @db.Decimal
+  oikea_poikittainen_kiihtyvyys_c1                            Decimal?                  @db.Decimal
+  vasen_poikittainen_kiihtyvyys_c1                            Decimal?                  @db.Decimal
+  oikea_poikittainen_kiihtyvyys_c1_suodatettu                 Decimal?                  @db.Decimal
+  vasen_poikittainen_kiihtyvyys_c1_suodatettu                 Decimal?                  @db.Decimal
+  oikea_poikittainen_kiihtyvyys_c1_keskihajonta               Decimal?                  @db.Decimal
+  vasen_poikittainen_kiihtyvyys_c1_keskihajonta               Decimal?                  @db.Decimal
+  pystysuuntainen_kiihtyvyys_c2                               Decimal?                  @db.Decimal
+  pystysuuntainen_kiihtyvyys_c2_suodatettu                    Decimal?                  @db.Decimal
+  poikittainen_kiihtyvyys_c2                                  Decimal?                  @db.Decimal
+  poikittainen_kiihtyvyys_c2_suodatettu                       Decimal?                  @db.Decimal
+  transversal_acceleration_c2_mean_to_peak                    Decimal?                  @db.Decimal
+  pystysuuntainen_kiihtyvyys_c3                               Decimal?                  @db.Decimal
+  pystysuuntainen_kiihtyvyys_c3_suodatettu                    Decimal?                  @db.Decimal
+  poikittainen_kiihtyvyys_c3                                  Decimal?                  @db.Decimal
+  poikittainen_kiihtyvyys_c3_suodatettu                       Decimal?                  @db.Decimal
+  transversal_acceleration_c3_mean_to_peak                    Decimal?                  @db.Decimal
+  ams_ajonopeus                                               Decimal?                  @db.Decimal
+  track                                                       String?                   @db.VarChar(40)
+  location                                                    String?                   @db.VarChar(40)
+  latitude                                                    String?                   @db.VarChar(40)
+  longitude                                                   String?                   @db.VarChar(40)
+  rataosuus_numero                                            String?                   @db.VarChar(40)
+  rataosuus_nimi                                              String?                   @db.VarChar(40)
+  raide_numero                                                String?                   @db.VarChar(40)
+  rata_kilometri                                              Int?
+  rata_metrit                                                 Decimal?                  @db.Decimal
+  lat                                                         Decimal?                  @db.Decimal
+  long                                                        Decimal?                  @db.Decimal
+  created                                                     DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                                    DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                                        nan_reason?
+  oikea_pystysuuntainen_kiihtyvyys_c1_nan_reason              nan_reason?
+  vasen_pystysuuntainen_kiihtyvyys_c1_nan_reason              nan_reason?
+  oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason   nan_reason?
+  vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason   nan_reason?
+  oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason nan_reason?
+  vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason nan_reason?
+  oikea_poikittainen_kiihtyvyys_c1_nan_reason                 nan_reason?
+  vasen_poikittainen_kiihtyvyys_c1_nan_reason                 nan_reason?
+  oikea_poikittainen_kiihtyvyys_c1_suodatettu_nan_reason      nan_reason?
+  vasen_poikittainen_kiihtyvyys_c1_suodatettu_nan_reason      nan_reason?
+  oikea_poikittainen_kiihtyvyys_c1_keskihajonta_nan_reason    nan_reason?
+  vasen_poikittainen_kiihtyvyys_c1_keskihajonta_nan_reason    nan_reason?
+  pystysuuntainen_kiihtyvyys_c2_nan_reason                    nan_reason?
+  pystysuuntainen_kiihtyvyys_c2_suodatettu_nan_reason         nan_reason?
+  poikittainen_kiihtyvyys_c2_nan_reason                       nan_reason?
+  poikittainen_kiihtyvyys_c2_suodatettu_nan_reason            nan_reason?
+  transversal_acceleration_c2_mean_to_peak_nan_reason         nan_reason?
+  pystysuuntainen_kiihtyvyys_c3_nan_reason                    nan_reason?
+  pystysuuntainen_kiihtyvyys_c3_suodatettu_nan_reason         nan_reason?
+  poikittainen_kiihtyvyys_c3_nan_reason                       nan_reason?
+  poikittainen_kiihtyvyys_c3_suodatettu_nan_reason            nan_reason?
+  transversal_acceleration_c3_mean_to_peak_nan_reason         nan_reason?
+  ams_ajonopeus_nan_reason                                    nan_reason?
+  raportti                                                    raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([raportti_id], map: "ams_index")
 
 }
 
@@ -79,131 +103,167 @@ model logging {
 
 /// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
 model mittaus {
-  id               Int                       @id @default(autoincrement())
-  raportti_id      Int
-  running_date     DateTime                  @db.Timestamp(6)
-  jarjestelma      jarjestelma?
-  sscount          Int?
-  sijainti         Unsupported("geography")?
-  ajonopeus        Decimal?                  @db.Decimal
-  track            String?                   @db.VarChar(40)
-  location         String?                   @db.VarChar(40)
-  latitude         String?                   @db.VarChar(40)
-  longitude        String?                   @db.VarChar(40)
-  rataosuus_numero String?                   @db.VarChar(40)
-  rataosuus_nimi   String?                   @db.VarChar(40)
-  raide_numero     String?                   @db.VarChar(40)
-  rata_kilometri   Int?
-  rata_metrit      Decimal?                  @db.Decimal
-  lat              Decimal?                  @db.Decimal
-  long             Decimal?                  @db.Decimal
-  created          DateTime?                 @default(now()) @db.Timestamp(6)
-  modified         DateTime?                 @db.Timestamp(6)
-  ams_mittaus      ams_mittaus? // These are added manually
-  ohl_mittaus      ohl_mittaus?
-  pi_mittaus       pi_mittaus?
-  rc_mittaus       rc_mittaus?
-  rp_mittaus       rp_mittaus?
-  tg_mittaus       tg_mittaus?
-  tsight_mittaus   tsight_mittaus?
-  raportti         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                   Int                       @id @default(autoincrement())
+  raportti_id          Int
+  running_date         DateTime                  @db.Timestamp(6)
+  jarjestelma          jarjestelma?
+  sscount              Int?
+  sijainti             Unsupported("geography")?
+  ajonopeus            Decimal?                  @db.Decimal
+  track                String?                   @db.VarChar(40)
+  location             String?                   @db.VarChar(40)
+  latitude             String?                   @db.VarChar(40)
+  longitude            String?                   @db.VarChar(40)
+  rataosuus_numero     String?                   @db.VarChar(40)
+  rataosuus_nimi       String?                   @db.VarChar(40)
+  raide_numero         String?                   @db.VarChar(40)
+  rata_kilometri       Int?
+  rata_metrit          Decimal?                  @db.Decimal
+  lat                  Decimal?                  @db.Decimal
+  long                 Decimal?                  @db.Decimal
+  created              DateTime?                 @default(now()) @db.Timestamp(6)
+  modified             DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason nan_reason?
+  raportti             raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model ohl_mittaus {
-  id                              Int                       @id @default(autoincrement())
-  raportti_id                     Int
-  running_date                    DateTime                  @db.Timestamp(6)
-  jarjestelma                     jarjestelma?
-  sscount                         Int?
-  sijainti                        Unsupported("geography")?
-  ajonopeus                       Decimal?                  @db.Decimal
-  siksak_1                        Decimal?                  @db.Decimal
-  siksak_2                        Decimal?                  @db.Decimal
-  korkeus_1                       Decimal?                  @db.Decimal
-  korkeus_2                       Decimal?                  @db.Decimal
-  jaannospaksuus_1                Decimal?                  @db.Decimal
-  jaannospaksuus_2                Decimal?                  @db.Decimal
-  risteavien_ajolankojen_etaisyys Decimal?                  @db.Decimal
-  height_gradient                 Decimal?                  @db.Decimal
-  pinnan_leveys_1                 Decimal?                  @db.Decimal
-  pinnan_leveys_2                 Decimal?                  @db.Decimal
-  pinnan_leveyden_keskiarvo_1     Decimal?                  @db.Decimal
-  pinnan_leveyden_keskiarvo_2     Decimal?                  @db.Decimal
-  pinnan_leveyden_keskihajonta_1  Decimal?                  @db.Decimal
-  pinnan_leveyden_keskihajonta_2  Decimal?                  @db.Decimal
-  jaannospinta_ala_1              Decimal?                  @db.Decimal
-  jaannospinta_ala_2              Decimal?                  @db.Decimal
-  jaannospinta_alan_keskiarvo_1   Decimal?                  @db.Decimal
-  jaannospinta_alan_keskiarvo_2   Decimal?                  @db.Decimal
-  residual_area_stddev_1          Decimal?                  @db.Decimal
-  residual_area_stddev_2          Decimal?                  @db.Decimal
-  pole                            Decimal?                  @db.Decimal
-  korkeuden_poikkeama             Decimal?                  @db.Decimal
-  siksakkin_poikkeama             Decimal?                  @db.Decimal
-  pituuskaltevuus                 Decimal?                  @db.Decimal
-  right_wire_wear_2               Decimal?                  @db.Decimal
-  stagger_box_ohl                 Decimal?                  @db.Decimal
-  height_box_ohl                  Decimal?                  @db.Decimal
-  track                           String?                   @db.VarChar(40)
-  location                        String?                   @db.VarChar(40)
-  latitude                        String?                   @db.VarChar(40)
-  longitude                       String?                   @db.VarChar(40)
-  rataosuus_numero                String?                   @db.VarChar(40)
-  rataosuus_nimi                  String?                   @db.VarChar(40)
-  raide_numero                    String?                   @db.VarChar(40)
-  rata_kilometri                  Int?
-  rata_metrit                     Decimal?                  @db.Decimal
-  ohl_ajonopeus                   Decimal?                  @db.Decimal
-  lat                             Decimal?                  @db.Decimal
-  long                            Decimal?                  @db.Decimal
-  created                         DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                        DateTime?                 @db.Timestamp(6)
-  mittaus                         mittaus                   @relation(fields: [id], references: [id])
-  raportti                        raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                         Int                       @id @default(autoincrement())
+  raportti_id                                Int
+  running_date                               DateTime                  @db.Timestamp(6)
+  jarjestelma                                jarjestelma?
+  sscount                                    Int?
+  sijainti                                   Unsupported("geography")?
+  ajonopeus                                  Decimal?                  @db.Decimal
+  siksak_1                                   Decimal?                  @db.Decimal
+  siksak_2                                   Decimal?                  @db.Decimal
+  korkeus_1                                  Decimal?                  @db.Decimal
+  korkeus_2                                  Decimal?                  @db.Decimal
+  jaannospaksuus_1                           Decimal?                  @db.Decimal
+  jaannospaksuus_2                           Decimal?                  @db.Decimal
+  risteavien_ajolankojen_etaisyys            Decimal?                  @db.Decimal
+  height_gradient                            Decimal?                  @db.Decimal
+  pinnan_leveys_1                            Decimal?                  @db.Decimal
+  pinnan_leveys_2                            Decimal?                  @db.Decimal
+  pinnan_leveyden_keskiarvo_1                Decimal?                  @db.Decimal
+  pinnan_leveyden_keskiarvo_2                Decimal?                  @db.Decimal
+  pinnan_leveyden_keskihajonta_1             Decimal?                  @db.Decimal
+  pinnan_leveyden_keskihajonta_2             Decimal?                  @db.Decimal
+  jaannospinta_ala_1                         Decimal?                  @db.Decimal
+  jaannospinta_ala_2                         Decimal?                  @db.Decimal
+  jaannospinta_alan_keskiarvo_1              Decimal?                  @db.Decimal
+  jaannospinta_alan_keskiarvo_2              Decimal?                  @db.Decimal
+  residual_area_stddev_1                     Decimal?                  @db.Decimal
+  residual_area_stddev_2                     Decimal?                  @db.Decimal
+  pole                                       Decimal?                  @db.Decimal
+  korkeuden_poikkeama                        Decimal?                  @db.Decimal
+  siksakkin_poikkeama                        Decimal?                  @db.Decimal
+  pituuskaltevuus                            Decimal?                  @db.Decimal
+  right_wire_wear_2                          Decimal?                  @db.Decimal
+  stagger_box_ohl                            Decimal?                  @db.Decimal
+  height_box_ohl                             Decimal?                  @db.Decimal
+  track                                      String?                   @db.VarChar(40)
+  location                                   String?                   @db.VarChar(40)
+  latitude                                   String?                   @db.VarChar(40)
+  longitude                                  String?                   @db.VarChar(40)
+  rataosuus_numero                           String?                   @db.VarChar(40)
+  rataosuus_nimi                             String?                   @db.VarChar(40)
+  raide_numero                               String?                   @db.VarChar(40)
+  rata_kilometri                             Int?
+  rata_metrit                                Decimal?                  @db.Decimal
+  ohl_ajonopeus                              Decimal?                  @db.Decimal
+  lat                                        Decimal?                  @db.Decimal
+  long                                       Decimal?                  @db.Decimal
+  created                                    DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                   DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                       nan_reason?
+  siksak_1_nan_reason                        nan_reason?
+  siksak_2_nan_reason                        nan_reason?
+  korkeus_1_nan_reason                       nan_reason?
+  korkeus_2_nan_reason                       nan_reason?
+  jaannospaksuus_1_nan_reason                nan_reason?
+  jaannospaksuus_2_nan_reason                nan_reason?
+  risteavien_ajolankojen_etaisyys_nan_reason nan_reason?
+  height_gradient_nan_reason                 nan_reason?
+  pinnan_leveys_1_nan_reason                 nan_reason?
+  pinnan_leveys_2_nan_reason                 nan_reason?
+  pinnan_leveyden_keskiarvo_1_nan_reason     nan_reason?
+  pinnan_leveyden_keskiarvo_2_nan_reason     nan_reason?
+  pinnan_leveyden_keskihajonta_1_nan_reason  nan_reason?
+  pinnan_leveyden_keskihajonta_2_nan_reason  nan_reason?
+  jaannospinta_ala_1_nan_reason              nan_reason?
+  jaannospinta_ala_2_nan_reason              nan_reason?
+  jaannospinta_alan_keskiarvo_1_nan_reason   nan_reason?
+  jaannospinta_alan_keskiarvo_2_nan_reason   nan_reason?
+  residual_area_stddev_1_nan_reason          nan_reason?
+  residual_area_stddev_2_nan_reason          nan_reason?
+  pole_nan_reason                            nan_reason?
+  korkeuden_poikkeama_nan_reason             nan_reason?
+  siksakkin_poikkeama_nan_reason             nan_reason?
+  pituuskaltevuus_nan_reason                 nan_reason?
+  right_wire_wear_2_nan_reason               nan_reason?
+  stagger_box_ohl_nan_reason                 nan_reason?
+  height_box_ohl_nan_reason                  nan_reason?
+  ohl_ajonopeus_nan_reason                   nan_reason?
+  raportti                                   raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([raportti_id], map: "ohl_index")
 
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model pi_mittaus {
-  id               Int                       @id @default(autoincrement())
-  raportti_id      Int
-  running_date     DateTime                  @db.Timestamp(6)
-  jarjestelma      jarjestelma?
-  sscount          Int?
-  sijainti         Unsupported("geography")?
-  ajonopeus        Decimal?                  @db.Decimal
-  accz_1_1         Decimal?                  @db.Decimal
-  accz_1_2         Decimal?                  @db.Decimal
-  accz_2_1         Decimal?                  @db.Decimal
-  accz_2_2         Decimal?                  @db.Decimal
-  f_1_1            Decimal?                  @db.Decimal
-  f_1_2            Decimal?                  @db.Decimal
-  f_2_1            Decimal?                  @db.Decimal
-  f_2_2            Decimal?                  @db.Decimal
-  fint             Decimal?                  @db.Decimal
-  fcomp            Decimal?                  @db.Decimal
-  fext             Decimal?                  @db.Decimal
-  stagger          Decimal?                  @db.Decimal
-  height_ws        Decimal?                  @db.Decimal
-  track            String?                   @db.VarChar(40)
-  location         String?                   @db.VarChar(40)
-  latitude         String?                   @db.VarChar(40)
-  longitude        String?                   @db.VarChar(40)
-  rataosuus_numero String?                   @db.VarChar(40)
-  rataosuus_nimi   String?                   @db.VarChar(40)
-  raide_numero     String?                   @db.VarChar(40)
-  rata_kilometri   Int?
-  rata_metrit      Decimal?                  @db.Decimal
-  lat              Decimal?                  @db.Decimal
-  long             Decimal?                  @db.Decimal
-  created          DateTime?                 @default(now()) @db.Timestamp(6)
-  modified         DateTime?                 @db.Timestamp(6)
-  mittaus          mittaus                   @relation(fields: [id], references: [id])
+  id                   Int                       @id @default(autoincrement())
+  raportti_id          Int
+  running_date         DateTime                  @db.Timestamp(6)
+  jarjestelma          jarjestelma?
+  sscount              Int?
+  sijainti             Unsupported("geography")?
+  ajonopeus            Decimal?                  @db.Decimal
+  accz_1_1             Decimal?                  @db.Decimal
+  accz_1_2             Decimal?                  @db.Decimal
+  accz_2_1             Decimal?                  @db.Decimal
+  accz_2_2             Decimal?                  @db.Decimal
+  f_1_1                Decimal?                  @db.Decimal
+  f_1_2                Decimal?                  @db.Decimal
+  f_2_1                Decimal?                  @db.Decimal
+  f_2_2                Decimal?                  @db.Decimal
+  fint                 Decimal?                  @db.Decimal
+  fcomp                Decimal?                  @db.Decimal
+  fext                 Decimal?                  @db.Decimal
+  stagger              Decimal?                  @db.Decimal
+  height_ws            Decimal?                  @db.Decimal
+  track                String?                   @db.VarChar(40)
+  location             String?                   @db.VarChar(40)
+  latitude             String?                   @db.VarChar(40)
+  longitude            String?                   @db.VarChar(40)
+  rataosuus_numero     String?                   @db.VarChar(40)
+  rataosuus_nimi       String?                   @db.VarChar(40)
+  raide_numero         String?                   @db.VarChar(40)
+  rata_kilometri       Int?
+  rata_metrit          Decimal?                  @db.Decimal
+  lat                  Decimal?                  @db.Decimal
+  long                 Decimal?                  @db.Decimal
+  created              DateTime?                 @default(now()) @db.Timestamp(6)
+  modified             DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason nan_reason?
+  accz_1_1_nan_reason  nan_reason?
+  accz_1_2_nan_reason  nan_reason?
+  accz_2_1_nan_reason  nan_reason?
+  accz_2_2_nan_reason  nan_reason?
+  f_1_1_nan_reason     nan_reason?
+  f_1_2_nan_reason     nan_reason?
+  f_2_1_nan_reason     nan_reason?
+  f_2_2_nan_reason     nan_reason?
+  fint_nan_reason      nan_reason?
+  fcomp_nan_reason     nan_reason?
+  fext_nan_reason      nan_reason?
+  stagger_nan_reason   nan_reason?
+  height_ws_nan_reason nan_reason?
+  raportti             raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  raportti         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
+  @@index([raportti_id], map: "pi_index")
 
 }
 
@@ -240,16 +300,16 @@ model raportti {
   metadata_changed_at_datetime  DateTime?          @db.Timestamp(6)
   extra_information             String?            @db.VarChar(400)
   metadata_status               String?            @db.VarChar(20)
-  maintenance_area              String?            @db.VarChar(20)
+  maintenance_area              String?            @db.VarChar(50)
   is_empty                      Boolean?           @default(false)
   length                        Int?
-  tilirataosanumero             String?            @db.VarChar(20)
+  tilirataosanumero             String?            @db.VarChar(50)
   report_type                   String?            @db.VarChar(50)
   temperature                   Float?             @db.Real
-  measurement_start_location    String?            @db.VarChar(20)
-  measurement_end_location      String?            @db.VarChar(20)
-  measurement_direction         String?            @db.VarChar(20)
-  maintenance_level             String?            @db.VarChar(20)
+  measurement_start_location    String?            @db.VarChar(50)
+  measurement_end_location      String?            @db.VarChar(50)
+  measurement_direction         String?            @db.VarChar(50)
+  maintenance_level             String?            @db.VarChar(50)
   hash                          String?            @db.VarChar(64)
   ams_mittaus                   ams_mittaus[]
   mittaus                       mittaus[]
@@ -264,196 +324,335 @@ model raportti {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model rc_mittaus {
-  id                                               Int                       @id @default(autoincrement())
-  raportti_id                                      Int
-  running_date                                     DateTime                  @db.Timestamp(6)
-  jarjestelma                                      jarjestelma?
-  sscount                                          Int?
-  sijainti                                         Unsupported("geography")?
-  ajonopeus                                        Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_10_30mm                 Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_10_30mm                 Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_30_100mm                Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_30_100mm                Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_100_300mm               Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_100_300mm               Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_300_1000mm              Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_300_1000mm              Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_10_30mm_keskiarvo       Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_10_30mm_keskiarvo       Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_30_100mm_keskiarvo      Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_30_100mm_keskiarvo      Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_100_300mm_keskiarvo     Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_100_300mm_keskiarvo     Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_300_1000mm_keskiarvo    Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_300_1000mm_keskiarvo    Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_10_30mm_keskihajonta    Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_10_30mm_keskihajonta    Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_30_100mm_keskihajonta   Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_30_100mm_keskihajonta   Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_10_300mm_keskihajonta   Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_100_300mm_keskihajonta  Decimal?                  @db.Decimal
-  oikea_raiteen_aallon_rms_300_1000mm_keskihajonta Decimal?                  @db.Decimal
-  vasen_raiteen_aallon_rms_300_1000_keskihajonta   Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj  Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj  Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms100_300mm_kiintea_keskiar Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms100_300mm_kiintea_keskiar Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms300_1000mm_kiintea_keskia Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms300_1000mm_kiintea_keskia Decimal?                  @db.Decimal
-  vasen_raiteen_aallonrms300_1000mm_kiintea_keskih Decimal?                  @db.Decimal
-  oikea_raiteen_aallonrms300_1000mm_kiintea_keskih Decimal?                  @db.Decimal
-  track                                            String?                   @db.VarChar(40)
-  location                                         String?                   @db.VarChar(40)
-  latitude                                         String?                   @db.VarChar(40)
-  longitude                                        String?                   @db.VarChar(40)
-  rataosuus_numero                                 String?                   @db.VarChar(40)
-  rataosuus_nimi                                   String?                   @db.VarChar(40)
-  raide_numero                                     String?                   @db.VarChar(40)
-  rata_kilometri                                   Int?
-  rata_metrit                                      Decimal?                  @db.Decimal
-  lat                                              Decimal?                  @db.Decimal
-  long                                             Decimal?                  @db.Decimal
-  created                                          DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                                         DateTime?                 @db.Timestamp(6)
-  mittaus                                          mittaus                   @relation(fields: [id], references: [id])
-  raportti                                         raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                                          Int                       @id @default(autoincrement())
+  raportti_id                                                 Int
+  running_date                                                DateTime                  @db.Timestamp(6)
+  jarjestelma                                                 jarjestelma?
+  sscount                                                     Int?
+  sijainti                                                    Unsupported("geography")?
+  ajonopeus                                                   Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_10_30mm                            Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_10_30mm                            Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_30_100mm                           Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_30_100mm                           Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_100_300mm                          Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_100_300mm                          Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_300_1000mm                         Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_300_1000mm                         Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_10_30mm_keskiarvo                  Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_10_30mm_keskiarvo                  Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_30_100mm_keskiarvo                 Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_30_100mm_keskiarvo                 Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_100_300mm_keskiarvo                Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_100_300mm_keskiarvo                Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_300_1000mm_keskiarvo               Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_300_1000mm_keskiarvo               Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_10_30mm_keskihajonta               Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_10_30mm_keskihajonta               Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_30_100mm_keskihajonta              Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_30_100mm_keskihajonta              Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_10_300mm_keskihajonta              Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_100_300mm_keskihajonta             Decimal?                  @db.Decimal
+  oikea_raiteen_aallon_rms_300_1000mm_keskihajonta            Decimal?                  @db.Decimal
+  vasen_raiteen_aallon_rms_300_1000_keskihajonta              Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj             Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj             Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiar            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiar            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskia            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskia            Decimal?                  @db.Decimal
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskih            Decimal?                  @db.Decimal
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskih            Decimal?                  @db.Decimal
+  track                                                       String?                   @db.VarChar(40)
+  location                                                    String?                   @db.VarChar(40)
+  latitude                                                    String?                   @db.VarChar(40)
+  longitude                                                   String?                   @db.VarChar(40)
+  rataosuus_numero                                            String?                   @db.VarChar(40)
+  rataosuus_nimi                                              String?                   @db.VarChar(40)
+  raide_numero                                                String?                   @db.VarChar(40)
+  rata_kilometri                                              Int?
+  rata_metrit                                                 Decimal?                  @db.Decimal
+  lat                                                         Decimal?                  @db.Decimal
+  long                                                        Decimal?                  @db.Decimal
+  created                                                     DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                                    DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                                        nan_reason?
+  oikea_raiteen_aallon_rms_10_30mm_nan_reason                 nan_reason?
+  vasen_raiteen_aallon_rms_10_30mm_nan_reason                 nan_reason?
+  oikea_raiteen_aallon_rms_30_100mm_nan_reason                nan_reason?
+  vasen_raiteen_aallon_rms_30_100mm_nan_reason                nan_reason?
+  oikea_raiteen_aallon_rms_100_300mm_nan_reason               nan_reason?
+  vasen_raiteen_aallon_rms_100_300mm_nan_reason               nan_reason?
+  oikea_raiteen_aallon_rms_300_1000mm_nan_reason              nan_reason?
+  vasen_raiteen_aallon_rms_300_1000mm_nan_reason              nan_reason?
+  oikea_raiteen_aallon_rms_10_30mm_keskiarvo_nan_reason       nan_reason?
+  vasen_raiteen_aallon_rms_10_30mm_keskiarvo_nan_reason       nan_reason?
+  oikea_raiteen_aallon_rms_30_100mm_keskiarvo_nan_reason      nan_reason?
+  vasen_raiteen_aallon_rms_30_100mm_keskiarvo_nan_reason      nan_reason?
+  oikea_raiteen_aallon_rms_100_300mm_keskiarvo_nan_reason     nan_reason?
+  vasen_raiteen_aallon_rms_100_300mm_keskiarvo_nan_reason     nan_reason?
+  oikea_raiteen_aallon_rms_300_1000mm_keskiarvo_nan_reason    nan_reason?
+  vasen_raiteen_aallon_rms_300_1000mm_keskiarvo_nan_reason    nan_reason?
+  oikea_raiteen_aallon_rms_10_30mm_keskihajonta_nan_reason    nan_reason?
+  vasen_raiteen_aallon_rms_10_30mm_keskihajonta_nan_reason    nan_reason?
+  oikea_raiteen_aallon_rms_30_100mm_keskihajonta_nan_reason   nan_reason?
+  vasen_raiteen_aallon_rms_30_100mm_keskihajonta_nan_reason   nan_reason?
+  oikea_raiteen_aallon_rms_10_300mm_keskihajonta_nan_reason   nan_reason?
+  vasen_raiteen_aallon_rms_100_300mm_keskihajonta_nan_reason  nan_reason?
+  oikea_raiteen_aallon_rms_300_1000mm_keskihajonta_nan_reason nan_reason?
+  vasen_raiteen_aallon_rms_300_1000_keskihajonta_nan_reason   nan_reason?
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo_nan_reason nan_reason?
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo_nan_reason nan_reason?
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj_nan_reason  nan_reason?
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj_nan_reason  nan_reason?
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv_nan_reason nan_reason?
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv_nan_reason nan_reason?
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj_nan_reason nan_reason?
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj_nan_reason nan_reason?
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiar_nan_reason nan_reason?
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiar_nan_reason nan_reason?
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha_nan_reason nan_reason?
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha_nan_reason nan_reason?
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskia_nan_reason nan_reason?
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskia_nan_reason nan_reason?
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskih_nan_reason nan_reason?
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskih_nan_reason nan_reason?
+  raportti                                                    raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([raportti_id], map: "rc_index")
 
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model rp_mittaus {
-  id                                                 Int                       @id @default(autoincrement())
-  raportti_id                                        Int
-  running_date                                       DateTime                  @db.Timestamp(6)
-  jarjestelma                                        jarjestelma?
-  sscount                                            Int?
-  sijainti                                           Unsupported("geography")?
-  ajonopeus                                          Decimal?                  @db.Decimal
-  vasen_pystysuora_kuluma                            Decimal?                  @db.Decimal
-  oikea_pystysuora_kuluma                            Decimal?                  @db.Decimal
-  vasen_pystysuora_kuluman_keskiarvo                 Decimal?                  @db.Decimal
-  oikea_pystysuora_kuluman_keskiarvo                 Decimal?                  @db.Decimal
-  vasen_pystysuora_kuluman_keskihajonta              Decimal?                  @db.Decimal
-  oikea_pystysuora_kuluman_keskihajonta              Decimal?                  @db.Decimal
-  vasen_sisapuolinen_sivuttaiskuluma                 Decimal?                  @db.Decimal
-  oikea_sisapuolinen_sivuttaiskuluma                 Decimal?                  @db.Decimal
-  vasen_sisapuolisen_sivuttaiskuluman_keskiarvo      Decimal?                  @db.Decimal
-  oikea_sisapuolisen_sivuttaiskuluman_keskiarvo      Decimal?                  @db.Decimal
-  vasen_sisapuolisen_sivuttaiskuluman_keskihajonta   Decimal?                  @db.Decimal
-  oikea_sisapuolisen_sivuttaiskuluman_keskihajonta   Decimal?                  @db.Decimal
-  vasen_ulkoinen_sivuttaiskuluma                     Decimal?                  @db.Decimal
-  oikea_ulkoinen_sivuttaiskuluma                     Decimal?                  @db.Decimal
-  vasen_ulkoisen_sivuttaiskuluman_keskiarvo          Decimal?                  @db.Decimal
-  oikea_ulkoisen_sivuttaiskuluman_keskiarvo          Decimal?                  @db.Decimal
-  vasen_ulkoisen_sivuttaiskuluman_keskihajonta       Decimal?                  @db.Decimal
-  oikea_ulkoisen_sivuttaiskuluman_keskihajonta       Decimal?                  @db.Decimal
-  vasen_kallistus                                    Decimal?                  @db.Decimal
-  oikea_kallistus                                    Decimal?                  @db.Decimal
-  vasen_kallistuksen_keskiarvo                       Decimal?                  @db.Decimal
-  oikea_kallistuksen_keskiarvo                       Decimal?                  @db.Decimal
-  vasen_kallistuksen_keskihajonta                    Decimal?                  @db.Decimal
-  oikea_kallistuksen_keskihajonta                    Decimal?                  @db.Decimal
-  vasen_45_kuluma                                    Decimal?                  @db.Decimal
-  oikea_45_kuluma                                    Decimal?                  @db.Decimal
-  vasen_45_kuluman_keskiarvo                         Decimal?                  @db.Decimal
-  oikea_45_kuluman_keskiarvo                         Decimal?                  @db.Decimal
-  vasen_45_kuluman_keskihajonta                      Decimal?                  @db.Decimal
-  oikea_45_kuluman_keskihajonta                      Decimal?                  @db.Decimal
-  vasen_yhdistetty_kuluma                            Decimal?                  @db.Decimal
-  oikea_yhdistetty_kuluma                            Decimal?                  @db.Decimal
-  vasen_yhdistetyn_kuluman_keskiarvo                 Decimal?                  @db.Decimal
-  oikea_yhdistetyn_kuluman_keskiarvo                 Decimal?                  @db.Decimal
-  vasen_yhdistetyn_kuluman_keskihajonta              Decimal?                  @db.Decimal
-  oikea_yhdistetyn_kuluman_keskihajonta              Decimal?                  @db.Decimal
-  vasen_poikkileikkauspinta_ala                      Decimal?                  @db.Decimal
-  oikea_poikkileikkauspinta_ala                      Decimal?                  @db.Decimal
-  vasen_poikkileikkauspinta_alan_keskiarvo           Decimal?                  @db.Decimal
-  oikea_poikkileikkauspinta_alan_keskiarvo           Decimal?                  @db.Decimal
-  vasen_poikkileikkauspinta_alan_keskihajonta        Decimal?                  @db.Decimal
-  oikea_poikkileikkauspinta_alan_keskihajonta        Decimal?                  @db.Decimal
-  vasen_sisapuolinen_purse                           Decimal?                  @db.Decimal
-  oikea_sisapuolinen_purse                           Decimal?                  @db.Decimal
-  vasen_sisapuolisen_purseen_keskiarvo               Decimal?                  @db.Decimal
-  oikea_sisapuolisen_purseen_keskiarvo               Decimal?                  @db.Decimal
-  vasen_sisapuolisen_purseen_keskihajonta            Decimal?                  @db.Decimal
-  oikea_sisapuolisen_purseen_keskihajonta            Decimal?                  @db.Decimal
-  vasen_ulkopuolinen_purse                           Decimal?                  @db.Decimal
-  oikea_ulkopuolinen_purse                           Decimal?                  @db.Decimal
-  vasen_ulkopuolisen_purseen_keskiarvo               Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_purseen_keskiarvo               Decimal?                  @db.Decimal
-  vasen_ulkopuolisen_purseen_keskihajonta            Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_purseen_keskihajonta            Decimal?                  @db.Decimal
-  tehollinen_kartiokkuus                             Decimal?                  @db.Decimal
-  tehollisen_kartiokkuuden_keskiarvo                 Decimal?                  @db.Decimal
-  tehollisen_kartiokkuuden_keskihajonta              Decimal?                  @db.Decimal
-  vasen_kiskon_kallistuksen_kiintea_keskiarvo        Decimal?                  @db.Decimal
-  oikea_kiskon_kallistuksen_kiintea_keskiarvo        Decimal?                  @db.Decimal
-  vasen_kiskon_kallistuksen_kiintea_keskihajonta     Decimal?                  @db.Decimal
-  oikea_kiskon_kallistuksen_kiintea_keskihajonta     Decimal?                  @db.Decimal
-  vasen_pystysuoran_kuluman_kiintea_keskiarvo        Decimal?                  @db.Decimal
-  oikea_pystysuoran_kuluman_kiintea_keskiarvo        Decimal?                  @db.Decimal
-  vasen_pystysuoran_kuluman_kiintea_keskihajonta     Decimal?                  @db.Decimal
-  oikea_pystysuoran_kuluman_kiintea_keskihajonta     Decimal?                  @db.Decimal
-  vasen_sisapuolisen_sivuttaisk_kiintea_keskiarvo    Decimal?                  @db.Decimal
-  oikea_sisapuolisen_sivuttaisk_kiintea_keskiarvo    Decimal?                  @db.Decimal
-  vasen_sisapuolisen_sivuttaisk_kiintea_keskihajonta Decimal?                  @db.Decimal
-  oikea_sisapuolisen_sivuttaisk_kiintea_keskihajonta Decimal?                  @db.Decimal
-  vasen_ulkopuolisen_sivuttaisk_kiintea_keskiarvo    Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_sivuttaisk_kiintea_keskiarvo    Decimal?                  @db.Decimal
-  vasen_ulkopuolisen_sivuttaisk_kiintea_keskihajonta Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_sivuttaisk_kiintea_keskihajonta Decimal?                  @db.Decimal
-  vasen_45_kuluman_kiintea_keskiarvo                 Decimal?                  @db.Decimal
-  oikea_45_kuluman_kiintea_keskiarvo                 Decimal?                  @db.Decimal
-  vasen_45_kuluman_kiintea_keskihajonta              Decimal?                  @db.Decimal
-  oikea_45_kuluman_kiintea_keskihajonta              Decimal?                  @db.Decimal
-  vasen_yhdistetyn_kuluman_kiintea_keskiarvo         Decimal?                  @db.Decimal
-  oikea_yhdistetyn_kuluman_kiintea_keskiarvo         Decimal?                  @db.Decimal
-  vasen_yhdistetyn_kuluman_kiintea_keskihajonta      Decimal?                  @db.Decimal
-  oikea_yhdistetyn_kuluman_kiintea_keskihajonta      Decimal?                  @db.Decimal
-  vasen_poikkileikkauspinta_alan_kiintea_keskiarvo   Decimal?                  @db.Decimal
-  oikea_poikkileikkauspinta_alan_kiintea_keskiarvo   Decimal?                  @db.Decimal
-  vasen_poikkileikkauspint_alan_kiintea_keskihajonta Decimal?                  @db.Decimal
-  oikea_poikkileikkauspint_alan_kiintea_keskihajonta Decimal?                  @db.Decimal
-  vasen_sisapuolisen_purseen_kiintea_keskiarvo       Decimal?                  @db.Decimal
-  oikea_sisapuolisen_purseen_kiintea_keskiarvo       Decimal?                  @db.Decimal
-  vasen_sisapuolisen_purseen_kiintea_keskihajonta    Decimal?                  @db.Decimal
-  oikea_sisapuolisen_purseen_kiintea_keskihajonta    Decimal?                  @db.Decimal
-  vasen_ulkopuolisen_purseen_kiintea_keskiarvo       Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_purseen_kiintea_keskiarvo       Decimal?                  @db.Decimal
-  vasen_ulkopulisen_purseen_kiintea_keskihajonta     Decimal?                  @db.Decimal
-  oikea_ulkopuolisen_purseen_kiintea_keskihajonta    Decimal?                  @db.Decimal
-  tehollisen_kartiokkuuden_kiintea_keskiarvo         Decimal?                  @db.Decimal
-  tehollisen_kartiokkuuden_kiintea_keskihajonta      Decimal?                  @db.Decimal
-  vasen_poikkipinta_alan_poikkeama                   Decimal?                  @db.Decimal
-  oikea_poikkipinta_alan_poikkeama                   Decimal?                  @db.Decimal
-  rp_ajonopeus                                       Decimal?                  @db.Decimal
-  track                                              String?                   @db.VarChar(40)
-  location                                           String?                   @db.VarChar(40)
-  latitude                                           String?                   @db.VarChar(40)
-  longitude                                          String?                   @db.VarChar(40)
-  rataosuus_numero                                   String?                   @db.VarChar(40)
-  rataosuus_nimi                                     String?                   @db.VarChar(40)
-  raide_numero                                       String?                   @db.VarChar(40)
-  rata_kilometri                                     Int?
-  rata_metrit                                        Decimal?                  @db.Decimal
-  lat                                                Decimal?                  @db.Decimal
-  long                                               Decimal?                  @db.Decimal
-  created                                            DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                                           DateTime?                 @db.Timestamp(6)
-  mittaus                                            mittaus                   @relation(fields: [id], references: [id])
+  id                                                            Int                       @id @default(autoincrement())
+  raportti_id                                                   Int
+  running_date                                                  DateTime                  @db.Timestamp(6)
+  jarjestelma                                                   jarjestelma?
+  sscount                                                       Int?
+  sijainti                                                      Unsupported("geography")?
+  ajonopeus                                                     Decimal?                  @db.Decimal
+  vasen_pystysuora_kuluma                                       Decimal?                  @db.Decimal
+  oikea_pystysuora_kuluma                                       Decimal?                  @db.Decimal
+  vasen_pystysuora_kuluman_keskiarvo                            Decimal?                  @db.Decimal
+  oikea_pystysuora_kuluman_keskiarvo                            Decimal?                  @db.Decimal
+  vasen_pystysuora_kuluman_keskihajonta                         Decimal?                  @db.Decimal
+  oikea_pystysuora_kuluman_keskihajonta                         Decimal?                  @db.Decimal
+  vasen_sisapuolinen_sivuttaiskuluma                            Decimal?                  @db.Decimal
+  oikea_sisapuolinen_sivuttaiskuluma                            Decimal?                  @db.Decimal
+  vasen_sisapuolisen_sivuttaiskuluman_keskiarvo                 Decimal?                  @db.Decimal
+  oikea_sisapuolisen_sivuttaiskuluman_keskiarvo                 Decimal?                  @db.Decimal
+  vasen_sisapuolisen_sivuttaiskuluman_keskihajonta              Decimal?                  @db.Decimal
+  oikea_sisapuolisen_sivuttaiskuluman_keskihajonta              Decimal?                  @db.Decimal
+  vasen_ulkoinen_sivuttaiskuluma                                Decimal?                  @db.Decimal
+  oikea_ulkoinen_sivuttaiskuluma                                Decimal?                  @db.Decimal
+  vasen_ulkoisen_sivuttaiskuluman_keskiarvo                     Decimal?                  @db.Decimal
+  oikea_ulkoisen_sivuttaiskuluman_keskiarvo                     Decimal?                  @db.Decimal
+  vasen_ulkoisen_sivuttaiskuluman_keskihajonta                  Decimal?                  @db.Decimal
+  oikea_ulkoisen_sivuttaiskuluman_keskihajonta                  Decimal?                  @db.Decimal
+  vasen_kallistus                                               Decimal?                  @db.Decimal
+  oikea_kallistus                                               Decimal?                  @db.Decimal
+  vasen_kallistuksen_keskiarvo                                  Decimal?                  @db.Decimal
+  oikea_kallistuksen_keskiarvo                                  Decimal?                  @db.Decimal
+  vasen_kallistuksen_keskihajonta                               Decimal?                  @db.Decimal
+  oikea_kallistuksen_keskihajonta                               Decimal?                  @db.Decimal
+  vasen_45_kuluma                                               Decimal?                  @db.Decimal
+  oikea_45_kuluma                                               Decimal?                  @db.Decimal
+  vasen_45_kuluman_keskiarvo                                    Decimal?                  @db.Decimal
+  oikea_45_kuluman_keskiarvo                                    Decimal?                  @db.Decimal
+  vasen_45_kuluman_keskihajonta                                 Decimal?                  @db.Decimal
+  oikea_45_kuluman_keskihajonta                                 Decimal?                  @db.Decimal
+  vasen_yhdistetty_kuluma                                       Decimal?                  @db.Decimal
+  oikea_yhdistetty_kuluma                                       Decimal?                  @db.Decimal
+  vasen_yhdistetyn_kuluman_keskiarvo                            Decimal?                  @db.Decimal
+  oikea_yhdistetyn_kuluman_keskiarvo                            Decimal?                  @db.Decimal
+  vasen_yhdistetyn_kuluman_keskihajonta                         Decimal?                  @db.Decimal
+  oikea_yhdistetyn_kuluman_keskihajonta                         Decimal?                  @db.Decimal
+  vasen_poikkileikkauspinta_ala                                 Decimal?                  @db.Decimal
+  oikea_poikkileikkauspinta_ala                                 Decimal?                  @db.Decimal
+  vasen_poikkileikkauspinta_alan_keskiarvo                      Decimal?                  @db.Decimal
+  oikea_poikkileikkauspinta_alan_keskiarvo                      Decimal?                  @db.Decimal
+  vasen_poikkileikkauspinta_alan_keskihajonta                   Decimal?                  @db.Decimal
+  oikea_poikkileikkauspinta_alan_keskihajonta                   Decimal?                  @db.Decimal
+  vasen_sisapuolinen_purse                                      Decimal?                  @db.Decimal
+  oikea_sisapuolinen_purse                                      Decimal?                  @db.Decimal
+  vasen_sisapuolisen_purseen_keskiarvo                          Decimal?                  @db.Decimal
+  oikea_sisapuolisen_purseen_keskiarvo                          Decimal?                  @db.Decimal
+  vasen_sisapuolisen_purseen_keskihajonta                       Decimal?                  @db.Decimal
+  oikea_sisapuolisen_purseen_keskihajonta                       Decimal?                  @db.Decimal
+  vasen_ulkopuolinen_purse                                      Decimal?                  @db.Decimal
+  oikea_ulkopuolinen_purse                                      Decimal?                  @db.Decimal
+  vasen_ulkopuolisen_purseen_keskiarvo                          Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_purseen_keskiarvo                          Decimal?                  @db.Decimal
+  vasen_ulkopuolisen_purseen_keskihajonta                       Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_purseen_keskihajonta                       Decimal?                  @db.Decimal
+  tehollinen_kartiokkuus                                        Decimal?                  @db.Decimal
+  tehollisen_kartiokkuuden_keskiarvo                            Decimal?                  @db.Decimal
+  tehollisen_kartiokkuuden_keskihajonta                         Decimal?                  @db.Decimal
+  vasen_kiskon_kallistuksen_kiintea_keskiarvo                   Decimal?                  @db.Decimal
+  oikea_kiskon_kallistuksen_kiintea_keskiarvo                   Decimal?                  @db.Decimal
+  vasen_kiskon_kallistuksen_kiintea_keskihajonta                Decimal?                  @db.Decimal
+  oikea_kiskon_kallistuksen_kiintea_keskihajonta                Decimal?                  @db.Decimal
+  vasen_pystysuoran_kuluman_kiintea_keskiarvo                   Decimal?                  @db.Decimal
+  oikea_pystysuoran_kuluman_kiintea_keskiarvo                   Decimal?                  @db.Decimal
+  vasen_pystysuoran_kuluman_kiintea_keskihajonta                Decimal?                  @db.Decimal
+  oikea_pystysuoran_kuluman_kiintea_keskihajonta                Decimal?                  @db.Decimal
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskiarvo               Decimal?                  @db.Decimal
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskiarvo               Decimal?                  @db.Decimal
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskiarvo               Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskiarvo               Decimal?                  @db.Decimal
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  vasen_45_kuluman_kiintea_keskiarvo                            Decimal?                  @db.Decimal
+  oikea_45_kuluman_kiintea_keskiarvo                            Decimal?                  @db.Decimal
+  vasen_45_kuluman_kiintea_keskihajonta                         Decimal?                  @db.Decimal
+  oikea_45_kuluman_kiintea_keskihajonta                         Decimal?                  @db.Decimal
+  vasen_yhdistetyn_kuluman_kiintea_keskiarvo                    Decimal?                  @db.Decimal
+  oikea_yhdistetyn_kuluman_kiintea_keskiarvo                    Decimal?                  @db.Decimal
+  vasen_yhdistetyn_kuluman_kiintea_keskihajonta                 Decimal?                  @db.Decimal
+  oikea_yhdistetyn_kuluman_kiintea_keskihajonta                 Decimal?                  @db.Decimal
+  vasen_poikkileikkauspinta_alan_kiintea_keskiarvo              Decimal?                  @db.Decimal
+  oikea_poikkileikkauspinta_alan_kiintea_keskiarvo              Decimal?                  @db.Decimal
+  vasen_poikkileikkauspint_alan_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  oikea_poikkileikkauspint_alan_kiintea_keskihajonta            Decimal?                  @db.Decimal
+  vasen_sisapuolisen_purseen_kiintea_keskiarvo                  Decimal?                  @db.Decimal
+  oikea_sisapuolisen_purseen_kiintea_keskiarvo                  Decimal?                  @db.Decimal
+  vasen_sisapuolisen_purseen_kiintea_keskihajonta               Decimal?                  @db.Decimal
+  oikea_sisapuolisen_purseen_kiintea_keskihajonta               Decimal?                  @db.Decimal
+  vasen_ulkopuolisen_purseen_kiintea_keskiarvo                  Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_purseen_kiintea_keskiarvo                  Decimal?                  @db.Decimal
+  vasen_ulkopulisen_purseen_kiintea_keskihajonta                Decimal?                  @db.Decimal
+  oikea_ulkopuolisen_purseen_kiintea_keskihajonta               Decimal?                  @db.Decimal
+  tehollisen_kartiokkuuden_kiintea_keskiarvo                    Decimal?                  @db.Decimal
+  tehollisen_kartiokkuuden_kiintea_keskihajonta                 Decimal?                  @db.Decimal
+  vasen_poikkipinta_alan_poikkeama                              Decimal?                  @db.Decimal
+  oikea_poikkipinta_alan_poikkeama                              Decimal?                  @db.Decimal
+  rp_ajonopeus                                                  Decimal?                  @db.Decimal
+  track                                                         String?                   @db.VarChar(40)
+  location                                                      String?                   @db.VarChar(40)
+  latitude                                                      String?                   @db.VarChar(40)
+  longitude                                                     String?                   @db.VarChar(40)
+  rataosuus_numero                                              String?                   @db.VarChar(40)
+  rataosuus_nimi                                                String?                   @db.VarChar(40)
+  raide_numero                                                  String?                   @db.VarChar(40)
+  rata_kilometri                                                Int?
+  rata_metrit                                                   Decimal?                  @db.Decimal
+  lat                                                           Decimal?                  @db.Decimal
+  long                                                          Decimal?                  @db.Decimal
+  created                                                       DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                                      DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                                          nan_reason?
+  vasen_pystysuora_kuluma_nan_reason                            nan_reason?
+  oikea_pystysuora_kuluma_nan_reason                            nan_reason?
+  vasen_pystysuora_kuluman_keskiarvo_nan_reason                 nan_reason?
+  oikea_pystysuora_kuluman_keskiarvo_nan_reason                 nan_reason?
+  vasen_pystysuora_kuluman_keskihajonta_nan_reason              nan_reason?
+  oikea_pystysuora_kuluman_keskihajonta_nan_reason              nan_reason?
+  vasen_sisapuolinen_sivuttaiskuluma_nan_reason                 nan_reason?
+  oikea_sisapuolinen_sivuttaiskuluma_nan_reason                 nan_reason?
+  vasen_sisapuolisen_sivuttaiskuluman_keskiarvo_nan_reason      nan_reason?
+  oikea_sisapuolisen_sivuttaiskuluman_keskiarvo_nan_reason      nan_reason?
+  vasen_sisapuolisen_sivuttaiskuluman_keskihajonta_nan_reason   nan_reason?
+  oikea_sisapuolisen_sivuttaiskuluman_keskihajonta_nan_reason   nan_reason?
+  vasen_ulkoinen_sivuttaiskuluma_nan_reason                     nan_reason?
+  oikea_ulkoinen_sivuttaiskuluma_nan_reason                     nan_reason?
+  vasen_ulkoisen_sivuttaiskuluman_keskiarvo_nan_reason          nan_reason?
+  oikea_ulkoisen_sivuttaiskuluman_keskiarvo_nan_reason          nan_reason?
+  vasen_ulkoisen_sivuttaiskuluman_keskihajonta_nan_reason       nan_reason?
+  oikea_ulkoisen_sivuttaiskuluman_keskihajonta_nan_reason       nan_reason?
+  vasen_kallistus_nan_reason                                    nan_reason?
+  oikea_kallistus_nan_reason                                    nan_reason?
+  vasen_kallistuksen_keskiarvo_nan_reason                       nan_reason?
+  oikea_kallistuksen_keskiarvo_nan_reason                       nan_reason?
+  vasen_kallistuksen_keskihajonta_nan_reason                    nan_reason?
+  oikea_kallistuksen_keskihajonta_nan_reason                    nan_reason?
+  vasen_45_kuluma_nan_reason                                    nan_reason?
+  oikea_45_kuluma_nan_reason                                    nan_reason?
+  vasen_45_kuluman_keskiarvo_nan_reason                         nan_reason?
+  oikea_45_kuluman_keskiarvo_nan_reason                         nan_reason?
+  vasen_45_kuluman_keskihajonta_nan_reason                      nan_reason?
+  oikea_45_kuluman_keskihajonta_nan_reason                      nan_reason?
+  vasen_yhdistetty_kuluma_nan_reason                            nan_reason?
+  oikea_yhdistetty_kuluma_nan_reason                            nan_reason?
+  vasen_yhdistetyn_kuluman_keskiarvo_nan_reason                 nan_reason?
+  oikea_yhdistetyn_kuluman_keskiarvo_nan_reason                 nan_reason?
+  vasen_yhdistetyn_kuluman_keskihajonta_nan_reason              nan_reason?
+  oikea_yhdistetyn_kuluman_keskihajonta_nan_reason              nan_reason?
+  vasen_poikkileikkauspinta_ala_nan_reason                      nan_reason?
+  oikea_poikkileikkauspinta_ala_nan_reason                      nan_reason?
+  vasen_poikkileikkauspinta_alan_keskiarvo_nan_reason           nan_reason?
+  oikea_poikkileikkauspinta_alan_keskiarvo_nan_reason           nan_reason?
+  vasen_poikkileikkauspinta_alan_keskihajonta_nan_reason        nan_reason?
+  oikea_poikkileikkauspinta_alan_keskihajonta_nan_reason        nan_reason?
+  vasen_sisapuolinen_purse_nan_reason                           nan_reason?
+  oikea_sisapuolinen_purse_nan_reason                           nan_reason?
+  vasen_sisapuolisen_purseen_keskiarvo_nan_reason               nan_reason?
+  oikea_sisapuolisen_purseen_keskiarvo_nan_reason               nan_reason?
+  vasen_sisapuolisen_purseen_keskihajonta_nan_reason            nan_reason?
+  oikea_sisapuolisen_purseen_keskihajonta_nan_reason            nan_reason?
+  vasen_ulkopuolinen_purse_nan_reason                           nan_reason?
+  oikea_ulkopuolinen_purse_nan_reason                           nan_reason?
+  vasen_ulkopuolisen_purseen_keskiarvo_nan_reason               nan_reason?
+  oikea_ulkopuolisen_purseen_keskiarvo_nan_reason               nan_reason?
+  vasen_ulkopuolisen_purseen_keskihajonta_nan_reason            nan_reason?
+  oikea_ulkopuolisen_purseen_keskihajonta_nan_reason            nan_reason?
+  tehollinen_kartiokkuus_nan_reason                             nan_reason?
+  tehollisen_kartiokkuuden_keskiarvo_nan_reason                 nan_reason?
+  tehollisen_kartiokkuuden_keskihajonta_nan_reason              nan_reason?
+  vasen_kiskon_kallistuksen_kiintea_keskiarvo_nan_reason        nan_reason?
+  oikea_kiskon_kallistuksen_kiintea_keskiarvo_nan_reason        nan_reason?
+  vasen_kiskon_kallistuksen_kiintea_keskihajonta_nan_reason     nan_reason?
+  oikea_kiskon_kallistuksen_kiintea_keskihajonta_nan_reason     nan_reason?
+  vasen_pystysuoran_kuluman_kiintea_keskiarvo_nan_reason        nan_reason?
+  oikea_pystysuoran_kuluman_kiintea_keskiarvo_nan_reason        nan_reason?
+  vasen_pystysuoran_kuluman_kiintea_keskihajonta_nan_reason     nan_reason?
+  oikea_pystysuoran_kuluman_kiintea_keskihajonta_nan_reason     nan_reason?
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskiarvo_nan_reason    nan_reason?
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskiarvo_nan_reason    nan_reason?
+  vasen_sisapuolisen_sivuttaisk_kiintea_keskihajonta_nan_reason nan_reason?
+  oikea_sisapuolisen_sivuttaisk_kiintea_keskihajonta_nan_reason nan_reason?
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskiarvo_nan_reason    nan_reason?
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskiarvo_nan_reason    nan_reason?
+  vasen_ulkopuolisen_sivuttaisk_kiintea_keskihajonta_nan_reason nan_reason?
+  oikea_ulkopuolisen_sivuttaisk_kiintea_keskihajonta_nan_reason nan_reason?
+  vasen_45_kuluman_kiintea_keskiarvo_nan_reason                 nan_reason?
+  oikea_45_kuluman_kiintea_keskiarvo_nan_reason                 nan_reason?
+  vasen_45_kuluman_kiintea_keskihajonta_nan_reason              nan_reason?
+  oikea_45_kuluman_kiintea_keskihajonta_nan_reason              nan_reason?
+  vasen_yhdistetyn_kuluman_kiintea_keskiarvo_nan_reason         nan_reason?
+  oikea_yhdistetyn_kuluman_kiintea_keskiarvo_nan_reason         nan_reason?
+  vasen_yhdistetyn_kuluman_kiintea_keskihajonta_nan_reason      nan_reason?
+  oikea_yhdistetyn_kuluman_kiintea_keskihajonta_nan_reason      nan_reason?
+  vasen_poikkileikkauspinta_alan_kiintea_keskiarvo_nan_reason   nan_reason?
+  oikea_poikkileikkauspinta_alan_kiintea_keskiarvo_nan_reason   nan_reason?
+  vasen_poikkileikkauspint_alan_kiintea_keskihajonta_nan_reason nan_reason?
+  oikea_poikkileikkauspint_alan_kiintea_keskihajonta_nan_reason nan_reason?
+  vasen_sisapuolisen_purseen_kiintea_keskiarvo_nan_reason       nan_reason?
+  oikea_sisapuolisen_purseen_kiintea_keskiarvo_nan_reason       nan_reason?
+  vasen_sisapuolisen_purseen_kiintea_keskihajonta_nan_reason    nan_reason?
+  oikea_sisapuolisen_purseen_kiintea_keskihajonta_nan_reason    nan_reason?
+  vasen_ulkopuolisen_purseen_kiintea_keskiarvo_nan_reason       nan_reason?
+  oikea_ulkopuolisen_purseen_kiintea_keskiarvo_nan_reason       nan_reason?
+  vasen_ulkopulisen_purseen_kiintea_keskihajonta_nan_reason     nan_reason?
+  oikea_ulkopuolisen_purseen_kiintea_keskihajonta_nan_reason    nan_reason?
+  tehollisen_kartiokkuuden_kiintea_keskiarvo_nan_reason         nan_reason?
+  tehollisen_kartiokkuuden_kiintea_keskihajonta_nan_reason      nan_reason?
+  vasen_poikkipinta_alan_poikkeama_nan_reason                   nan_reason?
+  oikea_poikkipinta_alan_poikkeama_nan_reason                   nan_reason?
+  rp_ajonopeus_nan_reason                                       nan_reason?
+  raportti                                                      raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  raportti                                           raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
+  @@index([raportti_id], map: "rp_index")
 
 }
 
@@ -468,117 +667,174 @@ model spatial_ref_sys {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model tg_mittaus {
-  id                                     Int                       @id @default(autoincrement())
-  raportti_id                            Int
-  running_date                           DateTime                  @db.Timestamp(6)
-  jarjestelma                            jarjestelma?
-  sscount                                Int?
-  sijainti                               Unsupported("geography")?
-  ajonopeus                              Decimal?                  @db.Decimal
-  raideleveyden_poikkeama                Decimal?                  @db.Decimal
-  kallistus                              Decimal?                  @db.Decimal
-  kallistuksen_poikkeama                 Decimal?                  @db.Decimal
-  kierous                                Decimal?                  @db.Decimal
-  kaarevuus                              Decimal?                  @db.Decimal
-  raideleveyden_poikkeaman_muutos        Decimal?                  @db.Decimal
-  kierouden_poikkeama                    Decimal?                  @db.Decimal
-  vasen_korkeuspoikkeama_d1              Decimal?                  @db.Decimal
-  vasen_korkeuspoikkeama_d2              Decimal?                  @db.Decimal
-  oikea_korkeuspoikkeama_d2              Decimal?                  @db.Decimal
-  vasen_korkeuspoikkeama_d3              Decimal?                  @db.Decimal
-  oikea_korkeuspoikkeama_d3              Decimal?                  @db.Decimal
-  vasen_nuolikorkeuspoikkeama_d1         Decimal?                  @db.Decimal
-  oikea_nuolikorkeuspoikkeama_d1         Decimal?                  @db.Decimal
-  vasen_nuolikorkeuspoikkeama_d2         Decimal?                  @db.Decimal
-  oikea_nuolikorkeuspoikkeama_d2         Decimal?                  @db.Decimal
-  vasen_nuolikorkeuspoikkeama_d3         Decimal?                  @db.Decimal
-  oikea_nuolikorkeuspoikkeama_d3         Decimal?                  @db.Decimal
-  gradient                               Decimal?                  @db.Decimal
-  raideleveyden                          Decimal?                  @db.Decimal
-  oikea_korkeuspoikkeama_d1              Decimal?                  @db.Decimal
-  raideleveyden_keskihajonta             Decimal?                  @db.Decimal
-  kallistus_keskihajonta                 Decimal?                  @db.Decimal
-  kierouden_keskihajonta                 Decimal?                  @db.Decimal
-  vasen_korkeuspoikkeama_d1_keskihajonta Decimal?                  @db.Decimal
-  oikea_korkeuspoikkeama_d1_keskihajonta Decimal?                  @db.Decimal
-  vasen_nuolikorkeus_d1_keskihajonta     Decimal?                  @db.Decimal
-  oikea_nuolikorkeus_d1_keskihajonta     Decimal?                  @db.Decimal
-  vasen_korkeuspoikkema_d0               Decimal?                  @db.Decimal
-  oikea_korkeuspoikkema_d0               Decimal?                  @db.Decimal
-  vasen_korkeuspoikkema_d0_keskihajonta  Decimal?                  @db.Decimal
-  oikea_korkeuspoikkema_d0_keskihajonta  Decimal?                  @db.Decimal
-  track                                  String?                   @db.VarChar(40)
-  location                               String?                   @db.VarChar(40)
-  latitude                               String?                   @db.VarChar(40)
-  longitude                              String?                   @db.VarChar(40)
-  rataosuus_numero                       String?                   @db.VarChar(40)
-  rataosuus_nimi                         String?                   @db.VarChar(40)
-  raide_numero                           String?                   @db.VarChar(40)
-  rata_kilometri                         Int?
-  rata_metrit                            Decimal?                  @db.Decimal
-  lat                                    Decimal?                  @db.Decimal
-  long                                   Decimal?                  @db.Decimal
-  created                                DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                               DateTime?                 @db.Timestamp(6)
-  mittaus                                mittaus                   @relation(fields: [id], references: [id])
+  id                                                Int                       @id @default(autoincrement())
+  raportti_id                                       Int
+  running_date                                      DateTime                  @db.Timestamp(6)
+  jarjestelma                                       jarjestelma?
+  sscount                                           Int?
+  sijainti                                          Unsupported("geography")?
+  ajonopeus                                         Decimal?                  @db.Decimal
+  raideleveyden_poikkeama                           Decimal?                  @db.Decimal
+  kallistus                                         Decimal?                  @db.Decimal
+  kallistuksen_poikkeama                            Decimal?                  @db.Decimal
+  kierous                                           Decimal?                  @db.Decimal
+  kaarevuus                                         Decimal?                  @db.Decimal
+  raideleveyden_poikkeaman_muutos                   Decimal?                  @db.Decimal
+  kierouden_poikkeama                               Decimal?                  @db.Decimal
+  vasen_korkeuspoikkeama_d1                         Decimal?                  @db.Decimal
+  vasen_korkeuspoikkeama_d2                         Decimal?                  @db.Decimal
+  oikea_korkeuspoikkeama_d2                         Decimal?                  @db.Decimal
+  vasen_korkeuspoikkeama_d3                         Decimal?                  @db.Decimal
+  oikea_korkeuspoikkeama_d3                         Decimal?                  @db.Decimal
+  vasen_nuolikorkeuspoikkeama_d1                    Decimal?                  @db.Decimal
+  oikea_nuolikorkeuspoikkeama_d1                    Decimal?                  @db.Decimal
+  vasen_nuolikorkeuspoikkeama_d2                    Decimal?                  @db.Decimal
+  oikea_nuolikorkeuspoikkeama_d2                    Decimal?                  @db.Decimal
+  vasen_nuolikorkeuspoikkeama_d3                    Decimal?                  @db.Decimal
+  oikea_nuolikorkeuspoikkeama_d3                    Decimal?                  @db.Decimal
+  gradient                                          Decimal?                  @db.Decimal
+  raideleveyden                                     Decimal?                  @db.Decimal
+  oikea_korkeuspoikkeama_d1                         Decimal?                  @db.Decimal
+  raideleveyden_keskihajonta                        Decimal?                  @db.Decimal
+  kallistus_keskihajonta                            Decimal?                  @db.Decimal
+  kierouden_keskihajonta                            Decimal?                  @db.Decimal
+  vasen_korkeuspoikkeama_d1_keskihajonta            Decimal?                  @db.Decimal
+  oikea_korkeuspoikkeama_d1_keskihajonta            Decimal?                  @db.Decimal
+  vasen_nuolikorkeus_d1_keskihajonta                Decimal?                  @db.Decimal
+  oikea_nuolikorkeus_d1_keskihajonta                Decimal?                  @db.Decimal
+  vasen_korkeuspoikkema_d0                          Decimal?                  @db.Decimal
+  oikea_korkeuspoikkema_d0                          Decimal?                  @db.Decimal
+  vasen_korkeuspoikkema_d0_keskihajonta             Decimal?                  @db.Decimal
+  oikea_korkeuspoikkema_d0_keskihajonta             Decimal?                  @db.Decimal
+  track                                             String?                   @db.VarChar(40)
+  location                                          String?                   @db.VarChar(40)
+  latitude                                          String?                   @db.VarChar(40)
+  longitude                                         String?                   @db.VarChar(40)
+  rataosuus_numero                                  String?                   @db.VarChar(40)
+  rataosuus_nimi                                    String?                   @db.VarChar(40)
+  raide_numero                                      String?                   @db.VarChar(40)
+  rata_kilometri                                    Int?
+  rata_metrit                                       Decimal?                  @db.Decimal
+  lat                                               Decimal?                  @db.Decimal
+  long                                              Decimal?                  @db.Decimal
+  created                                           DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                          DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                              nan_reason?
+  raideleveyden_poikkeama_nan_reason                nan_reason?
+  kallistus_nan_reason                              nan_reason?
+  kallistuksen_poikkeama_nan_reason                 nan_reason?
+  kierous_nan_reason                                nan_reason?
+  kaarevuus_nan_reason                              nan_reason?
+  raideleveyden_poikkeaman_muutos_nan_reason        nan_reason?
+  kierouden_poikkeama_nan_reason                    nan_reason?
+  vasen_korkeuspoikkeama_d1_nan_reason              nan_reason?
+  vasen_korkeuspoikkeama_d2_nan_reason              nan_reason?
+  oikea_korkeuspoikkeama_d2_nan_reason              nan_reason?
+  vasen_korkeuspoikkeama_d3_nan_reason              nan_reason?
+  oikea_korkeuspoikkeama_d3_nan_reason              nan_reason?
+  vasen_nuolikorkeuspoikkeama_d1_nan_reason         nan_reason?
+  oikea_nuolikorkeuspoikkeama_d1_nan_reason         nan_reason?
+  vasen_nuolikorkeuspoikkeama_d2_nan_reason         nan_reason?
+  oikea_nuolikorkeuspoikkeama_d2_nan_reason         nan_reason?
+  vasen_nuolikorkeuspoikkeama_d3_nan_reason         nan_reason?
+  oikea_nuolikorkeuspoikkeama_d3_nan_reason         nan_reason?
+  gradient_nan_reason                               nan_reason?
+  raideleveyden_nan_reason                          nan_reason?
+  oikea_korkeuspoikkeama_d1_nan_reason              nan_reason?
+  raideleveyden_keskihajonta_nan_reason             nan_reason?
+  kallistus_keskihajonta_nan_reason                 nan_reason?
+  kierouden_keskihajonta_nan_reason                 nan_reason?
+  vasen_korkeuspoikkeama_d1_keskihajonta_nan_reason nan_reason?
+  oikea_korkeuspoikkeama_d1_keskihajonta_nan_reason nan_reason?
+  vasen_nuolikorkeus_d1_keskihajonta_nan_reason     nan_reason?
+  oikea_nuolikorkeus_d1_keskihajonta_nan_reason     nan_reason?
+  vasen_korkeuspoikkema_d0_nan_reason               nan_reason?
+  oikea_korkeuspoikkema_d0_nan_reason               nan_reason?
+  vasen_korkeuspoikkema_d0_keskihajonta_nan_reason  nan_reason?
+  oikea_korkeuspoikkema_d0_keskihajonta_nan_reason  nan_reason?
+  raportti                                          raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  raportti                               raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-
+  @@index([raportti_id], map: "tg_index")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model tsight_mittaus {
-  id                                  Int                       @id @default(autoincrement())
-  raportti_id                         Int
-  running_date                        DateTime                  @db.Timestamp(6)
-  jarjestelma                         jarjestelma?
-  sscount                             Int?
-  sijainti                            Unsupported("geography")?
-  ajonopeus                           Decimal?                  @db.Decimal
-  ballast_slope_l                     Decimal?                  @db.Decimal
-  ballast_width_l                     Decimal?                  @db.Decimal
-  ballast_height_l                    Decimal?                  @db.Decimal
-  ballast_slope_r                     Decimal?                  @db.Decimal
-  ballast_width_r                     Decimal?                  @db.Decimal
-  ballast_height_r                    Decimal?                  @db.Decimal
-  platform_center_h_l                 Decimal?                  @db.Decimal
-  platform_run_v_l                    Decimal?                  @db.Decimal
-  platform_center_h_r                 Decimal?                  @db.Decimal
-  platform_run_v_r                    Decimal?                  @db.Decimal
-  fin1_kin_min_distance               Decimal?                  @db.Decimal
-  fin1_kin_leftrail_min_dist          Decimal?                  @db.Decimal
-  fin1_kin_rightrail_min_dist         Decimal?                  @db.Decimal
-  sg_mt_kin_min_distance              Decimal?                  @db.Decimal
-  sg_mt_kin_leftrail_min_distance     Decimal?                  @db.Decimal
-  sg_mt_kin_rightrail_min_distance    Decimal?                  @db.Decimal
-  sg_st_kin_min_distance              Decimal?                  @db.Decimal
-  sg_st_kin_leftrail_min_distance     Decimal?                  @db.Decimal
-  sg_st_kin_rightrail_min_distance    Decimal?                  @db.Decimal
-  oversize_kin_min_distance           Decimal?                  @db.Decimal
-  oversize_kin_leftrail_min_distance  Decimal?                  @db.Decimal
-  oversize_kin_rightrail_min_distance Decimal?                  @db.Decimal
-  gauge_adjacenttrack_left            Decimal?                  @db.Decimal
-  distance_adjacenttrack_left         Decimal?                  @db.Decimal
-  gauge_adjacenttrack_right           Decimal?                  @db.Decimal
-  distance_adjacenttrack_right        Decimal?                  @db.Decimal
-  track                               String?                   @db.VarChar(40)
-  location                            String?                   @db.VarChar(40)
-  latitude                            String?                   @db.VarChar(40)
-  longitude                           String?                   @db.VarChar(40)
-  rataosuus_numero                    String?                   @db.VarChar(40)
-  rataosuus_nimi                      String?                   @db.VarChar(40)
-  raide_numero                        String?                   @db.VarChar(40)
-  rata_kilometri                      Int?
-  rata_metrit                         Decimal?                  @db.Decimal
-  lat                                 Decimal?                  @db.Decimal
-  long                                Decimal?                  @db.Decimal
-  created                             DateTime?                 @default(now()) @db.Timestamp(6)
-  modified                            DateTime?                 @db.Timestamp(6)
-  mittaus                             mittaus                   @relation(fields: [id], references: [id])
+  id                                             Int                       @id @default(autoincrement())
+  raportti_id                                    Int
+  running_date                                   DateTime                  @db.Timestamp(6)
+  jarjestelma                                    jarjestelma?
+  sscount                                        Int?
+  sijainti                                       Unsupported("geography")?
+  ajonopeus                                      Decimal?                  @db.Decimal
+  ballast_slope_l                                Decimal?                  @db.Decimal
+  ballast_width_l                                Decimal?                  @db.Decimal
+  ballast_height_l                               Decimal?                  @db.Decimal
+  ballast_slope_r                                Decimal?                  @db.Decimal
+  ballast_width_r                                Decimal?                  @db.Decimal
+  ballast_height_r                               Decimal?                  @db.Decimal
+  platform_center_h_l                            Decimal?                  @db.Decimal
+  platform_run_v_l                               Decimal?                  @db.Decimal
+  platform_center_h_r                            Decimal?                  @db.Decimal
+  platform_run_v_r                               Decimal?                  @db.Decimal
+  fin1_kin_min_distance                          Decimal?                  @db.Decimal
+  fin1_kin_leftrail_min_dist                     Decimal?                  @db.Decimal
+  fin1_kin_rightrail_min_dist                    Decimal?                  @db.Decimal
+  sg_mt_kin_min_distance                         Decimal?                  @db.Decimal
+  sg_mt_kin_leftrail_min_distance                Decimal?                  @db.Decimal
+  sg_mt_kin_rightrail_min_distance               Decimal?                  @db.Decimal
+  sg_st_kin_min_distance                         Decimal?                  @db.Decimal
+  sg_st_kin_leftrail_min_distance                Decimal?                  @db.Decimal
+  sg_st_kin_rightrail_min_distance               Decimal?                  @db.Decimal
+  oversize_kin_min_distance                      Decimal?                  @db.Decimal
+  oversize_kin_leftrail_min_distance             Decimal?                  @db.Decimal
+  oversize_kin_rightrail_min_distance            Decimal?                  @db.Decimal
+  gauge_adjacenttrack_left                       Decimal?                  @db.Decimal
+  distance_adjacenttrack_left                    Decimal?                  @db.Decimal
+  gauge_adjacenttrack_right                      Decimal?                  @db.Decimal
+  distance_adjacenttrack_right                   Decimal?                  @db.Decimal
+  track                                          String?                   @db.VarChar(40)
+  location                                       String?                   @db.VarChar(40)
+  latitude                                       String?                   @db.VarChar(40)
+  longitude                                      String?                   @db.VarChar(40)
+  rataosuus_numero                               String?                   @db.VarChar(40)
+  rataosuus_nimi                                 String?                   @db.VarChar(40)
+  raide_numero                                   String?                   @db.VarChar(40)
+  rata_kilometri                                 Int?
+  rata_metrit                                    Decimal?                  @db.Decimal
+  lat                                            Decimal?                  @db.Decimal
+  long                                           Decimal?                  @db.Decimal
+  created                                        DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                                       DateTime?                 @db.Timestamp(6)
+  ajonopeus_nan_reason                           nan_reason?
+  ballast_slope_l_nan_reason                     nan_reason?
+  ballast_width_l_nan_reason                     nan_reason?
+  ballast_height_l_nan_reason                    nan_reason?
+  ballast_slope_r_nan_reason                     nan_reason?
+  ballast_width_r_nan_reason                     nan_reason?
+  ballast_height_r_nan_reason                    nan_reason?
+  platform_center_h_l_nan_reason                 nan_reason?
+  platform_run_v_l_nan_reason                    nan_reason?
+  platform_center_h_r_nan_reason                 nan_reason?
+  platform_run_v_r_nan_reason                    nan_reason?
+  fin1_kin_min_distance_nan_reason               nan_reason?
+  fin1_kin_leftrail_min_dist_nan_reason          nan_reason?
+  fin1_kin_rightrail_min_dist_nan_reason         nan_reason?
+  sg_mt_kin_min_distance_nan_reason              nan_reason?
+  sg_mt_kin_leftrail_min_distance_nan_reason     nan_reason?
+  sg_mt_kin_rightrail_min_distance_nan_reason    nan_reason?
+  sg_st_kin_min_distance_nan_reason              nan_reason?
+  sg_st_kin_leftrail_min_distance_nan_reason     nan_reason?
+  sg_st_kin_rightrail_min_distance_nan_reason    nan_reason?
+  oversize_kin_min_distance_nan_reason           nan_reason?
+  oversize_kin_leftrail_min_distance_nan_reason  nan_reason?
+  oversize_kin_rightrail_min_distance_nan_reason nan_reason?
+  gauge_adjacenttrack_left_nan_reason            nan_reason?
+  distance_adjacenttrack_left_nan_reason         nan_reason?
+  gauge_adjacenttrack_right_nan_reason           nan_reason?
+  distance_adjacenttrack_right_nan_reason        nan_reason?
+  raportti                                       raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  raportti                            raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
+  @@index([raportti_id], map: "tsight_index")
 
 }
 
@@ -609,4 +865,15 @@ enum logging_level {
   info
   warn
   error
+}
+
+enum nan_reason {
+  INV_VALUE
+  NAN_VALUE
+  NULL_VALUE
+  INF_VALUE
+  MINUS_INF_VALUE
+  UNKNOWN_VALUE
+  EMPTY_VALUE
+  MISSING_COLUMN
 }
