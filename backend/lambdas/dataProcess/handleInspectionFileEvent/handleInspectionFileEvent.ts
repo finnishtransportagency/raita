@@ -43,9 +43,8 @@ export function getLambdaConfigOrFail() {
   };
 }
 
-const prisma = getPrismaClient();
-
 const findReportByKey = async (key: string) => {
+  const prisma = getPrismaClient();
   const foundReport = (await prisma).raportti.findFirst({
     where: {
       key: {
