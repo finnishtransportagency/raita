@@ -9,6 +9,7 @@ import {
   isRaitaSourceSystem,
 } from '../../../../utils';
 import {
+  checkExistingHash,
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
@@ -43,7 +44,7 @@ export function getLambdaConfigOrFail() {
   };
 }
 
-const findReportByKey = async (key: string) => {
+export const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
   const foundReport = (await prisma).raportti.findFirst({
     where: {
@@ -213,40 +214,17 @@ export async function handleInspectionFileEvent(
         results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
       );
 
-      const checkExistingHash = await Promise.all(
-        entries.map(async entry => {
-          if (entry.key) {
-            const foundReport = await findReportByKey(entry.key);
-            if (foundReport) {
-              const skipHashCheck = entry.options.skip_hash_check;
-              const requireNewerParserVersion =
-                entry.options.require_newer_parser_version;
-
-              if (skipHashCheck && foundReport.hash === entry.hash) return true;
-
-              if (foundReport.hash !== entry.hash) return true;
-
-              if (requireNewerParserVersion) {
-                const newVersion = entry.metadata.parser_version;
-                const existingVersion = foundReport.parser_version;
-                return (
-                  compareVersionStrings(
-                    newVersion as any as string,
-                    existingVersion as any as string,
-                  ) <= 0
-                );
-              } else return false;
-            } else return true;
-          }
-          return true;
-        }),
-      );
-
       if (doCSVParsing) {
         if (dbConnection) {
-          const saveableEntries = entries.filter(
-            (entry, index) => checkExistingHash[index],
+          const checkedEntries = await Promise.all(
+            entries.map(async entry => {
+              const isSaveable = await checkExistingHash(entry);
+              return { entry, isSaveable };
+            }),
           );
+          const saveableEntries = checkedEntries
+            .filter(result => result.isSaveable)
+            .map(result => result.entry);
           await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
           log.error(
