@@ -79,12 +79,13 @@ function rowContainsWarnings(
   );
 }
 function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
-  return (
-    (type === 'data-process' && !row.counts['data-inspection']) ||
-    (row.counts['data-inspection'].info === 0 &&
+  if (row.counts['data-inspection']) {
+    return (
+      row.counts['data-inspection'].info === 0 &&
       row.counts['data-inspection'].warn === 0 &&
-      row.counts['data-inspection'].error === 0)
-  );
+      row.counts['data-inspection'].error === 0
+    );
+  } else return type === 'data-process' && !!row.counts['data-inspection'];
 }
 
 /**
