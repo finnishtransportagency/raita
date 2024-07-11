@@ -10,6 +10,9 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../utils';
+import { findReportByKey } from './dataProcess/handleInspectionFileEvent/handleInspectionFileEvent';
+import { FileMetadataEntry } from '../types';
+import { compareVersionStrings } from '../utils/compareVersionStrings';
 
 /**
  * Error class for Raita API lambdas
@@ -187,9 +190,7 @@ export function isExcelSuffix(arg: string): arg is ExcelSuffix {
 }
 
 export function isCsvSuffix(arg: string): arg is ExcelSuffix {
-  return (
-    fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg
-  );
+  return fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg;
 }
 
 export function getOriginalZipNameFromPath(path: string[]): string {
@@ -197,4 +198,32 @@ export function getOriginalZipNameFromPath(path: string[]): string {
     return '';
   }
   return `${path.slice(0, 5).join('/')}.zip`;
+}
+
+export async function checkExistingHash(
+  entry: FileMetadataEntry,
+): Promise<boolean> {
+  if (entry.key) {
+    const foundReport = await findReportByKey(entry.key);
+    if (foundReport) {
+      const skipHashCheck = entry.options.skip_hash_check;
+      const requireNewerParserVersion =
+        entry.options.require_newer_parser_version;
+
+      if (skipHashCheck && foundReport.hash === entry.hash) return true;
+
+      if (foundReport.hash !== entry.hash) return true;
+
+      if (requireNewerParserVersion) {
+        const newVersion = entry.metadata.parser_version;
+        const existingVersion = foundReport.parser_version;
+        return (
+          compareVersionStrings(
+            newVersion as any as string,
+            existingVersion as any as string,
+          ) >= 0
+        );
+      } else return false;
+    } else return true;
+  } else return true;
 }

@@ -9,6 +9,7 @@ import {
   isRaitaSourceSystem,
 } from '../../../../utils';
 import {
+  checkExistingHash,
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
@@ -25,6 +26,8 @@ import {
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
+import { getPrismaClient } from '../../../utils/prismaClient';
+import { compareVersionStrings } from '../../../utils/compareVersionStrings';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -40,6 +43,19 @@ export function getLambdaConfigOrFail() {
     allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
+
+export const findReportByKey = async (key: string) => {
+  const prisma = getPrismaClient();
+  const foundReport = (await prisma).raportti.findFirst({
+    where: {
+      key: {
+        in: [key],
+      },
+    },
+  });
+
+  return foundReport;
+};
 
 const withRequest = lambdaRequestTracker();
 
@@ -135,9 +151,27 @@ export async function handleInspectionFileEvent(
           return null;
         }
 
-        const reportId = dbConnection
-          ? await insertRaporttiData(key, keyData.fileName, null, dbConnection)
-          : -1;
+        let reportId: number;
+
+        if (!dbConnection) {
+          // No DB connection
+          reportId = -1;
+        } else {
+          // DB connection exists
+          const foundReport = await findReportByKey(key);
+          if (foundReport) {
+            // Report found
+            reportId = foundReport.id;
+          } else {
+            // Report not found, insert new report
+            reportId = await insertRaporttiData(
+              key,
+              keyData.fileName,
+              null,
+              dbConnection,
+            );
+          }
+        }
 
         const parseResults = await parseFileMetadata({
           keyData,
@@ -182,7 +216,16 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          await updateRaporttiMetadata(entries, dbConnection);
+          const checkedEntries = await Promise.all(
+            entries.map(async entry => {
+              const isSaveable = await checkExistingHash(entry);
+              return { entry, isSaveable };
+            }),
+          );
+          const saveableEntries = checkedEntries
+            .filter(result => result.isSaveable)
+            .map(result => result.entry);
+          await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',
