@@ -1,8 +1,5 @@
-import { hash } from 'crypto';
 import { FileMetadataEntry } from '../../../../types';
-import { compareVersionStrings } from '../../../../utils/compareVersionStrings';
 import { checkExistingHash } from '../../../utils';
-import { findReportByKey as originalFindReportByKey } from '../handleInspectionFileEvent';
 import { jest } from '@jest/globals';
 
 // Mock the findReportByKey function
