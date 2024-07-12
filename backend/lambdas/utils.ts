@@ -210,6 +210,12 @@ export async function checkExistingHash(
       const requireNewerParserVersion =
         entry.options.require_newer_parser_version;
 
+      // updating existing file: don't update parsed_at_datetime
+      const oldParsedAt = foundReport.parsed_at_datetime
+        ? foundReport.parsed_at_datetime.toISOString()
+        : null;
+      entry.metadata.parsed_at_datetime = oldParsedAt;
+
       if (skipHashCheck && foundReport.hash === entry.hash) return true;
 
       if (foundReport.hash !== entry.hash) return true;
