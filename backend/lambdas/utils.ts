@@ -10,9 +10,9 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../utils';
-import { findReportByKey } from './dataProcess/handleInspectionFileEvent/handleInspectionFileEvent';
 import { FileMetadataEntry } from '../types';
 import { compareVersionStrings } from '../utils/compareVersionStrings';
+import { raportti } from '@prisma/client';
 
 /**
  * Error class for Raita API lambdas
@@ -202,34 +202,26 @@ export function getOriginalZipNameFromPath(path: string[]): string {
 
 export async function checkExistingHash(
   entry: FileMetadataEntry,
+  foundReport: raportti | null,
 ): Promise<boolean> {
-  if (entry.key) {
-    const foundReport = await findReportByKey(entry.key);
-    if (foundReport) {
-      const skipHashCheck = entry.options.skip_hash_check;
-      const requireNewerParserVersion =
-        entry.options.require_newer_parser_version;
+  if (entry.key && foundReport) {
+    const skipHashCheck = entry.options.skip_hash_check;
+    const requireNewerParserVersion =
+      entry.options.require_newer_parser_version;
 
-      // updating existing file: don't update parsed_at_datetime
-      const oldParsedAt = foundReport.parsed_at_datetime
-        ? foundReport.parsed_at_datetime.toISOString()
-        : null;
-      entry.metadata.parsed_at_datetime = oldParsedAt;
+    if (skipHashCheck && foundReport.hash === entry.hash) return true;
 
-      if (skipHashCheck && foundReport.hash === entry.hash) return true;
+    if (foundReport.hash !== entry.hash) return true;
 
-      if (foundReport.hash !== entry.hash) return true;
-
-      if (requireNewerParserVersion) {
-        const newVersion = entry.metadata.parser_version;
-        const existingVersion = foundReport.parser_version;
-        return (
-          compareVersionStrings(
-            newVersion as any as string,
-            existingVersion as any as string,
-          ) >= 0
-        );
-      } else return false;
-    } else return true;
+    if (requireNewerParserVersion) {
+      const newVersion = entry.metadata.parser_version;
+      const existingVersion = foundReport.parser_version;
+      return (
+        compareVersionStrings(
+          newVersion as any as string,
+          existingVersion as any as string,
+        ) >= 0
+      );
+    } else return false;
   } else return true;
 }

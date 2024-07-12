@@ -44,7 +44,7 @@ export function getLambdaConfigOrFail() {
   };
 }
 
-export const findReportByKey = async (key: string) => {
+const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
   const foundReport = (await prisma).raportti.findFirst({
     where: {
@@ -218,13 +218,25 @@ export async function handleInspectionFileEvent(
         if (dbConnection) {
           const checkedEntries = await Promise.all(
             entries.map(async entry => {
-              const isSaveable = await checkExistingHash(entry);
+              const foundReport = await findReportByKey(entry.key);
+              const isSaveable = foundReport
+                ? await checkExistingHash(entry, foundReport)
+                : null;
+              // updating existing file: don't update parsed_at_datetime
+
+              const oldParsedAt = foundReport?.parsed_at_datetime
+                ? foundReport.parsed_at_datetime.toISOString()
+                : null;
+              if (foundReport) {
+                entry.metadata.parsed_at_datetime = oldParsedAt;
+              }
               return { entry, isSaveable };
             }),
           );
           const saveableEntries = checkedEntries
             .filter(result => result.isSaveable)
             .map(result => result.entry);
+
           await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
           log.error(
