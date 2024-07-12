@@ -1,58 +1,25 @@
-import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
+// import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
 /**
  * Build on example from https://www.gravitywell.co.uk/insights/using-ecs-tasks-on-aws-fargate-to-replace-lambda-functions/
  */
 export const launchECSZipTask = async ({
-  clusterArn,
-  taskArn,
-  containerName,
-  targetBucketName,
-  subnetIds,
   key,
-  sourceBucketName,
+  queueUrl,
 }: {
-  clusterArn: string;
-  taskArn: string;
-  containerName: string;
-  targetBucketName: string;
-  subnetIds: Array<string>;
   key: string;
-  sourceBucketName: string;
+  queueUrl: string;
 }) => {
   // Invoke ECS task
-  const client = new ECSClient({});
-  const command = new RunTaskCommand({
-    cluster: clusterArn,
-    taskDefinition: taskArn,
-    launchType: LaunchType.FARGATE,
-    networkConfiguration: {
-      awsvpcConfiguration: {
-        subnets: subnetIds,
-        assignPublicIp: 'DISABLED',
-      },
-    },
-    overrides: {
-      containerOverrides: [
-        {
-          name: containerName,
-          environment: [
-            {
-              name: 'S3_SOURCE_BUCKET',
-              value: sourceBucketName,
-            },
-            {
-              name: 'S3_SOURCE_KEY',
-              value: key,
-            },
-            {
-              name: 'S3_TARGET_BUCKET',
-              value: targetBucketName,
-            },
-          ],
-        },
-      ],
-    },
+  const sqsClient = new SQSClient();
+  // add message to queue where ECS task will pick it up
+  const body = {
+    S3_SOURCE_KEY: key,
+  };
+  const messageCommand = new SendMessageCommand({
+    QueueUrl: queueUrl,
+    MessageBody: JSON.stringify(body),
   });
-  return await client.send(command);
+  return await sqsClient.send(messageCommand);
 };
