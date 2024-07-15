@@ -179,7 +179,11 @@ export class RaitaPipelineStack extends Stack {
     const preSteps: Step[] = [
       new ShellStep('UnitTest', {
         input: githubSource,
-        installCommands: ['npm ci', 'npm --prefix frontend ci'],
+        installCommands: [
+          'npm ci',
+          'npm --prefix frontend ci',
+          'npm run prisma:generate',
+        ],
         commands: ['npm run test', 'npm run --prefix frontend test'],
       }),
     ];
