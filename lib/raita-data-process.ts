@@ -23,7 +23,10 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
-import { getDatabaseEnvironmentVariables, getRemovalPolicy } from './utils';
+import {
+  getDatabaseEnvironmentVariables,
+  prismaBundlingOptions,
+} from './utils';
 import {
   Alarm,
   AlarmRule,
@@ -354,7 +357,7 @@ export class DataProcessStack extends NestedStack {
 
     // route csv bucket s3 events through a queue
     const csvQueue = new Queue(this, 'csv-queue', {
-      visibilityTimeout: Duration.seconds(5*60),
+      visibilityTimeout: Duration.seconds(5 * 60),
     });
     this.csvDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
@@ -538,6 +541,7 @@ export class DataProcessStack extends NestedStack {
         ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'true',
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -676,10 +680,7 @@ export class DataProcessStack extends NestedStack {
   }) {
     // any events that fail cause lambda to fail twice will be written here
     // currently nothing is done to this queue
-    const massCSVDeadLetterQueue = new Queue(
-      this,
-      'csv-mass-deadletter',
-    );
+    const massCSVDeadLetterQueue = new Queue(this, 'csv-mass-deadletter');
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 3072,
