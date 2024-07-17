@@ -138,19 +138,15 @@ export const getDatabaseEnvironmentVariables = (
 
 /**
  * These should be given as bundling options to NodeJsFunction that uses Prisma
+ * Prisma layer is also needed
  */
 export const prismaBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
-  nodeModules: ['prisma', '@prisma/client'],
-  commandHooks: {
-    beforeInstall: (i, o) => [`cp -r ${i}/backend/db/prisma ${o}`],
-    beforeBundling: (i, o) => [],
-    afterBundling: (i, o) => [
-      `cd ${o} && npx prisma generate`,
-      // remove unused stuff to reduce bundle size
-      `rm -r ${o}/node_modules/@prisma/engines`,
-      `rm -r ${o}/node_modules/.prisma/client/*debian*`,
-      `rm -r ${o}/node_modules/prisma/*debian*`,
-    ],
-  },
+  externalModules: ['@prisma'], // this is provided by the lambda layer so mark it as external
+};
+
+/**
+ * Needed for graphql lambdas
+ */
+export const graphqlBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
   loader: { '.graphql': 'text' },
 };
