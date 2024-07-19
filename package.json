@@ -75,7 +75,6 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
     "graphql": "^16.8.1",
-    "jest-mock-extended": "^3.0.7",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "jwk-to-pem": "^2.0.5",
