@@ -43,6 +43,7 @@ export function getLambdaConfigOrFail() {
     allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
@@ -53,13 +54,12 @@ const findReportByKey = async (key: string) => {
       },
     },
   });
-  console.log(foundReport);
+  adminLogger.info(`FoundReport: ${foundReport}`);
   return foundReport;
 };
 
 const withRequest = lambdaRequestTracker();
 
-const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
