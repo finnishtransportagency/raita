@@ -53,7 +53,7 @@ const findReportByKey = async (key: string) => {
       },
     },
   });
-
+  console.log(foundReport);
   return foundReport;
 };
 
