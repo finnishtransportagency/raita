@@ -202,26 +202,23 @@ export function getOriginalZipNameFromPath(path: string[]): string {
 
 export async function checkExistingHash(
   entry: FileMetadataEntry,
-  foundReport: raportti | null,
+  foundReport: raportti,
 ): Promise<boolean> {
-  if (entry.key && foundReport) {
-    const skipHashCheck = entry.options.skip_hash_check;
-    const requireNewerParserVersion =
-      entry.options.require_newer_parser_version;
+  const skipHashCheck = entry.options.skip_hash_check;
+  const requireNewerParserVersion = entry.options.require_newer_parser_version;
 
-    if (skipHashCheck && foundReport.hash === entry.hash) return true;
+  if (skipHashCheck && foundReport.hash === entry.hash) return true;
 
-    if (foundReport.hash !== entry.hash) return true;
+  if (foundReport.hash !== entry.hash) return true;
 
-    if (requireNewerParserVersion) {
-      const newVersion = entry.metadata.parser_version;
-      const existingVersion = foundReport.parser_version;
-      return (
-        compareVersionStrings(
-          newVersion as any as string,
-          existingVersion as any as string,
-        ) >= 0
-      );
-    } else return false;
-  } else return true;
+  if (requireNewerParserVersion) {
+    const newVersion = entry.metadata.parser_version;
+    const existingVersion = foundReport.parser_version;
+    return (
+      compareVersionStrings(
+        newVersion as any as string,
+        existingVersion as any as string,
+      ) >= 0
+    );
+  } else return false;
 }

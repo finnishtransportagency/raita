@@ -224,12 +224,10 @@ export async function handleInspectionFileEvent(
                 : null;
               // updating existing file: don't update parsed_at_datetime
 
-              const oldParsedAt = foundReport?.parsed_at_datetime
-                ? foundReport.parsed_at_datetime.toISOString()
-                : null;
-              if (foundReport) {
-                entry.metadata.parsed_at_datetime = oldParsedAt;
-              }
+              entry.metadata.parsed_at_datetime =
+                foundReport?.parsed_at_datetime != null
+                  ? foundReport.parsed_at_datetime.toISOString()
+                  : entry.metadata.parsed_at_datetime;
               return { entry, isSaveable };
             }),
           );
