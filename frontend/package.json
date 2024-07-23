@@ -20,7 +20,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@graphql-typed-document-node/core": "^3.2.0",
-    "@opensearch-project/opensearch": "^2.4.0",
     "@tanstack/react-query": "^4.36.1",
     "@tanstack/react-query-devtools": "^4.36.1",
     "axios": "^1.6.2",

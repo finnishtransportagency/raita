@@ -5,10 +5,8 @@ import { marked } from 'marked';
 
 import instructionData from 'shared/doc/manual_data_process_instructions.md';
 import { Button, TextInput, Modal } from 'components';
-import { makeQuery } from 'shared/query-builder';
 import css from './delete.module.css';
 import markdownCss from '../../styles/markdown.module.css';
-import { useSearch } from 'shared/hooks';
 import { postManualDataProcessRequest } from 'shared/rest';
 import { ManualDataProcessRequest, RaitaNextPage } from 'shared/types';
 import { RaitaRole } from 'shared/user';

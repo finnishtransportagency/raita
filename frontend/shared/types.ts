@@ -51,8 +51,6 @@ export namespace Rest {
   };
 
   export type Fields = Record<string, Field>;
-
-  export type Reports = SearchResponse;
 }
 
 export type ImageKeys = {
@@ -61,37 +59,7 @@ export type ImageKeys = {
 };
 //
 
-/**
- * Something along the lines the way OpenSearch results are represented
- * @deprecated Use OpenSearch-provided types instead
- * @see {@link SearchHit}
- * @see {@link SearchResponse}
- */
-export interface ISearchResult<T> {
-  score: number;
-  source: T;
-}
-
 //
-
-export interface IDocument {
-  score?: number;
-  source: {
-    key: string;
-    file_name: string;
-    size: number;
-    metadata: IDocumentMetadata;
-  };
-}
-
-export interface IDocumentMetadata {}
-
-export interface SearchResponse {
-  total: number;
-  keys: Array<string>;
-  totalSize: number;
-  hits: Array<IDocument>;
-}
 
 export interface ImageKeyResponse {
   images: {
