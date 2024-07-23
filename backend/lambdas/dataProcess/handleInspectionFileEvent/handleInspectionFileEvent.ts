@@ -47,14 +47,16 @@ const adminLogger: IAdminLogger = new PostgresLogger();
 
 const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
-  const foundReport = (await prisma).raportti.findFirst({
+  const foundReport = await (
+    await prisma
+  ).raportti.findFirst({
     where: {
       key: {
         in: [key],
       },
     },
   });
-  await adminLogger.info(`FoundReport: ${foundReport}`);
+  await adminLogger.info(`FoundReport adminlogger: ${foundReport}`);
   return foundReport;
 };
 
