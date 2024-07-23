@@ -56,7 +56,9 @@ const findReportByKey = async (key: string) => {
       },
     },
   });
-  await adminLogger.info(`FoundReport adminlogger: ${foundReport}`);
+  await adminLogger.info(
+    `FoundReport adminlogger: ${foundReport?.key}, ${key}`,
+  );
   return foundReport;
 };
 
@@ -221,7 +223,7 @@ export async function handleInspectionFileEvent(
           const checkedEntries = await Promise.all(
             entries.map(async entry => {
               const foundReport = await findReportByKey(entry.key);
-              log.info(`FOUNDREPORT: ${foundReport}`);
+              log.info(`Keys: ${foundReport?.key}, ${entry.key}`);
               const isSaveable = foundReport
                 ? await checkExistingHash(entry, foundReport)
                 : true;
