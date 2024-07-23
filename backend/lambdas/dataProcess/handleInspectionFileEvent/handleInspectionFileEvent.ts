@@ -223,7 +223,6 @@ export async function handleInspectionFileEvent(
           const checkedEntries = await Promise.all(
             entries.map(async entry => {
               const foundReport = await findReportByKey(entry.key);
-              log.info(`Keys: ${foundReport?.key}, ${entry.key}`);
               const isSaveable = foundReport
                 ? await checkExistingHash(entry, foundReport)
                 : true;
@@ -238,7 +237,10 @@ export async function handleInspectionFileEvent(
           );
           const saveableEntries = checkedEntries
             .filter(result => result.isSaveable)
-            .map(result => result.entry);
+            .map(result => {
+              adminLogger.info(result.entry.hash);
+              return result.entry;
+            });
 
           await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {

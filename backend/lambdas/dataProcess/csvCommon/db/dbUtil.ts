@@ -331,9 +331,11 @@ export async function updateRaporttiMetadata(
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
+      hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
     };
     try {
+      log.info(raporttiData.hash);
       let id;
       if (metaDataEntry.reportId) {
         id = metaDataEntry.reportId;
