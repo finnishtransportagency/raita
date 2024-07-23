@@ -1040,7 +1040,7 @@ export class DataProcessStack extends NestedStack {
     // add scaling based on total number (visible + in flight) of messages in queue
     const scaling = zipHandlerService.autoScaleTaskCount({
       minCapacity: 0,
-      maxCapacity: 2,
+      maxCapacity: 1,
     });
     const totalZipHandlerQueueMessageCount = new MathExpression({
       label: 'TotalZipHandlerQueueMessageCount',
@@ -1056,8 +1056,7 @@ export class DataProcessStack extends NestedStack {
       cooldown: cdk.Duration.seconds(300),
       scalingSteps: [
         { upper: 0, change: 0 },
-        { lower: 0, upper: 100, change: 1 },
-        { lower: 100, change: 2 },
+        { lower: 1, change: 1 },
       ],
     });
 
