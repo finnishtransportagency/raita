@@ -37,7 +37,7 @@ export const getPrismaClient = async () => {
     ],
   });
 
-  client.$on('query', e => {
+  client.$on('query', (e: any) => {
     log.info({ query: e.query, params: e.params, duration: e.duration });
   });
   return client;
