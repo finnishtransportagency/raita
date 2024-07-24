@@ -225,7 +225,7 @@ export async function handleInspectionFileEvent(
               const foundReport = await findReportByKey(entry.key);
               const isSaveable = foundReport
                 ? await checkExistingHash(entry, foundReport)
-                : true;
+                : false;
               // updating existing file: don't update parsed_at_datetime
 
               entry.metadata.parsed_at_datetime =
@@ -237,10 +237,7 @@ export async function handleInspectionFileEvent(
           );
           const saveableEntries = checkedEntries
             .filter(result => result.isSaveable)
-            .map(result => {
-              adminLogger.info(result.entry.hash);
-              return result.entry;
-            });
+            .map(result => result.entry);
 
           await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {

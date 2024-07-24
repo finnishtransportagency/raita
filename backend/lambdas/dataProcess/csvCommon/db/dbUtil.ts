@@ -335,7 +335,6 @@ export async function updateRaporttiMetadata(
       ...metaDataEntry.metadata,
     };
     try {
-      log.info(raporttiData.hash);
       let id;
       if (metaDataEntry.reportId) {
         id = metaDataEntry.reportId;
