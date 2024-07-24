@@ -56,9 +56,6 @@ const findReportByKey = async (key: string) => {
       },
     },
   });
-  await adminLogger.info(
-    `FoundReport adminlogger: ${foundReport?.key}, ${key}`,
-  );
   return foundReport;
 };
 
@@ -225,7 +222,7 @@ export async function handleInspectionFileEvent(
               const foundReport = await findReportByKey(entry.key);
               const isSaveable = foundReport
                 ? await checkExistingHash(entry, foundReport)
-                : false;
+                : true;
               // updating existing file: don't update parsed_at_datetime
 
               entry.metadata.parsed_at_datetime =
