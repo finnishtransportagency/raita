@@ -82,6 +82,7 @@ export async function chopCSVFileStream(
 ) {
   // Empty relevant mittaus rows, prevents duplication when file has been parsed before
   // TODO: is this the best place to do this
+  // note: if another parsing process of the same file is happening at the same time, result can be messy
   await emptyRaporttiMittausRows(reportId, dbConnection);
   await updateRaporttiStatus(reportId, 'CHOPPING', null, dbConnection);
 
