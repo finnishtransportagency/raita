@@ -331,6 +331,7 @@ export async function updateRaporttiMetadata(
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
+      hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
     };
     try {

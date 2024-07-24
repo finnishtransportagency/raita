@@ -43,23 +43,24 @@ export function getLambdaConfigOrFail() {
     allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
-  const foundReport = (await prisma).raportti.findFirst({
+  const foundReport = await (
+    await prisma
+  ).raportti.findFirst({
     where: {
       key: {
         in: [key],
       },
     },
   });
-
   return foundReport;
 };
 
 const withRequest = lambdaRequestTracker();
 
-const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
@@ -221,15 +222,13 @@ export async function handleInspectionFileEvent(
               const foundReport = await findReportByKey(entry.key);
               const isSaveable = foundReport
                 ? await checkExistingHash(entry, foundReport)
-                : null;
+                : true;
               // updating existing file: don't update parsed_at_datetime
 
-              const oldParsedAt = foundReport?.parsed_at_datetime
-                ? foundReport.parsed_at_datetime.toISOString()
-                : null;
-              if (foundReport) {
-                entry.metadata.parsed_at_datetime = oldParsedAt;
-              }
+              entry.metadata.parsed_at_datetime =
+                foundReport?.parsed_at_datetime != null
+                  ? foundReport.parsed_at_datetime.toISOString()
+                  : entry.metadata.parsed_at_datetime;
               return { entry, isSaveable };
             }),
           );
