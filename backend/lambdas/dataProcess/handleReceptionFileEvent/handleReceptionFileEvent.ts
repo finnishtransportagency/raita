@@ -26,8 +26,11 @@ import { lambdaRequestTracker } from 'pino-lambda';
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
   return {
-    queueUrl: getEnv('QUEUE_URL'),
+    clusterArn: getEnv('ECS_CLUSTER_ARN'),
+    taskArn: getEnv('ECS_TASK_ARN'),
+    containerName: getEnv('CONTAINER_NAME'),
     targetBucketName: getEnv('TARGET_BUCKET_NAME'),
+    subnetIds: getEnv('SUBNET_IDS').split(','),
   };
 }
 
@@ -78,6 +81,7 @@ export async function handleReceptionFileEvent(
         const result = await launchECSZipTask({
           ...config,
           key,
+          sourceBucketName: bucket.name,
         });
         log.info({ result }); // temporary? for debugging
         return result;

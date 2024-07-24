@@ -8,6 +8,6 @@ const getEnvOrFail = (name: string) => {
 
 export const getConfig = () => ({
   bucket: getEnvOrFail('S3_SOURCE_BUCKET'),
+  key: getEnvOrFail('S3_SOURCE_KEY'),
   targetBucket: getEnvOrFail('S3_TARGET_BUCKET'),
-  queueUrl: getEnvOrFail('QUEUE_URL'),
 });

@@ -32,7 +32,6 @@ import {
   AlarmRule,
   ComparisonOperator,
   CompositeAlarm,
-  MathExpression,
   Stats,
   TreatMissingData,
 } from 'aws-cdk-lib/aws-cloudwatch';
@@ -42,7 +41,7 @@ import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
-import { AdjustmentType } from 'aws-cdk-lib/aws-autoscaling';
+import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -208,15 +207,11 @@ export class DataProcessStack extends NestedStack {
       handleZipContainer,
       zipTaskLogGroup,
       zipTaskTaskRole,
-      zipHandlerService,
-      zipHandlerQueue,
     } = this.createZipHandlerECSResources({
       raitaStackIdentifier,
       vpc,
       raitaEnv,
       databaseEnvironmentVariables,
-      sourceBucket: this.dataReceptionBucket,
-      targetBucket: this.inspectionDataBucket,
     });
 
     this.dataReceptionBucket.grantRead(zipTaskTaskRole);
@@ -237,12 +232,11 @@ export class DataProcessStack extends NestedStack {
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
+      cluster: ecsCluster,
+      task: handleZipTask,
+      container: handleZipContainer,
       databaseEnvironmentVariables,
-      zipHandlerQueue,
     });
-
-    zipHandlerQueue.grantSendMessages(handleReceptionFileEventFn);
-
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
     this.dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
@@ -447,16 +441,20 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
+    cluster,
+    task,
+    container,
     databaseEnvironmentVariables,
-    zipHandlerQueue,
   }: {
     name: string;
     targetBucket: s3.Bucket;
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
+    cluster: cdk.aws_ecs.Cluster;
+    task: cdk.aws_ecs.FargateTaskDefinition;
+    container: cdk.aws_ecs.ContainerDefinition;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
-    zipHandlerQueue: Queue;
   }) {
     const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -469,8 +467,11 @@ export class DataProcessStack extends NestedStack {
         `../backend/lambdas/dataProcess/handleReceptionFileEvent/handleReceptionFileEvent.ts`,
       ),
       environment: {
-        QUEUE_URL: zipHandlerQueue.queueUrl,
+        ECS_CLUSTER_ARN: cluster.clusterArn,
+        ECS_TASK_ARN: task.taskDefinitionArn,
+        CONTAINER_NAME: container.containerName,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
+        SUBNET_IDS: vpc.privateSubnets.map(sn => sn.subnetId).join(','),
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
@@ -944,26 +945,12 @@ export class DataProcessStack extends NestedStack {
     vpc,
     raitaEnv,
     databaseEnvironmentVariables,
-    sourceBucket,
-    targetBucket,
   }: {
     raitaStackIdentifier: string;
     vpc: IVpc;
     raitaEnv: RaitaEnvironment;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
-    sourceBucket: Bucket;
-    targetBucket: Bucket;
   }) {
-    // dead letter queue just in case. Currently no handling to messages here
-    const zipHandlerDeadLetter = new Queue(
-      this,
-      'zip-handler-deadletter-queue',
-    );
-    const zipHandlerQueue = new Queue(this, 'zip-handler-queue', {
-      visibilityTimeout: Duration.minutes(60), // estimated max time to handle one zip
-      deadLetterQueue: { maxReceiveCount: 3, queue: zipHandlerDeadLetter },
-    });
-
     const ecsCluster = new ecs.Cluster(
       this,
       `cluster-${raitaStackIdentifier}`,
@@ -1011,65 +998,23 @@ export class DataProcessStack extends NestedStack {
       streamPrefix: 'FargateHandleZip',
       logRetention: RetentionDays.SIX_MONTHS,
     });
-    const containerImage = ecs.ContainerImage.fromDockerImageAsset(image);
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
-        image: containerImage,
+        image: ecs.ContainerImage.fromDockerImageAsset(image),
         logging: logDriver,
         environment: {
           AWS_REGION: this.region,
-          QUEUE_URL: zipHandlerQueue.queueUrl,
-          S3_SOURCE_BUCKET: sourceBucket.bucketName,
-          S3_TARGET_BUCKET: targetBucket.bucketName,
           ...databaseEnvironmentVariables,
         },
       },
     );
-
-    const zipHandlerService = new ecs.FargateService(
-      this,
-      'zip-handler-service',
-      {
-        cluster: ecsCluster,
-        taskDefinition: handleZipTask,
-        desiredCount: 0,
-      },
-    );
-
-    // add scaling based on total number (visible + in flight) of messages in queue
-    const scaling = zipHandlerService.autoScaleTaskCount({
-      minCapacity: 0,
-      maxCapacity: 1,
-    });
-    const totalZipHandlerQueueMessageCount = new MathExpression({
-      label: 'TotalZipHandlerQueueMessageCount',
-      expression: 'm1 + m2',
-      usingMetrics: {
-        m1: zipHandlerQueue.metricApproximateNumberOfMessagesVisible(),
-        m2: zipHandlerQueue.metricApproximateNumberOfMessagesNotVisible(), // in flight
-      },
-    });
-    scaling.scaleOnMetric('ZipHandlerQueueTotalMessagesScaling', {
-      metric: totalZipHandlerQueueMessageCount,
-      adjustmentType: AdjustmentType.EXACT_CAPACITY,
-      cooldown: cdk.Duration.seconds(300),
-      scalingSteps: [
-        { upper: 0, change: 0 },
-        { lower: 1, change: 1 },
-      ],
-    });
-
-    zipHandlerQueue.grantConsumeMessages(zipTaskTaskRole);
-
     return {
       ecsCluster,
       handleZipTask,
       handleZipContainer,
       zipTaskLogGroup: logDriver.logGroup,
       zipTaskTaskRole,
-      zipHandlerService,
-      zipHandlerQueue,
     };
   }
 }
