@@ -82,6 +82,7 @@ export type MittausCountResponse = {
   __typename?: 'MittausCountResponse';
   row_count: Scalars['Int']['output'];
   size_estimate: Scalars['Float']['output'];
+  status: Scalars['String']['output'];
 };
 
 export type MittausGenerateResponse = {
@@ -391,6 +392,7 @@ export type MittausResolvers<ContextType = any, ParentType extends ResolversPare
 export type MittausCountResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausCountResponse'] = ResolversParentTypes['MittausCountResponse']> = ResolversObject<{
   row_count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   size_estimate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

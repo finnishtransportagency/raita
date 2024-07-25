@@ -22,6 +22,7 @@ type Mittaus {
 }
 
 type MittausCountResponse {
+  status: String!
   row_count: Int!
   size_estimate: Float! # In bytes, can exceed 32 bit int size
 }
