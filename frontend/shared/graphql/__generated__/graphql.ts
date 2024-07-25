@@ -220,7 +220,7 @@ export type SearchRaporttiResponse = {
   page: Scalars['Int']['output'];
   page_size: Scalars['Int']['output'];
   raportti?: Maybe<Array<Raportti>>;
-  total_size: Scalars['Float']['output'];
+  total_size?: Maybe<Scalars['Float']['output']>;
 };
 
 export type Search_Mittaus_CountQueryVariables = Exact<{
@@ -265,7 +265,7 @@ export type Search_RaporttiQueryVariables = Exact<{
 }>;
 
 
-export type Search_RaporttiQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, total_size: number, page: number, page_size: number, raportti?: Array<{ __typename?: 'Raportti', file_name?: string | null, key?: string | null, file_type?: string | null, source_system?: string | null, zip_name?: string | null, campaign?: string | null, track_number?: string | null, track_part?: string | null, track_id?: string | null, km_start?: number | null, km_end?: number | null, system?: string | null, nonparsed_inspection_datetime?: string | null, report_category?: string | null, parser_version?: string | null, size?: number | null, zip_reception__year?: string | null, zip_reception__date?: string | null, year?: number | null, extra_information?: string | null, maintenance_area?: string | null, is_empty?: boolean | null, length?: number | null, tilirataosanumero?: string | null, report_type?: string | null, temperature?: number | null, measurement_start_location?: string | null, measurement_end_location?: string | null, measurement_direction?: string | null, maintenance_level?: string | null, status?: string | null, inspection_date?: string | null, parsed_at_datetime?: string | null, inspection_datetime?: string | null, metadata_changed_at_datetime?: string | null }> | null } };
+export type Search_RaporttiQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, total_size?: number | null, page: number, page_size: number, raportti?: Array<{ __typename?: 'Raportti', file_name?: string | null, key?: string | null, file_type?: string | null, source_system?: string | null, zip_name?: string | null, campaign?: string | null, track_number?: string | null, track_part?: string | null, track_id?: string | null, km_start?: number | null, km_end?: number | null, system?: string | null, nonparsed_inspection_datetime?: string | null, report_category?: string | null, parser_version?: string | null, size?: number | null, zip_reception__year?: string | null, zip_reception__date?: string | null, year?: number | null, extra_information?: string | null, maintenance_area?: string | null, is_empty?: boolean | null, length?: number | null, tilirataosanumero?: string | null, report_type?: string | null, temperature?: number | null, measurement_start_location?: string | null, measurement_end_location?: string | null, measurement_direction?: string | null, maintenance_level?: string | null, status?: string | null, inspection_date?: string | null, parsed_at_datetime?: string | null, inspection_datetime?: string | null, metadata_changed_at_datetime?: string | null }> | null } };
 
 export type Search_Raportti_By_Key_PrefixQueryVariables = Exact<{
   key: Scalars['String']['input'];
@@ -274,7 +274,7 @@ export type Search_Raportti_By_Key_PrefixQueryVariables = Exact<{
 }>;
 
 
-export type Search_Raportti_By_Key_PrefixQuery = { __typename?: 'Query', search_raportti_by_key_prefix: { __typename?: 'SearchRaporttiResponse', count: number, total_size: number, raportti?: Array<{ __typename?: 'Raportti', key?: string | null }> | null } };
+export type Search_Raportti_By_Key_PrefixQuery = { __typename?: 'Query', search_raportti_by_key_prefix: { __typename?: 'SearchRaporttiResponse', count: number, total_size?: number | null, raportti?: Array<{ __typename?: 'Raportti', key?: string | null }> | null } };
 
 export type Search_Raportti_Keys_OnlyQueryVariables = Exact<{
   raportti: RaporttiInput;
@@ -283,7 +283,7 @@ export type Search_Raportti_Keys_OnlyQueryVariables = Exact<{
 }>;
 
 
-export type Search_Raportti_Keys_OnlyQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, total_size: number, raportti?: Array<{ __typename?: 'Raportti', key?: string | null }> | null } };
+export type Search_Raportti_Keys_OnlyQuery = { __typename?: 'Query', search_raportti: { __typename?: 'SearchRaporttiResponse', count: number, total_size?: number | null, raportti?: Array<{ __typename?: 'Raportti', key?: string | null }> | null } };
 
 export type MetaQueryVariables = Exact<{ [key: string]: never; }>;
 

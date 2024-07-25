@@ -222,7 +222,7 @@ export type SearchRaporttiResponse = {
   page: Scalars['Int']['output'];
   page_size: Scalars['Int']['output'];
   raportti?: Maybe<Array<Raportti>>;
-  total_size: Scalars['Float']['output'];
+  total_size?: Maybe<Scalars['Float']['output']>;
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -461,7 +461,7 @@ export type SearchRaporttiResponseResolvers<ContextType = any, ParentType extend
   page?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   page_size?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   raportti?: Resolver<Maybe<Array<ResolversTypes['Raportti']>>, ParentType, ContextType>;
-  total_size?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  total_size?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
