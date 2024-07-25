@@ -158,6 +158,7 @@ export async function handleInspectionFileEvent(
 
         let reportId: number;
 
+        // entry values that are known before parsing
         const entryBeforeParsing: Partial<FileMetadataEntry> = {
           key,
           hash,
@@ -225,15 +226,14 @@ export async function handleInspectionFileEvent(
             ? foundReport.parsed_at_datetime.toISOString()
             : parseResults.metadata.parsed_at_datetime;
         return {
+          ...entryBeforeParsing,
           metadata: {
             ...parseResults.metadata,
             parsed_at_datetime,
-            ...entryBeforeParsing.metadata,
           },
           tags: fileStreamResult.tags,
           reportId,
           errors: parseResults.errors,
-          ...entryBeforeParsing,
         } as FileMetadataEntry;
       });
       // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
