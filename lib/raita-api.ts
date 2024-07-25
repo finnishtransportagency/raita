@@ -408,7 +408,7 @@ export class RaitaApiStack extends NestedStack {
     });
 
     this.handleV2GraphqlRequest = this.createV2GraphqlHandler({
-      name: 'api-handler-v2-files',
+      name: 'api-handler-v2-graphql',
       raitaStackIdentifier,
       raitaEnv,
       stackId,
