@@ -101,24 +101,6 @@ export const extractFileContentDataFromStream = (
   });
 };
 
-/**
- * Returns hex encoded hash calculated from a readable stream
- */
-const calculateHashFromStream = (fileStream: Readable): Promise<string> => {
-  const hashStream = createHash('sha256');
-  fileStream.pipe(hashStream);
-  return new Promise((resolve, reject) => {
-    hashStream.on('readable', () => {
-      const hashData = hashStream.read();
-      if (hashData) {
-        resolve(hashData.toString('hex'));
-      } else {
-        reject('Error calculating hash');
-      }
-    });
-  });
-};
-
 export const parseFileContent = async (
   spec: IExtractionSpec,
   keyData: KeyData,
@@ -128,15 +110,12 @@ export const parseFileContent = async (
   reportId: number,
 ): Promise<{
   contentData: ParseValueResult;
-  hash: string;
 }> => {
   let contentPromise: Promise<ParseValueResult>;
   let csvPromise: Promise<boolean | undefined>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
-  const hashPromise = calculateHashFromStream(originalStream);
-
   if (doCSVParsing) {
     if (
       keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
@@ -172,13 +151,11 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData, csvSuccess] = await Promise.all([
-    hashPromise,
+  const [contentData, csvSuccess] = await Promise.all([
     contentPromise,
     csvPromise,
   ]);
   return {
     contentData,
-    hash,
   };
 };
