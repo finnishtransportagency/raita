@@ -444,10 +444,10 @@ const ReportsIndex: RaitaNextPage = () => {
                       />
                     </div>
                     <div className={css.headerRow}>
+                      <div className="text-base my-2">
+                        {t('common:show_results')}
+                      </div>
                       <ul className={css.itemList}>
-                        <li className="text-base mr-2">
-                          {t('common:show_results')}
-                        </li>
                         <li className={css.item}>
                           <Button
                             label={10}
