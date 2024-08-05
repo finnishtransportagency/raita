@@ -90,7 +90,7 @@ export function ResultsPager(props: Props) {
                   type="secondary"
                   disabled={false}
                   onClick={handleSubmit}
-                  label={'Siirry sivulle'}
+                  label={t('common:to_page')}
                 />
               )}
 
