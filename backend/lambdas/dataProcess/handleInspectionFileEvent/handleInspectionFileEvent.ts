@@ -165,12 +165,7 @@ export async function handleInspectionFileEvent(
             reportId = foundReport.id;
           } else {
             // Report not found, insert new report
-            reportId = await insertRaporttiData(
-              key,
-              keyData.fileName,
-              null,
-              dbConnection,
-            );
+            reportId = await insertRaporttiData(key, keyData.fileName, null);
           }
         }
 
