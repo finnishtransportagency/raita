@@ -6,6 +6,7 @@ import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
+import { getPrismaClient } from '../../../../utils/prismaClient';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -448,7 +449,6 @@ export async function insertRaporttiData(
   key: string,
   fileName: string,
   status: string | null,
-  dbConnection: DBConnection,
 ): Promise<number> {
   const data: Raportti = {
     key,
@@ -458,14 +458,20 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
   try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
-    log.debug(id);
+    const raportti = await prisma.raportti.create({
+      data: {
+        key: key,
+        status: status,
+        file_name: fileName,
+        chunks_to_process: -1,
+        events: null,
+      },
+    });
 
-    return id.id;
+    console.debug(raportti.id);
+    return raportti.id;
   } catch (e) {
     log.error('Error inserting raportti data');
     log.error(e);
