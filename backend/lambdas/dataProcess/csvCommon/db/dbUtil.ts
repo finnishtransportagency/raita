@@ -347,7 +347,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -363,11 +363,9 @@ export async function updateRaporttiMetadata(
         throw new Error('ReportID undefined');
       }
       try {
-        const rowList = await sql`UPDATE ${sql(schema)}.raportti
-                                  set ${sql(raporttiData)}
-                                  WHERE id = ${id};`.catch(e => {
-          log.error('Error updating metadata to db: ' + e);
-          throw e;
+        await prisma.raportti.update({
+          where: { id: id },
+          data: raporttiData,
         });
         if (parsingErrors) {
           await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
