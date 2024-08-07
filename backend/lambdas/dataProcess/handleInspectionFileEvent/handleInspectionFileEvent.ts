@@ -220,6 +220,10 @@ export async function handleInspectionFileEvent(
                 : true;
               // updating existing file: don't update parsed_at_datetime
 
+              entry.metadata.track_number = entry.metadata.track_number
+                ? entry.metadata.track_number.toString()
+                : null;
+
               entry.metadata.parsed_at_datetime =
                 foundReport?.parsed_at_datetime != null
                   ? foundReport.parsed_at_datetime.toISOString()
