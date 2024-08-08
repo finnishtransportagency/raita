@@ -91,5 +91,6 @@
   "choose_reports": "Valitse raportit",
   "search_csv": "Hae mittausrivien määrä",
   "generate_csv": "Generoi CSV-tiedosto",
-  "page_labels.graphql_reports": "Raportit"
+  "page_labels.graphql_reports": "Raportit",
+  "to_page": "Siirry sivulle"
 }

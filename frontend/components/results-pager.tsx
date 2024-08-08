@@ -23,6 +23,7 @@ export function ResultsPager(props: Props) {
 
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage === pageCount;
+  const isCurrentPage = inputPage === currentPage;
   const hasPrevPage = currentPage > 1;
   const hasNextPage = currentPage < pageCount;
 
@@ -80,9 +81,19 @@ export function ResultsPager(props: Props) {
 
         <li className={css.item}>
           <span className="flex ">
-            <p>{t('common:page')} </p>
+            <form onSubmit={handleSubmit} className="flex space-x-2">
+              {isCurrentPage ? (
+                <p>{t('common:page')} </p>
+              ) : (
+                <Button
+                  size="sm"
+                  type="secondary"
+                  disabled={false}
+                  onClick={handleSubmit}
+                  label={t('common:to_page')}
+                />
+              )}
 
-            <form onSubmit={handleSubmit}>
               <input
                 type="text"
                 value={inputPage}
