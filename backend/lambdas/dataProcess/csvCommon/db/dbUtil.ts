@@ -7,6 +7,7 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
+import { PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -29,21 +30,37 @@ export async function writeRowsToDB(
   dbConnection: DBConnection,
 ): Promise<number> {
   const { schema, sql } = dbConnection;
-
+  const prisma = await getPrismaClient();
   try {
-    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
-      parsedCSVRows,
-    )} returning latitude, longitude, id`.catch(e => {
-      log.error(e);
-      throw e;
-    });
-    //  await populateGisPoints(rows, schema, table, sql);
-    //  log.info("populatedGisPoints ");
-
-    return rows.length;
+    let count;
+    switch (table) {
+      case TableEnum.AMS:
+        count = addAMSMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.OHL:
+        count = addOHLMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.PI:
+        count = addPIMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.RC:
+        count = addRCMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.RP:
+        count = addRPMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.TG:
+        count = addTGMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.TSIGHT:
+        count = addTsightMittausRecord(prisma, parsedCSVRows);
+        break;
+      default:
+        throw new Error(`Unhandled table type: ${table}`);
+    }
+    return count;
   } catch (e) {
-    // log.error('Error inserting measurement data: ' + table + ' ' + e);
-    // log.error(e);
+    log.error('Error inserting measurement data: ' + table + ' ' + e);
     throw e;
   }
 }
@@ -493,4 +510,89 @@ export async function writeMissingColumnsToDb(
   await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
     values,
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+}
+
+async function addAMSMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.ams_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+async function addOHLMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.ohl_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addPIMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.pi_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addRCMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.rc_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addRPMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.rp_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addTGMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.tg_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addTsightMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.tsight_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+enum TableEnum {
+  AMS = 'ams_mittaus',
+  OHL = 'ohl_mittaus',
+  PI = 'pi_mittaus',
+  RC = 'rc_mittaus',
+  RP = 'rp_mittaus',
+  TG = 'tg_mittaus',
+  TSIGHT = 'tsight_mittaus',
 }
