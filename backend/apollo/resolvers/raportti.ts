@@ -41,10 +41,11 @@ export const raporttiResolvers: Resolvers = {
           where,
         }),
       ]);
+      const totalSize = Number(sizeResult._sum.size);
       return {
         raportti: raporttiResult,
         count: sizeResult._count.id,
-        total_size: sizeResult._sum.size ? Number(sizeResult._sum.size) : NaN,
+        total_size: Number.isNaN(totalSize) ? null : totalSize,
         page_size,
         page,
       };
@@ -75,10 +76,11 @@ export const raporttiResolvers: Resolvers = {
           take: page_size,
         }),
       ]);
+      const totalSize = Number(sizeResult._sum.size);
       return {
         raportti: raporttiResult,
         count: sizeResult._count.id,
-        total_size: sizeResult._sum.size ? Number(sizeResult._sum.size) : NaN,
+        total_size: Number.isNaN(totalSize) ? null : totalSize,
         page_size,
         page,
       };

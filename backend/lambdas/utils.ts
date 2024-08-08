@@ -200,10 +200,10 @@ export function getOriginalZipNameFromPath(path: string[]): string {
   return `${path.slice(0, 5).join('/')}.zip`;
 }
 
-export async function checkExistingHash(
+export function checkExistingHash(
   entry: FileMetadataEntry,
   foundReport: raportti,
-): Promise<boolean> {
+): boolean {
   const skipHashCheck = entry.options.skip_hash_check;
   const requireNewerParserVersion = entry.options.require_newer_parser_version;
 
