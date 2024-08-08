@@ -228,30 +228,7 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          const checkedEntries = await Promise.all(
-            entries.map(async entry => {
-              const foundReport = await findReportByKey(entry.key);
-              const isSaveable = foundReport
-                ? await checkExistingHash(entry, foundReport)
-                : true;
-              // updating existing file: don't update parsed_at_datetime
-
-              entry.metadata.track_number = entry.metadata.track_number
-                ? entry.metadata.track_number.toString()
-                : null;
-
-              entry.metadata.parsed_at_datetime =
-                foundReport?.parsed_at_datetime != null
-                  ? foundReport.parsed_at_datetime.toISOString()
-                  : entry.metadata.parsed_at_datetime;
-              return { entry, isSaveable };
-            }),
-          );
-          const saveableEntries = checkedEntries
-            .filter(result => result.isSaveable)
-            .map(result => result.entry);
-
-          await updateRaporttiMetadata(saveableEntries, dbConnection);
+          await updateRaporttiMetadata(entries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',
