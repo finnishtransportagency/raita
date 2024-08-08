@@ -30,30 +30,30 @@ export async function writeRowsToDB(
   dbConnection: DBConnection,
 ): Promise<number> {
   const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+
   try {
     let count;
     switch (table) {
       case TableEnum.AMS:
-        count = addAMSMittausRecord(prisma, parsedCSVRows);
+        count = addAMSMittausRecord(parsedCSVRows);
         break;
       case TableEnum.OHL:
-        count = addOHLMittausRecord(prisma, parsedCSVRows);
+        count = addOHLMittausRecord(parsedCSVRows);
         break;
       case TableEnum.PI:
-        count = addPIMittausRecord(prisma, parsedCSVRows);
+        count = addPIMittausRecord(parsedCSVRows);
         break;
       case TableEnum.RC:
-        count = addRCMittausRecord(prisma, parsedCSVRows);
+        count = addRCMittausRecord(parsedCSVRows);
         break;
       case TableEnum.RP:
-        count = addRPMittausRecord(prisma, parsedCSVRows);
+        count = addRPMittausRecord(parsedCSVRows);
         break;
       case TableEnum.TG:
-        count = addTGMittausRecord(prisma, parsedCSVRows);
+        count = addTGMittausRecord(parsedCSVRows);
         break;
       case TableEnum.TSIGHT:
-        count = addTsightMittausRecord(prisma, parsedCSVRows);
+        count = addTsightMittausRecord(parsedCSVRows);
         break;
       default:
         throw new Error(`Unhandled table type: ${table}`);
@@ -512,20 +512,24 @@ export async function writeMissingColumnsToDb(
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }
 
-async function addAMSMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
-  const recordCount = await prisma.ams_mittaus.createMany({
-    data: parsedCSVRows,
-  });
+async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
+  log.info(`DATA TO AMS_MITTAUS`);
+  try {
+    const recordCount = await prisma.ams_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    // Log the error details
+    log.error(`Error adding AMS Mittaus records: ${error}`);
 
-  return recordCount.count;
+    // Optionally, you can rethrow the error if you want to handle it further up the call stack
+    throw error;
+  }
 }
-async function addOHLMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.ohl_mittaus.createMany({
     data: parsedCSVRows,
   });
@@ -533,10 +537,8 @@ async function addOHLMittausRecord(
   return recordCount.count;
 }
 
-async function addPIMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.pi_mittaus.createMany({
     data: parsedCSVRows,
   });
@@ -544,10 +546,8 @@ async function addPIMittausRecord(
   return recordCount.count;
 }
 
-async function addRCMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.rc_mittaus.createMany({
     data: parsedCSVRows,
   });
@@ -555,10 +555,8 @@ async function addRCMittausRecord(
   return recordCount.count;
 }
 
-async function addRPMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.rp_mittaus.createMany({
     data: parsedCSVRows,
   });
@@ -566,10 +564,8 @@ async function addRPMittausRecord(
   return recordCount.count;
 }
 
-async function addTGMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.tg_mittaus.createMany({
     data: parsedCSVRows,
   });
@@ -577,10 +573,8 @@ async function addTGMittausRecord(
   return recordCount.count;
 }
 
-async function addTsightMittausRecord(
-  prisma: PrismaClient,
-  parsedCSVRows: any[],
-): Promise<number> {
+async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
+  const prisma = await getPrismaClient();
   const recordCount = await prisma.tsight_mittaus.createMany({
     data: parsedCSVRows,
   });
