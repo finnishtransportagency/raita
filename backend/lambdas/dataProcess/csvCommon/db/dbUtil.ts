@@ -293,20 +293,21 @@ export async function updateRaporttiStatus(
   dbConnection: DBConnection,
 ) {
   const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
   }
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
-                            SET status = ${status},
-                                error  = ${errorSubstring}
-                            WHERE id = ${id}
-                            AND (status IS NULL
-                            OR status <> 'ERROR');`.catch(e => {
-      log.error('Error updateRaporttiStatus: ' + e);
-
-      throw e;
+    const updatedRaportti = await prisma.raportti.updateMany({
+      where: {
+        id: id,
+        OR: [{ status: null }, { status: { not: 'ERROR' } }],
+      },
+      data: {
+        status: status,
+        error: errorSubstring,
+      },
     });
   } catch (e) {
     log.error('Error updating raportti status');
