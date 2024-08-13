@@ -7,7 +7,6 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
-import { PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -410,11 +409,13 @@ export async function updateRaporttiChunks(
   dbConnection: DBConnection,
 ) {
   const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
 
   try {
-    const a = await sql`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { chunks_to_process: chunks },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -428,11 +429,17 @@ export async function substractRaporttiChunk(
   dbConnection: DBConnection,
 ) {
   const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
 
   try {
-    const a = await sql`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: {
+        chunks_to_process: {
+          decrement: 1,
+        },
+      },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -446,15 +453,16 @@ export async function raporttiChunksToProcess(
   dbConnection: DBConnection,
 ) {
   const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
   try {
-    const chunks = await sql`SELECT chunks_to_process FROM ${sql(
-      schema,
-    )}.raportti  WHERE id = ${id};`.catch(e => {
-      log.error(e);
-      throw e;
+    const chunks = await prisma.raportti.findUnique({
+      where: { id: id },
+      select: {
+        chunks_to_process: true,
+      },
     });
 
-    return Number(chunks[0].chunks_to_process);
+    return Number(chunks?.chunks_to_process);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
@@ -504,15 +512,17 @@ export async function writeMissingColumnsToDb(
   dbConnection: DBConnection,
 ): Promise<void> {
   const { schema, sql } = dbConnection;
-
+  const prisma = await getPrismaClient();
   const values = columnNames.map(name => ({
     raportti_id: reportId,
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
-    values,
-  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+  const a = await prisma.puuttuva_kolumni.createMany({
+    data: {
+      ...values,
+    },
+  }); // conflict comes from unique constraint when this is ran for each file chunk
 }
 
 async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
