@@ -349,6 +349,7 @@ export class DataProcessStack extends NestedStack {
       ...receptionAlarms,
       ...inspectionAlarms,
       ...zipHandlerAlarms,
+      ...csvAlarms,
     ];
 
     // Create csv data parser lambda, grant permissions and create event sources
@@ -361,6 +362,12 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
     });
+
+    const csvAlarms = this.createCSVHandlerAlarms(
+      this.handleCSVFileEventFn.logGroup,
+      raitaStackIdentifier,
+    );
+
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
@@ -603,6 +610,164 @@ export class DataProcessStack extends NestedStack {
       }),
     });
     return [errorAlarm, anyErrorAlarm];
+  }
+
+  /**
+   * Add alarms for monitoring errors from logs
+   *
+   * Multiple alarms for different types if errors
+   */
+  private createCSVHandlerAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const timeoutMetricFilter = logGroup.addMetricFilter(
+      'csv-timeout-filter',
+      {
+        filterPattern: FilterPattern.literal('%Task timed out%'),
+        metricName: `csv-timeout-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const parsingErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-parsing-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_PARSING_EXCEPTION'),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `csv-parsing-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const otherErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-other-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `csv-other-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    // create separate warn metric with no alarm associated
+    const warningMetricFilter = logGroup.addMetricFilter(
+      'csv-warn-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.any(
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_PARSING_EXCEPTION'),
+          ),
+          FilterPattern.stringValue('$.level', '=', 'warn'),
+        ),
+        metricName: `csv-warn-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const crashErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-crash-error-filter',
+      {
+        filterPattern: FilterPattern.literal('%Runtime exited%'),
+        metricName: `csv-crash-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-all-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `csv-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const timeoutAlarm = new Alarm(this, 'csv-timeout-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-timeout-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching timeout errors in metadata parser',
+      metric: timeoutMetricFilter.metric({
+        label: `Csv timeout ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const parsingErrorAlarm = new Alarm(
+      this,
+      'csv-parsing-errors-alarm',
+      {
+        comparisonOperator:
+        ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `csv-parsing-errors-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm for catching parsing errors in metadata parser',
+        metric: parsingErrorMetricFilter.metric({
+          label: `Csv parsing errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    const otherErrorAlarm = new Alarm(this, 'csv-other-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-other-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Alarm for catching code errors other than known parsing errors in metadata parser',
+      metric: otherErrorMetricFilter.metric({
+        label: `Csv other errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const crashErrorAlarm = new Alarm(this, 'csv-crash-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-crash-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching crashes of metadata parser',
+      metric: crashErrorMetricFilter.metric({
+        label: `Csv crash errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const anyErrorAlarm = new Alarm(this, 'csv-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-any-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Failsafe alarm for catching all errors in metadata parser, including those missed by other alarms',
+      metric: anyErrorMetricFilter.metric({
+        label: `Csv any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [
+      timeoutAlarm,
+      parsingErrorAlarm,
+      otherErrorAlarm,
+      crashErrorAlarm,
+      anyErrorAlarm,
+    ];
   }
 
   /**

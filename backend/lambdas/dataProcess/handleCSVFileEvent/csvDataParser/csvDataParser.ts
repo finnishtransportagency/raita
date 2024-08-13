@@ -1,5 +1,5 @@
 import { ParseValueResult } from '../../../../types';
-import { log } from '../../../../utils/logger';
+import {log, logCSVParsingException} from '../../../../utils/logger';
 import {
   convertToDBRow,
   DBConnection,
@@ -77,10 +77,14 @@ async function parseCsvAndWriteToDb(
       //disable here if needed stop database
       return await writeRowsToDB(dbRows, table, dbConnection);
       //return;
-    } catch (e) {
+    } catch (error) {
+      logCSVParsingException.error(
+        { errorType: error.errorType, fileName: fileBaseName },
+        `${error.message}. CSV write to db failed.`,
+      );
       log.error('Error writing to db');
-      log.error(e);
-      throw e;
+      log.error(error);
+      throw error;
     }
   } else {
     const errors = parsedCSVContent.errors;
@@ -441,16 +445,20 @@ export async function parseCSVFileStream(
                 ));
 
               notWritten--;
-            } catch (e) {
+            } catch (error) {
+              logCSVParsingException.error(
+                { errorType: error.errorType, fileName: fileBaseName },
+                `${error.message}. Handling CSV lines failed.`,
+              );
               log.error(
                 'ERROR handling buffered csv lines: ' +
-                  e +
+                  error +
                   ' ' +
                   bufferCopy.length && bufferCopy[0],
               );
               rl.removeAllListeners();
               rl.close();
-              reject(e);
+              reject(error);
             }
           }
         }
@@ -465,9 +473,13 @@ export async function parseCSVFileStream(
       });
     });
 
-    await lineReadPromise.catch(e => {
-      log.error('csv file parse or save error' + e);
-      throw e;
+    await lineReadPromise.catch(error => {
+      logCSVParsingException.error(
+        { errorType: error.errorType, fileName: fileBaseName },
+        `${error.message}. Handling CSV lines failed.`,
+      );
+      log.error('csv file parse or save error' + error);
+      throw error;
     });
 
     // Last content of lineBuffer not handled yet
@@ -500,9 +512,13 @@ export async function parseCSVFileStream(
     }
 
     return 'success';
-  } catch (e) {
-    log.error('csv parsing error, updating status ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
+  } catch (error) {
+    logCSVParsingException.error(
+      { errorType: error.errorType, fileName: fileBaseName },
+      `${error.message}. CSV parsing failure.`,
+    );
+    log.error('csv parsing error, updating status ' + error.toString());
+    await updateRaporttiStatus(reportId, 'ERROR', error.toString(), dbConnection);
     return 'error';
   }
 }
