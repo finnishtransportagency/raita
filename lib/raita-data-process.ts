@@ -345,12 +345,7 @@ export class DataProcessStack extends NestedStack {
       maxConcurrency: 100,
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
-    const allAlarms = [
-      ...receptionAlarms,
-      ...inspectionAlarms,
-      ...zipHandlerAlarms,
-      ...csvAlarms,
-    ];
+
 
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
@@ -424,6 +419,13 @@ export class DataProcessStack extends NestedStack {
     this.handleCSVFileMassImportEventFn.addEventSource(
       csvMassImportQueueSource,
     );
+
+    const allAlarms = [
+      ...receptionAlarms,
+      ...inspectionAlarms,
+      ...zipHandlerAlarms,
+      ...csvAlarms,
+    ];
 
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
