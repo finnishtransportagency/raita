@@ -322,10 +322,12 @@ export async function updateRaporttiMetadataStatus(
   dbConnection: DBConnection,
 ) {
   const { schema, sql } = dbConnection;
+  const prisma = await getPrismaClient();
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
-                            SET metadata_status = ${status}
-                            WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { metadata_status: status },
+    });
   } catch (error) {
     log.error({ error }, 'Error updating raportti metadata_status');
     throw error;
