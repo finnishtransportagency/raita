@@ -519,9 +519,8 @@ export async function writeMissingColumnsToDb(
   }));
 
   const a = await prisma.puuttuva_kolumni.createMany({
-    data: {
-      ...values,
-    },
+    data: values,
+    skipDuplicates: true,
   }); // conflict comes from unique constraint when this is ran for each file chunk
 }
 
