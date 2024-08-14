@@ -18,7 +18,7 @@ import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
-import { EXTRACTION_SPEC_PATH, raitaSourceSystems } from '../constants';
+import {EXTRACTION_SPEC_PATH, RAITA_DB_CONNECTION_EXCEPTION, raitaSourceSystems} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -644,6 +644,22 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
+
+
+    const dbConnectionMetricFilter = logGroup.addMetricFilter(
+      'db-connection-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_DB_CONNECTION_EXCEPTION'),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `db-connection-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+
+
     const otherErrorMetricFilter = logGroup.addMetricFilter(
       'csv-other-error-filter',
       {
@@ -714,9 +730,28 @@ export class DataProcessStack extends NestedStack {
         treatMissingData: TreatMissingData.NOT_BREACHING,
         alarmName: `csv-parsing-errors-alarm-${raitaStackIdentifier}`,
         alarmDescription:
-          'Alarm for catching parsing errors in metadata parser',
+          'Alarm for catching parsing errors in csv parser',
         metric: parsingErrorMetricFilter.metric({
           label: `Csv parsing errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    const dbConnectionErrorAlarm = new Alarm(
+      this,
+      'db-connection-errors-alarm',
+      {
+        comparisonOperator:
+        ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `db-connection-errors-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm for catching db connection errors',
+        metric: dbConnectionMetricFilter.metric({
+          label: `DB connection errors ${raitaStackIdentifier}`,
           period: Duration.days(1),
           statistic: Stats.SUM,
         }),
@@ -766,6 +801,7 @@ export class DataProcessStack extends NestedStack {
     return [
       timeoutAlarm,
       parsingErrorAlarm,
+      dbConnectionErrorAlarm,
       otherErrorAlarm,
       crashErrorAlarm,
       anyErrorAlarm,
