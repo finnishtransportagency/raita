@@ -412,6 +412,7 @@ export async function parseCSVFileStream(
               });
               missingOptionalColumns = headerValidation.missingOptional;
               try {
+                log.warn("HELLO missing cols rapo id: " + reportId);
                 await writeMissingColumnsToDb(
                   reportId,
                   headerValidation.missingOptional,
