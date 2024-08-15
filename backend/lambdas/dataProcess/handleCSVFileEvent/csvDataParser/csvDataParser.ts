@@ -1,5 +1,9 @@
 import { ParseValueResult } from '../../../../types';
-import {log, logCSVParsingException} from '../../../../utils/logger';
+import {
+  log,
+  logCSVDBException,
+  logCSVParsingException,
+} from '../../../../utils/logger';
 import {
   convertToDBRow,
   DBConnection,
@@ -39,7 +43,10 @@ function until(conditionFunction: () => any) {
   return new Promise(poll);
 }
 
-export async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
+export async function parseCsvData(
+  csvFileBody: string,
+  csvSchema: ZodObject<any>,
+) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
@@ -399,11 +406,19 @@ export async function parseCSVFileStream(
                 missingOptional: headerValidation.missingOptional,
               });
               missingOptionalColumns = headerValidation.missingOptional;
-              await writeMissingColumnsToDb(
-                reportId,
-                headerValidation.missingOptional,
-                dbConnection,
-              );
+              try {
+                await writeMissingColumnsToDb(
+                  reportId,
+                  headerValidation.missingOptional,
+                  dbConnection,
+                );
+              } catch (error) {
+                logCSVDBException.error(
+                  { errorType: error.errorType },
+                  'writeMissingColumnsToDb failed',
+                );
+                throw error;
+              }
             }
             if (headerValidation.extra.length) {
               log.warn({
@@ -518,7 +533,12 @@ export async function parseCSVFileStream(
       `${error.message}. CSV parsing failure.`,
     );
     log.error('csv parsing error, updating status ' + error.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', error.toString(), dbConnection);
+    await updateRaporttiStatus(
+      reportId,
+      'ERROR',
+      error.toString(),
+      dbConnection,
+    );
     return 'error';
   }
 }

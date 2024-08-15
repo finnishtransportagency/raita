@@ -18,7 +18,7 @@ import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
-import {EXTRACTION_SPEC_PATH, RAITA_DB_CONNECTION_EXCEPTION, raitaSourceSystems} from '../constants';
+import {EXTRACTION_SPEC_PATH, RAITA_CSV_DB_EXCEPTION, raitaSourceSystems} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -650,7 +650,7 @@ export class DataProcessStack extends NestedStack {
       'db-connection-error-filter',
       {
         filterPattern: FilterPattern.all(
-          FilterPattern.stringValue('$.tag', '=', 'RAITA_DB_CONNECTION_EXCEPTION'),
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_DB_EXCEPTION'),
           FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `db-connection-error-${raitaStackIdentifier}`,

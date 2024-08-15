@@ -1,5 +1,5 @@
 import { Context, S3Event, SQSEvent } from 'aws-lambda';
-import {log, logDBConnectiionException} from '../../../utils/logger';
+import {log, logCSVDBException} from '../../../utils/logger';
 import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
@@ -39,7 +39,7 @@ export async function handleCSVFileEvent(
   try {
     if (!dbConnection) {
       // No DB connection
-      logDBConnectiionException.error("No db connection");
+      logCSVDBException.error("No db connection");
       throw new Error('No db connection');
     }
     // one event from sqs can contain multiple s3 events
