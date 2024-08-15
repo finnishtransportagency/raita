@@ -533,66 +533,90 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
     });
     return recordCount.count;
   } catch (error) {
-    // Log the error details
     log.error(`Error adding AMS Mittaus records: ${error}`);
-
-    // Optionally, you can rethrow the error if you want to handle it further up the call stack
     throw error;
   }
 }
+
 async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.ohl_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  try {
+    const recordCount = await prisma.ohl_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding OHL Mittaus records: ${error}`);
+    throw error;
+  }
 }
 
 async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.pi_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  try {
+    const recordCount = await prisma.pi_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding PI Mittaus records: ${error}`);
+    throw error;
+  }
 }
 
 async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.rc_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  try {
+    const recordCount = await prisma.rc_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding RC Mittaus records: ${error}`);
+    throw error;
+  }
 }
 
 async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.rp_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  try {
+    const recordCount = await prisma.rp_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding RP Mittaus records: ${error}`);
+    throw error;
+  }
 }
 
 async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.tg_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  log.info(`DATA TO TG_MITTAUS`);
+  try {
+    const recordCount = await prisma.tg_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding TG Mittaus records: ${error}`);
+    throw error;
+  }
 }
 
 async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
-  const recordCount = await prisma.tsight_mittaus.createMany({
-    data: parsedCSVRows,
-  });
-
-  return recordCount.count;
+  try {
+    const recordCount = await prisma.tsight_mittaus.createMany({
+      data: parsedCSVRows,
+    });
+    return recordCount.count;
+  } catch (error) {
+    log.error(`Error adding Tsight Mittaus records: ${error}`);
+    throw error;
+  }
 }
+
 enum TableEnum {
   AMS = 'ams_mittaus',
   OHL = 'ohl_mittaus',
