@@ -52,8 +52,7 @@ async function getConnection() {
     connReuseCount++;
     return connection;
   }
-  //const password = await getSecretsManagerSecret('database_password');
-  const password = "abc";
+  const password = await getSecretsManagerSecret('database_password');
   connection = postgres({
     password,
     transform: { undefined: null },

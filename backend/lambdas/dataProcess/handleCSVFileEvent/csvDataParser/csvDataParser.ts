@@ -32,6 +32,10 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
+import {IAdminLogger} from "../../../../utils/adminLog/types";
+import {PostgresLogger} from "../../../../utils/adminLog/postgresLogger";
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -85,9 +89,9 @@ async function parseCsvAndWriteToDb(
       return await writeRowsToDB(dbRows, table, dbConnection);
       //return;
     } catch (error) {
-      logCSVParsingException.error(
+      logCSVDBException.error(
         { errorType: error.errorType, fileName: fileBaseName },
-        `${error.message}. CSV write to db failed.`,
+        `${error.message}. CSV rows write to db failed.`,
       );
       log.error('Error writing to db');
       log.error(error);
@@ -338,6 +342,7 @@ export async function parseCSVFileStream(
   dbConnection: DBConnection,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
+  await adminLogger.init('data-csv', keyData.keyWithoutSuffix);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
@@ -520,25 +525,44 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    await substractRaporttiChunk(reportId, dbConnection);
-    const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
-    if (chunksLeft == 0) {
-      await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+    try {
+      await substractRaporttiChunk(reportId, dbConnection);
+      const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
+      if (chunksLeft == 0) {
+        await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+      }
+    } catch (error) {
+      logCSVDBException.error(
+        { errorType: error.errorType },
+        'Status or chunk processsing db failure',
+      );
+      throw error;
     }
 
     return 'success';
   } catch (error) {
-    logCSVParsingException.error(
+    logCSVParsingException.warn(
       { errorType: error.errorType, fileName: fileBaseName },
       `${error.message}. CSV parsing failure.`,
     );
     log.error('csv parsing error, updating status ' + error.toString());
-    await updateRaporttiStatus(
-      reportId,
-      'ERROR',
-      error.toString(),
-      dbConnection,
+    await adminLogger.warn(
+      `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.`,
     );
+    try {
+      await updateRaporttiStatus(
+        reportId,
+        'ERROR',
+        error.toString(),
+        dbConnection,
+      );
+    } catch (error) {
+      logCSVDBException.error(
+        { errorType: error.errorType },
+        'Parsing error status update db failure',
+      );
+      throw error;
+    }
     return 'error';
   }
 }

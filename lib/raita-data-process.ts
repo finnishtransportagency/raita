@@ -647,13 +647,13 @@ export class DataProcessStack extends NestedStack {
 
 
     const dbConnectionMetricFilter = logGroup.addMetricFilter(
-      'db-connection-error-filter',
+      'csv-db-error-filter',
       {
         filterPattern: FilterPattern.all(
           FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_DB_EXCEPTION'),
           FilterPattern.stringValue('$.level', '=', 'error'),
         ),
-        metricName: `db-connection-error-${raitaStackIdentifier}`,
+        metricName: `csv-db-error-${raitaStackIdentifier}`,
         metricNamespace: 'raita-data-process',
         metricValue: '1',
       },
@@ -740,14 +740,14 @@ export class DataProcessStack extends NestedStack {
     );
     const dbConnectionErrorAlarm = new Alarm(
       this,
-      'db-connection-errors-alarm',
+      'csv-db-errors-alarm',
       {
         comparisonOperator:
         ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         threshold: 1,
         evaluationPeriods: 1,
         treatMissingData: TreatMissingData.NOT_BREACHING,
-        alarmName: `db-connection-errors-alarm-${raitaStackIdentifier}`,
+        alarmName: `csv-db-errors-alarm-${raitaStackIdentifier}`,
         alarmDescription:
           'Alarm for catching db connection errors',
         metric: dbConnectionMetricFilter.metric({
