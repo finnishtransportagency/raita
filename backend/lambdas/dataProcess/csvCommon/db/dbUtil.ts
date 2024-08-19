@@ -23,6 +23,22 @@ export async function getDBConnection(): Promise<{
 
 export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
 
+function processCSVRows(rows: any[]) {
+  return rows.map(row => {
+    for (const key in row) {
+      const value = row[key];
+      if (Number.isNaN(value)) {
+        row[key] = null;
+      }
+      if (value) {
+        row[key] = parseFloat(value).toFixed(2);
+      }
+      row.raportti_id = parseInt(row.raportti_id);
+    }
+    return row;
+  });
+}
+
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
@@ -34,25 +50,25 @@ export async function writeRowsToDB(
     let count;
     switch (table) {
       case TableEnum.AMS:
-        count = addAMSMittausRecord(parsedCSVRows);
+        count = addAMSMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.OHL:
-        count = addOHLMittausRecord(parsedCSVRows);
+        count = addOHLMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.PI:
-        count = addPIMittausRecord(parsedCSVRows);
+        count = addPIMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.RC:
-        count = addRCMittausRecord(parsedCSVRows);
+        count = addRCMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.RP:
-        count = addRPMittausRecord(parsedCSVRows);
+        count = addRPMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.TG:
-        count = addTGMittausRecord(parsedCSVRows);
+        count = addTGMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.TSIGHT:
-        count = addTsightMittausRecord(parsedCSVRows);
+        count = addTsightMittausRecord(processCSVRows(parsedCSVRows));
         break;
       default:
         throw new Error(`Unhandled table type: ${table}`);
