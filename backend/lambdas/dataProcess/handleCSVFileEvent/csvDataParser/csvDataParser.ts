@@ -32,8 +32,8 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-import {IAdminLogger} from "../../../../utils/adminLog/types";
-import {PostgresLogger} from "../../../../utils/adminLog/postgresLogger";
+import { IAdminLogger } from '../../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 
@@ -412,7 +412,7 @@ export async function parseCSVFileStream(
               });
               missingOptionalColumns = headerValidation.missingOptional;
               try {
-                log.warn("HELLO missing cols rapo id: " + reportId);
+                log.warn('HELLO missing cols rapo id: ' + reportId);
                 await writeMissingColumnsToDb(
                   reportId,
                   headerValidation.missingOptional,
@@ -494,14 +494,18 @@ export async function parseCSVFileStream(
       });
     });
 
-    await lineReadPromise.catch(error => {
-      logCSVParsingException.error(
-        { errorType: error.errorType, fileName: fileBaseName },
-        `${error.message}. Handling CSV lines failed.`,
-      );
-      log.error('csv file parse or save error' + error);
-      throw error;
-    });
+    await lineReadPromise
+      .then(() => {
+        log.info('lineReadPromise resolved');
+      })
+      .catch(error => {
+        logCSVParsingException.error(
+          { errorType: error.errorType, fileName: fileBaseName },
+          `${error.message}. Handling CSV lines failed.`,
+        );
+        log.error('csv file parse or save error' + error);
+        throw error;
+      });
 
     // Last content of lineBuffer not handled yet
 
