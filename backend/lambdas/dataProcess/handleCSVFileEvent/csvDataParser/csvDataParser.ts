@@ -82,7 +82,7 @@ async function parseCsvAndWriteToDb(
         ),
       ),
     );
-    console.log('dbRows', dbRows);
+
 
     try {
       //disable here if needed stop database
