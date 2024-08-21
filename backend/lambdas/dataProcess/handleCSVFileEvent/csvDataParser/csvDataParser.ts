@@ -342,7 +342,7 @@ export async function parseCSVFileStream(
   dbConnection: DBConnection,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
-  await adminLogger.init('data-csv', keyData.keyWithoutSuffix);
+  await adminLogger.init('data-csv', keyData.keyWithoutSuffix+'.'+keyData.fileSuffix);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
@@ -412,8 +412,10 @@ export async function parseCSVFileStream(
                   missingOptional: headerValidation.missingOptional,
                 });
                 missingOptionalColumns = headerValidation.missingOptional;
+                await adminLogger.info(
+                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` + missingOptionalColumns,
+                );
                 try {
-                  log.warn('HELLO missing cols rapo id: ' + reportId);
                   await writeMissingColumnsToDb(
                     reportId,
                     headerValidation.missingOptional,
@@ -515,6 +517,7 @@ export async function parseCSVFileStream(
           `${error.message}. Handling CSV lines failed.`,
         );
         log.error('csv file parse or save error' + error);
+
         throw error;
       });
 
@@ -552,6 +555,10 @@ export async function parseCSVFileStream(
         { errorType: error.errorType },
         'Status or chunk processsing db failure',
       );
+      await adminLogger.error(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` + error,
+      );
+
       throw error;
     }
 
@@ -562,9 +569,6 @@ export async function parseCSVFileStream(
       `${error.message}. CSV parsing failure.`,
     );
     log.error('csv parsing error, updating status ' + error.toString());
-    await adminLogger.warn(
-      `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.`,
-    );
     try {
       await updateRaporttiStatus(
         reportId,
@@ -572,10 +576,16 @@ export async function parseCSVFileStream(
         error.toString(),
         dbConnection,
       );
+      await adminLogger.warn(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` + error,
+      );
     } catch (error) {
       logCSVDBException.error(
         { errorType: error.errorType },
         'Parsing error status update db failure',
+      );
+      await adminLogger.error(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` + error,
       );
       throw error;
     }
