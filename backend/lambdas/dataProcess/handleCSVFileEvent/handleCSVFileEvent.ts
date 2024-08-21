@@ -112,14 +112,11 @@ export async function handleCSVFileEvent(
         } catch (err) {
           log.error(`An error occured while processing events: ${err}`);
           await adminLogger.error(
-            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` + err.message,
           );
           return null;
         }
       });
-      const entries = await Promise.all(recordResults).then(results =>
-        log.debug(results),
-      );
     });
 
     const settled = await Promise.allSettled(sqsRecordResults);
@@ -140,7 +137,7 @@ export async function handleCSVFileEvent(
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
     await adminLogger.error(
-      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. `+ err.message,
     );
   }
 }
