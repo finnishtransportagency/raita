@@ -17,6 +17,7 @@ import {
 import * as path from 'path';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 
 interface CloudfrontStackProps extends StackProps {
   readonly raitaStackIdentifier: string;
@@ -26,6 +27,7 @@ interface CloudfrontStackProps extends StackProps {
 
 // Based on: https://idanlupinsky.com/blog/static-site-deployment-using-aws-cloudfront-and-the-cdk/
 export class CloudfrontStack extends Stack {
+  readonly distribution: cloudfront.IDistribution;
   constructor(scope: Construct, id: string, props: CloudfrontStackProps) {
     super(scope, id, props);
     const { raitaStackIdentifier, stackId, raitaEnv } = props;
@@ -174,8 +176,9 @@ export class CloudfrontStack extends Stack {
           [`/oauth2*`]: apiProxyBehavior,
         };
       }
-      new cloudfront.Distribution(this, `cloudfront`, {
+      this.distribution = new cloudfront.Distribution(this, `cloudfront`, {
         domainNames: [cloudfrontDomainName],
+        enableLogging: true,
         certificate,
         defaultRootObject: 'reports.html',
         comment: `cloudfront for ${raitaStackIdentifier}`,
@@ -204,5 +207,16 @@ export class CloudfrontStack extends Stack {
         });
       }
     }
+    const frontendBuildDir = '../frontend/out';
+    new BucketDeployment(this, 'FrontendDeployment', {
+      sources: [Source.asset(path.join(__dirname, frontendBuildDir))],
+      destinationBucket: frontendStack.frontendBucket,
+      distribution: this.distribution ?? undefined,
+    });
+    const maintenanceBuildDir = '../frontend/maintenance_page';
+    new BucketDeployment(this, 'MaintenancePageDeployment', {
+      sources: [Source.asset(path.join(__dirname, maintenanceBuildDir))],
+      destinationBucket: frontendStack.maintenancePageBucket,
+    });
   }
 }

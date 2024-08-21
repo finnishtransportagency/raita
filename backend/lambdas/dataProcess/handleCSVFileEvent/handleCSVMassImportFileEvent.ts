@@ -1,4 +1,4 @@
-import { S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
 
 import { log } from '../../../utils/logger';
@@ -7,17 +7,14 @@ import {
   getGetEnvWithPreassignedContext,
   isRaitaSourceSystem,
 } from '../../../../utils';
-import {
-  getDecodedS3ObjectKey,
-  getKeyData,
-  getOriginalZipNameFromPath,
-} from '../../utils';
+import { getDecodedS3ObjectKey, getKeyData } from '../../utils';
 
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
   getDBConnection,
+  insertRaporttiData,
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { parseFileMetadata } from '../handleInspectionFileEvent/parseFileMetadata';
@@ -25,6 +22,7 @@ import {
   ENVIRONMENTS,
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
@@ -44,6 +42,8 @@ let dbConnection: DBConnection;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
 
+const withRequest = lambdaRequestTracker();
+
 /**
  * This is otherwise same as handleInspectionFileEvent.ts but writing to opensearh disabled.
  * This is started from file event from csv-data-mass-import s3 bucket.
@@ -53,7 +53,9 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  */
 export async function handleCSVMassImportFileEvent(
   event: SQSEvent,
+  context: Context,
 ): Promise<void> {
+  withRequest(event, context);
   dbConnection = await getDBConnection();
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
@@ -80,8 +82,10 @@ export async function handleCSVMassImportFileEvent(
         );
         const keyData = getKeyData(key);
 
-        await adminLogger.init('data-csv-mass-import', keyData.keyWithoutSuffix);
-
+        await adminLogger.init(
+          'data-csv-mass-import',
+          keyData.keyWithoutSuffix,
+        );
 
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
@@ -96,16 +100,23 @@ export async function handleCSVMassImportFileEvent(
         if (
           keyData.fileSuffix === fileSuffixesToIncludeInMetadataParsing.CSV_FILE
         ) {
-          const parseResults = await parseFileMetadata(
-            {
-              keyData,
-              fileStream: fileStreamResult.fileStream,
-              spec,
-              doCSVParsing,
-              dbConnection,
-            },
+          const reportId = dbConnection
+            ? await insertRaporttiData(
+                key,
+                keyData.fileName,
+                null,
+                dbConnection,
+              )
+            : -1;
 
-          );
+          const parseResults = await parseFileMetadata({
+            keyData,
+            fileStream: fileStreamResult.fileStream,
+            spec,
+            doCSVParsing,
+            dbConnection,
+            reportId,
+          });
           if (parseResults.errors) {
             await adminLogger.error(
               `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -127,7 +138,8 @@ export async function handleCSVMassImportFileEvent(
             metadata: parseResults.metadata,
             hash: parseResults.hash,
             tags: fileStreamResult.tags,
-            reportId: parseResults.reportId,
+            reportId,
+            errors: parseResults.errors,
             options: {
               skip_hash_check: skipHashCheck,
             },

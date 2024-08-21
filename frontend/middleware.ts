@@ -12,13 +12,15 @@ export async function middleware(request: NextRequest) {
     const queryParams = request.nextUrl.searchParams;
     const decodedParams = decodeURIComponent(queryParams.toString());
     const newParams = decodedParams.split('+').join(' '); // for some reason requests can be partly urlencoded but with spaces replaced by '+'
+    const headers = request.headers;
+    headers.append('x-api-key', devApiKey);
     if (queryParams && queryParams.size) {
       newUrl = `${newUrl}?${newParams}`;
     }
     if (request.method === 'GET') {
       return await fetch(newUrl, {
         method: 'GET',
-        headers: { 'x-api-key': devApiKey },
+        headers,
       });
     }
     if (request.method === 'POST') {
@@ -26,7 +28,7 @@ export async function middleware(request: NextRequest) {
       return await fetch(newUrl, {
         method: 'POST',
         body: JSON.stringify(newBody),
-        headers: { 'x-api-key': devApiKey },
+        headers,
       });
     }
   }

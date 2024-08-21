@@ -1,4 +1,4 @@
-import { S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import {
   CopyObjectCommand,
   HeadObjectCommand,
@@ -21,6 +21,7 @@ import {
   DataProcessLockedError,
   acquireDataProcessLockOrFail,
 } from '../../../utils/dataProcessLock';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -33,11 +34,15 @@ function getLambdaConfigOrFail() {
   };
 }
 
+const withRequest = lambdaRequestTracker();
+
 const adminLogger: IAdminLogger = new PostgresLogger();
 
 export async function handleReceptionFileEvent(
   queueEvent: SQSEvent,
+  context: Context,
 ): Promise<void> {
+  withRequest(queueEvent, context);
   try {
     const config = getLambdaConfigOrFail();
     const sqsRecords = queueEvent.Records;
@@ -120,7 +125,6 @@ export async function handleReceptionFileEvent(
     await adminLogger.error('Virhe zip-tiedoston käsittelyssä');
   }
 }
-
 
 /**
  * Wait until lock is acquired

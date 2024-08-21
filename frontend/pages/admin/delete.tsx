@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import type { NextPage } from 'next';
 import { clsx } from 'clsx';
 import { useTranslation } from 'next-i18next';
 import { marked } from 'marked';
 
 import instructionData from 'shared/doc/delete_instructions.md';
 import { Button, TextInput, Modal } from 'components';
-import { makeQuery } from 'shared/query-builder';
 import css from './delete.module.css';
 import markdownCss from '../../styles/markdown.module.css';
-import { useSearch } from 'shared/hooks';
 import { postDeleteRequest } from 'shared/rest';
 import { DeleteResponse, RaitaNextPage } from 'shared/types';
 import { RaitaRole } from 'shared/user';
+import { useQuery } from '@apollo/client';
+import { SEARCH_RAPORTTI_BY_KEY_PREFIX } from 'shared/graphql/queries/reports';
 
-const DeleteIndex: RaitaNextPage = () => {
+const DeletePage: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'admin']);
 
   const [prefixInput, setPrefixInput] = useState('');
@@ -25,14 +24,19 @@ const DeleteIndex: RaitaNextPage = () => {
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteIsConfirmed, setDeleteIsConfirmed] = useState(false);
 
-  const filesToDeleteMutation = useSearch();
+  const { loading, error, data, refetch } = useQuery(
+    SEARCH_RAPORTTI_BY_KEY_PREFIX,
+    {
+      variables: {
+        key: prefixInput,
+        page: 1,
+        page_size: 10,
+      },
+    },
+  );
 
   const fetchFilesToBeDeleted = () => {
-    const query = makeQuery(
-      [{ field: 'key.keyword', type: 'prefix', value: prefixInput }],
-      { paging: { size: 0, curPage: 1 }, keyFn: s => s },
-    );
-    filesToDeleteMutation.mutate(query);
+    refetch();
   };
 
   const showConfirmationModal = () => {
@@ -62,7 +66,6 @@ const DeleteIndex: RaitaNextPage = () => {
     if (deleteInProgress) {
       return;
     }
-    filesToDeleteMutation.reset();
     setConfirmModalOpen(false);
     setDeleteIsConfirmed(false);
     setConfirmInput('');
@@ -78,7 +81,7 @@ const DeleteIndex: RaitaNextPage = () => {
 
   const onConfirmInputChange = (inputText: string) => {
     setConfirmInput(inputText);
-    if (inputText === filesToDeleteMutation.data?.total.toString()) {
+    if (inputText === data?.search_raportti_by_key_prefix.count.toString()) {
       setDeleteIsConfirmed(true);
     } else {
       setDeleteIsConfirmed(false);
@@ -88,8 +91,8 @@ const DeleteIndex: RaitaNextPage = () => {
   const readyToDelete =
     confirmModalOpen &&
     deleteIsConfirmed &&
-    filesToDeleteMutation.data &&
-    filesToDeleteMutation.data.total > 0 &&
+    data?.search_raportti_by_key_prefix.raportti &&
+    data.search_raportti_by_key_prefix.count > 0 &&
     !deleteInProgress;
   return (
     <div className="container mx-auto px-16 py-6">
@@ -119,16 +122,16 @@ const DeleteIndex: RaitaNextPage = () => {
       >
         <div>
           <p>{t('admin:delete_path_info', { path: prefixInput })}</p>
-          {filesToDeleteMutation.isLoading && t('admin:delete_files_loading')}
-          {!!filesToDeleteMutation.error && t('admin:delete_files_fetch_error')}
-          {filesToDeleteMutation.data &&
-            (filesToDeleteMutation.data.total === 0 ? (
+          {loading && t('admin:delete_files_loading')}
+          {!!error && t('admin:delete_files_fetch_error')}
+          {data &&
+            (data.search_raportti_by_key_prefix.count === 0 ? (
               <p>{t('admin:delete_files_not_found')}</p>
             ) : (
               <>
                 <p>
                   {t('admin:delete_counts', {
-                    count: filesToDeleteMutation.data.total,
+                    count: data?.search_raportti_by_key_prefix.count,
                   })}
                 </p>
                 <label>
@@ -177,6 +180,6 @@ const DeleteIndex: RaitaNextPage = () => {
   );
 };
 
-DeleteIndex.requiredRole = RaitaRole.Admin;
+DeletePage.requiredRole = RaitaRole.Admin;
 
-export default DeleteIndex;
+export default DeletePage;

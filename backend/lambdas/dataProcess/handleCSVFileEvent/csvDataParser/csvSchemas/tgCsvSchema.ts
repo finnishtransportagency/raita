@@ -1,4 +1,5 @@
-import { zcsv } from '../../../../../utils/zod-csv/zcsv';
+import { zcsv } from 'zod-csv';
+
 import { z } from 'zod';
 
 /*
@@ -6,44 +7,112 @@ import { z } from 'zod';
 */
 
 export const tgSchema = z.object({
-  sscount: zcsv.number(z.number().optional()),
+  sscount: zcsv.number(
+    z.number().optional(),
+  ),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
   longitude: zcsv.string(z.string().optional()),
-  ajonopeus: zcsv.number(z.number().optional()),
-  raideleveyden_poikkeama: zcsv.number(z.number().optional()),
-  kallistus: zcsv.number(z.number().optional()),
-  kallistuksen_poikkeama: zcsv.number(z.number().optional()),
-  kierous: zcsv.number(z.number().optional()),
-  kaarevuus: zcsv.number(z.number().optional()),
-  raideleveyden_poikkeaman_muutos: zcsv.number(z.number().optional()),
-  kierouden_poikkeama: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkeama_d1: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkeama_d2: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkeama_d2: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkeama_d3: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkeama_d3: zcsv.number(z.number().optional()),
-  vasen_nuolikorkeuspoikkeama_d1: zcsv.number(z.number().optional()),
-  oikea_nuolikorkeuspoikkeama_d1: zcsv.number(z.number().optional()),
-  vasen_nuolikorkeuspoikkeama_d2: zcsv.number(z.number().optional()),
-  oikea_nuolikorkeuspoikkeama_d2: zcsv.number(z.number().optional()),
-  vasen_nuolikorkeuspoikkeama_d3: zcsv.number(z.number().optional()),
-  oikea_nuolikorkeuspoikkeama_d3: zcsv.number(z.number().optional()),
-  gradient: zcsv.number(z.number().optional()),
-  raideleveyden: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkeama_d1: zcsv.number(z.number().optional()),
-  raideleveyden_keskihajonta: zcsv.number(z.number().optional()),
-  kallistus_keskihajonta: zcsv.number(z.number().optional()),
-  kierouden_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkeama_d1_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkeama_d1_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_nuolikorkeus_d1_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_nuolikorkeus_d1_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkema_d0: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkema_d0: zcsv.number(z.number().optional()),
-  vasen_korkeuspoikkema_d0_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_korkeuspoikkema_d0_keskihajonta: zcsv.number(z.number().optional()),
+  ajonopeus: zcsv.string(
+    z.string().optional(),
+  ),
+  raideleveyden_poikkeama: zcsv.string(
+    z.string().optional(),
+  ),
+  kallistus: zcsv.string(
+    z.string().optional(),
+  ),
+  kallistuksen_poikkeama: zcsv.string(
+    z.string().optional(),
+  ),
+  kierous: zcsv.string(
+    z.string().optional(),
+  ),
+  kaarevuus: zcsv.string(
+    z.string().optional(),
+  ),
+  raideleveyden_poikkeaman_muutos: zcsv.string(
+    z.string().optional(),
+  ),
+  kierouden_poikkeama: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkeama_d1: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkeama_d2: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkeama_d2: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkeama_d3: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkeama_d3: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_nuolikorkeuspoikkeama_d1: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_nuolikorkeuspoikkeama_d1: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_nuolikorkeuspoikkeama_d2: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_nuolikorkeuspoikkeama_d2: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_nuolikorkeuspoikkeama_d3: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_nuolikorkeuspoikkeama_d3: zcsv.string(
+    z.string().optional(),
+  ),
+  gradient: zcsv.string(
+    z.string().optional(),
+  ),
+  raideleveyden: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkeama_d1: zcsv.string(
+    z.string().optional(),
+  ),
+  raideleveyden_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  kallistus_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  kierouden_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkeama_d1_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkeama_d1_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_nuolikorkeus_d1_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_nuolikorkeus_d1_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkema_d0: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkema_d0: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_korkeuspoikkema_d0_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_korkeuspoikkema_d0_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
 });
 
 export type ITg = z.infer<typeof tgSchema>;

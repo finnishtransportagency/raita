@@ -19,7 +19,13 @@ export const devApiKey = process.env.DEV_RAITA_API_KEY || null;
 
 export const paging = {
   pageSize: 10,
+  maxZipPageSize: 5000, // max size to use for zipping. If larger sizes are required, need to rework zip download so that list of keys is not fetched in frontend
 } as const;
 
 // index of zip file name in file key
 export const zipFileNameIndex = 5;
+
+export const currentMetadataDatabase: 'opensearch' | 'postgres' =
+  process.env.NEXT_PUBLIC_METADATA_DATABASE;
+export const enableCsvPage: boolean =
+  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE ?? false;

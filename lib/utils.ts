@@ -1,4 +1,4 @@
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { RemovalPolicy, aws_lambda_nodejs } from 'aws-cdk-lib';
 import { EbsDeviceVolumeType, ISubnet } from 'aws-cdk-lib/aws-ec2';
 import { DomainProps } from 'aws-cdk-lib/aws-opensearchservice';
 import * as path from 'path';
@@ -40,7 +40,6 @@ export const isProductionStack = (
   stackId: string,
   raitaEnv: RaitaEnvironment,
 ) => stackId === PRODUCTION_STACK_ID && raitaEnv === ENVIRONMENTS.prod;
-
 
 /**
  * Returns whether the stack is one of the two permanent Raita stacks
@@ -135,4 +134,19 @@ export const getDatabaseEnvironmentVariables = (
     'utf8',
   );
   return JSON.parse(file);
+};
+
+/**
+ * These should be given as bundling options to NodeJsFunction that uses Prisma
+ * Prisma layer is also needed
+ */
+export const prismaBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
+  externalModules: ['@prisma'], // this is provided by the lambda layer so mark it as external
+};
+
+/**
+ * Needed for graphql lambdas
+ */
+export const graphqlBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
+  loader: { '.graphql': 'text' },
 };

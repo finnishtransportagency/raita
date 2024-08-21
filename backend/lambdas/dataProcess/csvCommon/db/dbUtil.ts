@@ -61,21 +61,6 @@ async function getConnection() {
   return connection;
 }
 
-export async function getConnectionLocalDev() {
-  if (connection) {
-    return connection;
-  }
-  const password = 'password';
-  connection = postgres({
-    password,
-    username: 'postgres',
-    transform: { undefined: null },
-    idle_timeout: 20,
-    max_lifetime: 30,
-  });
-  return connection;
-}
-
 function constructRataosoite(track: string, location: string): Rataosoite {
   //Track: "008 KOKOL LR"
   //Location: "630+0850.00"
@@ -85,7 +70,6 @@ function constructRataosoite(track: string, location: string): Rataosoite {
   raide_numero integer, -- for example 2
   rata_kilometri integer, -- for example 130
   rata_metrit DECIMAL -- for example 100.00*/
-
   const splittedTrack = track.split(' ');
   let raideNumero = '';
   let rataosuusNimi = '';
@@ -121,11 +105,122 @@ function convertCoord(coord: string) {
   return Number(coord.replace(/[^0-9$.,]/g, ''));
 }
 
+function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
+  //skip common mittaus fields except ajonopeus
+  const {
+    id,
+    raportti_id,
+    running_date,
+    jarjestelma,
+    sscount,
+    rataosoite,
+    sijainti,
+    track,
+    location,
+    latitude,
+    longitude,
+    lat,
+    long,
+    raide_numero,
+    rata_kilometri,
+    rata_metrit,
+    rataosuus_nimi,
+    rataosuus_numero,
+    ...measurements
+  } = row;
+
+  let nanFields = {};
+  const NAN_REASON_POSTFIX = '_nan_reason';
+  let missingOptionalColumnsFields = {};
+  if (missingOptionalColumns) {
+    missingOptionalColumnsFields = handleNanMissingColumns(
+      missingOptionalColumns,
+      NAN_REASON_POSTFIX,
+    );
+  }
+  for (const [key, value] of Object.entries(measurements)) {
+    if (value) {
+      if (isNaN(Number(value))) {
+        const stringValue = value as string;
+        if (stringValue == '∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INF_VALUE';
+        } else if (stringValue == '-∞') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'MINUS_INF_VALUE';
+        } else if (stringValue.toLowerCase() == 'inv') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'INV_VALUE';
+        } else if (stringValue.toLowerCase() == 'nan') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NAN_VALUE';
+        } else if (stringValue.toLowerCase() == 'null') {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'NULL_VALUE';
+        } else {
+          // @ts-ignore
+          nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
+        }
+        //Measurement fields will be set to NaN.
+        measurements[key] = 'NaN';
+      }
+    } else {
+      // @ts-ignore
+      nanFields[key + NAN_REASON_POSTFIX] = 'EMPTY_VALUE';
+      //Measurement fields will be set to NaN.
+      measurements[key] = 'NaN';
+    }
+  }
+  return { ...measurements, ...nanFields, ...missingOptionalColumnsFields };
+}
+
+function handleNanMissingColumns(
+  missingOptionalColumns: string[],
+  NAN_REASON_POSTFIX: string,
+) {
+  //skip common mittaus fields except ajonopeus
+  const commonMittausFields: string[] = [
+    'id',
+    'raportti_id',
+    'running_date',
+    'jarjestelma',
+    'sscount',
+    'rataosoite',
+    'sijainti',
+    'track',
+    'location',
+    'latitude',
+    'longitude',
+    'lat',
+    'long',
+    'raide_numero',
+    'rata_kilometri',
+    'rata_metrit',
+    'rataosuus_nimi',
+    'rataosuus_numero',
+  ];
+  let nanFields = {};
+  let measurements = {};
+
+  for (const missingOptionalColumn of missingOptionalColumns) {
+    if (!commonMittausFields.includes(missingOptionalColumn)) {
+      // @ts-ignore
+      nanFields[missingOptionalColumn + NAN_REASON_POSTFIX] = 'MISSING_COLUMN';
+      //Add measurement fields with NaN value.
+      // @ts-ignore
+      measurements[missingOptionalColumn] = 'NaN';
+    }
+  }
+
+  return { ...measurements, ...nanFields };
+}
+
 export function convertToDBRow(
   row: Mittaus,
   runningDate: Date,
   reportId: number,
   fileNamePrefix: string,
+  missingOptionalColumns: string[] | undefined,
 ) {
   const rataosoite: Rataosoite = constructRataosoite(row.track, row.location);
   let lat = undefined;
@@ -138,7 +233,7 @@ export function convertToDBRow(
     long = convertCoord(row.longitude);
   }
 
-  return {
+  const convertedRow = {
     ...row,
     raportti_id: reportId,
     running_date: runningDate,
@@ -146,6 +241,10 @@ export function convertToDBRow(
     lat,
     long,
     ...rataosoite,
+  };
+  return {
+    ...convertedRow,
+    ...handleNan(convertedRow, missingOptionalColumns),
   };
 }
 
@@ -165,7 +264,8 @@ export async function updateRaporttiStatus(
                             SET status = ${status},
                                 error  = ${errorSubstring}
                             WHERE id = ${id}
-                            AND status <> 'ERROR';`.catch(e => {
+                            AND (status IS NULL
+                            OR status <> 'ERROR');`.catch(e => {
       log.error('Error updateRaporttiStatus: ' + e);
 
       throw e;
@@ -175,6 +275,21 @@ export async function updateRaporttiStatus(
     log.error(e);
 
     throw e;
+  }
+}
+export async function updateRaporttiMetadataStatus(
+  id: number,
+  status: string,
+  dbConnection: DBConnection,
+) {
+  const { schema, sql } = dbConnection;
+  try {
+    const a = await sql`UPDATE ${sql(schema)}.raportti
+                            SET metadata_status = ${status}
+                            WHERE id = ${id};`;
+  } catch (error) {
+    log.error({ error }, 'Error updating raportti metadata_status');
+    throw error;
   }
 }
 
@@ -213,6 +328,7 @@ export async function updateRaporttiMetadata(
 ) {
   const { schema, sql } = dbConnection;
   for (const metaDataEntry of data) {
+    const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
       ...metaDataEntry.metadata,
@@ -231,9 +347,14 @@ export async function updateRaporttiMetadata(
           log.error('Error updating metadata to db: ' + e);
           throw e;
         });
+        if (parsingErrors) {
+          await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
+        } else {
+          await updateRaporttiMetadataStatus(id, 'SUCCESS', dbConnection);
+        }
       } catch (e) {
         log.error('Update error to raportti table: ' + e);
-        await updateRaporttiStatus(id, 'ERROR', e.toString(), dbConnection);
+        await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
         throw e;
       }
     } catch (e) {
@@ -304,14 +425,14 @@ export async function raporttiChunksToProcess(
 
 export async function insertRaporttiData(
   key: string,
-  fileBaseName: string,
+  fileName: string,
   status: string | null,
   dbConnection: DBConnection,
 ): Promise<number> {
   const data: Raportti = {
     key,
     status,
-    file_name: fileBaseName,
+    file_name: fileName,
     chunks_to_process: -1,
     events: null,
   };
@@ -330,4 +451,21 @@ export async function insertRaporttiData(
 
     throw e;
   }
+}
+
+export async function writeMissingColumnsToDb(
+  reportId: number,
+  columnNames: string[],
+  dbConnection: DBConnection,
+): Promise<void> {
+  const { schema, sql } = dbConnection;
+
+  const values = columnNames.map(name => ({
+    raportti_id: reportId,
+    column_name: name,
+  }));
+
+  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+    values,
+  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }

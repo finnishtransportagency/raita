@@ -125,13 +125,13 @@ export const parseFileContent = async (
   fileStream: Readable,
   dbConnection: DBConnection | undefined,
   doCSVParsing: boolean,
+  reportId: number,
 ): Promise<{
   contentData: ParseValueResult;
   hash: string;
-  reportId: number | undefined;
 }> => {
   let contentPromise: Promise<ParseValueResult>;
-  let csvPromise: Promise<number | undefined>;
+  let csvPromise: Promise<boolean | undefined>;
   // Pipe the fileStream to multiple streams for consumption: hash calculation and file content parsing
   const originalStream = cloneable(fileStream);
   originalStream.pause();
@@ -143,12 +143,18 @@ export const parseFileContent = async (
     ) {
       log.info('chop csv file: ' + keyData.fileBaseName);
       const fileStreamToParse = originalStream.clone();
-      if(dbConnection) {
-        csvPromise = chopCSVFileStream(keyData, fileStreamToParse, dbConnection);
+      if (dbConnection) {
+        csvPromise = chopCSVFileStream(
+          keyData,
+          fileStreamToParse,
+          dbConnection,
+          reportId,
+        );
         log.info('csv parsing result: ' + csvPromise);
-      }
-      else{
-        log.error("content parsing with called csv enabled and without dbconnection");
+      } else {
+        log.error(
+          'content parsing with called csv enabled and without dbconnection',
+        );
         csvPromise = Promise.resolve(undefined);
       }
     } else {
@@ -166,7 +172,7 @@ export const parseFileContent = async (
     contentPromise = Promise.resolve({});
   }
   originalStream.resume();
-  const [hash, contentData, reportId] = await Promise.all([
+  const [hash, contentData, csvSuccess] = await Promise.all([
     hashPromise,
     contentPromise,
     csvPromise,
@@ -174,6 +180,5 @@ export const parseFileContent = async (
   return {
     contentData,
     hash,
-    reportId,
   };
 };

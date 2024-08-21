@@ -1,0 +1,125 @@
+# TODO: use ID type for id? but it is serialized as string
+type Raportti {
+  id: Int!
+  file_name: String
+  key: String
+  file_type: String
+  source_system: String
+  zip_name: String
+  campaign: String
+  track_number: String
+  track_part: String
+  track_id: String
+  km_start: Int
+  km_end: Int
+  system: String
+  nonparsed_inspection_datetime: String
+  report_category: String
+  size: Float
+  parser_version: String
+  zip_reception__year: String
+  zip_reception__date: String
+  year: Int
+  extra_information: String
+  maintenance_area: String
+  is_empty: Boolean
+  length: Int
+  tilirataosanumero: String
+  report_type: String
+  temperature: Float
+  measurement_start_location: String
+  measurement_end_location: String
+  measurement_direction: String
+  maintenance_level: String
+  status: String # TODO: needed?
+  inspection_date: String # TODO date?
+  parsed_at_datetime: String # TODO date?
+  inspection_datetime: String # TODO date?
+  metadata_changed_at_datetime: String # TODO date
+}
+
+type SearchRaporttiResponse {
+  raportti: [Raportti!]
+  count: Int!
+  total_size: Float! # in bytes, can exceed Int size
+  page: Int!
+  page_size: Int!
+}
+
+type FieldAggregation {
+  value: String!
+  count: Int!
+}
+
+type MittausSystemDescription {
+  name: String!
+  columns: [String!]! # list of system specific columns
+}
+
+type InputFieldDescription {
+  name: String!
+  type: String!
+}
+
+type MetaResponse {
+  report_type: [FieldAggregation!]!
+  file_type: [FieldAggregation!]!
+  system: [FieldAggregation!]!
+  track_part: [FieldAggregation!]!
+  tilirataosanumero: [FieldAggregation!]!
+  mittaus_systems: [MittausSystemDescription!]!
+  latest_inspection: String!
+  input_fields: [InputFieldDescription!]! # this should match fields of RaporttiInput, to be used by frontend
+}
+
+input RaporttiInput {
+  file_name: String
+  key: String
+  inspection_datetime: DateTimeIntervalInput
+  system: [String!]
+  report_type: [String!]
+  track_part: [String!]
+  tilirataosanumero: [String!]
+  file_type: [String!]
+  campaign: String
+  extra_information: String
+  is_empty: Boolean
+  km_start: IntIntervalInput
+  km_end: IntIntervalInput
+  length: IntIntervalInput
+  maintenance_area: String
+  maintenance_level: String
+  measurement_start_location: String
+  measurement_end_location: String
+  measurement_direction: String
+  metadata_changed_at_datetime: DateTimeIntervalInput
+  parsed_at_datetime: DateTimeIntervalInput
+  parser_version: String
+  report_category: String
+  source_system: String
+  temperature: FloatIntervalInput
+  track_number: String
+  track_id: String
+  year: Int
+  zip_name: String
+  # zip_reception__year: String TODO: are these useful?
+  # zip_reception__date: String
+}
+
+# TODO: stronger validation for inputs: datetime strings, enums
+type Query {
+  search_raportti(
+    raportti: RaporttiInput!
+    page: Int!
+    page_size: Int!
+    order_by_variable: String
+  ): SearchRaporttiResponse!
+
+  search_raportti_by_key_prefix(
+    key: String!
+    page: Int!
+    page_size: Int!
+  ): SearchRaporttiResponse!
+
+  meta: MetaResponse!
+}

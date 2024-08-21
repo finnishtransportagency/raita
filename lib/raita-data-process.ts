@@ -23,7 +23,10 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
-import { getDatabaseEnvironmentVariables, getRemovalPolicy } from './utils';
+import {
+  getDatabaseEnvironmentVariables,
+  prismaBundlingOptions,
+} from './utils';
 import {
   Alarm,
   AlarmRule,
@@ -54,6 +57,7 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly soaPolicyAccountId: string;
   readonly vaylaPolicyUserId: string;
   readonly loramPolicyUserId: string;
+  readonly prismaLambdaLayer: lambda.LayerVersion;
 }
 
 export class DataProcessStack extends NestedStack {
@@ -82,6 +86,7 @@ export class DataProcessStack extends NestedStack {
       soaPolicyAccountId,
       vaylaPolicyUserId,
       loramPolicyUserId,
+      prismaLambdaLayer,
     } = props;
 
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
@@ -305,6 +310,7 @@ export class DataProcessStack extends NestedStack {
       vpc,
       raitaEnv,
       databaseEnvironmentVariables,
+      prismaLambdaLayer,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
       this.handleInspectionFileEventFn.logGroup,
@@ -354,7 +360,7 @@ export class DataProcessStack extends NestedStack {
 
     // route csv bucket s3 events through a queue
     const csvQueue = new Queue(this, 'csv-queue', {
-      visibilityTimeout: Duration.seconds(5*60),
+      visibilityTimeout: Duration.seconds(5 * 60),
     });
     this.csvDataBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
@@ -495,6 +501,7 @@ export class DataProcessStack extends NestedStack {
     vpc,
     raitaEnv,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     openSearchDomainEndpoint: string;
@@ -508,6 +515,7 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     // any events that fail cause lambda to fail twice will be written here
     // currently nothing is done to this queue
@@ -538,6 +546,8 @@ export class DataProcessStack extends NestedStack {
         ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'true',
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -676,10 +686,7 @@ export class DataProcessStack extends NestedStack {
   }) {
     // any events that fail cause lambda to fail twice will be written here
     // currently nothing is done to this queue
-    const massCSVDeadLetterQueue = new Queue(
-      this,
-      'csv-mass-deadletter',
-    );
+    const massCSVDeadLetterQueue = new Queue(this, 'csv-mass-deadletter');
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 3072,

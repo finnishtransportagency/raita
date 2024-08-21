@@ -16,6 +16,39 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  rewrites: () => {
+    const currentMetadataDatabase =
+      process.env.NEXT_PUBLIC_METADATA_DATABASE || '';
+    // path rewrites to only enable "reports" or "graphql_reports" page
+    if (currentMetadataDatabase === 'opensearch') {
+      return {
+        beforeFiles: [
+          {
+            source: '/graphql_reports',
+            destination: '/reports',
+          },
+          {
+            source: '/',
+            destination: '/reports',
+          },
+        ],
+      };
+    } else if (currentMetadataDatabase === 'postgres') {
+      return {
+        beforeFiles: [
+          {
+            source: '/reports',
+            destination: '/graphql_reports',
+          },
+          {
+            source: '/',
+            destination: '/graphql_reports',
+          },
+        ],
+      };
+    }
+    return [];
+  },
 };
 
 module.exports = nextConfig;

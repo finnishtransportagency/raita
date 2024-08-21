@@ -7,6 +7,9 @@ import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
+import { lambdaRequestTracker } from 'pino-lambda';
+
+const withRequest = lambdaRequestTracker();
 
 /**
  * Returns meta information about inspection report (meta) data stored in Raita database
@@ -15,6 +18,7 @@ export async function handleMetaRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   try {
     const user = await getUser(event);
     await validateReadUser(user);

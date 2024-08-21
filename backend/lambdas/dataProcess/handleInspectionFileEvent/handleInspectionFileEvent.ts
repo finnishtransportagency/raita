@@ -1,5 +1,6 @@
-import { S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
@@ -8,6 +9,7 @@ import {
   isRaitaSourceSystem,
 } from '../../../../utils';
 import {
+  checkExistingHash,
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
@@ -20,9 +22,12 @@ import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import {
   DBConnection,
   getDBConnection,
+  insertRaporttiData,
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
+import { getPrismaClient } from '../../../utils/prismaClient';
+import { compareVersionStrings } from '../../../utils/compareVersionStrings';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -38,6 +43,21 @@ export function getLambdaConfigOrFail() {
     allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
+
+const findReportByKey = async (key: string) => {
+  const prisma = getPrismaClient();
+  const foundReport = (await prisma).raportti.findFirst({
+    where: {
+      key: {
+        in: [key],
+      },
+    },
+  });
+
+  return foundReport;
+};
+
+const withRequest = lambdaRequestTracker();
 
 const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
@@ -56,7 +76,9 @@ export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
  */
 export async function handleInspectionFileEvent(
   event: SQSEvent,
+  context: Context,
 ): Promise<void> {
+  withRequest(event, context);
   const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
@@ -128,12 +150,36 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
+
+        let reportId: number;
+
+        if (!dbConnection) {
+          // No DB connection
+          reportId = -1;
+        } else {
+          // DB connection exists
+          const foundReport = await findReportByKey(key);
+          if (foundReport) {
+            // Report found
+            reportId = foundReport.id;
+          } else {
+            // Report not found, insert new report
+            reportId = await insertRaporttiData(
+              key,
+              keyData.fileName,
+              null,
+              dbConnection,
+            );
+          }
+        }
+
         const parseResults = await parseFileMetadata({
           keyData,
           fileStream: fileStreamResult.fileStream,
           spec,
           doCSVParsing,
           dbConnection,
+          reportId,
         });
         if (parseResults.errors) {
           await adminLogger.error(
@@ -152,7 +198,8 @@ export async function handleInspectionFileEvent(
           metadata: parseResults.metadata,
           hash: parseResults.hash,
           tags: fileStreamResult.tags,
-          reportId: parseResults.reportId,
+          reportId,
+          errors: parseResults.errors,
           options: {
             skip_hash_check: skipHashCheck,
             require_newer_parser_version: requireNewerParserVersion,
@@ -169,10 +216,28 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          await updateRaporttiMetadata(
-            entries.filter(e => e.reportId),
-            dbConnection,
+          const checkedEntries = await Promise.all(
+            entries.map(async entry => {
+              const foundReport = await findReportByKey(entry.key);
+              const isSaveable = foundReport
+                ? await checkExistingHash(entry, foundReport)
+                : null;
+              // updating existing file: don't update parsed_at_datetime
+
+              const oldParsedAt = foundReport?.parsed_at_datetime
+                ? foundReport.parsed_at_datetime.toISOString()
+                : null;
+              if (foundReport) {
+                entry.metadata.parsed_at_datetime = oldParsedAt;
+              }
+              return { entry, isSaveable };
+            }),
           );
+          const saveableEntries = checkedEntries
+            .filter(result => result.isSaveable)
+            .map(result => result.entry);
+
+          await updateRaporttiMetadata(saveableEntries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',

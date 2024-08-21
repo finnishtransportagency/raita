@@ -1,4 +1,5 @@
-import { zcsv } from '../../../../../utils/zod-csv/zcsv';
+import { zcsv } from 'zod-csv';
+
 import { z } from 'zod';
 
 /*
@@ -6,52 +7,136 @@ import { z } from 'zod';
 */
 
 export const rcSchema = z.object({
-  sscount: zcsv.number(z.number().optional()),
+  sscount: zcsv.number(
+    z.number().optional(),
+  ),
   track: zcsv.string(),
   location: zcsv.string(),
   latitude: zcsv.string(z.string().optional()),
   longitude: zcsv.string(z.string().optional()),
-  ajonopeus: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_10_30mm: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_10_30mm: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_30_100mm: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_30_100mm: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_100_300mm: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_100_300mm: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_300_1000mm: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_300_1000mm: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_10_30mm_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_10_30mm_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_30_100mm_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_30_100mm_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_100_300mm_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_100_300mm_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_300_1000mm_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_300_1000mm_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_10_30mm_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_10_30mm_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_30_100mm_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_30_100mm_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_10_300mm_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_100_300mm_keskihajonta: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallon_rms_300_1000mm_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallon_rms_300_1000_keskihajonta: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms100_300mm_kiintea_keskiar: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms100_300mm_kiintea_keskiar: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms300_1000mm_kiintea_keskia: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms300_1000mm_kiintea_keskia: zcsv.number(z.number().optional()),
-  vasen_raiteen_aallonrms300_1000mm_kiintea_keskih: zcsv.number(z.number().optional()),
-  oikea_raiteen_aallonrms300_1000mm_kiintea_keskih: zcsv.number(z.number().optional()),
+  ajonopeus: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_10_30mm: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_10_30mm: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_30_100mm: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_30_100mm: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_100_300mm: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_100_300mm: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_300_1000mm: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_300_1000mm: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_10_30mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_10_30mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_30_100mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_30_100mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_100_300mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_100_300mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_300_1000mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_300_1000mm_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_10_30mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_10_30mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_30_100mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_30_100mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_10_300mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_100_300mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallon_rms_300_1000mm_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallon_rms_300_1000_keskihajonta: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiar: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiar: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskia: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskia: zcsv.string(
+    z.string().optional(),
+  ),
+  vasen_raiteen_aallonrms300_1000mm_kiintea_keskih: zcsv.string(
+    z.string().optional(),
+  ),
+  oikea_raiteen_aallonrms300_1000mm_kiintea_keskih: zcsv.string(
+    z.string().optional(),
+  ),
 });
 
 export type IRc = z.infer<typeof rcSchema>;

@@ -7,25 +7,22 @@ import { extractFileNameData } from './fileNameDataParser';
 import { extractPathData } from './pathDataParser';
 import { DBConnection } from '../csvCommon/db/dbUtil';
 
-export async function parseFileMetadata(
-  {
-    keyData,
-    fileStream,
-    spec,
-    doCSVParsing,
-    dbConnection,
-
-  }: {
-    keyData: KeyData;
-    fileStream: Readable | undefined;
-    spec: IExtractionSpec;
-    doCSVParsing: boolean;
-    dbConnection: DBConnection | undefined;
-  },
-
-): Promise<{
+export async function parseFileMetadata({
+  keyData,
+  fileStream,
+  spec,
+  doCSVParsing,
+  dbConnection,
+  reportId,
+}: {
+  keyData: KeyData;
+  fileStream: Readable | undefined;
+  spec: IExtractionSpec;
+  doCSVParsing: boolean;
+  dbConnection: DBConnection | undefined;
+  reportId: number;
+}): Promise<{
   metadata: any;
-  reportId: number | undefined;
   hash: string;
   errors: boolean;
 }> {
@@ -60,7 +57,6 @@ export async function parseFileMetadata(
   }
   let fileContentData: any = {};
   let hash = '';
-  let reportId: number | undefined = undefined;
   try {
     if (fileStream) {
       const contentResult = await parseFileContent(
@@ -69,10 +65,10 @@ export async function parseFileMetadata(
         fileStream,
         dbConnection,
         doCSVParsing,
+        reportId,
       );
       fileContentData = contentResult.contentData;
       hash = contentResult.hash;
-      reportId = contentResult.reportId;
     } else {
       throw new RaitaParseError(
         'No fileStream',
@@ -110,7 +106,6 @@ export async function parseFileMetadata(
     metadata: allMetadata,
     hash,
     errors: errorsFound,
-    reportId,
   };
 }
 

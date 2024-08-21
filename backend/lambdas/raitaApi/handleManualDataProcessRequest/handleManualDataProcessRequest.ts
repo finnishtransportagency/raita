@@ -24,6 +24,7 @@ import {
 } from '../../utils';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   return {
@@ -44,6 +45,8 @@ const setTimeoutPromise = (delay: number) =>
   new Promise((resolve, reject) => {
     setTimeout(() => resolve(null), delay);
   });
+const withRequest = lambdaRequestTracker();
+
 /**
  * Handle an incoming request to start manual data (re-)process
  */
@@ -51,6 +54,7 @@ export async function handleManualDataProcessRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   try {
     const { body } = event;
     const s3Client = new S3Client({});

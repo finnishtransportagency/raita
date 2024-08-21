@@ -9,11 +9,14 @@ import {
 import { getSingleEventLogs } from '../../../utils/adminLog/pgLogReader';
 import { parseISO } from 'date-fns';
 import { AdminLogSource } from '../../../utils/adminLog/types';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 /**
  * Size in rows
  */
 const MAXIMUM_LOG_PAGE_SIZE = 1000;
+
+const withRequest = lambdaRequestTracker();
 
 /**
  * Handle request to view admin logs
@@ -26,11 +29,12 @@ export async function handleAdminLogsRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { queryStringParameters } = event;
   try {
     const user = await getUser(event);
+    log.info({ user, queryStringParameters });
     await validateAdminUser(user);
-
     if (
       !queryStringParameters?.invocationId ||
       !queryStringParameters?.date ||

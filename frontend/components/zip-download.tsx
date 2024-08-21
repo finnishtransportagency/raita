@@ -22,6 +22,8 @@ const initialState: ZipState = {
   isLoading: false,
 };
 
+// This version of zip-download is using old opensearch
+// TODO: remove this when not using opensearch
 export function ZipDownload(props: Props) {
   const { aggregationSize, usedQuery, resultTotalSize } = props;
   const [state, setState] = useState<ZipState>(initialState);
@@ -30,7 +32,10 @@ export function ZipDownload(props: Props) {
   const { t } = useTranslation(['common']);
   const resultTooBigToCompress =
     resultTotalSize && resultTotalSize > 5000000000 ? true : false;
-  const bigCompression = resultTotalSize && resultTotalSize > 1000000000 && !resultTooBigToCompress ? true : false;
+  const bigCompression =
+    resultTotalSize && resultTotalSize > 1000000000 && !resultTooBigToCompress
+      ? true
+      : false;
 
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
@@ -113,7 +118,7 @@ export function ZipDownload(props: Props) {
         />
       )}
       {bigCompression && (
-        <p className='text-xs'>{t('common:big_compression')}</p>
+        <p className="text-xs">{t('common:big_compression')}</p>
       )}
       {error && (
         <div

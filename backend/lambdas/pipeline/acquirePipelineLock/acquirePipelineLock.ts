@@ -1,4 +1,4 @@
-import { CodePipelineEvent } from 'aws-lambda';
+import { CodePipelineEvent, Context } from 'aws-lambda';
 import {
   DataProcessLockedError,
   acquirePipelineLockOrFail,
@@ -6,10 +6,15 @@ import {
 } from '../../../utils/dataProcessLock';
 import { CodePipeline } from 'aws-sdk';
 import { logPipeline } from '../../../utils/logger';
+import { lambdaRequestTracker } from 'pino-lambda';
+
+const withRequest = lambdaRequestTracker();
 
 export async function handleAcquirePipelineLock(
   event: CodePipelineEvent,
+  context: Context,
 ): Promise<void> {
+  withRequest(event, context);
   const pipeline = new CodePipeline();
   const jobId = event['CodePipeline.job'].id;
   try {

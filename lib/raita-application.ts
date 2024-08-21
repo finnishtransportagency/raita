@@ -2,7 +2,7 @@ import * as opensearch from 'aws-cdk-lib/aws-opensearchservice';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Port } from 'aws-cdk-lib/aws-ec2';
-import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { BundlingOutput, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
 import { getEnvDependentOsConfiguration, isPermanentStack } from './utils';
@@ -12,6 +12,8 @@ import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
 import { PsqlClientStack } from './raita-psql-client-ec2';
 import { SSM_API_KEY } from '../constants';
+import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
+import path from 'path';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -63,6 +65,18 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier,
     });
 
+    // Create a lambda layer containing prisma client and engine, to avoid bundling big engine files for every lambda
+    const prismaLambdaLayer = new LayerVersion(this, 'prisma-layer-version', {
+      code: Code.fromAsset(path.join(__dirname, '../'), {
+        bundling: {
+          image: Runtime.NODEJS_20_X.bundlingImage,
+          command: ['bash', './create-prisma-lambda-layer.sh'],
+          outputType: BundlingOutput.NOT_ARCHIVED,
+          workingDirectory: '/asset-input',
+        },
+      }),
+    });
+
     // Create data processing resources
     const dataProcessStack = new DataProcessStack(this, 'stack-dataprocess', {
       raitaStackIdentifier: raitaStackIdentifier,
@@ -78,6 +92,7 @@ export class ApplicationStack extends NestedStack {
       soaPolicyAccountId: soaPolicyAccountId,
       vaylaPolicyUserId: vaylaPolicyUserId,
       loramPolicyUserId: loramPolicyUserId,
+      prismaLambdaLayer,
     });
 
     // Create API Gateway
@@ -94,6 +109,7 @@ export class ApplicationStack extends NestedStack {
       cloudfrontDomainName: cloudfrontDomainName,
       vpc,
       raitaSecurityGroup,
+      prismaLambdaLayer,
     });
 
     // Create Bastion Host for dev (main branch/stack) and production
@@ -165,6 +181,14 @@ export class ApplicationStack extends NestedStack {
       raitaStackIdentifier,
       serviceRoles: [raitaApiStack.raitaApiZipRequestLambdaServiceRole],
       resources: [raitaApiStack.handleZipProcessFn.functionArn],
+      actions: ['lambda:invokeFunction'],
+    });
+
+    this.createManagedPolicy({
+      name: 'GraphqlCsvGenerationInvokePolicy',
+      raitaStackIdentifier,
+      serviceRoles: [raitaApiStack.raitaApiGraphqlLambdaServiceRole],
+      resources: [raitaApiStack.handleCsvGenerationFn.functionArn],
       actions: ['lambda:invokeFunction'],
     });
 

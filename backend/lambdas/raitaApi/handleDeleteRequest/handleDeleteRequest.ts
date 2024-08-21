@@ -14,6 +14,8 @@ import {
 import MetadataPort from '../../../ports/metadataPort';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import { lambdaRequestTracker } from 'pino-lambda';
+import { getPrismaClient } from '../../../utils/prismaClient';
 
 function getLambdaConfigOrFail() {
   return {
@@ -31,6 +33,10 @@ const setTimeoutPromise = (delay: number) =>
   new Promise((resolve, reject) => {
     setTimeout(() => resolve(null), delay);
   });
+
+const withRequest = lambdaRequestTracker();
+const prisma = getPrismaClient();
+
 /**
  * Handle an incoming delete request
  * Delete keys that start with given prefix
@@ -39,6 +45,7 @@ export async function handleDeleteRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   try {
     const { body } = event;
     const s3 = new S3();
@@ -81,6 +88,7 @@ export async function handleDeleteRequest(
     let receptionDeleteCount = 0;
     let inspectionDeleteCount = 0;
     let metadataDeleteCount = 0;
+    let postgresDeleteCount = 0;
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
@@ -106,6 +114,7 @@ export async function handleDeleteRequest(
         region,
         openSearchDomain,
       );
+      postgresDeleteCount = await deleteFromPostgres(prefix);
     }
     if (
       deleteFrom.inspection &&
@@ -124,12 +133,13 @@ export async function handleDeleteRequest(
       },
     });
     await adminLogger.info(
-      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}`,
+      `Poistettujen tiedostojen määrät: zip-vastaanotto ${receptionDeleteCount}, tiedostosäilö ${inspectionDeleteCount}, metadatasäilö ${metadataDeleteCount}, Postgre ${postgresDeleteCount}`,
     );
     return getRaitaSuccessResponse({
       receptionDeleteCount,
       inspectionDeleteCount,
       metadataDeleteCount,
+      postgresDeleteCount,
     });
   } catch (err: any) {
     log.error(`Error in handleDeleteRequest: ${err.message}`);
@@ -256,6 +266,22 @@ async function deleteFromMetadata(
   } catch (err: any) {
     throw new RaitaLambdaError(
       `Error deleting from metadata: ${err.message}`,
+      500,
+    );
+  }
+}
+
+async function deleteFromPostgres(prefix: string) {
+  try {
+    const response = await (
+      await prisma
+    ).raportti.deleteMany({
+      where: { key: { startsWith: prefix } },
+    });
+    return response.count;
+  } catch (err: any) {
+    throw new RaitaLambdaError(
+      `Error deleting from Postgre metadata: ${err.message}`,
       500,
     );
   }

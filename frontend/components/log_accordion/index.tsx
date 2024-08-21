@@ -25,6 +25,7 @@ import {
   ADMIN_LOG_SUMMARY_PAGE_SIZE,
 } from 'shared/constants';
 import ResultsPager from 'components/results-pager';
+import LogView from 'components/log_view';
 
 type Props = {
   type: 'delete' | 'data-process';
@@ -77,6 +78,16 @@ function rowContainsWarnings(
     row.counts['data-inspection']?.warn > 0
   );
 }
+function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
+  if (row.counts['data-inspection']) {
+    return (
+      row.counts['data-inspection'].info === 0 &&
+      row.counts['data-inspection'].warn === 0 &&
+      row.counts['data-inspection'].error === 0
+    );
+  } else return type === 'data-process' && !!row.counts['data-inspection'];
+}
+
 /**
  * Fetch and show log rows for one event in an accordion item
  */
@@ -104,6 +115,10 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
   }>({});
 
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+  const [showWarningsOnly, setShowWarningsOnly] = useState(false);
+  const [showEmptyOnly, setShowEmptyOnly] = useState(false);
+  const [showWarnedFilesOnly, setShowWarnedFilesOnly] = useState(false);
+  const [showErroredFilesOnly, setShowErroredFilesOnly] = useState(false);
 
   useEffect(() => {
     if (forceFetch) {
@@ -178,9 +193,19 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
     }));
     setActiveEvents([...activeEvents, ...newElements]);
   };
-  const summaryRowsToShow = logSummary.summaryRows.filter(
-    row => !showErrorsOnly || rowContainsErrors(row, type),
-  );
+
+  const summaryRowsToShow = logSummary.summaryRows.filter(row => {
+    const containsErrors = rowContainsErrors(row, type);
+    const containsWarnings = rowContainsWarnings(row, type);
+    const isEmpty = rowIsEmpty(row, type);
+
+    return (
+      (!showErrorsOnly || containsErrors) &&
+      (!showWarningsOnly || containsWarnings) &&
+      (!showEmptyOnly || isEmpty)
+    );
+  });
+
   return (
     <>
       {errorMessage && <p>{errorMessage}</p>}
@@ -192,15 +217,35 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
         !errorMessage &&
         logSummary.summaryRows.length > 0 && (
           <>
-            <label className="block py-4">
-              <input
-                className="mx-1"
-                type="checkbox"
-                checked={showErrorsOnly}
-                onChange={e => setShowErrorsOnly(e.currentTarget.checked)}
-              />
-              {t('admin:log_show_only_errors')}
-            </label>
+            <div className="block py-4 flex flex-col">
+              <label>
+                <input
+                  className="mx-1"
+                  type="checkbox"
+                  checked={showErrorsOnly}
+                  onChange={e => setShowErrorsOnly(e.currentTarget.checked)}
+                />
+                {t('admin:log_show_only_errors')}
+              </label>
+              <label>
+                <input
+                  className="mx-1"
+                  type="checkbox"
+                  checked={showWarningsOnly}
+                  onChange={e => setShowWarningsOnly(e.currentTarget.checked)}
+                />
+                {t('admin:log_show_only_warnings')}
+              </label>
+              <label>
+                <input
+                  className="mx-1"
+                  type="checkbox"
+                  checked={showEmptyOnly}
+                  onChange={e => setShowEmptyOnly(e.currentTarget.checked)}
+                />
+                {t('admin:log_show_only_empty')}
+              </label>
+            </div>
             <p>{`${t('admin:log_total_events')}: ${logSummary.totalSize}`}</p>
             <p>{`${t('admin:log_error_events')}: ${
               logSummary.stats.find(row => row.log_level === 'error')
@@ -300,27 +345,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                               )
                             }
                           />
-                          <p>
-                            {t('admin:log_row_counts', {
-                              current: eventLogs[eventId].logs.length,
-                              total: eventLogs[eventId]?.totalSize,
-                            })}
-                          </p>
-                          <div className={clsx(css.logBox)}>
-                            {eventLogs[eventId].logs.map(row => (
-                              <pre
-                                className={`${clsx(css.logRow)} bg-${
-                                  row.log_level
-                                }`}
-                                key={`${row.log_message}${row.log_timestamp}`}
-                              >
-                                {`[${format(
-                                  new Date(row.log_timestamp),
-                                  'dd.MM.yyyy HH:mm:ss.SSS',
-                                )}] ${row.log_message}`}
-                              </pre>
-                            ))}
-                          </div>
+                          <LogView eventLogs={eventLogs} eventId={eventId} />
                         </>
                       )}
                     </AccordionItemPanel>

@@ -20,11 +20,13 @@ import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import {
   getDatabaseEnvironmentVariables,
+  graphqlBundlingOptions,
   isDevelopmentMainStack,
   isDevelopmentPreMainStack,
+  isPermanentStack,
+  prismaBundlingOptions,
 } from './utils';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-
 
 interface RaitaApiStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -39,6 +41,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly openSearchDomain: Domain;
   readonly cloudfrontDomainName: string;
   readonly raitaSecurityGroup: ec2.ISecurityGroup;
+  prismaLambdaLayer: lambda.LayerVersion;
 }
 
 type ListenerTargetLambdas = {
@@ -54,6 +57,8 @@ type ListenerTargetLambdas = {
  */
 export class RaitaApiStack extends NestedStack {
   public readonly raitaApiLambdaServiceRole: Role;
+  public readonly raitaApiGraphqlLambdaServiceRole: Role;
+  public readonly raitaApiCsvGenerationLambdaServiceRole: Role;
   public readonly raitaApiZipProcessLambdaServiceRole: Role;
   public readonly raitaApiZipRequestLambdaServiceRole: Role;
   public readonly raitaApiDeleteRequestLambdaServiceRole: Role;
@@ -64,16 +69,14 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
   public readonly handleAdminLogsRequestFn: NodejsFunction;
+  public readonly handleV2GraphqlRequest: NodejsFunction;
+  public readonly handleCsvGenerationFn: NodejsFunction;
   public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
 
-  constructor(
-    scope: Construct,
-    id: string,
-    props: RaitaApiStackProps,
-  ) {
+  constructor(scope: Construct, id: string, props: RaitaApiStackProps) {
     super(scope, id, props);
     const {
       raitaStackIdentifier,
@@ -88,6 +91,7 @@ export class RaitaApiStack extends NestedStack {
       openSearchDomain,
       cloudfrontDomainName,
       raitaSecurityGroup,
+      prismaLambdaLayer,
     } = props;
 
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
@@ -142,6 +146,32 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
 
+    this.raitaApiGraphqlLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiGraphqlLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+
+    this.raitaApiCsvGenerationLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'RaitaApiCsvGenerationLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiCsvGenerationLambdaServiceRole,
+    );
+    this.raitaApiCsvGenerationLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
+
     // Write permission is needed here (the Write part in ReadWrite) as it adds POST permissions to
     // the metadata index. RaitaApiLambdaServiceRole does not need to make any
     // data modifications to metadata index but under the hood the client from
@@ -156,6 +186,14 @@ export class RaitaApiStack extends NestedStack {
 
     // TODO: this is not needed on all resources
     this.raitaApiLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
+
+    this.raitaApiGraphqlLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['secretsmanager:GetSecretValue'],
@@ -314,6 +352,7 @@ export class RaitaApiStack extends NestedStack {
       receptionBucket: dataReceptionBucket,
       inspectionBucket: inspectionDataBucket,
       databaseEnvironmentVariables,
+      prismaLambdaLayer,
     });
     this.handleManualDataProcessFn = this.createManualDataProcessRequestHandler(
       {
@@ -327,6 +366,7 @@ export class RaitaApiStack extends NestedStack {
         receptionBucket: dataReceptionBucket,
         inspectionBucket: inspectionDataBucket,
         databaseEnvironmentVariables,
+        prismaLambdaLayer,
       },
     );
 
@@ -339,6 +379,7 @@ export class RaitaApiStack extends NestedStack {
       lambdaRole: this.raitaApiLambdaServiceRole,
       vpc,
       databaseEnvironmentVariables,
+      prismaLambdaLayer,
     });
     this.handleAdminLogsSummaryRequestFn =
       this.createAdminLogsRequestSummaryHandler({
@@ -350,7 +391,34 @@ export class RaitaApiStack extends NestedStack {
         lambdaRole: this.raitaApiLambdaServiceRole,
         vpc,
         databaseEnvironmentVariables,
+        prismaLambdaLayer,
       });
+
+    this.handleCsvGenerationFn = this.createCsvGenerationLambda({
+      name: 'handler-csv-generation',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiCsvGenerationLambdaServiceRole,
+      vpc,
+      databaseEnvironmentVariables,
+      targetBucket: dataCollectionBucket,
+      prismaLambdaLayer,
+    });
+
+    this.handleV2GraphqlRequest = this.createV2GraphqlHandler({
+      name: 'api-handler-v2-files',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiGraphqlLambdaServiceRole,
+      vpc,
+      databaseEnvironmentVariables,
+      csvGenerationFunction: this.handleCsvGenerationFn.functionName,
+      prismaLambdaLayer,
+    });
 
     const handleReturnLogin = this.createReturnLoginHandler({
       name: 'api-handler-return-login',
@@ -438,6 +506,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 350,
         path: [`${apiBaseUrl}/admin/logs`],
         targetName: 'admin-logs',
+      },
+      {
+        lambda: this.handleV2GraphqlRequest,
+        priority: 360,
+        path: [`${apiBaseUrl}/v2/graphql`],
+        targetName: 'v2-graphql',
       },
       {
         lambda: handleReturnLogin,
@@ -980,6 +1054,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -989,6 +1064,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole: Role;
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1006,6 +1082,8 @@ export class RaitaApiStack extends NestedStack {
         ENVIRONMENT: raitaEnv,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1027,6 +1105,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1036,6 +1115,7 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole: Role;
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1053,6 +1133,117 @@ export class RaitaApiStack extends NestedStack {
         ENVIRONMENT: raitaEnv,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  private createCsvGenerationLambda({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+    targetBucket,
+    prismaLambdaLayer,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    targetBucket: Bucket;
+    prismaLambdaLayer: lambda.LayerVersion;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(60 * 15), // max timeout, TODO test how long can this take
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleCsvGeneration',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/csvGeneration/handleCsvGeneration.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        TARGET_BUCKET: targetBucket.bucketName,
+        ...databaseEnvironmentVariables,
+      },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for admin log request
+   */
+  private createV2GraphqlHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+    csvGenerationFunction,
+    prismaLambdaLayer,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: RaitaEnvironment;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    csvGenerationFunction: string;
+    prismaLambdaLayer: lambda.LayerVersion;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(60), // TODO
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleV2GraphqlRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/v2/handleV2GraphqlRequest/handleV2GraphqlRequest.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        REGION: this.region,
+        CSV_GENERATION_LAMBDA: csvGenerationFunction,
+        ...databaseEnvironmentVariables,
+        NODE_ENV: isPermanentStack(stackId, raitaEnv)
+          ? 'production'
+          : 'development',
+      },
+      layers: [prismaLambdaLayer],
+      bundling: { ...graphqlBundlingOptions, ...prismaBundlingOptions },
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1119,6 +1310,7 @@ export class RaitaApiStack extends NestedStack {
     receptionBucket,
     inspectionBucket,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1132,6 +1324,7 @@ export class RaitaApiStack extends NestedStack {
     receptionBucket: Bucket;
     inspectionBucket: Bucket;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1154,6 +1347,8 @@ export class RaitaApiStack extends NestedStack {
         METADATA_INDEX: openSearchMetadataIndex,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -1172,6 +1367,7 @@ export class RaitaApiStack extends NestedStack {
     receptionBucket,
     inspectionBucket,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1183,6 +1379,7 @@ export class RaitaApiStack extends NestedStack {
     receptionBucket: Bucket;
     inspectionBucket: Bucket;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1202,6 +1399,8 @@ export class RaitaApiStack extends NestedStack {
         INSPECTION_BUCKET: inspectionBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {

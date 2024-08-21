@@ -8,6 +8,7 @@ import {
   getRaitaSuccessResponse,
   RaitaLambdaError,
 } from '../../utils';
+import { lambdaRequestTracker } from 'pino-lambda';
 
 function getLambdaConfigOrFail() {
   return {
@@ -24,6 +25,8 @@ async function getProgressDataFromS3(bucket: string, key: string, s3: S3) {
   return data?.Body ? JSON.parse(data.Body.toString()) : null;
 }
 
+const withRequest = lambdaRequestTracker();
+
 /**
  * Polls and parses a progression file in S3 to let the frontend
  * know when the request has succeeded.
@@ -32,6 +35,7 @@ export async function handlePollingRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
+  withRequest(event, _context);
   const { queryStringParameters } = event;
   const s3 = new S3();
   try {
