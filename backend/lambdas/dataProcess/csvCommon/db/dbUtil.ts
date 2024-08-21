@@ -52,9 +52,8 @@ async function getConnection() {
     connReuseCount++;
     return connection;
   }
-  //const password = await getSecretsManagerSecret('database_password');
-  const password ='abc';
-    connection = postgres({
+  const password = await getSecretsManagerSecret('database_password');
+  connection = postgres({
     password,
     transform: { undefined: null },
   });
@@ -486,7 +485,7 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+  await sql`INSERT INTO ${sql(schema)}.xpuuttuva_kolumni ${sql(
     values,
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }
