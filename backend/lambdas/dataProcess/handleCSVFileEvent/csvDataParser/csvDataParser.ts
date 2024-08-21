@@ -416,11 +416,7 @@ export async function parseCSVFileStream(
                   `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` + missingOptionalColumns,
                 );
                 try {
-                  await writeMissingColumnsToDb(
-                    reportId,
-                    headerValidation.missingOptional,
-                    dbConnection,
-                  );
+                  throw new Error('myerror');
                 } catch (error) {
                   logCSVDBException.error(
                     { errorType: error.errorType },
