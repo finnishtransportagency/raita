@@ -646,7 +646,7 @@ export class DataProcessStack extends NestedStack {
     );
 
 
-    const dbConnectionMetricFilter = logGroup.addMetricFilter(
+    const csvDBErrorMetricFilter = logGroup.addMetricFilter(
       'csv-db-error-filter',
       {
         filterPattern: FilterPattern.all(
@@ -738,7 +738,7 @@ export class DataProcessStack extends NestedStack {
         }),
       },
     );
-    const dbConnectionErrorAlarm = new Alarm(
+    const dbErrorAlarm = new Alarm(
       this,
       'csv-db-errors-alarm',
       {
@@ -749,9 +749,9 @@ export class DataProcessStack extends NestedStack {
         treatMissingData: TreatMissingData.NOT_BREACHING,
         alarmName: `csv-db-errors-alarm-${raitaStackIdentifier}`,
         alarmDescription:
-          'Alarm for catching db connection errors',
-        metric: dbConnectionMetricFilter.metric({
-          label: `DB connection errors ${raitaStackIdentifier}`,
+          'Alarm for catching csv parsing db errors',
+        metric: csvDBErrorMetricFilter.metric({
+          label: `CSV DB errors ${raitaStackIdentifier}`,
           period: Duration.days(1),
           statistic: Stats.SUM,
         }),
@@ -801,7 +801,7 @@ export class DataProcessStack extends NestedStack {
     return [
       timeoutAlarm,
       parsingErrorAlarm,
-      dbConnectionErrorAlarm,
+      dbErrorAlarm,
       otherErrorAlarm,
       crashErrorAlarm,
       anyErrorAlarm,
