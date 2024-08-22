@@ -24,7 +24,7 @@ export function ResultsPager(props: Props) {
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage === pageCount;
   const isCurrentPage = inputPage === currentPage;
-  const isCurrentPage = inputPage === currentPage;
+
   const hasPrevPage = currentPage > 1;
   const hasNextPage = currentPage < pageCount;
 
