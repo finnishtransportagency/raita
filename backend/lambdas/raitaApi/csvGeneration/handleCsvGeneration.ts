@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   S3Client,
   UploadPartCommand,
+  UploadPartCommandOutput,
 } from '@aws-sdk/client-s3';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
@@ -11,7 +12,19 @@ import { lambdaRequestTracker } from 'pino-lambda';
 import { Context } from 'aws-lambda';
 import { MutationGenerate_Mittaus_CsvArgs } from '../../../apollo/__generated__/resolvers-types';
 import { getPrismaClient } from '../../../utils/prismaClient';
-import { Prisma } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  ams_mittaus,
+  jarjestelma,
+  mittaus,
+  ohl_mittaus,
+  pi_mittaus,
+  rc_mittaus,
+  rp_mittaus,
+  tg_mittaus,
+  tsight_mittaus,
+} from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { objectToCsvBody, objectToCsvHeader } from './utils';
@@ -19,10 +32,17 @@ import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
 } from '../../../apollo/utils';
+import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../../constants';
+import { PassThrough, Readable } from 'stream';
 
 const withRequest = lambdaRequestTracker();
 
 const CSV_CHUNK_SIZE = 50000;
+
+const wait = (time: number) =>
+  new Promise(resolve => {
+    setTimeout(() => resolve(true), time);
+  });
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
@@ -37,6 +57,33 @@ export type CsvGenerationEvent = {
   csvKey: string;
 };
 
+type MittausDbResult =
+  | Partial<ams_mittaus>
+  | Partial<ohl_mittaus>
+  | Partial<pi_mittaus>
+  | Partial<rc_mittaus>
+  | Partial<rp_mittaus>
+  | Partial<tg_mittaus>
+  | Partial<tsight_mittaus>;
+
+type AnyMittausTableWhereInput =
+  | Prisma.ams_mittausFindManyArgs
+  | Prisma.ohl_mittausFindManyArgs
+  | Prisma.pi_mittausFindManyArgs
+  | Prisma.rc_mittausFindManyArgs
+  | Prisma.rp_mittausFindManyArgs
+  | Prisma.tg_mittausFindManyArgs
+  | Prisma.tsight_mittausFindManyArgs;
+
+type CsvRow = {
+  [column: string]: string | number | null;
+};
+
+type MultipartUploadResultWithPartNumber = {
+  uploadPartCommandOutput: UploadPartCommandOutput;
+  partNumber: number;
+};
+
 export async function handleCsvGeneration(
   event: CsvGenerationEvent,
   context: Context,
@@ -49,7 +96,7 @@ export async function handleCsvGeneration(
   try {
     await generateCsv(event, s3Client, config.targetBucket);
   } catch (error) {
-    log.error({ error }, 'Error at top level');
+    log.error({ error }, 'Error with CCSV generation');
     await uploadProgressData(
       {
         status: ProgressStatus.FAILED,
@@ -80,6 +127,8 @@ async function generateCsv(
 
   const { raportti, raportti_keys, mittaus, columns } = params;
 
+  const selectedColumns = columns;
+
   const progressKey = event.progressKey;
   const csvKey = event.csvKey;
   await uploadProgressData(
@@ -92,8 +141,6 @@ async function generateCsv(
     s3Client,
   );
 
-  const client = await getPrismaClient();
-
   const raporttiWhere: Prisma.raporttiWhereInput =
     raportti_keys && raportti_keys.length
       ? {
@@ -102,198 +149,23 @@ async function generateCsv(
           },
         }
       : getRaporttiWhereInput(raportti ?? {});
-  // TODO: mittaus filter
 
-  const systemsResult = await client.raportti.findMany({
-    where: raporttiWhere,
-    distinct: ['system'],
-    select: {
-      system: true,
-    },
-  });
-  const systemsInResults: string[] = systemsResult
-    .filter(res => !!res.system)
-    .map(res => res.system!);
-
-  const allColumnsPerSystem = getMittausFieldsPerSystem();
-  const countResult = await client.raportti.count({
-    where: raporttiWhere,
-  });
-
-  // handle one chunk at a time to allow arbitrary length
-  const pageSize = CSV_CHUNK_SIZE;
-  const partPromises = [];
-  const partCount = Math.ceil(countResult / pageSize);
-  let multipartUploadId: string | undefined;
-
-  for (let partIndex = 0; partIndex < partCount; partIndex++) {
-    const offset = partIndex * pageSize;
-    const raporttiRows = await client.raportti.findMany({
-      where: raporttiWhere,
-      select: {
-        file_name: true,
-        inspection_date: true,
-        system: true,
-        track_part: true,
-        tilirataosanumero: true,
-        mittaus: {
-          orderBy: {
-            sscount: 'asc',
-          },
-          select: {
-            sscount: true,
-            track: true,
-            location: true,
-            latitude: true,
-            longitude: true,
-            ajonopeus: true,
-            ams_mittaus: systemsInResults.includes('AMS')
-              ? {
-                  select: getColumnsSelectInputForSystem('AMS', columns),
-                }
-              : false,
-            ohl_mittaus: systemsInResults.includes('OHL')
-              ? {
-                  select: getColumnsSelectInputForSystem('OHL', columns),
-                }
-              : false,
-            pi_mittaus: systemsInResults.includes('PI')
-              ? {
-                  select: getColumnsSelectInputForSystem('PI', columns),
-                }
-              : false,
-            rc_mittaus: systemsInResults.includes('RC')
-              ? {
-                  select: getColumnsSelectInputForSystem('RC', columns),
-                }
-              : false,
-            rp_mittaus: systemsInResults.includes('RP')
-              ? {
-                  select: getColumnsSelectInputForSystem('RP', columns),
-                }
-              : false,
-            tg_mittaus: systemsInResults.includes('TG')
-              ? {
-                  select: getColumnsSelectInputForSystem('TG', columns),
-                }
-              : false,
-            tsight_mittaus: systemsInResults.includes('TSIGHT')
-              ? {
-                  select: getColumnsSelectInputForSystem('TSIGHT', columns),
-                }
-              : false,
-          },
-        },
-      },
-      skip: offset,
-      take: pageSize,
-    });
-
-    log.info({ mittaus: raporttiRows[0].mittaus[0] });
-
-    const allSystemSpecificColumnsInCsv = systemsInResults.flatMap(system => {
-      return allColumnsPerSystem
-        .filter(desc => desc.name === system)
-        .flatMap(desc => desc.columns);
-    });
-
-    // this includes columns from all systems in the query, to preserve field order between systems
-    const emptySystemSpecificColumns: { [column: string]: any } = {};
-    allSystemSpecificColumnsInCsv.forEach(
-      column => (emptySystemSpecificColumns[column] = null),
-    );
-
-    // map to csv format
-    const mittausRows = raporttiRows.flatMap(result => {
-      let mittaus = result.mittaus;
-      const newMittausRows = mittaus.map(mittausRow => {
-        let systemMittaus: { [column: string]: any } = mittausRow;
-        if (result.system === 'AMS' && mittausRow.ams_mittaus) {
-          systemMittaus = mittausRow.ams_mittaus;
-        }
-        if (result.system === 'OHL' && mittausRow.ohl_mittaus) {
-          systemMittaus = mittausRow.ohl_mittaus;
-        }
-        if (result.system === 'PI' && mittausRow.pi_mittaus) {
-          systemMittaus = mittausRow.pi_mittaus;
-        }
-        if (result.system === 'RC' && mittausRow.rc_mittaus) {
-          systemMittaus = mittausRow.rc_mittaus;
-        }
-        if (result.system === 'RP' && mittausRow.rp_mittaus) {
-          systemMittaus = mittausRow.rp_mittaus;
-        }
-        if (result.system === 'TG' && mittausRow.tg_mittaus) {
-          systemMittaus = mittausRow.tg_mittaus;
-        }
-        if (result.system === 'TSIGHT' && mittausRow.tsight_mittaus) {
-          systemMittaus = mittausRow.tsight_mittaus;
-        }
-        const { ajonopeus, location, latitude, longitude, sscount, track } =
-          mittausRow;
-        const emptyColumns = Object.assign({}, emptySystemSpecificColumns);
-        const filledColumns = Object.assign(emptyColumns, systemMittaus);
-
-        // map fields to string or number
-        const newRow = {
-          file_name: result.file_name,
-          inspection_date: result.inspection_date?.toISOString(),
-          system: result.system,
-          track_part: result.track_part,
-          track,
-          location,
-          latitude,
-          longitude,
-          sscount,
-          ajonopeus: Number(ajonopeus),
-          ...filledColumns,
-        };
-        return newRow;
-      });
-      return newMittausRows;
-    });
-
-    const firstChunk = partIndex === 0;
-    let fileBody: string;
-    if (firstChunk) {
-      const multipartUpload = await s3Client.send(
-        new CreateMultipartUploadCommand({
-          Bucket: targetBucket,
-          Key: csvKey,
-        }),
-      );
-      multipartUploadId = multipartUpload.UploadId;
-      fileBody =
-        objectToCsvHeader(mittausRows[0]) + objectToCsvBody(mittausRows);
-    } else {
-      fileBody = objectToCsvBody(mittausRows);
-    }
-    const uploadCommand = new UploadPartCommand({
-      Bucket: targetBucket,
-      Key: csvKey,
-      PartNumber: partIndex + 1,
-      UploadId: multipartUploadId,
-      Body: fileBody,
-    });
-    // TODO update upload progress percentage? is it useful?
-    partPromises.push(s3Client.send(uploadCommand));
-  }
-
-  const partResults = await Promise.all(partPromises);
-
-  await s3Client.send(
-    new CompleteMultipartUploadCommand({
-      Bucket: targetBucket,
-      Key: csvKey,
-      UploadId: multipartUploadId,
-      MultipartUpload: {
-        Parts: partResults.map((res, i) => ({
-          ETag: res.ETag,
-          PartNumber: i + 1,
-        })),
-      },
-    }),
+  // use a readable stream to read data from db and write to s3
+  // this is because the desired data chunk sizes when reading from db and writing to s3 are different
+  const csvStream: Readable = await readDbToReadable(
+    raporttiWhere,
+    selectedColumns,
   );
+
+  const uploadResult = await uploadReadableToS3(
+    csvStream,
+    targetBucket,
+    csvKey,
+    s3Client,
+  );
+  if (!uploadResult) {
+    throw new Error('S3 upload: uploadResult failed');
+  }
 
   const downloadCommand = new GetObjectCommand({
     Bucket: targetBucket,
@@ -338,4 +210,310 @@ const getColumnsSelectInputForSystem = (
     : allColumns;
   selectedColumns.forEach(column => (result[column] = true));
   return result;
+};
+
+/**
+ * Fetch mittaus rows from db from the correct system specific mittaus subtable
+ */
+const getPartialMittausRows = async (
+  client: PrismaClient,
+  raporttiIds: number[],
+  system: string,
+  offset: number,
+  pageSize: number,
+  selectedColumns: string[],
+) => {
+  const systemSpecificColumnSelections = getColumnsSelectInputForSystem(
+    system,
+    selectedColumns,
+  );
+  const params: AnyMittausTableWhereInput = {
+    where: {
+      raportti_id: {
+        in: raporttiIds,
+      },
+    },
+    orderBy: [
+      {
+        raportti_id: 'asc',
+      },
+      {
+        sscount: 'asc',
+      },
+    ],
+
+    select: {
+      sscount: true,
+      running_date: true,
+      track: true,
+      jarjestelma: true,
+      location: true,
+      latitude: true,
+      longitude: true,
+      ajonopeus: true,
+      ...systemSpecificColumnSelections,
+    },
+    skip: offset,
+    take: pageSize,
+  };
+  switch (system) {
+    case 'AMS':
+      return await client.ams_mittaus.findMany(
+        params as Prisma.ams_mittausFindManyArgs,
+      );
+    case 'OHL':
+      return await client.ohl_mittaus.findMany(
+        params as Prisma.ohl_mittausFindManyArgs,
+      );
+    case 'PI':
+      return await client.pi_mittaus.findMany(
+        params as Prisma.pi_mittausFindManyArgs,
+      );
+    case 'RC':
+      return await client.rc_mittaus.findMany(
+        params as Prisma.rc_mittausFindManyArgs,
+      );
+    case 'RP':
+      return await client.rp_mittaus.findMany(
+        params as Prisma.rp_mittausFindManyArgs,
+      );
+    case 'TG':
+      return await client.tg_mittaus.findMany(
+        params as Prisma.tg_mittausFindManyArgs,
+      );
+    case 'TSIGHT':
+      return await client.tsight_mittaus.findMany(
+        params as Prisma.tsight_mittausFindManyArgs,
+      );
+    default:
+      throw new Error('Unknown system');
+  }
+};
+
+const mapMittausRowsToCsvRows = (
+  mittausRows: MittausDbResult[],
+  emptyCsvRow: CsvRow,
+) => {
+  return mittausRows.map(mittaus => {
+    let systemMittaus: { [column: string]: any } = mittaus;
+    const { ajonopeus, location, latitude, longitude, sscount, track } =
+      mittaus;
+    const emptyColumns = Object.assign({}, emptyCsvRow);
+    const filledColumns = Object.assign(emptyColumns, systemMittaus);
+
+    // map fields to string or number
+    const newRow = {
+      // TODO: determine which metadata are to be included in csv
+      // file_name: result.file_name,
+      // inspection_date: result.inspection_date?.toISOString(),
+      // system: result.system,
+      // track_part: result.track_part,
+      track,
+      location,
+      latitude,
+      longitude,
+      sscount,
+      ajonopeus: Number(ajonopeus),
+      ...filledColumns,
+    };
+    return newRow;
+  });
+};
+
+const getEmptyCsvRowObject = (systems: string[]) => {
+  const allColumnsPerSystem = getMittausFieldsPerSystem();
+  const allSystemSpecificColumnsInCsv = systems.flatMap(system => {
+    return allColumnsPerSystem
+      .filter(desc => desc.name === system)
+      .flatMap(desc => desc.columns);
+  });
+  // this includes columns from all systems in the query, to preserve field order between systems
+  const emptySystemSpecificColumns: CsvRow = {};
+  allSystemSpecificColumnsInCsv.forEach(
+    column => (emptySystemSpecificColumns[column] = null),
+  );
+  return emptySystemSpecificColumns;
+};
+
+/**
+ * Get Readable stream that will eventually contain all csv data, fetched from dn
+ */
+const readDbToReadable = async (
+  raporttiWhere: Prisma.raporttiWhereInput,
+  selectedColumns: string[],
+): Promise<Readable> => {
+  const client = await getPrismaClient();
+  const raporttiCount = await client.raportti.count({
+    where: raporttiWhere,
+  });
+  const limit = CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT;
+  if (raporttiCount > limit) {
+    throw new Error('Size limit reached');
+  }
+  const systemsResult = await client.raportti.findMany({
+    where: raporttiWhere,
+    distinct: ['system'],
+    select: {
+      system: true,
+    },
+  });
+
+  const systemsInResults: string[] = systemsResult
+    .filter(res => !!res.system)
+    .map(res => res.system!);
+  const emptyCsvRow = getEmptyCsvRowObject(systemsInResults);
+
+  // handle one chunk at a time to allow arbitrary length
+  const rowCountToRead = CSV_CHUNK_SIZE;
+
+  const csvStream = new PassThrough();
+  csvStream.pause();
+  new Promise(async resolve => {
+    for (
+      let systemIndex = 0;
+      systemIndex < systemsInResults.length;
+      systemIndex++
+    ) {
+      // get csv rows per system for faster queries
+      const system = systemsInResults[systemIndex];
+      // get list of raporttiIds to make queries faster
+      const raporttiRows = await client.raportti.findMany({
+        where: { ...raporttiWhere, system: { equals: system as jarjestelma } },
+        select: {
+          id: true,
+        },
+      });
+      const raporttiIds = raporttiRows.map(raportti => raportti.id);
+      const mittausCount = await client.mittaus.count({
+        where: {
+          raportti_id: {
+            in: raporttiIds,
+          },
+        },
+      });
+      const partCount = Math.ceil(mittausCount / rowCountToRead);
+      for (
+        let partIndexInSystem = 0;
+        partIndexInSystem < partCount;
+        partIndexInSystem++
+      ) {
+        const offset = partIndexInSystem * rowCountToRead;
+        const mittausRows = await getPartialMittausRows(
+          client,
+          raporttiIds,
+          system,
+          offset,
+          rowCountToRead,
+          selectedColumns,
+        );
+
+        // map to csv format
+        const mittausMappedRows = mapMittausRowsToCsvRows(
+          mittausRows,
+          emptyCsvRow,
+        );
+        const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
+        const body = firstChunk
+          ? objectToCsvHeader(mittausMappedRows[0]) +
+            objectToCsvBody(mittausMappedRows)
+          : objectToCsvBody(mittausMappedRows);
+
+        csvStream.write(body, 'utf8');
+      }
+    }
+    csvStream.end();
+    resolve(true);
+  });
+  // return stream immediately
+  return csvStream;
+};
+
+const uploadReadableToS3 = async (
+  stream: Readable,
+  targetBucket: string,
+  csvKey: string,
+  s3Client: S3Client,
+) => {
+  const partPromises: Promise<MultipartUploadResultWithPartNumber>[] = [];
+  let partNumber = 1; // this should only be modified from one read function call at a time
+
+  const chunkSize = 10 << 20; // 10 MB
+  let multipartUploadId: string | undefined = undefined;
+  let streamEnded = false;
+
+  let reading = false;
+
+  /**
+   * Handle read and upload
+   */
+  const read = async () => {
+    while (true) {
+      const firstChunk = partNumber === 1;
+      const data = stream.read(chunkSize);
+      if (data === null) {
+        if (streamEnded) {
+          log.info('Stream end');
+          break;
+        }
+        log.info('Data null but stream not over');
+        await wait(10);
+        continue;
+      }
+      if (firstChunk) {
+        const multipartUpload = await s3Client.send(
+          new CreateMultipartUploadCommand({
+            Bucket: targetBucket,
+            Key: csvKey,
+          }),
+        );
+        multipartUploadId = multipartUpload.UploadId;
+      }
+      const uploadCommand = new UploadPartCommand({
+        Bucket: targetBucket,
+        Key: csvKey,
+        PartNumber: partNumber,
+        UploadId: multipartUploadId,
+        Body: data,
+      });
+      // TODO update upload progress percentage? is it useful?
+      const res = s3Client.send(uploadCommand);
+      const resultWithNumber: MultipartUploadResultWithPartNumber = {
+        uploadPartCommandOutput: await res,
+        partNumber,
+      };
+      partNumber += 1;
+      partPromises.push(Promise.resolve(resultWithNumber));
+    }
+    const partResults = await Promise.all(partPromises);
+    return await s3Client.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: targetBucket,
+        Key: csvKey,
+        UploadId: multipartUploadId,
+        MultipartUpload: {
+          Parts: partResults.map((res, i) => ({
+            ETag: res.uploadPartCommandOutput.ETag,
+            PartNumber: res.partNumber,
+          })),
+        },
+      }),
+    );
+  };
+
+  stream.on('end', async () => {
+    // tell read function loop that stream is over
+    // TODO: this seems a bit fragile
+    streamEnded = true;
+  });
+  return new Promise((resolve, reject) => {
+    stream.on('readable', async () => {
+      // there can be multiple readable events, but the easiest way is to have read loop running continuously until env event
+      log.info('readable');
+      if (!reading) {
+        reading = true;
+        await read();
+        resolve(true);
+      }
+    });
+  });
 };

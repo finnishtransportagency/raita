@@ -317,7 +317,15 @@ const CsvIndex: RaitaNextPage = () => {
               raporttiQuery.data &&
               !mittausCountQuery.loading &&
               mittausCountQuery.data &&
-              mittausCountQuery.data.search_mittaus_count && (
+              mittausCountQuery.data.search_mittaus_count.status ===
+                'size_limit' && <div>TODO: size limit reached</div>}
+
+            {!raporttiQuery.loading &&
+              raporttiQuery.data &&
+              !mittausCountQuery.loading &&
+              mittausCountQuery.data &&
+              mittausCountQuery.data.search_mittaus_count &&
+              mittausCountQuery.data.search_mittaus_count.status === 'ok' && (
                 <>
                   <div>
                     <div className="mt-1">

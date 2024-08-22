@@ -13,6 +13,7 @@ export const SEARCH_MITTAUS_COUNT = gql(`
       mittaus: $mittaus,
       columns: $columns,
       ) {
+      status
       row_count
       size_estimate
     }
