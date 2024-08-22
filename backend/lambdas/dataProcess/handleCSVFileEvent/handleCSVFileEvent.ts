@@ -117,6 +117,9 @@ export async function handleCSVFileEvent(
           return null;
         }
       });
+      const entries = await Promise.all(recordResults).then(results =>
+        log.debug(results),
+      );
     });
 
     const settled = await Promise.allSettled(sqsRecordResults);
