@@ -18,7 +18,11 @@ import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
-import {EXTRACTION_SPEC_PATH, RAITA_CSV_DB_EXCEPTION, raitaSourceSystems} from '../constants';
+import {
+  EXTRACTION_SPEC_PATH,
+  RAITA_CSV_DB_EXCEPTION,
+  raitaSourceSystems,
+} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -346,7 +350,6 @@ export class DataProcessStack extends NestedStack {
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
 
-
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
       name: 'dp-handler-csv-file',
@@ -623,20 +626,21 @@ export class DataProcessStack extends NestedStack {
     logGroup: ILogGroup,
     raitaStackIdentifier: string,
   ) {
-    const timeoutMetricFilter = logGroup.addMetricFilter(
-      'csv-timeout-filter',
-      {
-        filterPattern: FilterPattern.literal('%Task timed out%'),
-        metricName: `csv-timeout-${raitaStackIdentifier}`,
-        metricNamespace: 'raita-data-process',
-        metricValue: '1',
-      },
-    );
+    const timeoutMetricFilter = logGroup.addMetricFilter('csv-timeout-filter', {
+      filterPattern: FilterPattern.literal('%Task timed out%'),
+      metricName: `csv-timeout-${raitaStackIdentifier}`,
+      metricNamespace: 'raita-data-process',
+      metricValue: '1',
+    });
     const parsingErrorMetricFilter = logGroup.addMetricFilter(
       'csv-parsing-error-filter',
       {
         filterPattern: FilterPattern.all(
-          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_PARSING_EXCEPTION'),
+          FilterPattern.stringValue(
+            '$.tag',
+            '=',
+            'RAITA_CSV_PARSING_EXCEPTION',
+          ),
           FilterPattern.stringValue('$.level', '=', 'error'),
         ),
         metricName: `csv-parsing-error-${raitaStackIdentifier}`,
@@ -644,7 +648,6 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
-
 
     const csvDBErrorMetricFilter = logGroup.addMetricFilter(
       'csv-db-error-filter',
@@ -659,7 +662,6 @@ export class DataProcessStack extends NestedStack {
       },
     );
 
-
     const otherErrorMetricFilter = logGroup.addMetricFilter(
       'csv-other-error-filter',
       {
@@ -673,21 +675,23 @@ export class DataProcessStack extends NestedStack {
       },
     );
     // create separate warn metric with no alarm associated
-    const warningMetricFilter = logGroup.addMetricFilter(
-      'csv-warn-filter',
-      {
-        filterPattern: FilterPattern.all(
-          FilterPattern.any(
-            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
-            FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_PARSING_EXCEPTION'),
+    const warningMetricFilter = logGroup.addMetricFilter('csv-warn-filter', {
+      filterPattern: FilterPattern.all(
+        FilterPattern.any(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.stringValue(
+            '$.tag',
+            '=',
+            'RAITA_CSV_PARSING_EXCEPTION',
           ),
-          FilterPattern.stringValue('$.level', '=', 'warn'),
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_DB_EXCEPTION'),
         ),
-        metricName: `csv-warn-${raitaStackIdentifier}`,
-        metricNamespace: 'raita-data-process',
-        metricValue: '1',
-      },
-    );
+        FilterPattern.stringValue('$.level', '=', 'warn'),
+      ),
+      metricName: `csv-warn-${raitaStackIdentifier}`,
+      metricNamespace: 'raita-data-process',
+      metricValue: '1',
+    });
     const crashErrorMetricFilter = logGroup.addMetricFilter(
       'csv-crash-error-filter',
       {
@@ -712,51 +716,39 @@ export class DataProcessStack extends NestedStack {
       evaluationPeriods: 1,
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `csv-timeout-alarm-${raitaStackIdentifier}`,
-      alarmDescription: 'Alarm for catching timeout errors in metadata parser',
+      alarmDescription: 'Alarm for catching timeout errors in csv parser',
       metric: timeoutMetricFilter.metric({
         label: `Csv timeout ${raitaStackIdentifier}`,
         period: Duration.days(1),
         statistic: Stats.SUM,
       }),
     });
-    const parsingErrorAlarm = new Alarm(
-      this,
-      'csv-parsing-errors-alarm',
-      {
-        comparisonOperator:
-        ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-        threshold: 1,
-        evaluationPeriods: 1,
-        treatMissingData: TreatMissingData.NOT_BREACHING,
-        alarmName: `csv-parsing-errors-alarm-${raitaStackIdentifier}`,
-        alarmDescription:
-          'Alarm for catching parsing errors in csv parser',
-        metric: parsingErrorMetricFilter.metric({
-          label: `Csv parsing errors ${raitaStackIdentifier}`,
-          period: Duration.days(1),
-          statistic: Stats.SUM,
-        }),
-      },
-    );
-    const dbErrorAlarm = new Alarm(
-      this,
-      'csv-db-errors-alarm',
-      {
-        comparisonOperator:
-        ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-        threshold: 1,
-        evaluationPeriods: 1,
-        treatMissingData: TreatMissingData.NOT_BREACHING,
-        alarmName: `csv-db-errors-alarm-${raitaStackIdentifier}`,
-        alarmDescription:
-          'Alarm for catching csv parsing db errors',
-        metric: csvDBErrorMetricFilter.metric({
-          label: `CSV DB errors ${raitaStackIdentifier}`,
-          period: Duration.days(1),
-          statistic: Stats.SUM,
-        }),
-      },
-    );
+    const parsingErrorAlarm = new Alarm(this, 'csv-parsing-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-parsing-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching parsing errors in csv parser',
+      metric: parsingErrorMetricFilter.metric({
+        label: `Csv parsing errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const dbErrorAlarm = new Alarm(this, 'csv-db-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-db-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching csv parsing db errors',
+      metric: csvDBErrorMetricFilter.metric({
+        label: `CSV DB errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
     const otherErrorAlarm = new Alarm(this, 'csv-other-errors-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
@@ -764,7 +756,7 @@ export class DataProcessStack extends NestedStack {
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `csv-other-errors-alarm-${raitaStackIdentifier}`,
       alarmDescription:
-        'Alarm for catching code errors other than known parsing errors in metadata parser',
+        'Alarm for catching code errors other than known parsing errors in csv parser',
       metric: otherErrorMetricFilter.metric({
         label: `Csv other errors ${raitaStackIdentifier}`,
         period: Duration.days(1),
@@ -777,7 +769,7 @@ export class DataProcessStack extends NestedStack {
       evaluationPeriods: 1,
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `csv-crash-errors-alarm-${raitaStackIdentifier}`,
-      alarmDescription: 'Alarm for catching crashes of metadata parser',
+      alarmDescription: 'Alarm for catching crashes of csv parser',
       metric: crashErrorMetricFilter.metric({
         label: `Csv crash errors ${raitaStackIdentifier}`,
         period: Duration.days(1),
@@ -791,7 +783,7 @@ export class DataProcessStack extends NestedStack {
       treatMissingData: TreatMissingData.NOT_BREACHING,
       alarmName: `csv-any-errors-alarm-${raitaStackIdentifier}`,
       alarmDescription:
-        'Failsafe alarm for catching all errors in metadata parser, including those missed by other alarms',
+        'Failsafe alarm for catching all errors in csv parser, including those missed by other alarms',
       metric: anyErrorMetricFilter.metric({
         label: `Csv any errors ${raitaStackIdentifier}`,
         period: Duration.days(1),
