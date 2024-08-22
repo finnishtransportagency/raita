@@ -96,7 +96,7 @@ export async function handleCsvGeneration(
   try {
     await generateCsv(event, s3Client, config.targetBucket);
   } catch (error) {
-    log.error({ error }, 'Error with CCSV generation');
+    log.error({ error }, 'Error with CSV generation');
     await uploadProgressData(
       {
         status: ProgressStatus.FAILED,
