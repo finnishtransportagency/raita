@@ -47,8 +47,6 @@ export function CsvDownload(props: Props) {
   };
 
   useEffect(() => {
-    console.log('status change');
-    console.log(`shouldPoll: ${shouldPoll}`);
     if (generateCsvStatus.loading || !generateCsvStatus.data || shouldPoll) {
       return;
     }
@@ -70,10 +68,6 @@ export function CsvDownload(props: Props) {
       retry: 3,
       retryDelay: 3000,
       onSuccess: data => {
-        console.log('onSuccess');
-        console.log(data);
-        console.log(`shouldPoll: ${shouldPoll}`);
-        console.log(`pollingKey: ${pollingKey}`);
         if (
           data?.progressData?.status === ProgressStatus.SUCCESS &&
           data?.progressData?.url
