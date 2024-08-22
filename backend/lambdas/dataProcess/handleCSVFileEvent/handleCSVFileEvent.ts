@@ -1,5 +1,5 @@
 import { Context, S3Event, SQSEvent } from 'aws-lambda';
-import { log } from '../../../utils/logger';
+import {log, logCSVDBException} from '../../../utils/logger';
 import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
@@ -35,7 +35,13 @@ export async function handleCSVFileEvent(
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
 
+
   try {
+    if (!dbConnection) {
+      // No DB connection
+      logCSVDBException.error("No db connection");
+      throw new Error('No db connection');
+    }
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
       const s3Event: S3Event = JSON.parse(sqsRecord.body);
@@ -106,7 +112,7 @@ export async function handleCSVFileEvent(
         } catch (err) {
           log.error(`An error occured while processing events: ${err}`);
           await adminLogger.error(
-            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` + err.message,
           );
           return null;
         }
@@ -134,7 +140,7 @@ export async function handleCSVFileEvent(
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
     await adminLogger.error(
-      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.`,
+      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. `+ err.message,
     );
   }
 }

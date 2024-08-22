@@ -1,5 +1,9 @@
 import { ParseValueResult } from '../../../../types';
-import { log } from '../../../../utils/logger';
+import {
+  log,
+  logCSVDBException,
+  logCSVParsingException,
+} from '../../../../utils/logger';
 import {
   convertToDBRow,
   DBConnection,
@@ -28,6 +32,10 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
+import { IAdminLogger } from '../../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
+
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -39,7 +47,10 @@ function until(conditionFunction: () => any) {
   return new Promise(poll);
 }
 
-export async function parseCsvData(csvFileBody: string, csvSchema: ZodObject<any>) {
+export async function parseCsvData(
+  csvFileBody: string,
+  csvSchema: ZodObject<any>,
+) {
   const tidyedFileBody = tidyUpFileBody(csvFileBody);
   const parsedCSVContent = parseCSVContent(tidyedFileBody, csvSchema);
   return { ...parsedCSVContent };
@@ -71,16 +82,20 @@ async function parseCsvAndWriteToDb(
         ),
       ),
     );
-    console.log('dbRows', dbRows);
+
 
     try {
       //disable here if needed stop database
       return await writeRowsToDB(dbRows, table, dbConnection);
       //return;
-    } catch (e) {
+    } catch (error) {
+      logCSVDBException.error(
+        { errorType: error.errorType, fileName: fileBaseName },
+        `${error.message}. CSV rows write to db failed.`,
+      );
       log.error('Error writing to db');
-      log.error(e);
-      throw e;
+      log.error(error);
+      throw error;
     }
   } else {
     const errors = parsedCSVContent.errors;
@@ -327,6 +342,7 @@ export async function parseCSVFileStream(
   dbConnection: DBConnection,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
+  await adminLogger.init('data-csv', keyData.keyWithoutSuffix+'.'+keyData.fileSuffix);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
@@ -360,99 +376,126 @@ export async function parseCSVFileStream(
 
     const lineReadPromise = new Promise<void>((resolve, reject) => {
       rl.on('line', async line => {
-        lineBuffer.push(line);
-        lineCounter++;
+        try {
+          lineBuffer.push(line);
+          lineCounter++;
 
-        if (state == ReadState.READING_HEADER) {
-          //running date on the firstline unless it's missing; then csv column headers on the first line
-          //csv column headers on the second line when running date was found on the first
-          rl.pause();
-          if (
-            lineBuffer.length === 1 &&
-            lineBuffer[0].search('Running Date') != -1
-          ) {
-            runningDate = readRunningDateFromLine(lineBuffer[0]);
-          } else {
-            csvHeaderLine = lineBuffer[lineBuffer.length - 1]; // line 1 or 2
-            state = ReadState.READING_BODY;
-            lineBuffer = [];
-            const originalSchema = createFileSchema(fileNamePrefix);
-            log.debug('csvHeaderLine set: ' + csvHeaderLine);
-            const headerValidation = validateHeaders(
-              originalSchema,
-              csvHeaderLine,
-            );
-            if (headerValidation.missingRequired.length) {
-              log.error({
-                msg: 'Missing required fields',
-                missingRequired: headerValidation.missingRequired,
-              });
-              throw Error('Missing required fields');
-            }
-            if (headerValidation.missingOptional.length) {
-              log.warn({
-                msg: 'Missing optional fields',
-                missingOptional: headerValidation.missingOptional,
-              });
-              missingOptionalColumns = headerValidation.missingOptional;
-              await writeMissingColumnsToDb(
-                reportId,
-                headerValidation.missingOptional,
-                dbConnection,
-              );
-            }
-            if (headerValidation.extra.length) {
-              log.warn({
-                msg: 'Extra header fields',
-                extra: headerValidation.extra,
-              });
-            }
-            fileSchema = removeMissingHeadersFromSchema(
-              originalSchema,
-              csvHeaderLine,
-            );
-          }
-          rl.resume();
-        }
-        //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
-        if (state == ReadState.READING_BODY) {
-          if (lineBuffer.length > maxBufferSize) {
+          if (state == ReadState.READING_HEADER) {
+            //running date on the firstline unless it's missing; then csv column headers on the first line
+            //csv column headers on the second line when running date was found on the first
             rl.pause();
-            handleCounter++;
-
-            const bufferCopy = lineBuffer.slice();
-            lineBuffer = [];
-
-            rl.resume();
-            notWritten++;
-
-            await until(() => fileSchema != undefined);
-            try {
-              fileSchema &&
-                (await handleBufferedLines(
-                  csvHeaderLine.concat('\r\n').concat(bufferCopy.join('\r\n')),
-                  fileNamePrefix,
-                  runningDate,
-                  reportId,
-                  fileBaseName,
-                  dbConnection,
-                  fileSchema,
-                  missingOptionalColumns,
-                ));
-
-              notWritten--;
-            } catch (e) {
-              log.error(
-                'ERROR handling buffered csv lines: ' +
-                  e +
-                  ' ' +
-                  bufferCopy.length && bufferCopy[0],
+            if (
+              lineBuffer.length === 1 &&
+              lineBuffer[0].search('Running Date') != -1
+            ) {
+              runningDate = readRunningDateFromLine(lineBuffer[0]);
+            } else {
+              csvHeaderLine = lineBuffer[lineBuffer.length - 1]; // line 1 or 2
+              state = ReadState.READING_BODY;
+              lineBuffer = [];
+              const originalSchema = createFileSchema(fileNamePrefix);
+              log.debug('csvHeaderLine set: ' + csvHeaderLine);
+              const headerValidation = validateHeaders(
+                originalSchema,
+                csvHeaderLine,
               );
-              rl.removeAllListeners();
-              rl.close();
-              reject(e);
+              if (headerValidation.missingRequired.length) {
+                log.error({
+                  msg: 'Missing required fields',
+                  missingRequired: headerValidation.missingRequired,
+                });
+                throw Error('Missing required fields');
+              }
+              if (headerValidation.missingOptional.length) {
+                log.warn({
+                  msg: 'Missing optional fields',
+                  missingOptional: headerValidation.missingOptional,
+                });
+                missingOptionalColumns = headerValidation.missingOptional;
+                await adminLogger.info(
+                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` + missingOptionalColumns,
+                );
+                try {
+                  await writeMissingColumnsToDb(
+                    reportId,
+                    headerValidation.missingOptional,
+                    dbConnection,
+                  );
+                } catch (error) {
+                  log.error('writeMissingColumnsToDb failed');
+                  logCSVDBException.error(
+                    { errorType: error.errorType },
+                    'writeMissingColumnsToDb failed',
+                  );
+                  throw error;
+                }
+              }
+              if (headerValidation.extra.length) {
+                log.warn({
+                  msg: 'Extra header fields',
+                  extra: headerValidation.extra,
+                });
+              }
+              fileSchema = removeMissingHeadersFromSchema(
+                originalSchema,
+                csvHeaderLine,
+              );
+            }
+            rl.resume();
+          }
+          //read body lines as maxBufferSize chunks, put column headers at beginning on each chunk so zod-csv can handle them
+          if (state == ReadState.READING_BODY) {
+            if (lineBuffer.length > maxBufferSize) {
+              rl.pause();
+              handleCounter++;
+
+              const bufferCopy = lineBuffer.slice();
+              lineBuffer = [];
+
+              rl.resume();
+              notWritten++;
+
+              await until(() => fileSchema != undefined);
+              try {
+                fileSchema &&
+                  (await handleBufferedLines(
+                    csvHeaderLine
+                      .concat('\r\n')
+                      .concat(bufferCopy.join('\r\n')),
+                    fileNamePrefix,
+                    runningDate,
+                    reportId,
+                    fileBaseName,
+                    dbConnection,
+                    fileSchema,
+                    missingOptionalColumns,
+                  ));
+
+                notWritten--;
+              } catch (error) {
+                logCSVParsingException.error(
+                  { errorType: error.errorType, fileName: fileBaseName },
+                  `${error.message}. Handling CSV lines failed.`,
+                );
+                log.error(
+                  'ERROR handling buffered csv lines: ' +
+                    error +
+                    ' ' +
+                    bufferCopy.length && bufferCopy[0],
+                );
+                throw error;
+              }
             }
           }
+        } catch (error) {
+          logCSVParsingException.error(
+            { errorType: error.errorType, fileName: fileBaseName },
+            `${error.message}. Handling CSV lines failed.`,
+          );
+          log.error('ERROR handling csv lines: ' + error);
+          rl.removeAllListeners();
+          rl.close();
+          reject(error);
         }
       });
       rl.on('error', () => {
@@ -465,10 +508,19 @@ export async function parseCSVFileStream(
       });
     });
 
-    await lineReadPromise.catch(e => {
-      log.error('csv file parse or save error' + e);
-      throw e;
-    });
+    await lineReadPromise
+      .then(() => {
+        log.info('lineReadPromise resolved');
+      })
+      .catch(error => {
+        logCSVParsingException.error(
+          { errorType: error.errorType, fileName: fileBaseName },
+          `${error.message}. Handling CSV lines failed.`,
+        );
+        log.error('csv file parse or save error' + error);
+
+        throw error;
+      });
 
     // Last content of lineBuffer not handled yet
 
@@ -493,16 +545,51 @@ export async function parseCSVFileStream(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`,
     );
 
-    await substractRaporttiChunk(reportId, dbConnection);
-    const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
-    if (chunksLeft == 0) {
-      await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+    try {
+      await substractRaporttiChunk(reportId, dbConnection);
+      const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
+      if (chunksLeft == 0) {
+        await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+      }
+    } catch (error) {
+      logCSVDBException.error(
+        { errorType: error.errorType },
+        'Status or chunk processsing db failure',
+      );
+      await adminLogger.error(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` + error,
+      );
+
+      throw error;
     }
 
     return 'success';
-  } catch (e) {
-    log.error('csv parsing error, updating status ' + e.toString());
-    await updateRaporttiStatus(reportId, 'ERROR', e.toString(), dbConnection);
+  } catch (error) {
+    logCSVParsingException.warn(
+      { errorType: error.errorType, fileName: fileBaseName },
+      `${error.message}. CSV parsing failure.`,
+    );
+    log.error('csv parsing error, updating status ' + error.toString());
+    try {
+      await updateRaporttiStatus(
+        reportId,
+        'ERROR',
+        error.toString(),
+        dbConnection,
+      );
+      await adminLogger.warn(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` + error,
+      );
+    } catch (error) {
+      logCSVDBException.error(
+        { errorType: error.errorType },
+        'Parsing error status update db failure',
+      );
+      await adminLogger.error(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` + error,
+      );
+      throw error;
+    }
     return 'error';
   }
 }

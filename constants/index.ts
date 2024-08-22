@@ -40,6 +40,8 @@ export const raitaSourceSystems = {
 export const EXTRACTION_SPEC_PATH =
   'backend/lambdas/dataProcess/parsingConfiguration';
 export const RAITA_PARSING_EXCEPTION = '[RAITA PARSING EXCEPTION]';
+export const RAITA_CSV_PARSING_EXCEPTION = '[RAITA CSV PARSING EXCEPTION]';
+export const RAITA_CSV_DB_EXCEPTION = '[RAITA CSV DB EXCEPTION';
 export const SSM_CLOUDFRONT_CERTIFICATE_ARN =
   'raita-cloudfront-certificate-arn';
 export const SSM_CLOUDFRONT_DOMAIN_NAME = 'raita-cloudfront-domain-name';
@@ -68,3 +70,4 @@ export const DEVELOPMENT_MAIN_BRANCH = 'main';
 export const DEVELOPMENT_MAIN_STACK_ID = DEVELOPMENT_MAIN_BRANCH;
 export const DEVELOPMENT_PREMAIN_BRANCH = 'test/pre-main';
 export const DEVELOPMENT_PREMAIN_STACK_ID = 'premain';
+
