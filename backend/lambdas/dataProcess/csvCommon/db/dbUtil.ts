@@ -485,7 +485,7 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.xpuuttuva_kolumni ${sql(
+  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
     values,
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }
