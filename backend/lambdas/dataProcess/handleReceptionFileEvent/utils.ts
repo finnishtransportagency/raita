@@ -1,5 +1,7 @@
 // import { ECSClient, LaunchType, RunTaskCommand } from '@aws-sdk/client-ecs';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
+import { log } from '../../../utils/logger';
+import { asyncWait } from '../../../utils/common';
 
 /**
  * Build on example from https://www.gravitywell.co.uk/insights/using-ecs-tasks-on-aws-fargate-to-replace-lambda-functions/
@@ -12,7 +14,7 @@ export const launchECSZipTask = async ({
   queueUrl: string;
 }) => {
   // Invoke ECS task
-  const sqsClient = new SQSClient();
+  const sqsClient = new SQSClient({});
   // add message to queue where ECS task will pick it up
   const body = {
     S3_SOURCE_KEY: key,
@@ -21,5 +23,24 @@ export const launchECSZipTask = async ({
     QueueUrl: queueUrl,
     MessageBody: JSON.stringify(body),
   });
-  return await sqsClient.send(messageCommand);
+  let waitTime = 100;
+  let maxWait = 4000;
+  while (true) {
+    // there can be a lot of parallel executions and sending can randomly fail, retry a few times
+    try {
+      const res = await sqsClient.send(messageCommand);
+      return res;
+    } catch (error) {
+      log.warn(
+        { error, body, waitTime },
+        'Sending sqs client message failed, retrying',
+      );
+      if (waitTime > maxWait) {
+        throw new Error('Error sending sqs after max retries');
+      }
+      await asyncWait(waitTime);
+      waitTime = waitTime * 2;
+      continue;
+    }
+  }
 };
