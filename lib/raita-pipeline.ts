@@ -1,44 +1,16 @@
-import {
-  RemovalPolicy,
-  SecretValue,
-  Stack,
-  StackProps,
-  Stage,
-  StageProps,
-  Tags,
-} from 'aws-cdk-lib';
-import {
-  CodeBuildStep,
-  CodePipeline,
-  CodePipelineSource,
-  ShellStep,
-  Step,
-} from 'aws-cdk-lib/pipelines';
-import { Construct } from 'constructs';
-import {
-  BuildEnvironmentVariableType,
-  Cache,
-  LinuxBuildImage,
-  LocalCacheMode,
-} from 'aws-cdk-lib/aws-codebuild';
-import { RaitaStack } from './raita-stack';
-import {
-  getAccountVpcResourceConfig,
-  getPipelineConfig,
-  RaitaEnvironment,
-} from './config';
-import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
-import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import {
-  isDevelopmentMainStack,
-  isDevelopmentPreMainStack,
-  isPermanentStack,
-  isProductionStack,
-} from './utils';
+import {RemovalPolicy, SecretValue, Stack, StackProps, Stage, StageProps, Tags,} from 'aws-cdk-lib';
+import {CodeBuildStep, CodePipeline, CodePipelineSource, ShellStep, Step,} from 'aws-cdk-lib/pipelines';
+import {Construct} from 'constructs';
+import {BuildEnvironmentVariableType, Cache, LinuxBuildImage, LocalCacheMode,} from 'aws-cdk-lib/aws-codebuild';
+import {RaitaStack} from './raita-stack';
+import {getAccountVpcResourceConfig, getPipelineConfig, RaitaEnvironment,} from './config';
+import {Bucket} from 'aws-cdk-lib/aws-s3';
+import {Pipeline, PipelineType} from 'aws-cdk-lib/aws-codepipeline';
+import {Effect, PolicyStatement} from 'aws-cdk-lib/aws-iam';
+import {isDevelopmentMainStack, isDevelopmentPreMainStack, isPermanentStack, isProductionStack,} from './utils';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { RaitaPipelineLockStack } from './raita-pipeline-lock';
-import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import {RaitaPipelineLockStack} from './raita-pipeline-lock';
+import {StringParameter} from 'aws-cdk-lib/aws-ssm';
 
 /**
  * The stack that defines the application pipeline
@@ -78,6 +50,7 @@ export class RaitaPipelineStack extends Stack {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
       restartExecutionOnUpdate: true,
+      pipelineType: PipelineType.V2,
     });
     // Can't start build process otherwise
     pipeline.addToRolePolicy(
