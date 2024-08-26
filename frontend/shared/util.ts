@@ -1,4 +1,5 @@
-import * as R from 'rambda';
+import saveAs from 'file-saver';
+import { Dispatch, SetStateAction } from 'react';
 
 export function fst<T1, T2>([a, b]: [T1, T2]) {
   return a;
@@ -52,7 +53,7 @@ export const sizeformatter = (size: number | undefined, decimalPlaces = 2) => {
 };
 
 export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
-  Array.from(fs, (opt) => opt.value as string).filter(Boolean);
+  Array.from(fs, opt => opt.value as string).filter(Boolean);
 
 export const getKeyAggregations = (size: number | undefined) => {
   if (!size) return;
@@ -65,3 +66,26 @@ export const getKeyAggregations = (size: number | undefined) => {
     },
   };
 };
+
+export const handleZipDownload = (zipUrl: string) =>
+  zipUrl ? saveAs(zipUrl) : null;
+
+export const initialState: ZipState = {
+  shouldPoll: false,
+  pollingFileKey: undefined,
+  zipUrl: undefined,
+  error: undefined,
+  isLoading: false,
+};
+export type ZipState = {
+  shouldPoll: boolean;
+  pollingFileKey?: string;
+  zipUrl?: string;
+  error?: string;
+  isLoading: boolean;
+};
+
+export interface ZipContextType {
+  state: ZipState;
+  setState: Dispatch<SetStateAction<ZipState>>;
+}

@@ -15,15 +15,20 @@ import { getRaitaPages } from 'shared/pageRoutes';
 import Error from 'next/error';
 import LoadingOverlay from 'components/loading-overlay';
 import { apolloClient } from 'shared/graphql/client';
+import { createContext, Dispatch, SetStateAction, useState } from 'react';
+import { initialState, ZipContextType, ZipState } from 'shared/util';
 
 const client = new QueryClient();
 
 const raitaPages = getRaitaPages();
-
+export const zipContext = createContext<ZipContextType>({
+  state: initialState,
+  setState: () => {},
+});
 function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const { t } = useTranslation(['common']);
   const user = useUser();
-
+  const [state, setState] = useState<ZipState>(initialState);
   if (user.loading) {
     return <LoadingOverlay />;
   }
@@ -43,9 +48,11 @@ function RaitaApp({ Component, pageProps }: RaitaAppProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header pages={pages} />
-      <main className="flex-1">{pageContent}</main>
-      <Footer />
+      <zipContext.Provider value={{ state, setState }}>
+        <Header pages={pages} />
+        <main className="flex-1">{pageContent}</main>
+        <Footer />
+      </zipContext.Provider>
     </div>
   );
 }

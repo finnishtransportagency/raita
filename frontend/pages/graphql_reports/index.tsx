@@ -1,4 +1,10 @@
-import { useState, Fragment, useEffect, SyntheticEvent } from 'react';
+import {
+  useState,
+  Fragment,
+  useEffect,
+  SyntheticEvent,
+  useContext,
+} from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
@@ -37,6 +43,7 @@ import {
   SelectorSupportedType,
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
+import { zipContext } from 'pages/_app';
 
 //
 
@@ -77,7 +84,7 @@ const ReportsIndex: RaitaNextPage = () => {
   const [triggerInitialSearch, searchQuery] = useLazyQuery(SEARCH_RAPORTTI);
 
   const user = useUser();
-
+  const zipState = useContext(zipContext);
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -403,17 +410,30 @@ const ReportsIndex: RaitaNextPage = () => {
 
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              {!searchQuery.data && t('no_search_results')}
+              {!searchQuery.data && (
+                <div className="flex items-end">
+                  <div className="mt-1"> {t('common:no_results')}</div>
+                  {(zipState.state.zipUrl || zipState.state.isLoading) && (
+                    <div className="ml-2 flex">
+                      <ZipDownload
+                        aggregationSize={undefined}
+                        usedQueryVariables={getQueryVariables(state)}
+                        resultTotalSize={undefined}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {searchQuery.data && (
-                <div className="flex">
+                <div className="flex items-end">
                   <div className="mt-1">
                     {t('search_result_count', {
                       count: resultsData?.count,
                     })}
                   </div>
                   {resultsData?.total_size && resultsData?.total_size > 0 && (
-                    <div className="ml-2">
+                    <div className="ml-2 flex">
                       <ZipDownload
                         aggregationSize={resultsData?.count}
                         usedQueryVariables={getQueryVariables(state)}

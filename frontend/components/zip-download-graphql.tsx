@@ -1,36 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
 import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect } from 'react';
 import * as R from 'rambda';
 import * as cfg from 'shared/config';
 
 import { getPollingProgress, triggerZipLambda } from 'shared/rest';
-import { sizeformatter } from 'shared/util';
+import { handleZipDownload, initialState, sizeformatter } from 'shared/util';
 import Button from './button';
 import { Spinner } from './spinner';
 import { ProgressStatus } from 'shared/types';
 import { Search_RaporttiQueryVariables } from 'shared/graphql/__generated__/graphql';
 import { useLazyQuery } from '@apollo/client';
 import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
-
-const initialState: ZipState = {
-  shouldPoll: false,
-  pollingFileKey: undefined,
-  zipUrl: undefined,
-  error: undefined,
-  isLoading: false,
-};
+import { zipContext } from 'pages/_app';
 
 // Copied from zip-download.tsx
 // TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
   const { aggregationSize, usedQueryVariables, resultTotalSize } = props;
-  const [state, setState] = useState<ZipState>(initialState);
+  const { state, setState } = useContext(zipContext);
   const { zipUrl, error, isLoading } = state;
 
-  const maxSize = 5000000000;
-  const bigSize = 1000000000;
+  const maxSize = 5 * 1000 * 1000 * 1000;
+  const bigSize = 1 * 1000 * 1000 * 1000;
 
   const { t } = useTranslation(['common']);
   const resultTooBigToCompress =
@@ -111,29 +104,44 @@ export function ZipDownload(props: Props) {
     }
   };
 
-  const handleZipDownload = () => (zipUrl ? saveAs(zipUrl) : null);
+  const resetInitials = () => {
+    setState(initialState);
+    // keyQuery.data = undefined;
+  };
 
   return (
     <div>
       {!zipUrl || error ? (
-        <Button
-          disabled={isLoading || resultTooBigToCompress}
-          size="sm"
-          label={
-            isLoading ? (
-              <Spinner size={4} bottomMargin={0} />
-            ) : (
-              `${t('common:compress_all')} ${sizeformatter(resultTotalSize)}`
-            )
-          }
-          onClick={() => triggerKeyFetching()}
-        />
+        <div className="flex gap-2 mb-1">
+          <Button
+            disabled={isLoading || resultTooBigToCompress}
+            size="sm"
+            label={
+              isLoading ? (
+                <Spinner size={4} bottomMargin={0} />
+              ) : (
+                `${t('common:compress_all')} ${sizeformatter(
+                  resultTotalSize ? resultTotalSize : undefined,
+                )}`
+              )
+            }
+            onClick={() => triggerKeyFetching()}
+          />
+        </div>
       ) : (
-        <Button
-          size="sm"
-          label={`${t('common:download_zip')}`}
-          onClick={() => handleZipDownload()}
-        />
+        <div className="flex gap-2 mb-1">
+          <Button
+            size="sm"
+            label={`${t('common:download_zip')}`}
+            onClick={() => handleZipDownload(zipUrl)}
+          />
+          <Button
+            size="sm"
+            type="secondary"
+            label={`${t('common:cancel')}`}
+            onClick={() => resetInitials()}
+          />
+        </div>
       )}
       {bigCompression && (
         <p className="text-xs">{t('common:big_compression')}</p>
