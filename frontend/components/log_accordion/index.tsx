@@ -87,12 +87,6 @@ function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
       row.counts['data-inspection'].warn === 0 &&
       row.counts['data-inspection'].error === 0
     );
-  } else if (row.counts['data-csv']) {
-    return (
-      row.counts['data-csv'].info === 0 &&
-      row.counts['data-csv'].warn === 0 &&
-      row.counts['data-csv'].error === 0
-    );
   } else {
     return type === 'data-process' && !!row.counts['data-inspection'];
   }
