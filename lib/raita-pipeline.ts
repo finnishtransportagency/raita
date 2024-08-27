@@ -28,7 +28,7 @@ import {
   RaitaEnvironment,
 } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { Pipeline, PipelineType } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import {
   isDevelopmentMainStack,
@@ -78,6 +78,7 @@ export class RaitaPipelineStack extends Stack {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
       restartExecutionOnUpdate: true,
+      pipelineType: PipelineType.V2,
     });
     // Can't start build process otherwise
     pipeline.addToRolePolicy(
