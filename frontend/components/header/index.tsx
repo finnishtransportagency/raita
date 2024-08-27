@@ -8,7 +8,7 @@ import Navigation from 'components/navigation';
 import { PageDescription } from 'shared/pageRoutes';
 import LatestInspectionDate from 'components/latest_inspection_date';
 import { assetURL } from 'shared/config';
-import { zipContext } from 'pages/_app';
+import { zipContext } from 'shared/zipContext';
 import { ZipDownload } from 'components/zip-download-graphql';
 
 type Props = {

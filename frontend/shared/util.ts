@@ -66,26 +66,3 @@ export const getKeyAggregations = (size: number | undefined) => {
     },
   };
 };
-
-export const handleZipDownload = (zipUrl: string | null) =>
-  zipUrl ? saveAs(zipUrl) : null;
-
-export const initialState: ZipState = {
-  shouldPoll: false,
-  pollingFileKey: undefined,
-  zipUrl: undefined,
-  error: undefined,
-  isLoading: false,
-};
-export type ZipState = {
-  shouldPoll: boolean;
-  pollingFileKey?: string;
-  zipUrl?: string;
-  error?: string;
-  isLoading: boolean;
-};
-
-export interface ZipContextType {
-  state: ZipState;
-  setState: Dispatch<SetStateAction<ZipState>>;
-}

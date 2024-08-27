@@ -15,16 +15,14 @@ import { getRaitaPages } from 'shared/pageRoutes';
 import Error from 'next/error';
 import LoadingOverlay from 'components/loading-overlay';
 import { apolloClient } from 'shared/graphql/client';
-import { createContext, Dispatch, SetStateAction, useState } from 'react';
-import { initialState, ZipContextType, ZipState } from 'shared/util';
+import { useState } from 'react';
+import { initialState, ZipState } from 'shared/zipContext';
+import { zipContext } from 'shared/zipContext';
 
 const client = new QueryClient();
 
 const raitaPages = getRaitaPages();
-export const zipContext = createContext<ZipContextType>({
-  state: initialState,
-  setState: () => {},
-});
+
 function RaitaApp({ Component, pageProps }: RaitaAppProps) {
   const { t } = useTranslation(['common']);
   const user = useUser();

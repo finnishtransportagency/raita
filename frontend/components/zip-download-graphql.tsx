@@ -5,14 +5,15 @@ import * as R from 'rambda';
 import * as cfg from 'shared/config';
 
 import { getPollingProgress, triggerZipLambda } from 'shared/rest';
-import { handleZipDownload, initialState, sizeformatter } from 'shared/util';
+import { handleZipDownload, initialState } from 'shared/zipContext';
+import { sizeformatter } from 'shared/util';
 import Button from './button';
 import { Spinner } from './spinner';
 import { ProgressStatus } from 'shared/types';
 import { Search_RaporttiQueryVariables } from 'shared/graphql/__generated__/graphql';
 import { useLazyQuery } from '@apollo/client';
 import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
-import { zipContext } from 'pages/_app';
+import { zipContext } from 'shared/zipContext';
 
 // Copied from zip-download.tsx
 // TODO: rename when removing opensearch

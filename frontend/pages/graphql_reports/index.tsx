@@ -43,7 +43,7 @@ import {
   SelectorSupportedType,
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
-import { zipContext } from 'pages/_app';
+import { zipContext } from 'shared/zipContext';
 
 //
 
