@@ -413,7 +413,9 @@ const ReportsIndex: RaitaNextPage = () => {
               {!searchQuery.data && (
                 <div className="flex items-end">
                   <div className="mt-1"> {t('common:no_results')}</div>
-                  {(zipState.state.zipUrl || zipState.state.isLoading) && (
+                  {(zipState.state.zipUrl ||
+                    zipState.state.isLoading ||
+                    localStorage.getItem('zipUrl')) && (
                     <div className="ml-2 flex">
                       <ZipDownload
                         aggregationSize={undefined}

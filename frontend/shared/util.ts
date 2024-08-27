@@ -67,7 +67,7 @@ export const getKeyAggregations = (size: number | undefined) => {
   };
 };
 
-export const handleZipDownload = (zipUrl: string) =>
+export const handleZipDownload = (zipUrl: string | null) =>
   zipUrl ? saveAs(zipUrl) : null;
 
 export const initialState: ZipState = {

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
 import { useContext, useEffect } from 'react';
 import * as R from 'rambda';
@@ -18,7 +17,8 @@ import { zipContext } from 'pages/_app';
 // Copied from zip-download.tsx
 // TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
-  const { aggregationSize, usedQueryVariables, resultTotalSize } = props;
+  const { aggregationSize, usedQueryVariables, resultTotalSize, buttonType } =
+    props;
   const { state, setState } = useContext(zipContext);
   const { zipUrl, error, isLoading } = state;
 
@@ -62,6 +62,7 @@ export function ZipDownload(props: Props) {
         ) {
           setState(initialState);
           setState(R.assoc('zipUrl', data.progressData.url));
+          localStorage.setItem('zipUrl', data.progressData.url);
         } else if (data?.progressData?.status === ProgressStatus.FAILED) {
           setState(initialState);
           setState(R.assoc('error', `${t('common:zip_error')}`));
@@ -70,13 +71,15 @@ export function ZipDownload(props: Props) {
     },
   );
   const triggerKeyFetching = () => {
-    triggerKeyQuery({
-      variables: {
-        raportti: usedQueryVariables.raportti,
-        page: 1,
-        page_size: cfg.paging.maxZipPageSize,
-      },
-    });
+    if (usedQueryVariables) {
+      triggerKeyQuery({
+        variables: {
+          raportti: usedQueryVariables.raportti,
+          page: 1,
+          page_size: cfg.paging.maxZipPageSize,
+        },
+      });
+    }
   };
 
   useEffect(() => {
@@ -104,14 +107,19 @@ export function ZipDownload(props: Props) {
     }
   };
 
+  useEffect(() => {
+    if (state.zipUrl == undefined) triggerKeyQuery();
+  }, [state]);
+
   const resetInitials = () => {
     setState(initialState);
-    // keyQuery.data = undefined;
+    localStorage.removeItem('zipUrl');
+    triggerKeyQuery();
   };
 
   return (
     <div>
-      {!zipUrl || error ? (
+      {(!zipUrl && !localStorage.getItem('zipUrl')) || error ? (
         <div className="flex gap-2 mb-1">
           <Button
             disabled={isLoading || resultTooBigToCompress}
@@ -131,13 +139,14 @@ export function ZipDownload(props: Props) {
       ) : (
         <div className="flex gap-2 mb-1">
           <Button
+            type={buttonType ? buttonType : 'primary'}
             size="sm"
             label={`${t('common:download_zip')}`}
-            onClick={() => handleZipDownload(zipUrl)}
+            onClick={() => handleZipDownload(localStorage.getItem('zipUrl'))}
           />
           <Button
             size="sm"
-            type="secondary"
+            type={buttonType ? buttonType : 'secondary'}
             label={`${t('common:cancel')}`}
             onClick={() => resetInitials()}
           />
@@ -160,14 +169,7 @@ export function ZipDownload(props: Props) {
 
 type Props = {
   aggregationSize: number | undefined;
-  usedQueryVariables: Search_RaporttiQueryVariables;
+  usedQueryVariables?: Search_RaporttiQueryVariables;
   resultTotalSize: number | undefined;
-};
-
-type ZipState = {
-  shouldPoll: boolean;
-  pollingFileKey?: string;
-  zipUrl?: string;
-  error?: string;
-  isLoading: boolean;
+  buttonType?: 'primary' | 'secondary' | 'tertiary';
 };
