@@ -148,8 +148,10 @@ export class RaitaPipelineStack extends Stack {
           input: githubSource,
           installCommands: [
             'npm ci',
-            'npm --prefix frontend ci',
+            'npm run graphql:codegen',
             'npm run prisma:generate',
+            'npm --prefix frontend ci',
+            'npm run --prefix frontend graphql:codegen',
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
@@ -184,6 +186,8 @@ export class RaitaPipelineStack extends Stack {
           'npm ci',
           'npm --prefix frontend ci',
           'npm run prisma:generate',
+          'npm run graphql:codegen',
+          'npm run --prefix frontend graphql:codegen',
         ],
         commands: ['npm run test', 'npm run --prefix frontend test'],
       }),
