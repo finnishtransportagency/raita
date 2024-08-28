@@ -31,6 +31,7 @@ function getLogger(tag: string) {
 }
 
 export const log = getLogger('RAITA_BACKEND');
+export const logDatabaseOperation = getLogger('RAITA_DATABASE_OPERATION');
 export const logParsingException = getLogger('RAITA_PARSING_EXCEPTION');
 export const logCSVParsingException = getLogger('RAITA_CSV_PARSING_EXCEPTION');
 export const logCSVDBException = getLogger('RAITA_CSV_DB_EXCEPTION');
