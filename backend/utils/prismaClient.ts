@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { getEnvOrFail } from '../../utils';
 import { getSecretsManagerSecret } from './secretsManager';
-import { log } from './logger';
+import { logDatabaseOperation } from './logger';
 
 export const getPrismaClient = async () => {
   const user = getEnvOrFail('PGUSER');
@@ -39,7 +39,11 @@ export const getPrismaClient = async () => {
 
   // log query parameters and stats for all prisma queries
   client.$on('query', e => {
-    log.info({ query: e.query, params: e.params, duration: e.duration });
+    logDatabaseOperation.info({
+      query: e.query.replace('error', 'REPLACED'), // Don't trigger error log patterns by replacing 'error' in build query. There should be no actual error messages in the query string
+      params: e.params,
+      duration: e.duration,
+    });
   });
   return client;
 };
