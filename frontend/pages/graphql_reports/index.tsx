@@ -44,6 +44,7 @@ import {
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 import { zipContext } from 'shared/zipContext';
+import { PollingHandler } from 'components/pollingHandler';
 
 //
 
@@ -417,11 +418,7 @@ const ReportsIndex: RaitaNextPage = () => {
                     zipState.state.isLoading ||
                     localStorage.getItem('zipUrl')) && (
                     <div className="ml-2 flex">
-                      <ZipDownload
-                        aggregationSize={undefined}
-                        usedQueryVariables={getQueryVariables(state)}
-                        resultTotalSize={undefined}
-                      />
+                      <PollingHandler />
                     </div>
                   )}
                 </div>
@@ -436,11 +433,15 @@ const ReportsIndex: RaitaNextPage = () => {
                   </div>
                   {resultsData?.total_size && resultsData?.total_size > 0 && (
                     <div className="ml-2 flex">
-                      <ZipDownload
-                        aggregationSize={resultsData?.count}
-                        usedQueryVariables={getQueryVariables(state)}
-                        resultTotalSize={resultsData?.total_size}
-                      />
+                      {!localStorage.getItem('zipUrl') ? (
+                        <ZipDownload
+                          aggregationSize={resultsData?.count}
+                          usedQueryVariables={getQueryVariables(state)}
+                          resultTotalSize={resultsData?.total_size}
+                        />
+                      ) : (
+                        <PollingHandler />
+                      )}
                     </div>
                   )}
                 </div>

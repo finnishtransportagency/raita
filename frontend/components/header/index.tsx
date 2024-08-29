@@ -10,6 +10,7 @@ import LatestInspectionDate from 'components/latest_inspection_date';
 import { assetURL } from 'shared/config';
 import { zipContext } from 'shared/zipContext';
 import { ZipDownload } from 'components/zip-download-graphql';
+import { PollingHandler } from 'components/pollingHandler';
 type Props = {
   pages: PageDescription[];
 };
@@ -56,11 +57,7 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
               localStorage.getItem('zipUrl') ||
               localStorage.getItem('pollingFileKey')) && (
               <div className="ml-2 flex justify-end">
-                <ZipDownload
-                  buttonType="tertiary"
-                  aggregationSize={undefined}
-                  resultTotalSize={undefined}
-                />
+                <PollingHandler buttonType="tertiary" />
               </div>
             )}
           </div>
