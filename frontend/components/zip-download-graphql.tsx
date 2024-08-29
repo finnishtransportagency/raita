@@ -45,6 +45,16 @@ export function ZipDownload(props: Props) {
     return true;
   };
 
+  useEffect(() => {
+    if (localStorage.getItem('pollingFileKey')) {
+      setState(R.assoc('shouldPoll', true));
+      setState(R.assoc('isLoading', true));
+      setState(
+        R.assoc('pollingFileKey', localStorage.getItem('pollingFileKey')!),
+      );
+    }
+  }, []);
+
   const { data } = useQuery(
     ['fileData', state.pollingFileKey],
     () => {
@@ -97,6 +107,7 @@ export function ZipDownload(props: Props) {
     setState(initialState);
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     setState(R.assoc('pollingFileKey', pollingFileKey));
+    localStorage.setItem('pollingFileKey', pollingFileKey);
     setState(R.assoc('isLoading', true));
     try {
       triggerZipLambda(keys, pollingFileKey).then(() =>
@@ -115,6 +126,7 @@ export function ZipDownload(props: Props) {
   const resetInitials = () => {
     setState(initialState);
     localStorage.removeItem('zipUrl');
+    localStorage.removeItem('pollingFileKey');
     triggerKeyQuery();
   };
 
