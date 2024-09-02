@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useContext } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -8,7 +8,9 @@ import Navigation from 'components/navigation';
 import { PageDescription } from 'shared/pageRoutes';
 import LatestInspectionDate from 'components/latest_inspection_date';
 import { assetURL } from 'shared/config';
-
+import { zipContext } from 'shared/zipContext';
+import { ZipDownload } from 'components/zip-download-graphql';
+import { PollingHandler } from 'components/pollingHandler';
 type Props = {
   pages: PageDescription[];
 };
@@ -20,6 +22,7 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
   const router = useRouter();
   const pathSplit = router.pathname.split('/');
   const pageTitleKey = `page_labels${pathSplit.join('.')}`;
+  const zipState = useContext(zipContext);
   return (
     <>
       <header className="bg-primary text-white h-16">
@@ -45,8 +48,18 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
               width="179"
             />
           </div>
-          <div className="flex flex-row justify-end">
-            <LatestInspectionDate className="my-auto mr-4" />
+          <div className="my-auto">
+            <div className="flex flex-row justify-end">
+              <LatestInspectionDate className="my-auto mr-4" />
+            </div>
+            {(zipState.state.zipUrl ||
+              zipState.state.isLoading ||
+              localStorage.getItem('zipUrl') ||
+              localStorage.getItem('pollingFileKey')) && (
+              <div className="ml-2 flex justify-end">
+                <PollingHandler buttonType="tertiary" />
+              </div>
+            )}
           </div>
         </div>
       </header>
