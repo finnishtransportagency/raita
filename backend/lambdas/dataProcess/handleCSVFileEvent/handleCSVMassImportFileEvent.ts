@@ -127,6 +127,7 @@ export async function handleCSVMassImportFileEvent(
             await adminLogger.info(`Tiedosto parsittu: ${key}`);
           }
           const s3MetaData = fileStreamResult.metaData;
+          const hash = eventRecord.s3.object.eTag;
           const skipHashCheck =
             s3MetaData['skip-hash-check'] !== undefined &&
             Number(s3MetaData['skip-hash-check']) === 1;
@@ -138,7 +139,7 @@ export async function handleCSVMassImportFileEvent(
             bucket_name: eventRecord.s3.bucket.name,
             size: eventRecord.s3.object.size,
             metadata: parseResults.metadata,
-            hash: parseResults.hash,
+            hash,
             tags: fileStreamResult.tags,
             reportId,
             errors: parseResults.errors,
