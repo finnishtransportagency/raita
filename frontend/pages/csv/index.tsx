@@ -8,6 +8,8 @@ import { sizeformatter, takeOptionValues } from 'shared/util';
 
 import { Button, TextInput } from 'components';
 import { DateRange } from 'components';
+import FilterSelector from 'components/filters-graphql';
+import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 import MultiChoice from 'components/filters/multi-choice';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
@@ -18,6 +20,7 @@ import { RaitaRole, useUser } from 'shared/user';
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
 import {
   DateTimeIntervalInput,
+  RaporttiInput,
   Search_Mittaus_CountQueryVariables,
 } from 'shared/graphql/__generated__/graphql';
 import {
@@ -27,6 +30,10 @@ import {
   SEARCH_MITTAUS_COUNT,
 } from 'shared/graphql/queries/csv';
 import { CsvDownload } from 'components/csv-download';
+import {
+  SelectorSupportedType,
+  FieldDict,
+} from 'components/filters-graphql/selector';
 
 //
 
@@ -39,6 +46,43 @@ const initialState: CsvState = {
     columns: [],
     raportti_keys: [],
   },
+  extraRaporttiQueryVariables: {},
+};
+
+/**
+ * Fields that should not be shown in extra fields dropdown
+ */
+const disabledExtraFields = [
+  // These have dedicated inputs:
+  'file_name',
+  'inspection_date',
+  'inspection_datetime',
+  'system',
+  'track_part',
+  'tilirataosanumero',
+  'file_type',
+  // these are not relevant for csv:
+  'temperature',
+  'measurement_start_location',
+  'measurement_end_location',
+  'km_start',
+  'km_end',
+  'maintenance_area',
+  'report_category',
+  'report_type',
+  'measurement_direction',
+  'maintenance_level',
+  'is_empty',
+];
+
+const getQueryVariables = (state: CsvState) => {
+  return {
+    ...state.queryVariables,
+    raportti: {
+      ...state.queryVariables.raportti,
+      ...state.extraRaporttiQueryVariables,
+    },
+  };
 };
 
 const CsvIndex: RaitaNextPage = () => {
@@ -54,10 +98,9 @@ const CsvIndex: RaitaNextPage = () => {
 
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'columns'], []));
-    setState(R.assocPath(['queryVariables', 'query_variables'], []));
     triggerRaporttiSearch({
       variables: {
-        raportti: state.queryVariables.raportti,
+        ...getQueryVariables(state),
         page: 1,
         page_size: 1000, // TODO: we want all?
       },
@@ -97,7 +140,7 @@ const CsvIndex: RaitaNextPage = () => {
 
   const triggerCountSearch = () => {
     // TODO: initial query vs refetch? need to fix state management of the different queries
-    triggerMittausCountSearch({ variables: state.queryVariables });
+    triggerMittausCountSearch({ variables: getQueryVariables(state) });
   };
 
   /**
@@ -118,6 +161,19 @@ const CsvIndex: RaitaNextPage = () => {
       ? new Date(state.queryVariables.raportti.inspection_datetime.end)
       : undefined,
   };
+
+  const extraFields: FieldDict = {};
+  meta.data?.meta.input_fields?.forEach(fieldInfo => {
+    if (!fieldInfo.name) {
+      return;
+    }
+    if (disabledExtraFields.includes(fieldInfo.name)) {
+      return;
+    }
+    extraFields[fieldInfo.name] = {
+      type: fieldInfo.type! as SelectorSupportedType,
+    };
+  });
   const mittausSystems = meta.data.meta.mittaus_systems;
   const selectedSystems = state.queryVariables.raportti.system ?? [];
   const columnChoices = mittausSystems
@@ -156,15 +212,22 @@ const CsvIndex: RaitaNextPage = () => {
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
-
-                {/*
-                TODO: implement with graphql
                 <FilterSelector
                   filters={[]}
-                  onChange={updateFilterList}
-                  fields={meta.data?.fields!}
+                  onChange={entries => {
+                    const inputVariables =
+                      getInputVariablesFromEntries(entries);
+                    // replace the whole
+                    setState(
+                      R.assocPath(
+                        ['extraRaporttiQueryVariables'],
+                        inputVariables,
+                      ),
+                    );
+                  }}
+                  fields={extraFields}
                   resetFilterSelector={state.resetFilters}
-                /> */}
+                />
               </section>
 
               {/* Search date range */}
@@ -350,7 +413,7 @@ const CsvIndex: RaitaNextPage = () => {
                       state.resetFilters ||
                       mittausCountQuery.loading
                     }
-                    queryVariables={state.queryVariables}
+                    queryVariables={getQueryVariables(state)}
                   />
                 </>
               )}
@@ -375,4 +438,9 @@ type CsvState = {
   resetFilters: boolean;
   debug?: boolean;
   queryVariables: Search_Mittaus_CountQueryVariables;
+  /**
+   * For "extra variables" that are chosen separately from the filter selectors.
+   * Separate variable to simplify state management on deletions
+   */
+  extraRaporttiQueryVariables: RaporttiInput;
 };
