@@ -23,6 +23,7 @@ import {
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
+import {spec} from "node:test/reporters";
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
@@ -116,7 +117,7 @@ export async function handleCSVMassImportFileEvent(
             doCSVParsing,
             dbConnection,
             reportId,
-            'MASSIMPORT',
+            invocationId: 'MASSIMPORT',
           });
           if (parseResults.errors) {
             await adminLogger.error(
