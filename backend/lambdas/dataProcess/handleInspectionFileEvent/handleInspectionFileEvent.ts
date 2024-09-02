@@ -212,6 +212,7 @@ export async function handleInspectionFileEvent(
           doCSVParsing,
           dbConnection,
           reportId,
+          invocationId,
         });
         if (parseResults.errors) {
           await adminLogger.error(

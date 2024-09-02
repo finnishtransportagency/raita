@@ -116,6 +116,7 @@ export async function handleCSVMassImportFileEvent(
             doCSVParsing,
             dbConnection,
             reportId,
+            'MASSIMPORT',
           });
           if (parseResults.errors) {
             await adminLogger.error(

@@ -21,6 +21,7 @@ async function writeFileChunkToQueueS3(
   reportId: number,
   key: KeyData,
   chunkNumber: number,
+  invocationId: string,
 ) {
   try {
     await adminLogger.init('data-csv-mass-import', key.keyWithoutSuffix);
@@ -40,11 +41,15 @@ async function writeFileChunkToQueueS3(
 
     log.debug('config.targetBucketName' + config.inspectionBucket);
 
+    const newFileMetadata: { [key: string]: string } = {};
+    newFileMetadata['invocation-id'] = encodeURIComponent(invocationId); // pass same invocationId to extracted files for logging
+
     const command = new PutObjectCommand({
       Bucket: config.csvBucket,
       Key: outFileName,
       ContentType: 'text/csv',
       Body: Buffer.from(inputFileChunkBody),
+      Metadata: newFileMetadata,
     });
     const s3Client = new S3Client({});
     const putObjectCommandOutput = await s3Client.send(command);
@@ -79,6 +84,7 @@ export async function chopCSVFileStream(
   fileStream: Readable,
   dbConnection: DBConnection,
   reportId: number,
+  invocationId: string,
 ) {
   // Empty relevant mittaus rows, prevents duplication when file has been parsed before
   // note: if another parsing process of the same file is happening at the same time for some reason, result can be messy
@@ -148,6 +154,7 @@ export async function chopCSVFileStream(
               reportId,
               originalKeyData,
               chunkCounter,
+              invocationId,
             );
             //  log.debug("handled bufferd: " + handleCounter);
           }
@@ -181,6 +188,7 @@ export async function chopCSVFileStream(
         reportId,
         originalKeyData,
         chunkCounter,
+        invocationId,
       );
     }
 

@@ -108,6 +108,7 @@ export const parseFileContent = async (
   dbConnection: DBConnection | undefined,
   doCSVParsing: boolean,
   reportId: number,
+  invocationId: string,
 ): Promise<{
   contentData: ParseValueResult;
 }> => {
@@ -128,6 +129,7 @@ export const parseFileContent = async (
           fileStreamToParse,
           dbConnection,
           reportId,
+          invocationId,
         );
         log.info('csv parsing result: ' + csvPromise);
       } else {
