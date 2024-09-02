@@ -43,23 +43,24 @@ export function getLambdaConfigOrFail() {
     allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
   };
 }
+const adminLogger: IAdminLogger = new PostgresLogger();
 
 const findReportByKey = async (key: string) => {
   const prisma = getPrismaClient();
-  const foundReport = (await prisma).raportti.findFirst({
+  const foundReport = await (
+    await prisma
+  ).raportti.findFirst({
     where: {
       key: {
         in: [key],
       },
     },
   });
-
   return foundReport;
 };
 
 const withRequest = lambdaRequestTracker();
 
-const adminLogger: IAdminLogger = new PostgresLogger();
 let dbConnection: DBConnection | undefined = undefined;
 
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
@@ -84,6 +85,8 @@ export async function handleInspectionFileEvent(
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
   if (doCSVParsing) {
+    // nothing useful can be done without db connection
+    // TODO: clean up the logic of dbConnection and doCSVParsing checks: they are not useful after removal of opensearch
     dbConnection = await getDBConnection();
   }
   const backend = BackendFacade.getBackend(config);
@@ -105,6 +108,8 @@ export async function handleInspectionFileEvent(
           true,
         );
         const keyData = getKeyData(key);
+        // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
+        const hash = eventRecord.s3.object.eTag;
         const s3MetaData = fileStreamResult.metaData;
         const requireNewerParserVersion =
           s3MetaData['require-newer-parser-version'] !== undefined &&
@@ -153,24 +158,51 @@ export async function handleInspectionFileEvent(
 
         let reportId: number;
 
+        // entry values that are known before parsing
+        const entryBeforeParsing: Partial<FileMetadataEntry> = {
+          key,
+          hash,
+          file_name: keyData.fileName,
+          bucket_arn: eventRecord.s3.bucket.arn,
+          bucket_name: eventRecord.s3.bucket.name,
+          size: eventRecord.s3.object.size,
+          metadata: {
+            parser_version: spec.parserVersion,
+          },
+          options: {
+            skip_hash_check: skipHashCheck,
+            require_newer_parser_version: requireNewerParserVersion,
+          },
+        };
+
         if (!dbConnection) {
           // No DB connection
           reportId = -1;
+          throw new Error('No db connection');
+        }
+        let shouldParse = true;
+        // DB connection exists
+        const foundReport = await findReportByKey(key);
+        if (foundReport) {
+          // Report found
+          reportId = foundReport.id;
+
+          shouldParse = checkExistingHash(
+            entryBeforeParsing as FileMetadataEntry,
+            foundReport,
+          );
         } else {
-          // DB connection exists
-          const foundReport = await findReportByKey(key);
-          if (foundReport) {
-            // Report found
-            reportId = foundReport.id;
-          } else {
-            // Report not found, insert new report
-            reportId = await insertRaporttiData(
-              key,
-              keyData.fileName,
-              null,
-              dbConnection,
-            );
-          }
+          // Report not found, insert new report
+          reportId = await insertRaporttiData(
+            key,
+            keyData.fileName,
+            null,
+            dbConnection,
+          );
+        }
+        if (!shouldParse) {
+          log.info({ key, hash, reportId }, 'File not changed, skip parsing');
+          return null;
         }
 
         const parseResults = await parseFileMetadata({
@@ -188,23 +220,21 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
+        // if parsed_at_datetime already exists on found report, don't update it
+        const parsed_at_datetime =
+          foundReport?.parsed_at_datetime != null
+            ? foundReport.parsed_at_datetime.toISOString()
+            : parseResults.metadata.parsed_at_datetime;
         return {
-          // key is sent to be stored in url decoded format to db
-          key,
-          file_name: keyData.fileName,
-          bucket_arn: eventRecord.s3.bucket.arn,
-          bucket_name: eventRecord.s3.bucket.name,
-          size: eventRecord.s3.object.size,
-          metadata: parseResults.metadata,
-          hash: parseResults.hash,
+          ...entryBeforeParsing,
+          metadata: {
+            ...parseResults.metadata,
+            parsed_at_datetime,
+          },
           tags: fileStreamResult.tags,
           reportId,
           errors: parseResults.errors,
-          options: {
-            skip_hash_check: skipHashCheck,
-            require_newer_parser_version: requireNewerParserVersion,
-          },
-        };
+        } as FileMetadataEntry;
       });
       // TODO: Now error in any of file causes a general error to be logged and potentially causes valid files not to be processed.
       // Switch to granular error handling.
@@ -216,28 +246,7 @@ export async function handleInspectionFileEvent(
 
       if (doCSVParsing) {
         if (dbConnection) {
-          const checkedEntries = await Promise.all(
-            entries.map(async entry => {
-              const foundReport = await findReportByKey(entry.key);
-              const isSaveable = foundReport
-                ? await checkExistingHash(entry, foundReport)
-                : null;
-              // updating existing file: don't update parsed_at_datetime
-
-              const oldParsedAt = foundReport?.parsed_at_datetime
-                ? foundReport.parsed_at_datetime.toISOString()
-                : null;
-              if (foundReport) {
-                entry.metadata.parsed_at_datetime = oldParsedAt;
-              }
-              return { entry, isSaveable };
-            }),
-          );
-          const saveableEntries = checkedEntries
-            .filter(result => result.isSaveable)
-            .map(result => result.entry);
-
-          await updateRaporttiMetadata(saveableEntries, dbConnection);
+          await updateRaporttiMetadata(entries, dbConnection);
         } else {
           log.error(
             'content parsing with called csv enabled and without dbconnection',

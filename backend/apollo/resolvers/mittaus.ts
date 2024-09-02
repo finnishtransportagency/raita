@@ -5,6 +5,7 @@ import { RaitaLambdaError } from '../../lambdas/utils';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/handleCsvGeneration';
 import { getRaporttiWhereInput } from '../utils';
+import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
 
 /**
  * Return estimate of result file size in bytes
@@ -35,24 +36,37 @@ export const mittausResolvers: Resolvers = {
             }
           : getRaporttiWhereInput(raportti ?? {});
       // TODO: search with mittaus specific fields
-      const countResult = await client.raportti.findMany({
+      const raporttiCount = await client.raportti.count({
+        where: raporttiWhere,
+      });
+      const limit = CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT;
+      if (raporttiCount > limit) {
+        return {
+          status: 'size_limit',
+          row_count: raporttiCount,
+          size_estimate: NaN,
+        };
+      }
+      // mittaus table is BIG, make query faster by explicitly searching with raportti_id
+      const raporttiRows = await client.raportti.findMany({
         where: raporttiWhere,
         select: {
-          _count: {
-            select: {
-              mittaus: true,
-            },
+          id: true,
+        },
+      });
+
+      const mittausCount = await client.mittaus.count({
+        where: {
+          raportti_id: {
+            // TODO: search with mittaus specific fields
+            in: raporttiRows.map(raportti => raportti.id),
           },
         },
       });
-      const rowCount = countResult.reduce(
-        // TODO: can this sum be calculated in query?
-        (sum, row) => sum + row._count.mittaus,
-        0,
-      );
       return {
-        row_count: rowCount,
-        size_estimate: getSizeEstimate(rowCount, columns),
+        status: 'ok',
+        row_count: mittausCount,
+        size_estimate: getSizeEstimate(mittausCount, columns),
       };
     },
   },

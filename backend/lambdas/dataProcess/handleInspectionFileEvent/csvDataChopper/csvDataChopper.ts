@@ -1,6 +1,7 @@
 import { log } from '../../../../utils/logger';
 import {
   DBConnection,
+  emptyRaporttiMittausRows,
   updateRaporttiChunks,
   updateRaporttiStatus,
 } from '../../csvCommon/db/dbUtil';
@@ -79,6 +80,9 @@ export async function chopCSVFileStream(
   dbConnection: DBConnection,
   reportId: number,
 ) {
+  // Empty relevant mittaus rows, prevents duplication when file has been parsed before
+  // note: if another parsing process of the same file is happening at the same time for some reason, result can be messy
+  await emptyRaporttiMittausRows(reportId, dbConnection);
   await updateRaporttiStatus(reportId, 'CHOPPING', null, dbConnection);
 
   log.debug('reportId: ' + reportId);

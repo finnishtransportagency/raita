@@ -28,7 +28,7 @@ import {
   RaitaEnvironment,
 } from './config';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { Pipeline } from 'aws-cdk-lib/aws-codepipeline';
+import { Pipeline, PipelineType } from 'aws-cdk-lib/aws-codepipeline';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import {
   isDevelopmentMainStack,
@@ -78,6 +78,7 @@ export class RaitaPipelineStack extends Stack {
       artifactBucket: artifactBucket,
       pipelineName: `cpl-raita-${config.stackId}`,
       restartExecutionOnUpdate: true,
+      pipelineType: PipelineType.V2,
     });
     // Can't start build process otherwise
     pipeline.addToRolePolicy(
@@ -147,8 +148,10 @@ export class RaitaPipelineStack extends Stack {
           input: githubSource,
           installCommands: [
             'npm ci',
-            'npm --prefix frontend ci',
+            'npm run graphql:codegen',
             'npm run prisma:generate',
+            'npm --prefix frontend ci',
+            'npm run --prefix frontend graphql:codegen',
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
@@ -183,6 +186,8 @@ export class RaitaPipelineStack extends Stack {
           'npm ci',
           'npm --prefix frontend ci',
           'npm run prisma:generate',
+          'npm run graphql:codegen',
+          'npm run --prefix frontend graphql:codegen',
         ],
         commands: ['npm run test', 'npm run --prefix frontend test'],
       }),

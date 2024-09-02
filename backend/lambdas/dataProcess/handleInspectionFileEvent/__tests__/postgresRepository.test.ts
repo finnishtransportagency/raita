@@ -77,13 +77,6 @@ describe('PostgreRepository.upsertDocument', () => {
     jest.clearAllMocks();
   });
 
-  it('should return true if key is not found', async () => {
-    const foundReport = null;
-    const entry = mockEntry();
-    const result = await checkExistingHash(entry, foundReport);
-    expect(result).toBe(true);
-  });
-
   it('should return true if skip_hash_check is true and hash matches', async () => {
     const foundReport = mockFoundReport({ hash: 'testHash' });
     const entry = mockEntry({ options: { skip_hash_check: true } });

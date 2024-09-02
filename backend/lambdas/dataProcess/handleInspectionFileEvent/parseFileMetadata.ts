@@ -23,7 +23,6 @@ export async function parseFileMetadata({
   reportId: number;
 }): Promise<{
   metadata: any;
-  hash: string;
   errors: boolean;
 }> {
   let errorsFound = false;
@@ -56,7 +55,6 @@ export async function parseFileMetadata({
     }
   }
   let fileContentData: any = {};
-  let hash = '';
   try {
     if (fileStream) {
       const contentResult = await parseFileContent(
@@ -68,7 +66,6 @@ export async function parseFileMetadata({
         reportId,
       );
       fileContentData = contentResult.contentData;
-      hash = contentResult.hash;
     } else {
       throw new RaitaParseError(
         'No fileStream',
@@ -104,7 +101,6 @@ export async function parseFileMetadata({
   }
   return {
     metadata: allMetadata,
-    hash,
     errors: errorsFound,
   };
 }

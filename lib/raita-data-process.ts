@@ -18,7 +18,11 @@ import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
-import { EXTRACTION_SPEC_PATH, raitaSourceSystems } from '../constants';
+import {
+  EXTRACTION_SPEC_PATH,
+  RAITA_CSV_DB_EXCEPTION,
+  raitaSourceSystems,
+} from '../constants';
 import {
   createRaitaBucket,
   createRaitaServiceRole,
@@ -32,6 +36,7 @@ import {
   AlarmRule,
   ComparisonOperator,
   CompositeAlarm,
+  MathExpression,
   Stats,
   TreatMissingData,
 } from 'aws-cdk-lib/aws-cloudwatch';
@@ -41,7 +46,7 @@ import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
-import { handleCSVFileEvent } from '../backend/lambdas/dataProcess/handleCSVFileEvent/handleCSVFileEvent';
+import { AdjustmentType } from 'aws-cdk-lib/aws-autoscaling';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -207,11 +212,15 @@ export class DataProcessStack extends NestedStack {
       handleZipContainer,
       zipTaskLogGroup,
       zipTaskTaskRole,
+      zipHandlerService,
+      zipHandlerQueue,
     } = this.createZipHandlerECSResources({
       raitaStackIdentifier,
       vpc,
       raitaEnv,
       databaseEnvironmentVariables,
+      sourceBucket: this.dataReceptionBucket,
+      targetBucket: this.inspectionDataBucket,
     });
 
     this.dataReceptionBucket.grantRead(zipTaskTaskRole);
@@ -232,11 +241,12 @@ export class DataProcessStack extends NestedStack {
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
-      cluster: ecsCluster,
-      task: handleZipTask,
-      container: handleZipContainer,
       databaseEnvironmentVariables,
+      zipHandlerQueue,
     });
+
+    zipHandlerQueue.grantSendMessages(handleReceptionFileEventFn);
+
     this.inspectionDataBucket.grantWrite(handleReceptionFileEventFn);
     this.dataReceptionBucket.grantRead(handleReceptionFileEventFn);
 
@@ -339,11 +349,6 @@ export class DataProcessStack extends NestedStack {
       maxConcurrency: 100,
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
-    const allAlarms = [
-      ...receptionAlarms,
-      ...inspectionAlarms,
-      ...zipHandlerAlarms,
-    ];
 
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
@@ -355,6 +360,12 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
     });
+
+    const csvAlarms = this.createCSVHandlerAlarms(
+      this.handleCSVFileEventFn.logGroup,
+      raitaStackIdentifier,
+    );
+
     // Grant lambda permissions to bucket
     this.csvDataBucket.grantReadWrite(this.handleCSVFileEventFn);
 
@@ -412,6 +423,13 @@ export class DataProcessStack extends NestedStack {
       csvMassImportQueueSource,
     );
 
+    const allAlarms = [
+      ...receptionAlarms,
+      ...inspectionAlarms,
+      ...zipHandlerAlarms,
+      ...csvAlarms,
+    ];
+
     // create composite alarm that triggers when any alarm for different error types trigger
     const compositeAlarm = new CompositeAlarm(
       this,
@@ -441,20 +459,16 @@ export class DataProcessStack extends NestedStack {
     lambdaRole,
     raitaStackIdentifier,
     vpc,
-    cluster,
-    task,
-    container,
     databaseEnvironmentVariables,
+    zipHandlerQueue,
   }: {
     name: string;
     targetBucket: s3.Bucket;
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
-    cluster: cdk.aws_ecs.Cluster;
-    task: cdk.aws_ecs.FargateTaskDefinition;
-    container: cdk.aws_ecs.ContainerDefinition;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    zipHandlerQueue: Queue;
   }) {
     const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -467,11 +481,8 @@ export class DataProcessStack extends NestedStack {
         `../backend/lambdas/dataProcess/handleReceptionFileEvent/handleReceptionFileEvent.ts`,
       ),
       environment: {
-        ECS_CLUSTER_ARN: cluster.clusterArn,
-        ECS_TASK_ARN: task.taskDefinitionArn,
-        CONTAINER_NAME: container.containerName,
+        QUEUE_URL: zipHandlerQueue.queueUrl,
         TARGET_BUCKET_NAME: targetBucket.bucketName,
-        SUBNET_IDS: vpc.privateSubnets.map(sn => sn.subnetId).join(','),
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
@@ -604,6 +615,189 @@ export class DataProcessStack extends NestedStack {
       }),
     });
     return [errorAlarm, anyErrorAlarm];
+  }
+
+  /**
+   * Add alarms for monitoring errors from logs
+   *
+   * Multiple alarms for different types if errors
+   */
+  private createCSVHandlerAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const timeoutMetricFilter = logGroup.addMetricFilter('csv-timeout-filter', {
+      filterPattern: FilterPattern.literal('%Task timed out%'),
+      metricName: `csv-timeout-${raitaStackIdentifier}`,
+      metricNamespace: 'raita-data-process',
+      metricValue: '1',
+    });
+    const parsingErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-parsing-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue(
+            '$.tag',
+            '=',
+            'RAITA_CSV_PARSING_EXCEPTION',
+          ),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `csv-parsing-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+
+    const csvDBErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-db-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_DB_EXCEPTION'),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `csv-db-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+
+    const otherErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-other-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.stringValue('$.level', '=', 'error'),
+        ),
+        metricName: `csv-other-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    // create separate warn metric with no alarm associated
+    const warningMetricFilter = logGroup.addMetricFilter('csv-warn-filter', {
+      filterPattern: FilterPattern.all(
+        FilterPattern.any(
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          FilterPattern.stringValue(
+            '$.tag',
+            '=',
+            'RAITA_CSV_PARSING_EXCEPTION',
+          ),
+          FilterPattern.stringValue('$.tag', '=', 'RAITA_CSV_DB_EXCEPTION'),
+        ),
+        FilterPattern.stringValue('$.level', '=', 'warn'),
+      ),
+      metricName: `csv-warn-${raitaStackIdentifier}`,
+      metricNamespace: 'raita-data-process',
+      metricValue: '1',
+    });
+    const crashErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-crash-error-filter',
+      {
+        filterPattern: FilterPattern.literal('%Runtime exited%'),
+        metricName: `csv-crash-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'csv-all-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `csv-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const timeoutAlarm = new Alarm(this, 'csv-timeout-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-timeout-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching timeout errors in csv parser',
+      metric: timeoutMetricFilter.metric({
+        label: `Csv timeout ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const parsingErrorAlarm = new Alarm(this, 'csv-parsing-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-parsing-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching parsing errors in csv parser',
+      metric: parsingErrorMetricFilter.metric({
+        label: `Csv parsing errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const dbErrorAlarm = new Alarm(this, 'csv-db-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-db-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching csv parsing db errors',
+      metric: csvDBErrorMetricFilter.metric({
+        label: `CSV DB errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const otherErrorAlarm = new Alarm(this, 'csv-other-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-other-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Alarm for catching code errors other than known parsing errors in csv parser',
+      metric: otherErrorMetricFilter.metric({
+        label: `Csv other errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const crashErrorAlarm = new Alarm(this, 'csv-crash-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-crash-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription: 'Alarm for catching crashes of csv parser',
+      metric: crashErrorMetricFilter.metric({
+        label: `Csv crash errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    const anyErrorAlarm = new Alarm(this, 'csv-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `csv-any-errors-alarm-${raitaStackIdentifier}`,
+      alarmDescription:
+        'Failsafe alarm for catching all errors in csv parser, including those missed by other alarms',
+      metric: anyErrorMetricFilter.metric({
+        label: `Csv any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [
+      timeoutAlarm,
+      parsingErrorAlarm,
+      dbErrorAlarm,
+      otherErrorAlarm,
+      crashErrorAlarm,
+      anyErrorAlarm,
+    ];
   }
 
   /**
@@ -945,12 +1139,26 @@ export class DataProcessStack extends NestedStack {
     vpc,
     raitaEnv,
     databaseEnvironmentVariables,
+    sourceBucket,
+    targetBucket,
   }: {
     raitaStackIdentifier: string;
     vpc: IVpc;
     raitaEnv: RaitaEnvironment;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    sourceBucket: Bucket;
+    targetBucket: Bucket;
   }) {
+    // dead letter queue just in case. Currently no handling to messages here
+    const zipHandlerDeadLetter = new Queue(
+      this,
+      'zip-handler-deadletter-queue',
+    );
+    const zipHandlerQueue = new Queue(this, 'zip-handler-queue', {
+      visibilityTimeout: Duration.minutes(60), // estimated max time to handle one zip
+      deadLetterQueue: { maxReceiveCount: 3, queue: zipHandlerDeadLetter },
+    });
+
     const ecsCluster = new ecs.Cluster(
       this,
       `cluster-${raitaStackIdentifier}`,
@@ -998,23 +1206,65 @@ export class DataProcessStack extends NestedStack {
       streamPrefix: 'FargateHandleZip',
       logRetention: RetentionDays.SIX_MONTHS,
     });
+    const containerImage = ecs.ContainerImage.fromDockerImageAsset(image);
     const handleZipContainer = handleZipTask.addContainer(
       `container-${raitaStackIdentifier}-zip-handler`,
       {
-        image: ecs.ContainerImage.fromDockerImageAsset(image),
+        image: containerImage,
         logging: logDriver,
         environment: {
           AWS_REGION: this.region,
+          QUEUE_URL: zipHandlerQueue.queueUrl,
+          S3_SOURCE_BUCKET: sourceBucket.bucketName,
+          S3_TARGET_BUCKET: targetBucket.bucketName,
           ...databaseEnvironmentVariables,
         },
       },
     );
+
+    const zipHandlerService = new ecs.FargateService(
+      this,
+      'zip-handler-service',
+      {
+        cluster: ecsCluster,
+        taskDefinition: handleZipTask,
+        desiredCount: 0,
+      },
+    );
+
+    // add scaling based on total number (visible + in flight) of messages in queue
+    const scaling = zipHandlerService.autoScaleTaskCount({
+      minCapacity: 0,
+      maxCapacity: 1,
+    });
+    const totalZipHandlerQueueMessageCount = new MathExpression({
+      label: 'TotalZipHandlerQueueMessageCount',
+      expression: 'm1 + m2',
+      usingMetrics: {
+        m1: zipHandlerQueue.metricApproximateNumberOfMessagesVisible(),
+        m2: zipHandlerQueue.metricApproximateNumberOfMessagesNotVisible(), // in flight
+      },
+    });
+    scaling.scaleOnMetric('ZipHandlerQueueTotalMessagesScaling', {
+      metric: totalZipHandlerQueueMessageCount,
+      adjustmentType: AdjustmentType.EXACT_CAPACITY,
+      cooldown: cdk.Duration.seconds(300),
+      scalingSteps: [
+        { upper: 0, change: 0 },
+        { lower: 1, change: 1 },
+      ],
+    });
+
+    zipHandlerQueue.grantConsumeMessages(zipTaskTaskRole);
+
     return {
       ecsCluster,
       handleZipTask,
       handleZipContainer,
       zipTaskLogGroup: logDriver.logGroup,
       zipTaskTaskRole,
+      zipHandlerService,
+      zipHandlerQueue,
     };
   }
 }

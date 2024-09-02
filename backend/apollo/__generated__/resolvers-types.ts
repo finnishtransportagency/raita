@@ -82,6 +82,7 @@ export type MittausCountResponse = {
   __typename?: 'MittausCountResponse';
   row_count: Scalars['Int']['output'];
   size_estimate: Scalars['Float']['output'];
+  status: Scalars['String']['output'];
 };
 
 export type MittausGenerateResponse = {
@@ -222,7 +223,7 @@ export type SearchRaporttiResponse = {
   page: Scalars['Int']['output'];
   page_size: Scalars['Int']['output'];
   raportti?: Maybe<Array<Raportti>>;
-  total_size: Scalars['Float']['output'];
+  total_size?: Maybe<Scalars['Float']['output']>;
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -391,6 +392,7 @@ export type MittausResolvers<ContextType = any, ParentType extends ResolversPare
 export type MittausCountResponseResolvers<ContextType = any, ParentType extends ResolversParentTypes['MittausCountResponse'] = ResolversParentTypes['MittausCountResponse']> = ResolversObject<{
   row_count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   size_estimate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -461,7 +463,7 @@ export type SearchRaporttiResponseResolvers<ContextType = any, ParentType extend
   page?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   page_size?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   raportti?: Resolver<Maybe<Array<ResolversTypes['Raportti']>>, ParentType, ContextType>;
-  total_size?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  total_size?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

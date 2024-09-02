@@ -108,10 +108,6 @@ const extractionSpec: IExtractionSpec = {
   },
 };
 
-// hash for 'dummy' string
-const dummyHash =
-  'b5a2c96250612366ea272ffac6d9744aaf4b45aacd96aa7cfcb931ee3b558259';
-
 const testFileBody = `ver. 5.67.53
 VAL1: first value
 VAL2: 123456
@@ -119,8 +115,6 @@ OVERLAP: FROMCONTENT
 
 data here
 `;
-const testFileHash =
-  'e53d3e1705050cad90935209f87b7ef494dcf68365f521693e06f1a5e8ac05fc';
 
 describe('parseFileMetadata', () => {
   test('success: normal .txt', async () => {
@@ -144,7 +138,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: false,
-      hash: testFileHash,
       metadata: {
         file_type: 'txt',
         pathOnly1: 'test',
@@ -181,7 +174,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: true,
-      hash: dummyHash,
       metadata: {
         // data from name missing
         overlapping: 'FROMPATH',
@@ -214,7 +206,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: true,
-      hash: dummyHash,
       metadata: {
         // data from path missing
         file_type: 'csv',
@@ -251,7 +242,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: true,
-      hash: testFileHash,
       metadata: {
         // data from name missing
         pathOnly1: 'test',
@@ -286,7 +276,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: true,
-      hash: testFileHash,
       metadata: {
         // data form path missing
         file_type: 'txt',
@@ -322,7 +311,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: false, // TODO: should this report errors if no metadata is found?
-      hash: dummyHash,
       metadata: {
         // data from content missing
         file_type: 'txt',
@@ -358,7 +346,6 @@ describe('parseFileMetadata', () => {
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
       errors: false,
-      hash: testFileHash,
       metadata: {
         file_type: 'txt',
         pathOnly1: 'test',

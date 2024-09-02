@@ -248,6 +248,25 @@ export function convertToDBRow(
   };
 }
 
+/**
+ * Delete all mittaus rows  from raportti
+ */
+export async function emptyRaporttiMittausRows(
+  reportId: number,
+  dbConnection: DBConnection,
+) {
+  const { schema, sql } = dbConnection;
+  try {
+    const result = await sql`DELETE FROM ${sql(
+      schema,
+    )}.mittaus WHERE raportti_id = ${reportId}`;
+    log.info({ result: result[0] }, 'Deleted mittaus rows');
+  } catch (error) {
+    log.error({ error, reportId }, 'Error deleting mittaus rows');
+    throw error;
+  }
+}
+
 export async function updateRaporttiStatus(
   id: number,
   status: string,
@@ -331,6 +350,7 @@ export async function updateRaporttiMetadata(
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
+      hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
     };
     try {
