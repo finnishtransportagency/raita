@@ -69,7 +69,7 @@ export async function handleCSVFileEvent(
 
           const fileStreamResult = await files.getFileStream(
             eventRecord,
-            false,
+            true,
           );
           const keyData = getKeyData(key);
           const s3MetaData = fileStreamResult.metaData;
