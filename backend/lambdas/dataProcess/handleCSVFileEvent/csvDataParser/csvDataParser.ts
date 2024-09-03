@@ -589,7 +589,7 @@ export async function parseCSVFileStream(
         'Parsing error status update db failure',
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` +
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnistui.` +
           error,
       );
       throw error;

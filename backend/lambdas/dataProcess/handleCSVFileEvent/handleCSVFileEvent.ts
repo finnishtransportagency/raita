@@ -73,6 +73,7 @@ export async function handleCSVFileEvent(
           );
           const keyData = getKeyData(key);
           const s3MetaData = fileStreamResult.metaData;
+          log.debug("invocation-id from metadata " + s3MetaData['invocation-id']);
           const invocationId = s3MetaData['invocation-id']
             ? decodeURIComponent(s3MetaData['invocation-id'])
             : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
@@ -105,7 +106,8 @@ export async function handleCSVFileEvent(
                 Key: keyData.keyWithoutSuffix + '.' + keyData.fileSuffix,
               });
               const s3Client = new S3Client({});
-              const a = await s3Client.send(command);
+              //TODO uncomment
+              //const a = await s3Client.send(command);
             }
 
             return {
