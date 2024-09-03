@@ -1,6 +1,6 @@
 import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import {log, logCSVDBException} from '../../../utils/logger';
-import { getDecodedS3ObjectKey, getKeyData, isCsvSuffix } from '../../utils';
+import {getDecodedS3ObjectKey, getKeyData, getOriginalZipNameFromPath, isCsvSuffix} from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -62,13 +62,18 @@ export async function handleCSVFileEvent(
           currentKey = key;
           log.info({ fileName: key }, 'Start csv file handler');
           log.debug(eventRecord);
-          await adminLogger.init('data-csv', key);
+
           const fileStreamResult = await files.getFileStream(
             eventRecord,
             false,
           );
-
           const keyData = getKeyData(key);
+          const s3MetaData = fileStreamResult.metaData;
+          const invocationId = s3MetaData['invocation-id']
+            ? decodeURIComponent(s3MetaData['invocation-id'])
+            : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
+          await adminLogger.init('data-csv', invocationId);
+
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.debug(
@@ -85,6 +90,7 @@ export async function handleCSVFileEvent(
               fileStreamResult.fileStream,
               null,
               dbConnection,
+              invocationId,
             );
             if (result == 'success') {
               const config = getLambdaConfigOrFail();

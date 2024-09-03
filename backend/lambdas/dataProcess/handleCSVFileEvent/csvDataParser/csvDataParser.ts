@@ -340,9 +340,10 @@ export async function parseCSVFileStream(
   fileStream: Readable,
   metadata: ParseValueResult | null,
   dbConnection: DBConnection,
+  invocationId: string,
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
-  await adminLogger.init('data-csv', keyData.keyWithoutSuffix+'.'+keyData.fileSuffix);
+  await adminLogger.init('data-csv', invocationId);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
