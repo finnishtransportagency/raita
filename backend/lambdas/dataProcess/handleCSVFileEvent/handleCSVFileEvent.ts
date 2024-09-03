@@ -1,6 +1,11 @@
 import { Context, S3Event, SQSEvent } from 'aws-lambda';
-import {log, logCSVDBException} from '../../../utils/logger';
-import {getDecodedS3ObjectKey, getKeyData, getOriginalZipNameFromPath, isCsvSuffix} from '../../utils';
+import { log, logCSVDBException } from '../../../utils/logger';
+import {
+  getDecodedS3ObjectKey,
+  getKeyData,
+  getOriginalZipNameFromPath,
+  isCsvSuffix,
+} from '../../utils';
 import { parseCSVFileStream } from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -35,11 +40,10 @@ export async function handleCSVFileEvent(
   const files = new S3FileRepository();
   let currentKey: string = ''; // for logging in case of errors
 
-
   try {
     if (!dbConnection) {
       // No DB connection
-      logCSVDBException.error("No db connection");
+      logCSVDBException.error('No db connection');
       throw new Error('No db connection');
     }
     // one event from sqs can contain multiple s3 events
@@ -73,7 +77,6 @@ export async function handleCSVFileEvent(
             ? decodeURIComponent(s3MetaData['invocation-id'])
             : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
           await adminLogger.init('data-csv', invocationId);
-
 
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.debug(
@@ -118,7 +121,8 @@ export async function handleCSVFileEvent(
         } catch (err) {
           log.error(`An error occured while processing events: ${err}`);
           await adminLogger.error(
-            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` + err.message,
+            `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` +
+              err.message,
           );
           return null;
         }
@@ -146,7 +150,8 @@ export async function handleCSVFileEvent(
     // TODO: Figure out proper error handling.
     log.error(`An error occured while processing events: ${err}`);
     await adminLogger.error(
-      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. `+ err.message,
+      `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. ` +
+        err.message,
     );
   }
 }

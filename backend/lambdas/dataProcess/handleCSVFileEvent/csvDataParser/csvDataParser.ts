@@ -83,7 +83,6 @@ async function parseCsvAndWriteToDb(
       ),
     );
 
-
     try {
       //disable here if needed stop database
       return await writeRowsToDB(dbRows, table, dbConnection);
@@ -340,7 +339,7 @@ export async function parseCSVFileStream(
   fileStream: Readable,
   metadata: ParseValueResult | null,
   dbConnection: DBConnection,
-  invocationId: string,
+  invocationId: string = 'DEFAULT',
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
   await adminLogger.init('data-csv', invocationId);
@@ -414,7 +413,8 @@ export async function parseCSVFileStream(
                 });
                 missingOptionalColumns = headerValidation.missingOptional;
                 await adminLogger.info(
-                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` + missingOptionalColumns,
+                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` +
+                    missingOptionalColumns,
                 );
                 try {
                   await writeMissingColumnsToDb(
@@ -558,7 +558,8 @@ export async function parseCSVFileStream(
         'Status or chunk processsing db failure',
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` + error,
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` +
+          error,
       );
 
       throw error;
@@ -579,7 +580,8 @@ export async function parseCSVFileStream(
         dbConnection,
       );
       await adminLogger.warn(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` + error,
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` +
+          error,
       );
     } catch (error) {
       logCSVDBException.error(
@@ -587,7 +589,8 @@ export async function parseCSVFileStream(
         'Parsing error status update db failure',
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` + error,
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` +
+          error,
       );
       throw error;
     }
