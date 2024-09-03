@@ -73,7 +73,9 @@ export async function handleCSVFileEvent(
           );
           const keyData = getKeyData(key);
           const s3MetaData = fileStreamResult.metaData;
-          log.debug("invocation-id from metadata " + s3MetaData['invocation-id']);
+
+          log.info("invocation-id from metadata " + s3MetaData['invocation-id']);
+          log.info(s3MetaData);
           const invocationId = s3MetaData['invocation-id']
             ? decodeURIComponent(s3MetaData['invocation-id'])
             : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
