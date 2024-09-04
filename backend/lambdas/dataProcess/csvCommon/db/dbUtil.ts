@@ -13,6 +13,8 @@ import {
   convertDataToPiMittausArray,
   convertDataToRcMittausArray,
   convertDataToRpMittausArray,
+  convertDataToTgMittausArray,
+  convertDataToTsightMittausArray,
 } from './converters/dataConverters';
 
 let connection: postgres.Sql;
@@ -619,7 +621,7 @@ async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
 }
 
 async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
-  const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
+  const convertedData = convertDataToTgMittausArray(parsedCSVRows);
   const prisma = await getPrismaClient();
   log.info(`DATA TO TG_MITTAUS`);
   try {
@@ -634,7 +636,7 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
 }
 
 async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
-  const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
+  const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
   const prisma = await getPrismaClient();
   try {
     const recordCount = await prisma.tsight_mittaus.createMany({

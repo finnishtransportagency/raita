@@ -49,8 +49,8 @@ type AMSMittausData = {
 export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti || null, // Special handling may be needed for "Unsupported" types
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
@@ -208,7 +208,8 @@ type OhlMittausData = {
 export function convertDataToOhlMittausArray(data: any[]): OhlMittausData[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
+    running_date: item.running_date,
+
     jarjestelma: item.jarjestelma
       ? (item.jarjestelma as jarjestelma)
       : undefined,
@@ -343,8 +344,9 @@ type PiMittausData = {
 export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti || null, // Special handling may be needed for "Unsupported" types
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
@@ -444,8 +446,9 @@ type RcMittausData = {
 export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti || null,
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
@@ -726,8 +729,9 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
   return data.map(item => ({
     id: parseInt(item.id, 10),
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti, // Handle Unsupported("geography") appropriately
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
@@ -1198,8 +1202,9 @@ type tg_mittaus = {
 export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti || null, // Geography unsupported, left as-is
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
@@ -1363,8 +1368,9 @@ type TsightMittaus = {
 export function convertDataToTsightMittausArray(data: any[]): TsightMittaus[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
-    running_date: new Date(item.running_date),
-    jarjestelma: item.jarjestelma || null,
+    running_date: item.running_date,
+
+    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
     sijainti: item.sijainti || null, // Unsupported geography field
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
