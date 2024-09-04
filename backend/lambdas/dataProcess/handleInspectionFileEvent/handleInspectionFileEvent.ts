@@ -103,10 +103,7 @@ export async function handleInspectionFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(
-          eventRecord,
-          true,
-        );
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
         // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
         const hash = eventRecord.s3.object.eTag;

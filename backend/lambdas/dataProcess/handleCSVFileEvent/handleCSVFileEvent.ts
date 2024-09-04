@@ -67,14 +67,13 @@ export async function handleCSVFileEvent(
           log.info({ fileName: key }, 'Start csv file handler');
           log.debug(eventRecord);
 
-          const fileStreamResult = await files.getFileStream(
-            eventRecord,
-            true,
-          );
+          const fileStreamResult = await files.getFileStream(eventRecord);
           const keyData = getKeyData(key);
           const s3MetaData = fileStreamResult.metaData;
 
-          log.info("invocation-id from metadata " + s3MetaData['invocation-id']);
+          log.info(
+            'invocation-id from metadata ' + s3MetaData['invocation-id'],
+          );
           log.info(s3MetaData);
           const invocationId = s3MetaData['invocation-id']
             ? decodeURIComponent(s3MetaData['invocation-id'])

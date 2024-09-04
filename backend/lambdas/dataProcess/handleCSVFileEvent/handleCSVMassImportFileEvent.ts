@@ -23,7 +23,7 @@ import {
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
-import {spec} from "node:test/reporters";
+import { spec } from 'node:test/reporters';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
@@ -77,10 +77,7 @@ export async function handleCSVMassImportFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.debug({ fileName: key }, 'Start CSVMassImport file handler');
-        const fileStreamResult = await backend.files.getFileStream(
-          eventRecord,
-          true,
-        );
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
 
         await adminLogger.init(
