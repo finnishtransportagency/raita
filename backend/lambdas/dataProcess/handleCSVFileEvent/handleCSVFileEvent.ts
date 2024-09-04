@@ -89,7 +89,6 @@ export async function handleCSVFileEvent(
             const result = await parseCSVFileStream(
               keyData,
               fileStreamResult.fileStream,
-              null,
               dbConnection,
               invocationId,
             );

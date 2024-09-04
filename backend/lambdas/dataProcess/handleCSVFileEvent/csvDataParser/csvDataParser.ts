@@ -337,9 +337,8 @@ export function validateHeaders(
 export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
-  metadata: ParseValueResult | null,
   dbConnection: DBConnection,
-  invocationId: string = 'DEFAULT',
+  invocationId: string = 'DEFAULT_ID_FOR_TESTS',
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
   await adminLogger.init('data-csv', invocationId);
