@@ -578,7 +578,7 @@ export async function parseCSVFileStream(
         error.toString(),
         dbConnection,
       );
-      await adminLogger.warn(
+      await adminLogger.error(
         `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` +
           error,
       );
