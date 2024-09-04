@@ -23,25 +23,13 @@ import {
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
-import { spec } from 'node:test/reporters';
 
-export function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
-  return {
-    configurationFile: getEnv('CONFIGURATION_FILE'),
-    configurationBucket: getEnv('CONFIGURATION_BUCKET'),
-    cSVMassImportBucket: getEnv('CSV_MASS_IMPORT_BUCKET'),
-    csvBucket: getEnv('CSV_BUCKET'),
-    region: getEnv('REGION'),
-    environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD'),
-  };
-}
+import { getLambdaConfigOrFail } from './util';
 
 const adminLogger: IAdminLogger = new PostgresLogger();
-let dbConnection: DBConnection;
-
-export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
+const postgresConnection: Promise<DBConnection> = getDBConnection();
+const config = getLambdaConfigOrFail();
+const backend = BackendFacade.getBackend(config);
 
 const withRequest = lambdaRequestTracker();
 
@@ -57,13 +45,11 @@ export async function handleCSVMassImportFileEvent(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  dbConnection = await getDBConnection();
-  const config = getLambdaConfigOrFail();
+  const dbConnection = await postgresConnection;
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
   // @ts-ignore
-  const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
   try {
     const spec = await backend.specs.getSpecification();
