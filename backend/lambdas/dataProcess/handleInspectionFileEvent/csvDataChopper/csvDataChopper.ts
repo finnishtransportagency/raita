@@ -53,8 +53,6 @@ async function writeFileChunkToQueueS3(
     });
     const s3Client = new S3Client({});
     const putObjectCommandOutput = await s3Client.send(command);
-    log.info('PutObjectCommand output with invocation id' + invocationId);
-    log.info(putObjectCommandOutput);
   } catch (e) {
     log.error('Error in writeFileChunkToQueueS3');
     adminLogger.error('Error in writeFileChunkToQueueS3');
