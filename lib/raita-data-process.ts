@@ -346,7 +346,7 @@ export class DataProcessStack extends NestedStack {
     );
     const inspectionQueueSource = new SqsEventSource(inspectionQueue, {
       batchSize: 1, // need better error handling of batches in inspection handler if this is inreased
-      maxConcurrency: 100,
+      maxConcurrency: 50,
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
 
