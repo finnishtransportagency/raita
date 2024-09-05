@@ -33,17 +33,22 @@ export async function getDBConnection(): Promise<{
 export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
 
 function processCSVRows(rows: any[]) {
+  const stringValues = [
+    'jarjestelma',
+    'running_date',
+    'sijainti',
+    'rataosuus_nimi',
+    'modified',
+    'created',
+  ];
   return rows.map(row => {
     for (const key in row) {
       const value = row[key];
-      if (Number.isNaN(value)) {
+      if (Number.isNaN(value) && !stringValues.includes(key)) {
         row[key] = null;
       }
-      if (value) {
-        row[key] = parseFloat(value).toFixed(2);
-      }
-      row.raportti_id = parseInt(row.raportti_id);
     }
+    row.raportti_id = parseInt(row.raportti_id);
     return row;
   });
 }

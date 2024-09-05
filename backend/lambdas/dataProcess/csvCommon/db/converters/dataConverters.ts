@@ -142,7 +142,10 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri
       ? parseInt(item.rata_kilometri, 10)
@@ -292,7 +295,9 @@ export function convertDataToOhlMittausArray(data: any[]): OhlMittausData[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri
       ? parseInt(item.rata_kilometri, 10)
@@ -368,7 +373,9 @@ export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri
       ? parseInt(item.rata_kilometri, 10)
@@ -611,7 +618,9 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri || null,
     rata_metrit: item.rata_metrit ? new Decimal(item.rata_metrit) : null,
@@ -1303,7 +1312,9 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri
       ? parseInt(item.rata_kilometri, 10)
@@ -1458,7 +1469,9 @@ export function convertDataToTsightMittausArray(data: any[]): TsightMittaus[] {
     latitude: item.latitude || null,
     longitude: item.longitude || null,
     rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: item.rataosuus_nimi || null,
+    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
+      ? null
+      : item.rataosuus_nimi,
     raide_numero: item.raide_numero || null,
     rata_kilometri: item.rata_kilometri
       ? parseInt(item.rata_kilometri, 10)
