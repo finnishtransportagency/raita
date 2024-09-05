@@ -14,6 +14,7 @@ export async function parseFileMetadata({
   doCSVParsing,
   dbConnection,
   reportId,
+  invocationId,
 }: {
   keyData: KeyData;
   fileStream: Readable | undefined;
@@ -21,6 +22,7 @@ export async function parseFileMetadata({
   doCSVParsing: boolean;
   dbConnection: DBConnection | undefined;
   reportId: number;
+  invocationId: string;
 }): Promise<{
   metadata: any;
   errors: boolean;
@@ -64,6 +66,7 @@ export async function parseFileMetadata({
         dbConnection,
         doCSVParsing,
         reportId,
+        invocationId,
       );
       fileContentData = contentResult.contentData;
     } else {

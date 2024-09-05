@@ -62,7 +62,8 @@ function rowContainsErrors(
   }
   return (
     row.counts['data-reception']?.error > 0 ||
-    row.counts['data-inspection']?.error > 0
+    row.counts['data-inspection']?.error > 0 ||
+    row.counts['data-csv']?.error > 0
   );
 }
 
@@ -75,7 +76,8 @@ function rowContainsWarnings(
   }
   return (
     row.counts['data-reception']?.warn > 0 ||
-    row.counts['data-inspection']?.warn > 0
+    row.counts['data-inspection']?.warn > 0 ||
+    row.counts['data-csv']?.warn > 0
   );
 }
 function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
@@ -85,7 +87,9 @@ function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
       row.counts['data-inspection'].warn === 0 &&
       row.counts['data-inspection'].error === 0
     );
-  } else return type === 'data-process' && !!row.counts['data-inspection'];
+  } else {
+    return type === 'data-process' && !!row.counts['data-inspection'];
+  }
 }
 
 /**
@@ -155,7 +159,7 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
   const sources =
     type === 'delete'
       ? ['delete-process']
-      : ['data-inspection', 'data-reception'];
+      : ['data-inspection', 'data-reception', 'data-csv'];
 
   useEffect(() => {
     const changed = activeEvents.filter(({ eventId, pageIndex }) => {

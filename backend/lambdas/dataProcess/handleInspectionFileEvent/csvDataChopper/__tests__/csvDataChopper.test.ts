@@ -243,6 +243,7 @@ describe.skip('handle ams file success', () => {
       stringToStream(amsCsv),
       dbConnection,
       891,
+      'TEST_invocationId',
     );
     log.debug('report inserted: ' + result);
   }, 900000);
