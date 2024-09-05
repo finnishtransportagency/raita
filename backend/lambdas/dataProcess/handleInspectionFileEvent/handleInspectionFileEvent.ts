@@ -29,8 +29,6 @@ import { ENVIRONMENTS } from '../../../../constants';
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
 
-const adminLogger: IAdminLogger = new PostgresLogger();
-
 const findReportByKey = async (key: string) => {
   const foundReport = await (
     await prisma
@@ -53,6 +51,7 @@ const prisma = getPrismaClient();
 const postgresConnection: Promise<DBConnection> = getDBConnection();
 const config = getLambdaConfigOrFail();
 const backend = BackendFacade.getBackend(config);
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
 
 /**
  * Currently function takes in S3 events. This has implication that file port

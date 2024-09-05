@@ -9,12 +9,13 @@ import { asyncWait } from '../../../utils/common';
 export const launchECSZipTask = async ({
   key,
   queueUrl,
+  sqsClient,
 }: {
   key: string;
   queueUrl: string;
+  sqsClient: SQSClient;
 }) => {
   // Invoke ECS task
-  const sqsClient = new SQSClient({});
   // add message to queue where ECS task will pick it up
   const body = {
     S3_SOURCE_KEY: key,

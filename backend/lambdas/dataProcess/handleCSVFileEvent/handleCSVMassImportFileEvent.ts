@@ -26,8 +26,8 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { getLambdaConfigOrFail } from './util';
 
-const adminLogger: IAdminLogger = new PostgresLogger();
 const postgresConnection: Promise<DBConnection> = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
 const config = getLambdaConfigOrFail();
 const backend = BackendFacade.getBackend(config);
 

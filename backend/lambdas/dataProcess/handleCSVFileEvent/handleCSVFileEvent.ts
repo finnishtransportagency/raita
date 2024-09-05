@@ -24,8 +24,8 @@ function getLambdaConfigOrFail() {
   };
 }
 
-const adminLogger: IAdminLogger = new PostgresLogger();
 const postgresConnection: Promise<DBConnection> = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
 const files = new S3FileRepository();
 
 const withRequest = lambdaRequestTracker();
