@@ -498,8 +498,15 @@ export async function parseCSVFileStream(
           reject(error);
         }
       });
-      rl.on('error', () => {
-        log.error('rl on error ');
+      rl.on('error', async () => {
+        log.error('rl on error. Error reading line from csv-file: ' + fileBaseName);
+        logCSVParsingException.error(
+          {errorType: 'CSV Readline error', fileName: fileBaseName},
+          `rl on error. Error reading line from csv-file: ${fileBaseName}`,
+        );
+        await adminLogger.error(
+          `rl on error. Error reading line from csv-file: ${fileBaseName}.`
+        );
       });
       rl.on('close', async function () {
         await until(() => notWritten == 0);
