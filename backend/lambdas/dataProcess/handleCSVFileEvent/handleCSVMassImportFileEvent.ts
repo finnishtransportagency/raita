@@ -23,6 +23,7 @@ import {
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { spec } from 'node:test/reporters';
 
 import { getLambdaConfigOrFail } from './util';
 
