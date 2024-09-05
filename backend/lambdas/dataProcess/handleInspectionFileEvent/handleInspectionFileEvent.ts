@@ -46,7 +46,6 @@ const withRequest = lambdaRequestTracker();
 
 // init db connections and such
 // TODO: there should only be one db library used
-// logger will also create a connection
 const prisma = getPrismaClient();
 const postgresConnection: Promise<DBConnection> = getDBConnection();
 const config = getLambdaConfigOrFail();
