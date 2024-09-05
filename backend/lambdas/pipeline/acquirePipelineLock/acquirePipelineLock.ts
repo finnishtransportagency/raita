@@ -7,8 +7,10 @@ import {
 import { CodePipeline } from 'aws-sdk';
 import { logPipeline } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 
 const withRequest = lambdaRequestTracker();
+const dbConnection = getDBConnection();
 
 export async function handleAcquirePipelineLock(
   event: CodePipelineEvent,
@@ -18,7 +20,7 @@ export async function handleAcquirePipelineLock(
   const pipeline = new CodePipeline();
   const jobId = event['CodePipeline.job'].id;
   try {
-    const exists = await lockTableExists();
+    const exists = await lockTableExists(await dbConnection);
     if (!exists) {
       const message = 'Lock table does not exist, lock not acquired';
       logPipeline.warn(message);
@@ -32,7 +34,7 @@ export async function handleAcquirePipelineLock(
         .promise();
       return;
     }
-    await acquirePipelineLockOrFail();
+    await acquirePipelineLockOrFail(await dbConnection);
     await pipeline
       .putJobSuccessResult({
         jobId,

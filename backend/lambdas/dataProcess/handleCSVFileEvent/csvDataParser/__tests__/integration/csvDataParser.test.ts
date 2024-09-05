@@ -262,7 +262,6 @@ describe('handle ams csv file success', () => {
         path: [],
       },
       amsCsvStream,
-      {},
       dbConnection,
     );
 
@@ -286,7 +285,6 @@ describe('handle ams csv file unknow misspelled field success', () => {
         path: [],
       },
       stringToStream(amsWithNansCsv),
-      {},
       dbConnection,
     );
 
@@ -309,7 +307,6 @@ describe('handle ohlWithSurveyDate success', () => {
         path: [],
       },
       stringToStream(ohlWithSurveyDate),
-      {},
       dbConnection,
     );
     expect(result).toEqual('success');
@@ -331,7 +328,6 @@ describe('handle rcWithSomeEnglishColNames success', () => {
         path: [],
       },
       stringToStream(rcWithSomeEnglishColNames),
-      {},
       dbConnection,
     );
 
@@ -356,7 +352,6 @@ describe('handle rcWithOikeaGenetiveForm success', () => {
         path: [],
       },
       stringToStream(rcWithOikeaGenetiveForm),
-      {},
       dbConnection,
     );
 
@@ -381,7 +376,6 @@ describe('handle rpWithSomeTypo success', () => {
         path: [],
       },
       stringToStream(rpWithSomeTypo),
-      {},
       dbConnection,
     );
 
@@ -406,7 +400,6 @@ describe('handle rpWithSomeTypo2 success', () => {
         path: [],
       },
       stringToStream(rpWithSomeTypo2),
-      {},
       dbConnection,
     );
 
@@ -430,7 +423,6 @@ describe('handle tgSlave success', () => {
         path: [],
       },
       stringToStream(tgSlave),
-      {},
       dbConnection,
     );
 
@@ -462,7 +454,6 @@ describe('handle ams csv file with a missing oikea_pystysuuntainen_kiihtyvyys_c1
         path: [],
       },
       amsCsvMissingFieldStream,
-      {},
       dbConnection,
     );
 
@@ -486,7 +477,6 @@ describe('handle ams csv file with a missing sscount field success', () => {
         path: [],
       },
       amsCsvMissingSSCountStream,
-      {},
       dbConnection,
     );
 
@@ -508,7 +498,6 @@ describe('handle rp csv file success', () => {
         path: [],
       },
       rpCsvStream,
-      {},
       dbConnection,
     );
 

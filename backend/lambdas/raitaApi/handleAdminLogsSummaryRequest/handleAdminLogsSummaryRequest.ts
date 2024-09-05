@@ -58,7 +58,7 @@ export async function handleAdminLogsSummaryRequest(
     let parsedSources: AdminLogSource[];
     if (
       splitSources.filter(source =>
-        ['delete-process', 'data-inspection', 'data-reception'].includes(
+        ['delete-process', 'data-inspection', 'data-reception', 'data-csv'].includes(
           source,
         ),
       ).length === splitSources.length

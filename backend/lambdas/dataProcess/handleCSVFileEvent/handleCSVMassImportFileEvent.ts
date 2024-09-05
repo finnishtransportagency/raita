@@ -24,23 +24,12 @@ import {
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
 
-export function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
-  return {
-    configurationFile: getEnv('CONFIGURATION_FILE'),
-    configurationBucket: getEnv('CONFIGURATION_BUCKET'),
-    cSVMassImportBucket: getEnv('CSV_MASS_IMPORT_BUCKET'),
-    csvBucket: getEnv('CSV_BUCKET'),
-    region: getEnv('REGION'),
-    environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD'),
-  };
-}
+import { getLambdaConfigOrFail } from './util';
 
-const adminLogger: IAdminLogger = new PostgresLogger();
-let dbConnection: DBConnection;
-
-export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
+const postgresConnection: Promise<DBConnection> = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
+const config = getLambdaConfigOrFail();
+const backend = BackendFacade.getBackend(config);
 
 const withRequest = lambdaRequestTracker();
 
@@ -56,13 +45,11 @@ export async function handleCSVMassImportFileEvent(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  dbConnection = await getDBConnection();
-  const config = getLambdaConfigOrFail();
+  const dbConnection = await postgresConnection;
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
   // @ts-ignore
-  const backend = BackendFacade.getBackend(config);
   let currentKey: string = ''; // for logging in case of errors
   try {
     const spec = await backend.specs.getSpecification();
@@ -76,10 +63,7 @@ export async function handleCSVMassImportFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.debug({ fileName: key }, 'Start CSVMassImport file handler');
-        const fileStreamResult = await backend.files.getFileStream(
-          eventRecord,
-          true,
-        );
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
 
         await adminLogger.init(
@@ -116,6 +100,7 @@ export async function handleCSVMassImportFileEvent(
             doCSVParsing,
             dbConnection,
             reportId,
+            invocationId: 'MASSIMPORT',
           });
           if (parseResults.errors) {
             await adminLogger.error(
@@ -125,6 +110,7 @@ export async function handleCSVMassImportFileEvent(
             await adminLogger.info(`Tiedosto parsittu: ${key}`);
           }
           const s3MetaData = fileStreamResult.metaData;
+          const hash = eventRecord.s3.object.eTag;
           const skipHashCheck =
             s3MetaData['skip-hash-check'] !== undefined &&
             Number(s3MetaData['skip-hash-check']) === 1;
@@ -136,7 +122,7 @@ export async function handleCSVMassImportFileEvent(
             bucket_name: eventRecord.s3.bucket.name,
             size: eventRecord.s3.object.size,
             metadata: parseResults.metadata,
-            hash: parseResults.hash,
+            hash,
             tags: fileStreamResult.tags,
             reportId,
             errors: parseResults.errors,

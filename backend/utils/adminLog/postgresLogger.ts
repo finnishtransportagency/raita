@@ -1,15 +1,20 @@
-import postgres from 'postgres';
 import { log } from '../logger';
-import { getEnvOrFail } from '../../../utils';
 import { AdminLogLevel, AdminLogSource, IAdminLogger } from './types';
-import { getSecretsManagerSecret } from '../secretsManager';
+import {
+  DBConnection,
+  getDBConnection,
+} from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
 
 export class PostgresLogger implements IAdminLogger {
   private source: AdminLogSource;
   private invocationId: string;
-  private connection: postgres.Sql;
+  private connection: Promise<DBConnection>;
 
-  constructor() {}
+  constructor(dbConnection?: Promise<DBConnection>) {
+    if (dbConnection) {
+      this.connection = dbConnection;
+    }
+  }
 
   async init(source: AdminLogSource, invocationId: string) {
     this.source = source;
@@ -34,10 +39,9 @@ export class PostgresLogger implements IAdminLogger {
     if (this.connection) {
       return this.connection;
     }
-    const password = await getSecretsManagerSecret('database_password');
     // other login info is read from pg env vars
     // TODO: show some error if they are not found?
-    this.connection = postgres({ password });
+    this.connection = getDBConnection();
     return this.connection;
   }
 
@@ -46,9 +50,10 @@ export class PostgresLogger implements IAdminLogger {
       log.warn('Trying to log with PostgresLogger before initialization;');
       return;
     }
-    const schema = getEnvOrFail('RAITA_PGSCHEMA');
+    const connection = await this.getConnection();
+    const schema = connection.schema;
     const timestamp = new Date(Date.now()).toISOString();
-    const sql = await this.getConnection();
+    const sql = connection.sql;
     const rows = messages.map(message => ({
       source: this.source,
       log_timestamp: timestamp,

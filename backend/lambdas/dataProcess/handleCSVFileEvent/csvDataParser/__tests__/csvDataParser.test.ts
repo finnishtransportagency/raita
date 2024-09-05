@@ -463,7 +463,6 @@ describe.skip('handle ams csv file success', () => {
         path: [],
       },
       amsCsvStream,
-      {},
       dbConnection,
     );
 
@@ -501,7 +500,6 @@ describe.skip('handle ams csv file unknow misspelled field success', () => {
         path: [],
       },
       stringToStream(amsCsvWithUnkownMisspelledField),
-      {},
       dbConnection,
     );
 
@@ -538,7 +536,6 @@ describe.skip('handle ams csv file Nans', () => {
         path: [],
       },
       stringToStream(amsWithNansCsv),
-      {},
       dbConnection,
     );
 
@@ -561,7 +558,6 @@ describe.skip('handle ohlWithSurveyDate success', () => {
         path: [],
       },
       stringToStream(ohlWithSurveyDate),
-      {},
       dbConnection,
     );
     expect(result).toEqual('success');
@@ -595,7 +591,6 @@ describe.skip('handle rcWithSomeEnglishColNames success', () => {
         path: [],
       },
       stringToStream(rcWithSomeEnglishColNames),
-      {},
       dbConnection,
     );
 
@@ -632,7 +627,6 @@ describe.skip('handle rcWithOikeaGenetiveForm success', () => {
         path: [],
       },
       stringToStream(rcWithOikeaGenetiveForm),
-      {},
       dbConnection,
     );
 
@@ -669,7 +663,6 @@ describe.skip('handle rpWithSomeTypo success', () => {
         path: [],
       },
       stringToStream(rpWithSomeTypo),
-      {},
       dbConnection,
     );
 
@@ -706,7 +699,6 @@ describe.skip('handle rpWithSomeTypo2 success', () => {
         path: [],
       },
       stringToStream(rpWithSomeTypo2),
-      {},
       dbConnection,
     );
 
@@ -742,7 +734,6 @@ describe.skip('handle tgSlave success', () => {
         path: [],
       },
       stringToStream(tgSlave),
-      {},
       dbConnection,
     );
 
@@ -792,7 +783,6 @@ describe.skip('handle ams csv file with a missing oikea_pystysuuntainen_kiihtyvy
         path: [],
       },
       amsCsvMissingFieldStream,
-      {},
       dbConnection,
     );
 
@@ -828,7 +818,6 @@ describe.skip('handle ams csv file with a missing sscount field success', () => 
         path: [],
       },
       amsCsvMissingSSCountStream,
-      {},
       dbConnection,
     );
 
@@ -850,7 +839,6 @@ describe.skip('handle rp csv file success', () => {
         path: [],
       },
       rpCsvStream,
-      {},
       dbConnection,
     );
 

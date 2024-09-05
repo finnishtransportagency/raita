@@ -27,26 +27,9 @@ import {
 } from '../csvCommon/db/dbUtil';
 import { ENVIRONMENTS } from '../../../../constants';
 import { getPrismaClient } from '../../../utils/prismaClient';
-import { compareVersionStrings } from '../../../utils/compareVersionStrings';
-
-export function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
-  return {
-    configurationFile: getEnv('CONFIGURATION_FILE'),
-    configurationBucket: getEnv('CONFIGURATION_BUCKET'),
-    inspectionBucket: getEnv('INSPECTION_BUCKET'),
-    csvBucket: getEnv('CSV_BUCKET'),
-    openSearchDomain: getEnv('OPENSEARCH_DOMAIN'),
-    region: getEnv('REGION'),
-    metadataIndex: getEnv('METADATA_INDEX'),
-    environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD'),
-  };
-}
-const adminLogger: IAdminLogger = new PostgresLogger();
+import { getLambdaConfigOrFail } from './util';
 
 const findReportByKey = async (key: string) => {
-  const prisma = getPrismaClient();
   const foundReport = await (
     await prisma
   ).raportti.findFirst({
@@ -61,9 +44,13 @@ const findReportByKey = async (key: string) => {
 
 const withRequest = lambdaRequestTracker();
 
-let dbConnection: DBConnection | undefined = undefined;
-
-export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;
+// init db connections and such
+// TODO: there should only be one db library used
+const prisma = getPrismaClient();
+const postgresConnection: Promise<DBConnection> = getDBConnection();
+const config = getLambdaConfigOrFail();
+const backend = BackendFacade.getBackend(config);
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -80,16 +67,10 @@ export async function handleInspectionFileEvent(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  const config = getLambdaConfigOrFail();
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
-  if (doCSVParsing) {
-    // nothing useful can be done without db connection
-    // TODO: clean up the logic of dbConnection and doCSVParsing checks: they are not useful after removal of opensearch
-    dbConnection = await getDBConnection();
-  }
-  const backend = BackendFacade.getBackend(config);
+  const dbConnection = await postgresConnection;
   let currentKey: string = ''; // for logging in case of errors
   try {
     const spec = await backend.specs.getSpecification();
@@ -103,10 +84,7 @@ export async function handleInspectionFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
-        const fileStreamResult = await backend.files.getFileStream(
-          eventRecord,
-          true,
-        );
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
         // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
         const hash = eventRecord.s3.object.eTag;
@@ -212,6 +190,7 @@ export async function handleInspectionFileEvent(
           doCSVParsing,
           dbConnection,
           reportId,
+          invocationId,
         });
         if (parseResults.errors) {
           await adminLogger.error(
