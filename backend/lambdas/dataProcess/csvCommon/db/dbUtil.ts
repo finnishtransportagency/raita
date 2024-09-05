@@ -56,6 +56,7 @@ async function getConnection() {
   connection = postgres({
     password,
     transform: { undefined: null },
+    max: 1,
   });
   connCount++;
   return connection;

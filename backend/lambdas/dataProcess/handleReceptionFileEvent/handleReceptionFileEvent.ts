@@ -22,6 +22,8 @@ import {
   acquireDataProcessLockOrFail,
 } from '../../../utils/dataProcessLock';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { SQSClient } from '@aws-sdk/client-sqs';
+import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -33,7 +35,10 @@ function getLambdaConfigOrFail() {
 
 const withRequest = lambdaRequestTracker();
 
-const adminLogger: IAdminLogger = new PostgresLogger();
+const config = getLambdaConfigOrFail();
+const sqsClient = new SQSClient({});
+const dbConnection = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
 export async function handleReceptionFileEvent(
   queueEvent: SQSEvent,
@@ -41,7 +46,6 @@ export async function handleReceptionFileEvent(
 ): Promise<void> {
   withRequest(queueEvent, context);
   try {
-    const config = getLambdaConfigOrFail();
     const sqsRecords = queueEvent.Records;
     const sqsRecord = sqsRecords[0]; // assume only one event here // TODO: handle this if batch size is increased
     const s3Event: S3Event = JSON.parse(sqsRecord.body);
@@ -55,7 +59,7 @@ export async function handleReceptionFileEvent(
         // note: currently this lock is never released
         // pipeline can acquire lock only after all dataprocess locks have timed out
         // TODO: release lock once all files inside zip have been fully handled
-        await getLock(key);
+        await getLock(key, await dbConnection);
         log.info('acquired lock');
       } catch (error) {
         log.error(error);
@@ -78,6 +82,7 @@ export async function handleReceptionFileEvent(
         const result = await launchECSZipTask({
           ...config,
           key,
+          sqsClient,
         });
         log.info({ result }); // temporary? for debugging
         return result;
@@ -126,14 +131,14 @@ export async function handleReceptionFileEvent(
  * Wait until lock is acquired
  */
 // @ts-ignore
-const getLock = async (key: string) => {
+const getLock = async (key: string, dbConnection: DBConnection) => {
   // TODO: don't naively wait here
   const waitTime = 30 * 1000;
   const timeout = 1000 * 60 * 15; // note: lambda timeout will hit first currently
   let elapsed = 0;
   while (elapsed < timeout) {
     try {
-      return await acquireDataProcessLockOrFail(key);
+      return await acquireDataProcessLockOrFail(key, dbConnection);
     } catch (error) {
       if (error instanceof DataProcessLockedError) {
         log.info('Data process locked, waiting to acquire lock');
