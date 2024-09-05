@@ -23,6 +23,7 @@ import {
   fileSuffixesToIncludeInMetadataParsing,
 } from '../../../../constants';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { spec } from 'node:test/reporters';
 
 export function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('CSV mass import lambda');
@@ -76,10 +77,7 @@ export async function handleCSVMassImportFileEvent(
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.debug({ fileName: key }, 'Start CSVMassImport file handler');
-        const fileStreamResult = await backend.files.getFileStream(
-          eventRecord,
-          true,
-        );
+        const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
 
         await adminLogger.init(
@@ -116,6 +114,7 @@ export async function handleCSVMassImportFileEvent(
             doCSVParsing,
             dbConnection,
             reportId,
+            invocationId: 'MASSIMPORT',
           });
           if (parseResults.errors) {
             await adminLogger.error(
@@ -125,6 +124,7 @@ export async function handleCSVMassImportFileEvent(
             await adminLogger.info(`Tiedosto parsittu: ${key}`);
           }
           const s3MetaData = fileStreamResult.metaData;
+          const hash = eventRecord.s3.object.eTag;
           const skipHashCheck =
             s3MetaData['skip-hash-check'] !== undefined &&
             Number(s3MetaData['skip-hash-check']) === 1;
@@ -136,7 +136,7 @@ export async function handleCSVMassImportFileEvent(
             bucket_name: eventRecord.s3.bucket.name,
             size: eventRecord.s3.object.size,
             metadata: parseResults.metadata,
-            hash: parseResults.hash,
+            hash,
             tags: fileStreamResult.tags,
             reportId,
             errors: parseResults.errors,

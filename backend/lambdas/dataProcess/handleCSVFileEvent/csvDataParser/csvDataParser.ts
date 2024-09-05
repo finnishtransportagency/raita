@@ -83,7 +83,6 @@ async function parseCsvAndWriteToDb(
       ),
     );
 
-
     try {
       //disable here if needed stop database
       return await writeRowsToDB(dbRows, table, dbConnection);
@@ -338,11 +337,11 @@ export function validateHeaders(
 export async function parseCSVFileStream(
   keyData: KeyData,
   fileStream: Readable,
-  metadata: ParseValueResult | null,
   dbConnection: DBConnection,
+  invocationId: string = 'DEFAULT_ID_FOR_TESTS',
 ) {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
-  await adminLogger.init('data-csv', keyData.keyWithoutSuffix+'.'+keyData.fileSuffix);
+  await adminLogger.init('data-csv', invocationId);
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
@@ -413,7 +412,8 @@ export async function parseCSVFileStream(
                 });
                 missingOptionalColumns = headerValidation.missingOptional;
                 await adminLogger.info(
-                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` + missingOptionalColumns,
+                  `Tiedoston ${fileBaseName} csv tiedostosta puuttuu ei-pakollisia kolumneja: ` +
+                    missingOptionalColumns,
                 );
                 try {
                   await writeMissingColumnsToDb(
@@ -498,8 +498,15 @@ export async function parseCSVFileStream(
           reject(error);
         }
       });
-      rl.on('error', () => {
-        log.error('rl on error ');
+      rl.on('error', async () => {
+        log.error('rl on error. Error reading line from csv-file: ' + fileBaseName);
+        logCSVParsingException.error(
+          {errorType: 'CSV Readline error', fileName: fileBaseName},
+          `rl on error. Error reading line from csv-file: ${fileBaseName}`,
+        );
+        await adminLogger.error(
+          `rl on error. Error reading line from csv-file: ${fileBaseName}.`
+        );
       });
       rl.on('close', async function () {
         await until(() => notWritten == 0);
@@ -557,7 +564,8 @@ export async function parseCSVFileStream(
         'Status or chunk processsing db failure',
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` + error,
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Status or chunk processsing db failure.` +
+          error,
       );
 
       throw error;
@@ -577,8 +585,9 @@ export async function parseCSVFileStream(
         error.toString(),
         dbConnection,
       );
-      await adminLogger.warn(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` + error,
+      await adminLogger.error(
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` +
+          error,
       );
     } catch (error) {
       logCSVDBException.error(
@@ -586,7 +595,8 @@ export async function parseCSVFileStream(
         'Parsing error status update db failure',
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnitui.` + error,
+        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportin päivitys ERROR-statukselle epäonnistui.` +
+          error,
       );
       throw error;
     }
