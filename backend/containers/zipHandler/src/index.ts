@@ -169,7 +169,8 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
               entries.success.length +
               entries.skipped.length +
               entries.error.length;
-            let logMessage = `Tiedostoja yhteensä: ${totalCount}`;
+            let logMessage =
+              `Tiedostoja yhteensä: ${totalCount}`;
             if (entries.success.length) {
               logMessage += `\nPurettu onnistuneesti: ${entries.success.length}`;
             }

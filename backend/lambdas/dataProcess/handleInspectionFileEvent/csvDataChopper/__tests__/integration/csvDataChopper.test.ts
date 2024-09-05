@@ -234,6 +234,7 @@ describe('handle ams file success', () => {
       amsCsvStream,
       dbConnection,
       891,
+      'TEST_invocationId',
     );
     log.debug('report inserted: ' + result);
   }, 900000);
