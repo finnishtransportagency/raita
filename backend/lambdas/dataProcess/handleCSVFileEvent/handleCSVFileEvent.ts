@@ -24,8 +24,9 @@ function getLambdaConfigOrFail() {
   };
 }
 
-const adminLogger: IAdminLogger = new PostgresLogger();
-let dbConnection: DBConnection;
+const postgresConnection: Promise<DBConnection> = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
+const files = new S3FileRepository();
 
 const withRequest = lambdaRequestTracker();
 
@@ -36,8 +37,7 @@ export async function handleCSVFileEvent(
   withRequest(event, context);
   log.debug('Start csv file handler');
   log.debug(event);
-  dbConnection = await getDBConnection();
-  const files = new S3FileRepository();
+  const dbConnection = await postgresConnection;
   let currentKey: string = ''; // for logging in case of errors
 
   try {

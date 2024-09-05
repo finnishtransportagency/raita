@@ -9,7 +9,7 @@ import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
-import { getLambdaConfigOrFail } from '../handleInspectionFileEvent';
+import { getLambdaConfigOrFail } from '../util';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { IAdminLogger } from '../../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';

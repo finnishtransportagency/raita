@@ -1,7 +1,5 @@
-import postgres from 'postgres';
-import { getSecretsManagerSecret } from './secretsManager';
-import { getEnvOrFail } from '../../utils';
 import { subMinutes } from 'date-fns';
+import { DBConnection } from '../lambdas/dataProcess/csvCommon/db/dbUtil';
 
 /**
  * This file handles the data process lock
@@ -23,12 +21,6 @@ enum LockHolderType {
   Pipeline = 'pipeline',
 }
 
-async function getClient() {
-  const password = await getSecretsManagerSecret('database_password');
-  const sql = await postgres({ password });
-  return sql;
-}
-
 /**
  * Acquire lock with holder_type = holderType as long as there is no lock held by holderTypeToFailOn
  * Allow setting multiple locks by the same holderType
@@ -37,9 +29,10 @@ async function acquireLockOrFail(
   holderType: LockHolderType,
   holderTypeToFailOn: LockHolderType,
   filename: string | null,
+  dbConnection: DBConnection,
 ) {
-  const sql = await getClient();
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const sql = dbConnection.sql;
+  const schema = dbConnection.schema;
   const timestamp = new Date(Date.now()).toISOString();
   const expiredTime = subMinutes(
     new Date(),
@@ -78,9 +71,10 @@ async function acquireLockOrFail(
 async function releaseLock(
   holderType: LockHolderType,
   filename: string | null,
+  dbConnection: DBConnection,
 ) {
-  const sql = await getClient();
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const sql = dbConnection.sql;
+  const schema = dbConnection.schema;
   return await sql`
   DELETE FROM ${sql(schema)}.data_process_lock
   WHERE holder_type = ${holderType}
@@ -88,33 +82,41 @@ async function releaseLock(
   `;
 }
 
-export function acquirePipelineLockOrFail() {
+export function acquirePipelineLockOrFail(dbConnection: DBConnection) {
   return acquireLockOrFail(
     LockHolderType.Pipeline,
     LockHolderType.DataProcess,
     'pipeline',
+    dbConnection,
   );
 }
-export function acquireDataProcessLockOrFail(filename: string) {
+export function acquireDataProcessLockOrFail(
+  filename: string,
+  dbConnection: DBConnection,
+) {
   return acquireLockOrFail(
     LockHolderType.DataProcess,
     LockHolderType.Pipeline,
     filename,
+    dbConnection,
   );
 }
-export function releasePipelineLock() {
-  return releaseLock(LockHolderType.Pipeline, 'pipeline');
+export function releasePipelineLock(dbConnection: DBConnection) {
+  return releaseLock(LockHolderType.Pipeline, 'pipeline', dbConnection);
 }
-export function releaseDataProcessLock(filename: string) {
-  return releaseLock(LockHolderType.DataProcess, filename);
+export function releaseDataProcessLock(
+  filename: string,
+  dbConnection: DBConnection,
+) {
+  return releaseLock(LockHolderType.DataProcess, filename, dbConnection);
 }
 
 /**
  * This should only be used from the pipeline
  */
-export async function lockTableExists() {
-  const sql = await getClient();
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+export async function lockTableExists(dbConnection: DBConnection) {
+  const sql = dbConnection.sql;
+  const schema = dbConnection.schema;
   const result = await sql`SELECT EXISTS (
   SELECT FROM information_schema.tables
   WHERE table_schema = ${schema}
