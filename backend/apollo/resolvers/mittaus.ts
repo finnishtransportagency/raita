@@ -44,7 +44,7 @@ export const mittausResolvers: Resolvers = {
         return {
           status: 'size_limit',
           row_count: raporttiCount,
-          size_estimate: NaN,
+          size_estimate: null,
         };
       }
       // mittaus table is BIG, make query faster by explicitly searching with raportti_id
