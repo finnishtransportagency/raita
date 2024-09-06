@@ -578,15 +578,20 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
 async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
   const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
-  try {
-    const recordCount = await prisma.ohl_mittaus.createMany({
-      data: convertedData,
-    });
-    return recordCount.count;
-  } catch (error) {
-    log.error(`Error adding OHL Mittaus records: ${error}`);
-    throw error;
-  }
+  let count = 0;
+  convertedData.map(row => {
+    try {
+      const recordCount = prisma.ohl_mittaus.createMany({
+        data: convertedData,
+      });
+      count += 1;
+      return recordCount;
+    } catch (error) {
+      log.error(`Error adding OHL Mittaus records: ${error}`);
+      throw error;
+    }
+  });
+  return count;
 }
 
 async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
@@ -611,29 +616,39 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
 async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const convertedData = convertDataToRcMittausArray(parsedCSVRows);
   const prisma = await getPrismaClient();
-  try {
-    const recordCount = await prisma.rc_mittaus.createMany({
-      data: convertedData,
-    });
-    return recordCount.count;
-  } catch (error) {
-    log.error(`Error adding RC Mittaus records: ${error}`);
-    throw error;
-  }
+  let count = 0;
+  convertedData.map(row => {
+    try {
+      const recordCount = prisma.rc_mittaus.createMany({
+        data: convertedData,
+      });
+      count += 1;
+      return recordCount;
+    } catch (error) {
+      log.error(`Error adding RC Mittaus records: ${error}`);
+      throw error;
+    }
+  });
+  return count;
 }
 
 async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const convertedData = convertDataToRpMittausArray(parsedCSVRows);
   const prisma = await getPrismaClient();
-  try {
-    const recordCount = await prisma.rp_mittaus.createMany({
-      data: convertedData,
-    });
-    return recordCount.count;
-  } catch (error) {
-    log.error(`Error adding RP Mittaus records: ${error}`);
-    throw error;
-  }
+  let count = 0;
+  convertedData.map(row => {
+    try {
+      const recordCount = prisma.rp_mittaus.createMany({
+        data: convertedData,
+      });
+      count += 1;
+      return recordCount;
+    } catch (error) {
+      log.error(`Error adding RP Mittaus records: ${error}`);
+      throw error;
+    }
+  });
+  return count;
 }
 
 async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
@@ -659,15 +674,20 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
 async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
   const prisma = await getPrismaClient();
-  try {
-    const recordCount = await prisma.tsight_mittaus.createMany({
-      data: convertedData,
-    });
-    return recordCount.count;
-  } catch (error) {
-    log.error(`Error adding Tsight Mittaus records: ${error}`);
-    throw error;
-  }
+  let count = 0;
+  convertedData.map(row => {
+    try {
+      const recordCount = prisma.tsight_mittaus.createMany({
+        data: convertedData,
+      });
+      count += 1;
+      return recordCount;
+    } catch (error) {
+      log.error(`Error adding TSIGHT Mittaus records: ${error}`);
+      throw error;
+    }
+  });
+  return count;
 }
 
 enum TableEnum {
