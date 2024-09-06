@@ -73,6 +73,7 @@ export const MITTAUS_META = gql(`
       tilirataosanumero { value count }
       mittaus_systems { name columns }
       latest_inspection
+      input_fields { name type }
     }
   }
 `);
