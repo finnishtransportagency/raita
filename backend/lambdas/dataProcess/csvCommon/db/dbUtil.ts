@@ -561,11 +561,6 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
   log.info(`DATA TO AMS_MITTAUS`);
   let count = 0;
   convertedData.map(row => {
-    Object.entries(row).forEach(([key, value]) => {
-      if (isNaN(value)) {
-        log.info(`NaN row ${row}`);
-      }
-    });
     try {
       const recordCount = prisma.ams_mittaus.create({
         data: row,
@@ -586,8 +581,8 @@ async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   convertedData.map(row => {
     try {
-      const recordCount = prisma.ohl_mittaus.createMany({
-        data: convertedData,
+      const recordCount = prisma.ohl_mittaus.create({
+        data: row,
       });
       count += 1;
       return recordCount;
@@ -604,11 +599,6 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const convertedData = convertDataToPiMittausArray(parsedCSVRows);
   let count = 0;
   convertedData.map(row => {
-    Object.entries(row).forEach(([key, value]) => {
-      if (isNaN(value)) {
-        log.info(`NaN row ${row}`);
-      }
-    });
     try {
       const recordCount = prisma.pi_mittaus.create({
         data: row,
@@ -629,8 +619,8 @@ async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   convertedData.map(row => {
     try {
-      const recordCount = prisma.rc_mittaus.createMany({
-        data: convertedData,
+      const recordCount = prisma.rc_mittaus.create({
+        data: row,
       });
       count += 1;
       return recordCount;
@@ -648,8 +638,8 @@ async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   convertedData.map(row => {
     try {
-      const recordCount = prisma.rp_mittaus.createMany({
-        data: convertedData,
+      const recordCount = prisma.rp_mittaus.create({
+        data: row,
       });
       count += 1;
       return recordCount;
@@ -667,11 +657,6 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   log.info(`DATA TO TG_MITTAUS`);
   let count = 0;
   convertedData.map(row => {
-    Object.entries(row).forEach(([key, value]) => {
-      if (isNaN(value)) {
-        log.info(`NaN row ${row}`);
-      }
-    });
     try {
       const recordCount = prisma.tg_mittaus.create({
         data: row,
@@ -692,8 +677,8 @@ async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   convertedData.map(row => {
     try {
-      const recordCount = prisma.tsight_mittaus.createMany({
-        data: convertedData,
+      const recordCount = prisma.tsight_mittaus.create({
+        data: row,
       });
       count += 1;
       return recordCount;
