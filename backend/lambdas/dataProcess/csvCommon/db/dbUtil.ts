@@ -563,7 +563,7 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
   convertedData.map(row => {
     Object.entries(row).forEach(([key, value]) => {
       if (isNaN(value)) {
-        log.info(`NaN found in key "${key}" with value: ${value}`);
+        log.info(`NaN row ${row}`);
       }
     });
     try {
@@ -606,7 +606,7 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   convertedData.map(row => {
     Object.entries(row).forEach(([key, value]) => {
       if (isNaN(value)) {
-        log.info(`NaN found in key "${key}" with value: ${value}`);
+        log.info(`NaN row ${row}`);
       }
     });
     try {
@@ -669,7 +669,7 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   convertedData.map(row => {
     Object.entries(row).forEach(([key, value]) => {
       if (isNaN(value)) {
-        log.info(`NaN found in key "${key}" with value: ${value}`);
+        log.info(`NaN row ${row}`);
       }
     });
     try {
