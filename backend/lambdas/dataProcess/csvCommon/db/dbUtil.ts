@@ -16,6 +16,7 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
+import { ro } from 'date-fns/locale';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -49,6 +50,7 @@ function processCSVRows(rows: any[]) {
       }
     }
     row.raportti_id = parseInt(row.raportti_id);
+    row.id = parseInt(row.id);
     return row;
   });
 }
