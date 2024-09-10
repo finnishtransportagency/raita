@@ -37,6 +37,7 @@ function processCSVRows(rows: any[]) {
   const stringValues = [
     'jarjestelma',
     'running_date',
+    'sijainti',
     'rataosuus_nimi',
     'modified',
     'created',
@@ -564,6 +565,7 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   const recordCounts = await Promise.all(
     convertedData.map(row => {
+      log.info(`THIS IS DATA: ${JSON.stringify(row)}`);
       try {
         const recordCount = prisma.ams_mittaus.create({
           data: row,
