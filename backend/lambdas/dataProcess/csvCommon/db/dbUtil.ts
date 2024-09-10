@@ -44,14 +44,13 @@ function processCSVRows(rows: any[]) {
 
   return rows.map(row => {
     for (const key in row) {
-      if (row.sijainti) delete row.sijainti;
+      delete row.sijainti;
       const value = row[key];
       if (Number.isNaN(value) && !stringValues.includes(key)) {
         row[key] = null;
       }
     }
     row.raportti_id = parseInt(row.raportti_id);
-    row.id = parseInt(row.id);
     return row;
   });
 }
