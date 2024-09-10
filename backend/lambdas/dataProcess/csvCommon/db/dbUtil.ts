@@ -37,13 +37,14 @@ function processCSVRows(rows: any[]) {
   const stringValues = [
     'jarjestelma',
     'running_date',
-    'sijainti',
     'rataosuus_nimi',
     'modified',
     'created',
   ];
+
   return rows.map(row => {
     for (const key in row) {
+      if (row.sijainti) delete row.sijainti;
       const value = row[key];
       if (Number.isNaN(value) && !stringValues.includes(key)) {
         row[key] = null;

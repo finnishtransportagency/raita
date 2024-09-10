@@ -52,7 +52,7 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
     running_date: item.running_date,
     jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null, // Special handling may be needed for "Unsupported" types
+
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     oikea_pystysuuntainen_kiihtyvyys_c1:
       item.oikea_pystysuuntainen_kiihtyvyys_c1
@@ -217,7 +217,7 @@ export function convertDataToOhlMittausArray(data: any[]): OhlMittausData[] {
       ? (item.jarjestelma as jarjestelma)
       : undefined,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null, // Special handling may be needed for "Unsupported" types
+
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     siksak_1: item.siksak_1 ? new Decimal(item.siksak_1) : null,
     siksak_2: item.siksak_2 ? new Decimal(item.siksak_2) : null,
@@ -353,7 +353,6 @@ export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
 
     jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null, // Special handling may be needed for "Unsupported" types
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     accz_1_1: item.accz_1_1 ? new Decimal(item.accz_1_1) : null,
     accz_1_2: item.accz_1_2 ? new Decimal(item.accz_1_2) : null,
@@ -457,7 +456,7 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
 
     jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null,
+
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     oikea_raiteen_aallon_rms_10_30mm: item.oikea_raiteen_aallon_rms_10_30mm
       ? new Decimal(item.oikea_raiteen_aallon_rms_10_30mm)
@@ -1215,7 +1214,7 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
 
     jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null, // Geography unsupported, left as-is
+
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     raideleveyden_poikkeama: item.raideleveyden_poikkeama
       ? new Decimal(item.raideleveyden_poikkeama)
@@ -1383,7 +1382,7 @@ export function convertDataToTsightMittausArray(data: any[]): TsightMittaus[] {
 
     jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
     sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    sijainti: item.sijainti || null, // Unsupported geography field
+
     ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
     ballast_slope_l: item.ballast_slope_l
       ? new Decimal(item.ballast_slope_l)
