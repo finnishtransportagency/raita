@@ -558,20 +558,22 @@ export async function writeMissingColumnsToDb(
 async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
   const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
-  log.info(`DATA TO AMS_MITTAUS`);
+
   let count = 0;
-  convertedData.map(row => {
-    try {
-      const recordCount = prisma.ams_mittaus.create({
-        data: row,
-      });
-      count += 1;
-      return recordCount;
-    } catch (error) {
-      log.error(`Error adding AMS Mittaus records: ${error}`);
-      throw error;
-    }
-  });
+  const recordCounts = await Promise.all(
+    convertedData.map(row => {
+      try {
+        const recordCount = prisma.ams_mittaus.create({
+          data: row,
+        });
+        count += 1;
+        return recordCount;
+      } catch (error) {
+        log.error(`Error adding AMS Mittaus records: ${error}`);
+        throw error;
+      }
+    }),
+  );
   return count;
 }
 
@@ -598,18 +600,20 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
   const convertedData = convertDataToPiMittausArray(parsedCSVRows);
   let count = 0;
-  convertedData.map(row => {
-    try {
-      const recordCount = prisma.pi_mittaus.create({
-        data: row,
-      });
-      count += 1;
-      return recordCount;
-    } catch (error) {
-      log.error(`Error adding PI Mittaus records: ${error}`);
-      throw error;
-    }
-  });
+  const recordCounts = await Promise.all(
+    convertedData.map(row => {
+      try {
+        const recordCount = prisma.pi_mittaus.create({
+          data: row,
+        });
+        count += 1;
+        return recordCount;
+      } catch (error) {
+        log.error(`Error adding PI Mittaus records: ${error}`);
+        throw error;
+      }
+    }),
+  );
   return count;
 }
 
@@ -656,18 +660,20 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   const prisma = await getPrismaClient();
   log.info(`DATA TO TG_MITTAUS`);
   let count = 0;
-  convertedData.map(row => {
-    try {
-      const recordCount = prisma.tg_mittaus.create({
-        data: row,
-      });
-      count += 1;
-      return recordCount;
-    } catch (error) {
-      log.error(`Error adding TG Mittaus records: ${error}`);
-      throw error;
-    }
-  });
+  const recordCounts = await Promise.all(
+    convertedData.map(row => {
+      try {
+        const recordCount = prisma.tg_mittaus.create({
+          data: row,
+        });
+        count += 1;
+        return recordCount;
+      } catch (error) {
+        log.error(`Error adding TG Mittaus records: ${error}`);
+        throw error;
+      }
+    }),
+  );
   return count;
 }
 
