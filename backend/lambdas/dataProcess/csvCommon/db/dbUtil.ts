@@ -52,6 +52,7 @@ function processCSVRows(rows: any[]) {
       }
     }
     row.raportti_id = parseInt(row.raportti_id);
+    row.id = parseInt(row.id);
     return row;
   });
 }
@@ -67,25 +68,25 @@ export async function writeRowsToDB(
     let count;
     switch (table) {
       case TableEnum.AMS:
-        count = addAMSMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addAMSMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.OHL:
-        count = addOHLMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addOHLMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.PI:
-        count = addPIMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addPIMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.RC:
-        count = addRCMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addRCMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.RP:
-        count = addRPMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addRPMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.TG:
-        count = addTGMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addTGMittausRecord(processCSVRows(parsedCSVRows));
         break;
       case TableEnum.TSIGHT:
-        count = addTsightMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addTsightMittausRecord(processCSVRows(parsedCSVRows));
         break;
       default:
         throw new Error(`Unhandled table type: ${table}`);
