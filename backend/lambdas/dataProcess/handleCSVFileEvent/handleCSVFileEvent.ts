@@ -34,13 +34,13 @@ export async function handleCSVFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  withRequest(event, context);
-  log.debug('Start csv file handler');
-  log.debug(event);
-  const dbConnection = await postgresConnection;
-  let currentKey: string = ''; // for logging in case of errors
-
   try {
+    withRequest(event, context);
+    log.debug('Start csv file handler');
+    log.debug(event);
+    const dbConnection = await postgresConnection;
+    let currentKey: string = ''; // for logging in case of errors
+
     if (!dbConnection) {
       // No DB connection
       logCSVDBException.error('No db connection');
