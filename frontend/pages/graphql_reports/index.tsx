@@ -411,44 +411,42 @@ const ReportsIndex: RaitaNextPage = () => {
 
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              {!searchQuery.data && (
-                <div className="flex items-end">
-                  <div className="mt-1"> {t('common:no_results')}</div>
-                  {(zipState.state.zipUrl ||
-                    zipState.state.isLoading ||
-                    localStorage.getItem('zipUrl')) && (
-                    <div className="ml-2 flex">
-                      <PollingHandler />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {searchQuery.data && (
+              {searchQuery.data &&
+              resultsData?.total_size &&
+              resultsData?.total_size > 0 ? (
                 <div className="flex items-end">
                   <div className="mt-1">
                     {t('search_result_count', {
                       count: resultsData?.count,
                     })}
                   </div>
-                  {resultsData?.total_size && resultsData?.total_size > 0 && (
-                    <div className="ml-2 flex">
-                      {!localStorage.getItem('zipUrl') ? (
-                        <ZipDownload
-                          aggregationSize={resultsData?.count}
-                          usedQueryVariables={getQueryVariables(state)}
-                          resultTotalSize={resultsData?.total_size}
-                        />
-                      ) : (
-                        <PollingHandler />
-                      )}
-                    </div>
-                  )}
+
+                  <div className="ml-2 flex">
+                    {!localStorage.getItem('zipUrl') ? (
+                      <ZipDownload
+                        aggregationSize={resultsData?.count}
+                        usedQueryVariables={getQueryVariables(state)}
+                        resultTotalSize={resultsData?.total_size}
+                      />
+                    ) : (
+                      <PollingHandler />
+                    )}
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="flex items-end">
+                    <div className="mt-1">{t('common:no_results')}</div>
+                    {localStorage.getItem('zipUrl') ||
+                    zipState.state.isLoading ? (
+                      <PollingHandler />
+                    ) : null}
+                  </div>
+                </>
               )}
 
               <div>
-                {resultsData && (
+                {resultsData && !(resultsData.count >= 0) && (
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
