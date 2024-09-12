@@ -452,10 +452,20 @@ const ReportsIndex: RaitaNextPage = () => {
                     </div>
                   )}
                 </div>
+              ) : (
+                <>
+                  <div className="flex items-end">
+                    <div className="mt-1">{t('common:no_results')}</div>
+                    {localStorage.getItem('zipUrl') ||
+                    zipState.state.isLoading ? (
+                      <PollingHandler />
+                    ) : null}
+                  </div>
+                </>
               )}
 
               <div>
-                {resultsData && (
+                {resultsData && !(resultsData.count >= 0) && (
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
