@@ -33,31 +33,6 @@ export async function getDBConnection(): Promise<{
 
 export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
 
-function processCSVRows(rows: any[]) {
-  const stringValues = [
-    'jarjestelma',
-    'running_date',
-    'sijainti',
-    'rataosuus_nimi',
-    'modified',
-    'created',
-  ];
-
-  return rows.map(row => {
-    delete row.sijainti;
-    for (const key in row) {
-      const value = row[key];
-      if (Number.isNaN(value) && !stringValues.includes(key)) {
-        row[key] = null;
-      }
-    }
-    if (!Number.isNaN(row.raportti_id))
-      row.raportti_id = parseInt(row.raportti_id);
-    if (!Number.isNaN(row.id)) row.id = parseInt(row.id);
-    return row;
-  });
-}
-
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
@@ -69,25 +44,25 @@ export async function writeRowsToDB(
     let count;
     switch (table) {
       case TableEnum.AMS:
-        count = await addAMSMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addAMSMittausRecord(parsedCSVRows);
         break;
       case TableEnum.OHL:
-        count = await addOHLMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addOHLMittausRecord(parsedCSVRows);
         break;
       case TableEnum.PI:
-        count = await addPIMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addPIMittausRecord(parsedCSVRows);
         break;
       case TableEnum.RC:
-        count = await addRCMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addRCMittausRecord(parsedCSVRows);
         break;
       case TableEnum.RP:
-        count = await addRPMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addRPMittausRecord(parsedCSVRows);
         break;
       case TableEnum.TG:
-        count = await addTGMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addTGMittausRecord(parsedCSVRows);
         break;
       case TableEnum.TSIGHT:
-        count = await addTsightMittausRecord(processCSVRows(parsedCSVRows));
+        count = await addTsightMittausRecord(parsedCSVRows);
         break;
       default:
         throw new Error(`Unhandled table type: ${table}`);
@@ -610,6 +585,7 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   const recordCounts = await Promise.all(
     convertedData.map(row => {
+      log.info(`THIS IS DATA: ${JSON.stringify(row)}`);
       try {
         const recordCount = prisma.pi_mittaus.create({
           data: row,
@@ -674,6 +650,7 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   let count = 0;
   const recordCounts = await Promise.all(
     convertedData.map(row => {
+      log.info(`THIS IS DATA: ${JSON.stringify(row)}`);
       try {
         const recordCount = prisma.tg_mittaus.create({
           data: row,

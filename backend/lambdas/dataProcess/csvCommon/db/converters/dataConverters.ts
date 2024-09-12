@@ -1,6 +1,10 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import { jarjestelma } from '@prisma/client';
 
+function sanitizeValue<T>(value: T) {
+  return Number.isNaN(value) || !value ? null : value;
+}
+
 type AMSMittausData = {
   raportti_id: number;
   running_date: Date;
@@ -50,111 +54,140 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
   return data.map(item => ({
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
-    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
-    sscount: item.sscount ? parseInt(item.sscount, 10) : null,
 
-    ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
-    oikea_pystysuuntainen_kiihtyvyys_c1:
-      item.oikea_pystysuuntainen_kiihtyvyys_c1
-        ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1)
-        : null,
-    vasen_pystysuuntainen_kiihtyvyys_c1:
-      item.vasen_pystysuuntainen_kiihtyvyys_c1
-        ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1)
-        : null,
-    oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu:
-      item.oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu
-        ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu)
-        : null,
-    vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu:
-      item.vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu
-        ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu)
-        : null,
-    oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta:
-      item.oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta
-        ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta)
-        : null,
-    vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta:
-      item.vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta
-        ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta)
-        : null,
-    oikea_poikittainen_kiihtyvyys_c1: item.oikea_poikittainen_kiihtyvyys_c1
+    jarjestelma: sanitizeValue(item.jarjestelma),
+    sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
+
+    ajonopeus: sanitizeValue(item.ajonopeus)
+      ? new Decimal(item.ajonopeus)
+      : null,
+    oikea_pystysuuntainen_kiihtyvyys_c1: sanitizeValue(
+      item.oikea_pystysuuntainen_kiihtyvyys_c1,
+    )
+      ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1)
+      : null,
+    vasen_pystysuuntainen_kiihtyvyys_c1: sanitizeValue(
+      item.vasen_pystysuuntainen_kiihtyvyys_c1,
+    )
+      ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1)
+      : null,
+    oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu: sanitizeValue(
+      item.oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu,
+    )
+      ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu)
+      : null,
+    vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu: sanitizeValue(
+      item.vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu,
+    )
+      ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu)
+      : null,
+    oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta: sanitizeValue(
+      item.oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta,
+    )
+      ? new Decimal(item.oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta)
+      : null,
+    vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta: sanitizeValue(
+      item.vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta,
+    )
+      ? new Decimal(item.vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta)
+      : null,
+    oikea_poikittainen_kiihtyvyys_c1: sanitizeValue(
+      item.oikea_poikittainen_kiihtyvyys_c1,
+    )
       ? new Decimal(item.oikea_poikittainen_kiihtyvyys_c1)
       : null,
-    vasen_poikittainen_kiihtyvyys_c1: item.vasen_poikittainen_kiihtyvyys_c1
+    vasen_poikittainen_kiihtyvyys_c1: sanitizeValue(
+      item.vasen_poikittainen_kiihtyvyys_c1,
+    )
       ? new Decimal(item.vasen_poikittainen_kiihtyvyys_c1)
       : null,
-    oikea_poikittainen_kiihtyvyys_c1_suodatettu:
-      item.oikea_poikittainen_kiihtyvyys_c1_suodatettu
-        ? new Decimal(item.oikea_poikittainen_kiihtyvyys_c1_suodatettu)
-        : null,
-    vasen_poikittainen_kiihtyvyys_c1_suodatettu:
-      item.vasen_poikittainen_kiihtyvyys_c1_suodatettu
-        ? new Decimal(item.vasen_poikittainen_kiihtyvyys_c1_suodatettu)
-        : null,
-    oikea_poikittainen_kiihtyvyys_c1_keskihajonta:
-      item.oikea_poikittainen_kiihtyvyys_c1_keskihajonta
-        ? new Decimal(item.oikea_poikittainen_kiihtyvyys_c1_keskihajonta)
-        : null,
-    vasen_poikittainen_kiihtyvyys_c1_keskihajonta:
-      item.vasen_poikittainen_kiihtyvyys_c1_keskihajonta
-        ? new Decimal(item.vasen_poikittainen_kiihtyvyys_c1_keskihajonta)
-        : null,
-    pystysuuntainen_kiihtyvyys_c2: item.pystysuuntainen_kiihtyvyys_c2
+    oikea_poikittainen_kiihtyvyys_c1_suodatettu: sanitizeValue(
+      item.oikea_poikittainen_kiihtyvyys_c1_suodatettu,
+    )
+      ? new Decimal(item.oikea_poikittainen_kiihtyvyys_c1_suodatettu)
+      : null,
+    vasen_poikittainen_kiihtyvyys_c1_suodatettu: sanitizeValue(
+      item.vasen_poikittainen_kiihtyvyys_c1_suodatettu,
+    )
+      ? new Decimal(item.vasen_poikittainen_kiihtyvyys_c1_suodatettu)
+      : null,
+    oikea_poikittainen_kiihtyvyys_c1_keskihajonta: sanitizeValue(
+      item.oikea_poikittainen_kiihtyvyys_c1_keskihajonta,
+    )
+      ? new Decimal(item.oikea_poikittainen_kiihtyvyys_c1_keskihajonta)
+      : null,
+    vasen_poikittainen_kiihtyvyys_c1_keskihajonta: sanitizeValue(
+      item.vasen_poikittainen_kiihtyvyys_c1_keskihajonta,
+    )
+      ? new Decimal(item.vasen_poikittainen_kiihtyvyys_c1_keskihajonta)
+      : null,
+    pystysuuntainen_kiihtyvyys_c2: sanitizeValue(
+      item.pystysuuntainen_kiihtyvyys_c2,
+    )
       ? new Decimal(item.pystysuuntainen_kiihtyvyys_c2)
       : null,
-    pystysuuntainen_kiihtyvyys_c2_suodatettu:
-      item.pystysuuntainen_kiihtyvyys_c2_suodatettu
-        ? new Decimal(item.pystysuuntainen_kiihtyvyys_c2_suodatettu)
-        : null,
-    poikittainen_kiihtyvyys_c2: item.poikittainen_kiihtyvyys_c2
+    pystysuuntainen_kiihtyvyys_c2_suodatettu: sanitizeValue(
+      item.pystysuuntainen_kiihtyvyys_c2_suodatettu,
+    )
+      ? new Decimal(item.pystysuuntainen_kiihtyvyys_c2_suodatettu)
+      : null,
+    poikittainen_kiihtyvyys_c2: sanitizeValue(item.poikittainen_kiihtyvyys_c2)
       ? new Decimal(item.poikittainen_kiihtyvyys_c2)
       : null,
-    poikittainen_kiihtyvyys_c2_suodatettu:
-      item.poikittainen_kiihtyvyys_c2_suodatettu
-        ? new Decimal(item.poikittainen_kiihtyvyys_c2_suodatettu)
-        : null,
-    transversal_acceleration_c2_mean_to_peak:
-      item.transversal_acceleration_c2_mean_to_peak
-        ? new Decimal(item.transversal_acceleration_c2_mean_to_peak)
-        : null,
-    pystysuuntainen_kiihtyvyys_c3: item.pystysuuntainen_kiihtyvyys_c3
+    poikittainen_kiihtyvyys_c2_suodatettu: sanitizeValue(
+      item.poikittainen_kiihtyvyys_c2_suodatettu,
+    )
+      ? new Decimal(item.poikittainen_kiihtyvyys_c2_suodatettu)
+      : null,
+    transversal_acceleration_c2_mean_to_peak: sanitizeValue(
+      item.transversal_acceleration_c2_mean_to_peak,
+    )
+      ? new Decimal(item.transversal_acceleration_c2_mean_to_peak)
+      : null,
+    pystysuuntainen_kiihtyvyys_c3: sanitizeValue(
+      item.pystysuuntainen_kiihtyvyys_c3,
+    )
       ? new Decimal(item.pystysuuntainen_kiihtyvyys_c3)
       : null,
-    pystysuuntainen_kiihtyvyys_c3_suodatettu:
-      item.pystysuuntainen_kiihtyvyys_c3_suodatettu
-        ? new Decimal(item.pystysuuntainen_kiihtyvyys_c3_suodatettu)
-        : null,
-    poikittainen_kiihtyvyys_c3: item.poikittainen_kiihtyvyys_c3
+    pystysuuntainen_kiihtyvyys_c3_suodatettu: sanitizeValue(
+      item.pystysuuntainen_kiihtyvyys_c3_suodatettu,
+    )
+      ? new Decimal(item.pystysuuntainen_kiihtyvyys_c3_suodatettu)
+      : null,
+    poikittainen_kiihtyvyys_c3: sanitizeValue(item.poikittainen_kiihtyvyys_c3)
       ? new Decimal(item.poikittainen_kiihtyvyys_c3)
       : null,
-    poikittainen_kiihtyvyys_c3_suodatettu:
-      item.poikittainen_kiihtyvyys_c3_suodatettu
-        ? new Decimal(item.poikittainen_kiihtyvyys_c3_suodatettu)
-        : null,
-    transversal_acceleration_c3_mean_to_peak:
-      item.transversal_acceleration_c3_mean_to_peak
-        ? new Decimal(item.transversal_acceleration_c3_mean_to_peak)
-        : null,
-    ams_ajonopeus: item.ams_ajonopeus ? new Decimal(item.ams_ajonopeus) : null,
-    track: item.track || null,
-    location: item.location || null,
-    latitude: item.latitude || null,
-    longitude: item.longitude || null,
-    rataosuus_numero: item.rataosuus_numero || null,
+    poikittainen_kiihtyvyys_c3_suodatettu: sanitizeValue(
+      item.poikittainen_kiihtyvyys_c3_suodatettu,
+    )
+      ? new Decimal(item.poikittainen_kiihtyvyys_c3_suodatettu)
+      : null,
+    transversal_acceleration_c3_mean_to_peak: sanitizeValue(
+      item.transversal_acceleration_c3_mean_to_peak,
+    )
+      ? new Decimal(item.transversal_acceleration_c3_mean_to_peak)
+      : null,
+    ams_ajonopeus: sanitizeValue(item.ams_ajonopeus)
+      ? new Decimal(item.ams_ajonopeus)
+      : null,
+    track: sanitizeValue(item.track),
+    location: sanitizeValue(item.location),
+    latitude: sanitizeValue(item.latitude),
+    longitude: sanitizeValue(item.longitude),
+    rataosuus_numero: sanitizeValue(item.rataosuus_numero),
 
-    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
-      ? null
-      : item.rataosuus_nimi,
-    raide_numero: item.raide_numero || null,
-    rata_kilometri: item.rata_kilometri
+    rataosuus_nimi: sanitizeValue(item.rataosuus_nimi),
+    raide_numero: sanitizeValue(item.raide_numero),
+    rata_kilometri: sanitizeValue(item.rata_kilometri)
       ? parseInt(item.rata_kilometri, 10)
       : null,
-    rata_metrit: item.rata_metrit ? new Decimal(item.rata_metrit) : null,
-    lat: item.lat ? new Decimal(item.lat) : null,
-    long: item.long ? new Decimal(item.long) : null,
-    created: item.created ? new Date(item.created) : null,
-    modified: item.modified ? new Date(item.modified) : null,
+    rata_metrit: sanitizeValue(item.rata_metrit)
+      ? new Decimal(item.rata_metrit)
+      : null,
+    lat: sanitizeValue(item.lat) ? new Decimal(item.lat) : null,
+    long: sanitizeValue(item.long) ? new Decimal(item.long) : null,
+    created: sanitizeValue(item.created) ? new Date(item.created) : null,
+    modified: sanitizeValue(item.modified) ? new Date(item.modified) : null,
   }));
 }
 
@@ -351,39 +384,44 @@ export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
-    sscount: item.sscount ? parseInt(item.sscount, 10) : null,
-    ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
-    accz_1_1: item.accz_1_1 ? new Decimal(item.accz_1_1) : null,
-    accz_1_2: item.accz_1_2 ? new Decimal(item.accz_1_2) : null,
-    accz_2_1: item.accz_2_1 ? new Decimal(item.accz_2_1) : null,
-    accz_2_2: item.accz_2_2 ? new Decimal(item.accz_2_2) : null,
-    f_1_1: item.f_1_1 ? new Decimal(item.f_1_1) : null,
-    f_1_2: item.f_1_2 ? new Decimal(item.f_1_2) : null,
-    f_2_1: item.f_2_1 ? new Decimal(item.f_2_1) : null,
-    f_2_2: item.f_2_2 ? new Decimal(item.f_2_2) : null,
-    fint: item.fint ? new Decimal(item.fint) : null,
-    fcomp: item.fcomp ? new Decimal(item.fcomp) : null,
-    fext: item.fext ? new Decimal(item.fext) : null,
-    stagger: item.stagger ? new Decimal(item.stagger) : null,
-    height_ws: item.height_ws ? new Decimal(item.height_ws) : null,
-    track: item.track || null,
-    location: item.location || null,
-    latitude: item.latitude || null,
-    longitude: item.longitude || null,
-    rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
-      ? null
-      : item.rataosuus_nimi,
-    raide_numero: item.raide_numero || null,
-    rata_kilometri: item.rata_kilometri
+    jarjestelma: sanitizeValue(item.jarjestelma),
+    sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
+    ajonopeus: sanitizeValue(item.ajonopeus)
+      ? new Decimal(item.ajonopeus)
+      : null,
+    accz_1_1: sanitizeValue(item.accz_1_1) ? new Decimal(item.accz_1_1) : null,
+    accz_1_2: sanitizeValue(item.accz_1_2) ? new Decimal(item.accz_1_2) : null,
+    accz_2_1: sanitizeValue(item.accz_2_1) ? new Decimal(item.accz_2_1) : null,
+    accz_2_2: sanitizeValue(item.accz_2_2) ? new Decimal(item.accz_2_2) : null,
+    f_1_1: sanitizeValue(item.f_1_1) ? new Decimal(item.f_1_1) : null,
+    f_1_2: sanitizeValue(item.f_1_2) ? new Decimal(item.f_1_2) : null,
+    f_2_1: sanitizeValue(item.f_2_1) ? new Decimal(item.f_2_1) : null,
+    f_2_2: sanitizeValue(item.f_2_2) ? new Decimal(item.f_2_2) : null,
+    fint: sanitizeValue(item.fint) ? new Decimal(item.fint) : null,
+    fcomp: sanitizeValue(item.fcomp) ? new Decimal(item.fcomp) : null,
+    fext: sanitizeValue(item.fext) ? new Decimal(item.fext) : null,
+    stagger: sanitizeValue(item.stagger) ? new Decimal(item.stagger) : null,
+    height_ws: sanitizeValue(item.height_ws)
+      ? new Decimal(item.height_ws)
+      : null,
+    track: sanitizeValue(item.track),
+    location: sanitizeValue(item.location),
+    latitude: sanitizeValue(item.latitude),
+    longitude: sanitizeValue(item.longitude),
+    rataosuus_numero: sanitizeValue(item.rataosuus_numero),
+
+    rataosuus_nimi: sanitizeValue(item.rataosuus_nimi),
+    raide_numero: sanitizeValue(item.raide_numero),
+    rata_kilometri: sanitizeValue(item.rata_kilometri)
       ? parseInt(item.rata_kilometri, 10)
       : null,
-    rata_metrit: item.rata_metrit ? new Decimal(item.rata_metrit) : null,
-    lat: item.lat ? new Decimal(item.lat) : null,
-    long: item.long ? new Decimal(item.long) : null,
-    created: item.created ? new Date(item.created) : null,
-    modified: item.modified ? new Date(item.modified) : null,
+    rata_metrit: sanitizeValue(item.rata_metrit)
+      ? new Decimal(item.rata_metrit)
+      : null,
+    lat: sanitizeValue(item.lat) ? new Decimal(item.lat) : null,
+    long: sanitizeValue(item.long) ? new Decimal(item.long) : null,
+    created: sanitizeValue(item.created) ? new Date(item.created) : null,
+    modified: sanitizeValue(item.modified) ? new Date(item.modified) : null,
   }));
 }
 
@@ -1212,117 +1250,148 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: Number.isNaN(item.jarjestelma) ? null : item.jarjestelma,
-    sscount: item.sscount ? parseInt(item.sscount, 10) : null,
+    jarjestelma: sanitizeValue(item.jarjestelma),
+    sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
 
-    ajonopeus: item.ajonopeus ? new Decimal(item.ajonopeus) : null,
-    raideleveyden_poikkeama: item.raideleveyden_poikkeama
+    ajonopeus: sanitizeValue(item.ajonopeus)
+      ? new Decimal(item.ajonopeus)
+      : null,
+    raideleveyden_poikkeama: sanitizeValue(item.raideleveyden_poikkeama)
       ? new Decimal(item.raideleveyden_poikkeama)
       : null,
-    kallistus: item.kallistus ? new Decimal(item.kallistus) : null,
-    kallistuksen_poikkeama: item.kallistuksen_poikkeama
+    kallistus: sanitizeValue(item.kallistus)
+      ? new Decimal(item.kallistus)
+      : null,
+    kallistuksen_poikkeama: sanitizeValue(item.kallistuksen_poikkeama)
       ? new Decimal(item.kallistuksen_poikkeama)
       : null,
-    kierous: item.kierous ? new Decimal(item.kierous) : null,
-    kaarevuus: item.kaarevuus ? new Decimal(item.kaarevuus) : null,
-    raideleveyden_poikkeaman_muutos: item.raideleveyden_poikkeaman_muutos
+    kierous: sanitizeValue(item.kierous) ? new Decimal(item.kierous) : null,
+    kaarevuus: sanitizeValue(item.kaarevuus)
+      ? new Decimal(item.kaarevuus)
+      : null,
+    raideleveyden_poikkeaman_muutos: sanitizeValue(
+      item.raideleveyden_poikkeaman_muutos,
+    )
       ? new Decimal(item.raideleveyden_poikkeaman_muutos)
       : null,
-    kierouden_poikkeama: item.kierouden_poikkeama
+    kierouden_poikkeama: sanitizeValue(item.kierouden_poikkeama)
       ? new Decimal(item.kierouden_poikkeama)
       : null,
-    vasen_korkeuspoikkeama_d1: item.vasen_korkeuspoikkeama_d1
+    vasen_korkeuspoikkeama_d1: sanitizeValue(item.vasen_korkeuspoikkeama_d1)
       ? new Decimal(item.vasen_korkeuspoikkeama_d1)
       : null,
-    vasen_korkeuspoikkeama_d2: item.vasen_korkeuspoikkeama_d2
+    vasen_korkeuspoikkeama_d2: sanitizeValue(item.vasen_korkeuspoikkeama_d2)
       ? new Decimal(item.vasen_korkeuspoikkeama_d2)
       : null,
-    oikea_korkeuspoikkeama_d2: item.oikea_korkeuspoikkeama_d2
+    oikea_korkeuspoikkeama_d2: sanitizeValue(item.oikea_korkeuspoikkeama_d2)
       ? new Decimal(item.oikea_korkeuspoikkeama_d2)
       : null,
-    vasen_korkeuspoikkeama_d3: item.vasen_korkeuspoikkeama_d3
+    vasen_korkeuspoikkeama_d3: sanitizeValue(item.vasen_korkeuspoikkeama_d3)
       ? new Decimal(item.vasen_korkeuspoikkeama_d3)
       : null,
-    oikea_korkeuspoikkeama_d3: item.oikea_korkeuspoikkeama_d3
+    oikea_korkeuspoikkeama_d3: sanitizeValue(item.oikea_korkeuspoikkeama_d3)
       ? new Decimal(item.oikea_korkeuspoikkeama_d3)
       : null,
-    vasen_nuolikorkeuspoikkeama_d1: item.vasen_nuolikorkeuspoikkeama_d1
+    vasen_nuolikorkeuspoikkeama_d1: sanitizeValue(
+      item.vasen_nuolikorkeuspoikkeama_d1,
+    )
       ? new Decimal(item.vasen_nuolikorkeuspoikkeama_d1)
       : null,
-    oikea_nuolikorkeuspoikkeama_d1: item.oikea_nuolikorkeuspoikkeama_d1
+    oikea_nuolikorkeuspoikkeama_d1: sanitizeValue(
+      item.oikea_nuolikorkeuspoikkeama_d1,
+    )
       ? new Decimal(item.oikea_nuolikorkeuspoikkeama_d1)
       : null,
-    vasen_nuolikorkeuspoikkeama_d2: item.vasen_nuolikorkeuspoikkeama_d2
+    vasen_nuolikorkeuspoikkeama_d2: sanitizeValue(
+      item.vasen_nuolikorkeuspoikkeama_d2,
+    )
       ? new Decimal(item.vasen_nuolikorkeuspoikkeama_d2)
       : null,
-    oikea_nuolikorkeuspoikkeama_d2: item.oikea_nuolikorkeuspoikkeama_d2
+    oikea_nuolikorkeuspoikkeama_d2: sanitizeValue(
+      item.oikea_nuolikorkeuspoikkeama_d2,
+    )
       ? new Decimal(item.oikea_nuolikorkeuspoikkeama_d2)
       : null,
-    vasen_nuolikorkeuspoikkeama_d3: item.vasen_nuolikorkeuspoikkeama_d3
+    vasen_nuolikorkeuspoikkeama_d3: sanitizeValue(
+      item.vasen_nuolikorkeuspoikkeama_d3,
+    )
       ? new Decimal(item.vasen_nuolikorkeuspoikkeama_d3)
       : null,
-    oikea_nuolikorkeuspoikkeama_d3: item.oikea_nuolikorkeuspoikkeama_d3
+    oikea_nuolikorkeuspoikkeama_d3: sanitizeValue(
+      item.oikea_nuolikorkeuspoikkeama_d3,
+    )
       ? new Decimal(item.oikea_nuolikorkeuspoikkeama_d3)
       : null,
-    gradient: item.gradient ? new Decimal(item.gradient) : null,
-    raideleveyden: item.raideleveyden ? new Decimal(item.raideleveyden) : null,
-    oikea_korkeuspoikkeama_d1: item.oikea_korkeuspoikkeama_d1
+    gradient: sanitizeValue(item.gradient) ? new Decimal(item.gradient) : null,
+    raideleveyden: sanitizeValue(item.raideleveyden)
+      ? new Decimal(item.raideleveyden)
+      : null,
+    oikea_korkeuspoikkeama_d1: sanitizeValue(item.oikea_korkeuspoikkeama_d1)
       ? new Decimal(item.oikea_korkeuspoikkeama_d1)
       : null,
-    raideleveyden_keskihajonta: item.raideleveyden_keskihajonta
+    raideleveyden_keskihajonta: sanitizeValue(item.raideleveyden_keskihajonta)
       ? new Decimal(item.raideleveyden_keskihajonta)
       : null,
-    kallistus_keskihajonta: item.kallistus_keskihajonta
+    kallistus_keskihajonta: sanitizeValue(item.kallistus_keskihajonta)
       ? new Decimal(item.kallistus_keskihajonta)
       : null,
-    kierouden_keskihajonta: item.kierouden_keskihajonta
+    kierouden_keskihajonta: sanitizeValue(item.kierouden_keskihajonta)
       ? new Decimal(item.kierouden_keskihajonta)
       : null,
-    vasen_korkeuspoikkeama_d1_keskihajonta:
-      item.vasen_korkeuspoikkeama_d1_keskihajonta
-        ? new Decimal(item.vasen_korkeuspoikkeama_d1_keskihajonta)
-        : null,
-    oikea_korkeuspoikkeama_d1_keskihajonta:
-      item.oikea_korkeuspoikkeama_d1_keskihajonta
-        ? new Decimal(item.oikea_korkeuspoikkeama_d1_keskihajonta)
-        : null,
-    vasen_nuolikorkeus_d1_keskihajonta: item.vasen_nuolikorkeus_d1_keskihajonta
+    vasen_korkeuspoikkeama_d1_keskihajonta: sanitizeValue(
+      item.vasen_korkeuspoikkeama_d1_keskihajonta,
+    )
+      ? new Decimal(item.vasen_korkeuspoikkeama_d1_keskihajonta)
+      : null,
+    oikea_korkeuspoikkeama_d1_keskihajonta: sanitizeValue(
+      item.oikea_korkeuspoikkeama_d1_keskihajonta,
+    )
+      ? new Decimal(item.oikea_korkeuspoikkeama_d1_keskihajonta)
+      : null,
+    vasen_nuolikorkeus_d1_keskihajonta: sanitizeValue(
+      item.vasen_nuolikorkeus_d1_keskihajonta,
+    )
       ? new Decimal(item.vasen_nuolikorkeus_d1_keskihajonta)
       : null,
-    oikea_nuolikorkeus_d1_keskihajonta: item.oikea_nuolikorkeus_d1_keskihajonta
+    oikea_nuolikorkeus_d1_keskihajonta: sanitizeValue(
+      item.oikea_nuolikorkeus_d1_keskihajonta,
+    )
       ? new Decimal(item.oikea_nuolikorkeus_d1_keskihajonta)
       : null,
-    vasen_korkeuspoikkema_d0: item.vasen_korkeuspoikkema_d0
+    vasen_korkeuspoikkema_d0: sanitizeValue(item.vasen_korkeuspoikkema_d0)
       ? new Decimal(item.vasen_korkeuspoikkema_d0)
       : null,
-    oikea_korkeuspoikkema_d0: item.oikea_korkeuspoikkema_d0
+    oikea_korkeuspoikkema_d0: sanitizeValue(item.oikea_korkeuspoikkema_d0)
       ? new Decimal(item.oikea_korkeuspoikkema_d0)
       : null,
-    vasen_korkeuspoikkema_d0_keskihajonta:
-      item.vasen_korkeuspoikkema_d0_keskihajonta
-        ? new Decimal(item.vasen_korkeuspoikkema_d0_keskihajonta)
-        : null,
-    oikea_korkeuspoikkema_d0_keskihajonta:
-      item.oikea_korkeuspoikkema_d0_keskihajonta
-        ? new Decimal(item.oikea_korkeuspoikkema_d0_keskihajonta)
-        : null,
-    track: item.track || null,
-    location: item.location || null,
-    latitude: item.latitude || null,
-    longitude: item.longitude || null,
-    rataosuus_numero: item.rataosuus_numero || null,
-    rataosuus_nimi: Number.isNaN(item.rataosuus_nimi)
-      ? null
-      : item.rataosuus_nimi,
-    raide_numero: item.raide_numero || null,
-    rata_kilometri: item.rata_kilometri
+    vasen_korkeuspoikkema_d0_keskihajonta: sanitizeValue(
+      item.vasen_korkeuspoikkema_d0_keskihajonta,
+    )
+      ? new Decimal(item.vasen_korkeuspoikkema_d0_keskihajonta)
+      : null,
+    oikea_korkeuspoikkema_d0_keskihajonta: sanitizeValue(
+      item.oikea_korkeuspoikkema_d0_keskihajonta,
+    )
+      ? new Decimal(item.oikea_korkeuspoikkema_d0_keskihajonta)
+      : null,
+
+    track: sanitizeValue(item.track),
+    location: sanitizeValue(item.location),
+    latitude: sanitizeValue(item.latitude),
+    longitude: sanitizeValue(item.longitude),
+    rataosuus_numero: sanitizeValue(item.rataosuus_numero),
+    rataosuus_nimi: sanitizeValue(item.rataosuus_nimi),
+    raide_numero: sanitizeValue(item.raide_numero),
+    rata_kilometri: sanitizeValue(item.rata_kilometri)
       ? parseInt(item.rata_kilometri, 10)
       : null,
-    rata_metrit: item.rata_metrit ? new Decimal(item.rata_metrit) : null,
-    lat: item.lat ? new Decimal(item.lat) : null,
-    long: item.long ? new Decimal(item.long) : null,
-    created: item.created ? new Date(item.created) : null,
-    modified: item.modified ? new Date(item.modified) : null,
+    rata_metrit: sanitizeValue(item.rata_metrit)
+      ? new Decimal(item.rata_metrit)
+      : null,
+    lat: sanitizeValue(item.lat) ? new Decimal(item.lat) : null,
+    long: sanitizeValue(item.long) ? new Decimal(item.long) : null,
+    created: sanitizeValue(item.created) ? new Date(item.created) : null,
+    modified: sanitizeValue(item.modified) ? new Date(item.modified) : null,
   }));
 }
 
