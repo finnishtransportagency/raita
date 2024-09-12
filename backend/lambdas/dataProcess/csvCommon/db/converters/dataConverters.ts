@@ -475,7 +475,7 @@ type RcMittausData = {
   vasen_raiteen_aallon_rms_10_30mm_keskihajonta?: Decimal | null;
   oikea_raiteen_aallon_rms_30_100mm_keskihajonta?: Decimal | null;
   vasen_raiteen_aallon_rms_30_100mm_keskihajonta?: Decimal | null;
-  oikea_raiteen_aallon_rms_100_300mm_keskihajonta?: Decimal | null;
+  oikea_raiteen_aallon_rms_10_300mm_keskihajonta?: Decimal | null;
   vasen_raiteen_aallon_rms_100_300mm_keskihajonta?: Decimal | null;
   oikea_raiteen_aallon_rms_300_1000mm_keskihajonta?: Decimal | null;
   vasen_raiteen_aallon_rms_300_1000mm_keskihajonta?: Decimal | null;
@@ -647,11 +647,11 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
           sanitizeValue(item.vasen_raiteen_aallon_rms_30_100mm_keskihajonta),
         )
       : null,
-    oikea_raiteen_aallon_rms_100_300mm_keskihajonta: sanitizeValue(
-      item.oikea_raiteen_aallon_rms_100_300mm_keskihajonta,
+    oikea_raiteen_aallon_rms_10_300mm_keskihajonta: sanitizeValue(
+      item.oikea_raiteen_aallon_rms_10_300mm_keskihajonta,
     )
       ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_100_300mm_keskihajonta),
+          sanitizeValue(item.oikea_raiteen_aallon_rms_10_300mm_keskihajonta),
         )
       : null,
     vasen_raiteen_aallon_rms_100_300mm_keskihajonta: sanitizeValue(
