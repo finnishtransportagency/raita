@@ -2,7 +2,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { jarjestelma } from '@prisma/client';
 
 function sanitizeValue<T>(value: T) {
-  return Number.isNaN(value) || !value ? null : value;
+  return Number.isNaN(value) || !value || value == 'NaN' ? null : value;
 }
 
 type AMSMittausData = {
