@@ -34,13 +34,18 @@ export async function handleCSVFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  try {
-    withRequest(event, context);
-    log.debug('Start csv file handler');
-    log.debug(event);
-    const dbConnection = await postgresConnection;
-    let currentKey: string = ''; // for logging in case of errors
+  withRequest(event, context);
+  log.debug('Start csv file handler');
+  log.debug(event);
+  // Set preliminary value for logging invocation id or old zip file name would be used from previous invocation.
+  // If exception happen before or during getting zip fiel name from metadata; loggings woul go under 'ZIP FILE ASSOCIATION FAILED' invocation id.
+  let invocationId = 'ZIP FILE ASSOCIATION FAILED';
+  await adminLogger.init('data-csv', invocationId);
 
+  const dbConnection = await postgresConnection;
+  let currentKey: string = ''; // for logging in case of errors
+
+  try {
     if (!dbConnection) {
       // No DB connection
       logCSVDBException.error('No db connection');
@@ -61,21 +66,34 @@ export async function handleCSVFileEvent(
           }
         | any[]
       >[] = s3Event.Records.map(async eventRecord => {
+        const key = getDecodedS3ObjectKey(eventRecord);
+        currentKey = key;
+        log.info({ fileName: key }, 'Start csv file handler');
+        log.debug(eventRecord);
         try {
-          const key = getDecodedS3ObjectKey(eventRecord);
-          currentKey = key;
-          log.info({ fileName: key }, 'Start csv file handler');
-          log.debug(eventRecord);
-
           const fileStreamResult = await files.getFileStream(eventRecord);
           const keyData = getKeyData(key);
-          const s3MetaData = fileStreamResult.metaData;
-
-          const invocationId = s3MetaData['invocation-id']
-            ? decodeURIComponent(s3MetaData['invocation-id'])
-            : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
+          const invocationIdWithOldBehavior = getOriginalZipNameFromPath(
+            keyData.path,
+          ); // fall back to old behaviour: guess zip file name
+          invocationId = invocationIdWithOldBehavior;
           await adminLogger.init('data-csv', invocationId);
-
+          try {
+            const s3MetaData = fileStreamResult.metaData;
+            const invocationId = s3MetaData['invocation-id']
+              ? decodeURIComponent(s3MetaData['invocation-id'])
+              : invocationIdWithOldBehavior;
+            await adminLogger.init('data-csv', invocationId);
+          } catch (err) {
+            log.warn(
+              `An error occured in getFileStream ${currentKey}: ${err} `,
+            );
+            await adminLogger.warn(
+              `Tiedoston ${currentKey} ei löytynyt S3:sta. Toinen prosessi on jo käsitellyt tiedoston.` +
+                err.message,
+            );
+            return null;
+          }
           if (!isCsvSuffix(keyData.fileSuffix)) {
             log.debug(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
