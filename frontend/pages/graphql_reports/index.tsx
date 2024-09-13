@@ -446,7 +446,7 @@ const ReportsIndex: RaitaNextPage = () => {
               )}
 
               <div>
-                {resultsData && !(resultsData.count >= 0) && (
+                {resultsData && resultsData.count > 0 && (
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
