@@ -532,7 +532,8 @@ const ReportsIndex: RaitaNextPage = () => {
                         document.key
                           ?.split('/')
                           .slice(0, zipFileNameIndex)
-                          .join('/') ?? '';
+                          .join('/')
+                          .replace('.xlsx', '') ?? '';
 
                       // Bail out if we have nothing
                       if (!document) return null;
