@@ -446,7 +446,7 @@ const ReportsIndex: RaitaNextPage = () => {
               )}
 
               <div>
-                {resultsData && !(resultsData.count >= 0) && (
+                {resultsData && resultsData.count > 0 && (
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
@@ -532,7 +532,8 @@ const ReportsIndex: RaitaNextPage = () => {
                         document.key
                           ?.split('/')
                           .slice(0, zipFileNameIndex)
-                          .join('/') ?? '';
+                          .join('/')
+                          .replace('.xlsx', '') ?? '';
 
                       // Bail out if we have nothing
                       if (!document) return null;
