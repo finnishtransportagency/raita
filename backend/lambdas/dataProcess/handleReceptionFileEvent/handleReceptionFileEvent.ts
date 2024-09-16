@@ -44,8 +44,8 @@ export async function handleReceptionFileEvent(
   queueEvent: SQSEvent,
   context: Context,
 ): Promise<void> {
-  withRequest(queueEvent, context);
   try {
+    withRequest(queueEvent, context);
     const sqsRecords = queueEvent.Records;
     const sqsRecord = sqsRecords[0]; // assume only one event here // TODO: handle this if batch size is increased
     const s3Event: S3Event = JSON.parse(sqsRecord.body);
