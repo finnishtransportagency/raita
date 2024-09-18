@@ -34,18 +34,18 @@ export async function handleCSVFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  withRequest(event, context);
-  log.debug('Start csv file handler');
-  log.debug(event);
-  // Set preliminary value for logging invocation id or old zip file name would be used from previous invocation.
-  // If exception happen before or during getting zip fiel name from metadata; loggings woul go under 'ZIP FILE ASSOCIATION FAILED' invocation id.
-  let invocationId = 'ZIP FILE ASSOCIATION FAILED';
-  await adminLogger.init('data-csv', invocationId);
-
-  const dbConnection = await postgresConnection;
   let currentKey: string = ''; // for logging in case of errors
-
   try {
+    withRequest(event, context);
+    log.debug('Start csv file handler');
+    log.debug(event);
+    // Set preliminary value for logging invocation id or old zip file name would be used from previous invocation.
+    // If exception happen before or during getting zip fiel name from metadata; loggings woul go under 'ZIP FILE ASSOCIATION FAILED' invocation id.
+    let invocationId = 'ZIP FILE ASSOCIATION FAILED';
+    await adminLogger.init('data-csv', invocationId);
+    const dbConnection = await postgresConnection;
+
+
     if (!dbConnection) {
       // No DB connection
       logCSVDBException.error('No db connection');
@@ -57,20 +57,21 @@ export async function handleCSVFileEvent(
       const recordResults: Promise<
         | null
         | {
-            bucket_arn: string;
-            size: number;
-            file_name: string;
-            bucket_name: string;
-            key: string;
-            tags: Record<string, string>;
-          }
+        bucket_arn: string;
+        size: number;
+        file_name: string;
+        bucket_name: string;
+        key: string;
+        tags: Record<string, string>;
+      }
         | any[]
       >[] = s3Event.Records.map(async eventRecord => {
-        const key = getDecodedS3ObjectKey(eventRecord);
-        currentKey = key;
-        log.info({ fileName: key }, 'Start csv file handler');
-        log.debug(eventRecord);
         try {
+          const key = getDecodedS3ObjectKey(eventRecord);
+          currentKey = key;
+          log.info({ fileName: key }, 'Start csv file handler');
+          log.debug(eventRecord);
+
           const fileStreamResult = await files.getFileStream(eventRecord);
           const keyData = getKeyData(key);
           const invocationIdWithOldBehavior = getOriginalZipNameFromPath(
@@ -90,7 +91,7 @@ export async function handleCSVFileEvent(
             );
             await adminLogger.warn(
               `Tiedoston ${currentKey} ei löytynyt S3:sta. Toinen prosessi on jo käsitellyt tiedoston.` +
-                err.message,
+              err.message,
             );
             return null;
           }
@@ -137,7 +138,7 @@ export async function handleCSVFileEvent(
           log.error(`An error occured while processing events: ${err}`);
           await adminLogger.error(
             `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` +
-              err.message,
+            err.message,
           );
           return null;
         }
@@ -166,7 +167,7 @@ export async function handleCSVFileEvent(
     log.error(`An error occured while processing events: ${err}`);
     await adminLogger.error(
       `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. ` +
-        err.message,
+      err.message,
     );
   }
 }
