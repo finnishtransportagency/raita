@@ -99,6 +99,9 @@ export async function handleInspectionFileEvent(
   try {
     withRequest(event, context);
     const dbConnection = await postgresConnection;
+    if (!dbConnection) {
+      throw new Error('No db connection');
+    }
     const spec = await backend.specs.getSpecification();
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
@@ -106,7 +109,6 @@ export async function handleInspectionFileEvent(
       const recordResults = s3Event.Records.map<
         Promise<FileMetadataEntry | null>
       >(async eventRecord => {
-        eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
@@ -129,7 +131,7 @@ export async function handleInspectionFileEvent(
         if (eventRecord.s3.object.size === 0) {
           // empty file is probably an error and will mess up searching by hash
           log.error({ message: 'Empty file, skipping', key });
-          adminLogger.error(`Tyhjä tiedosto: ${key}`);
+          await adminLogger.error(`Tyhjä tiedosto: ${key}`);
           return null;
         }
         // Return empty null result if the top level folder does not match any of the names
@@ -178,12 +180,6 @@ export async function handleInspectionFileEvent(
             require_newer_parser_version: requireNewerParserVersion,
           },
         };
-
-        if (!dbConnection) {
-          // No DB connection
-          reportId = -1;
-          throw new Error('No db connection');
-        }
         let shouldParse = true;
         // DB connection exists
         const foundReport = await findReportByKey(key);
@@ -245,22 +241,22 @@ export async function handleInspectionFileEvent(
       // Switch to granular error handling.
       // Check if lambda supports es2022 and if so, switch to Promise.allSettled
 
-      const entries = await Promise.all(recordResults).then(
-        results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
-      );
+      const entries = (await Promise.all(recordResults)).filter(x =>
+        Boolean(x),
+      ) as Array<FileMetadataEntry>;
+
+      if (!entries.length) {
+        log.info('Nothing to save, exit');
+        return null;
+      }
 
       if (doCSVParsing) {
-        if (dbConnection) {
-          await updateRaporttiMetadata(entries, dbConnection);
-        } else {
-          log.error(
-            'content parsing with called csv enabled and without dbconnection',
-          );
-        }
+        await updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }
-      return await backend.metadataStorage.saveFileMetadata(entries);
+      await backend.metadataStorage.saveFileMetadata(entries);
+      return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);
     await Promise.all(
@@ -274,6 +270,7 @@ export async function handleInspectionFileEvent(
             `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
           );
         }
+        return;
       }),
     );
   } catch (err) {
