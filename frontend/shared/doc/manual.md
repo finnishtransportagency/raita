@@ -43,7 +43,7 @@ Hakuavaimet ovat tavallisesti tyyppiä tarkka osuma. Esimerkiksi järjestelmän 
 
 Numeroarvoille ja päivämäärille on tarjolla haku alku- ja loppupisteen mukaan. Näille hakuavaimille ilmeistyy näkyviin pudotusvalikko josta voi valita joko >= (suurempi tai yhtä suuri kuin) tai <= (pienempi tai yhtäsuuri kuin).
 
-Hakuun voi asettaa arvon sekä alkupisteelle että loppupisteelle lisäämällä sama hakuavain kahteen kertaan.
+Hakuun voi asettaa arvon sekä alkupisteelle että loppupisteelle lisäämällä saman hakuavaimen kahteen kertaan.
 
 Paras tapa selvittää hakukriteerien toimintoja on tehdä ensin yleisempi haku, jonka jälkeen on mahdollista tarkentaa hakua täsmällisemmillä hakukriteereillä.
 
