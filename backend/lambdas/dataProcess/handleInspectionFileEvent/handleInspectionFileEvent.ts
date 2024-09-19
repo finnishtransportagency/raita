@@ -225,11 +225,14 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
-        // if parsed_at_datetime already exists on found report, don't update it
-        const parsed_at_datetime =
+        // if parsed_at_datetime already exists on found report, don't update it except if hash also changed
+        let parsed_at_datetime =
           foundReport?.parsed_at_datetime != null
             ? foundReport.parsed_at_datetime.toISOString()
             : parseResults.metadata.parsed_at_datetime;
+        if (foundReport && foundReport.hash !== hash) {
+          parsed_at_datetime = parseResults.metadata.parsed_at_datetime;
+        }
         return {
           ...entryBeforeParsing,
           metadata: {
