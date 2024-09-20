@@ -21,7 +21,8 @@ Käyttö kannattaa aloittaa kokeilevasti "yritä ja onnistu" -menetelmällä.
 Pudotusvalikoista löytyy suodattimet
 
 - Tarkastusajankohdan perusteella
-- Sisällön osalta (järjestelmät ja raporttityypit)
+- Sisällön osalta
+  - Voit etsiä raportteja joko raporttityyppien tai raportointijärjestelmien avulla.
 - Mittauspaikan perusteella (Raportointiosuudet ja tilirataosanumerot)
   - Raportointiosuudet ovat lyhenteitä, esim KOKYV on väli Kokkola Ylivieska.
   - Raportointiosuuksien tulkinta vaatii toistaiseksi lyhenteiden tuntemista, selkokieliset kuvaukset ovat kehitysjonossa
@@ -29,7 +30,6 @@ Pudotusvalikoista löytyy suodattimet
 - Tiedostotyypin perusteella
   - Txt- ja pdf -muotoiset raportit ovat välillä samansisältöisiä
   - csv -tiedostot sisältävät tarkkaa mittausdataa
-    Voit etsiä raportteja joko raporttityyppien tai raportointijärjestelmien avulla.
 
 ### Haku tiedostonimellä
 
@@ -37,19 +37,13 @@ Tiedostonimellä haku toimii siten, että listaukseen palautetaan kaikki tiedost
 
 ### Tarkat hakukentät
 
-Hakua on mahdollista tehdä myös kaikilla metatiedoilla. Raporteista löytyvät metatiedot toimivat hakuavaimina ja vertailua on mahdollista seuraavilla vertailutyökaluilla.
+Hakua on mahdollista tehdä myös kaikilla metatiedoilla. Raporteista löytyvät metatiedot toimivat hakuavaimina ja vertailu on mahdollista seuraavilla vertailutyökaluilla.
 
 Hakuavaimet ovat tavallisesti tyyppiä tarkka osuma. Esimerkiksi järjestelmän nimi pitää kirjoittaa tarkasti, jotta hakutuloksia saadaan.
 
-Soveltuvissa kohdin on tarjolla myös loogisia hakuoperaatioita. Nämä vertailuperusteet ovat tarjolla esimerkiksi ratakilometrien perusteella tehtävään hakuun. Tarjolla olevia loogisia hakukriteereitä ovat:
+Numeroarvoille ja päivämäärille on tarjolla haku alku- ja loppupisteen mukaan. Näille hakuavaimille ilmeistyy näkyviin pudotusvalikko josta voi valita joko >= (suurempi tai yhtä suuri kuin) tai <= (pienempi tai yhtäsuuri kuin).
 
-```
-= (yhtäsuuruusvertailu)
-> (suurempi kuin)
->= (suurempi tai yhtä suuri kuin)
-< (pienempi kuin)
-<= (pienempi tai yhtäsuuri kuin)
-```
+Hakuun voi asettaa arvon sekä alkupisteelle että loppupisteelle lisäämällä saman hakuavaimen kahteen kertaan.
 
 Paras tapa selvittää hakukriteerien toimintoja on tehdä ensin yleisempi haku, jonka jälkeen on mahdollista tarkentaa hakua täsmällisemmillä hakukriteereillä.
 
