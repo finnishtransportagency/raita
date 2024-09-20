@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'next-i18next';
 import { marked } from 'marked';
@@ -23,6 +23,10 @@ const DeletePage: RaitaNextPage = () => {
   const [deleteResult, setDeleteResult] = useState<DeleteResponse | null>(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteIsConfirmed, setDeleteIsConfirmed] = useState(false);
+  const [selectedZips, setSelectedZips] = useState<string[]>([]);
+  const [deletePrefixes, setDeletePrefixes] = useState<string[]>([]);
+  const [zipNamesByPrefix, setzipNamesByPrefix] = useState<string[]>([]);
+  const [deleteAll, setDeleteAll] = useState(false);
 
   const { loading, error, data, refetch } = useQuery(
     SEARCH_RAPORTTI_BY_KEY_PREFIX,
@@ -30,10 +34,46 @@ const DeletePage: RaitaNextPage = () => {
       variables: {
         key: prefixInput,
         page: 1,
-        page_size: 10,
+        page_size: 1000,
       },
     },
   );
+
+  useEffect(() => {
+    const zipNames = data?.search_raportti_by_key_prefix.raportti
+      ? Array.from(
+          new Set(
+            data.search_raportti_by_key_prefix.raportti
+              .map(raportti => raportti.zip_name) // Extract zip_name
+              .filter(
+                (zipName): zipName is string =>
+                  zipName !== null && zipName !== undefined,
+              ), // Filter out null and undefined
+          ),
+        )
+      : [];
+    setzipNamesByPrefix(zipNames);
+    if (zipNames.length == 1) {
+      setSelectedZips(zipNames);
+    } else setSelectedZips([]);
+  }, [data]);
+
+  useEffect(() => {
+    if (data?.search_raportti_by_key_prefix.raportti) {
+      const matchedKeys = Array.from(
+        new Set(
+          data?.search_raportti_by_key_prefix.raportti
+            .filter(
+              item => item.zip_name && selectedZips.includes(item.zip_name),
+            )
+            .map(item => item.key && item.key.split('/').slice(0, 5).join('/'))
+            .filter((key): key is string => key !== null && key !== undefined),
+        ),
+      );
+      setDeletePrefixes(matchedKeys);
+    }
+    data?.search_raportti_by_key_prefix.raportti?.filter(item => item.key);
+  }, [selectedZips, data]);
 
   const fetchFilesToBeDeleted = () => {
     refetch();
@@ -50,8 +90,25 @@ const DeletePage: RaitaNextPage = () => {
     }
     setDeleteInProgress(true);
     try {
-      const response = await postDeleteRequest(prefixInput);
-      setDeleteResult(response);
+      const response = await Promise.all(
+        deletePrefixes.map(deleteItem => postDeleteRequest(deleteItem)),
+      );
+      const deleteResponse: DeleteResponse = response.reduce(
+        (acc, current) => ({
+          receptionDeleteCount:
+            acc.receptionDeleteCount + current.receptionDeleteCount,
+          inspectionDeleteCount:
+            acc.inspectionDeleteCount + current.inspectionDeleteCount,
+          metadataDeleteCount:
+            acc.metadataDeleteCount + current.metadataDeleteCount,
+        }),
+        {
+          receptionDeleteCount: 0,
+          inspectionDeleteCount: 0,
+          metadataDeleteCount: 0,
+        },
+      );
+      setDeleteResult(deleteResponse);
       setDeleteInProgress(false);
       setConfirmModalOpen(false);
       setResultModalOpen(true);
@@ -61,7 +118,6 @@ const DeletePage: RaitaNextPage = () => {
       alert(`${t('admin:delete_error')} ${err.message ?? err}`);
     }
   };
-
   const onCancelConfirmation = () => {
     if (deleteInProgress) {
       return;
@@ -70,6 +126,8 @@ const DeletePage: RaitaNextPage = () => {
     setDeleteIsConfirmed(false);
     setConfirmInput('');
     setDeleteInProgress(false);
+    setDeleteAll(false);
+    setSelectedZips([]);
   };
 
   const resetAll = () => {
@@ -77,6 +135,7 @@ const DeletePage: RaitaNextPage = () => {
     setResultModalOpen(false);
     setPrefixInput('');
     setDeleteResult(null);
+    setSelectedZips([]);
   };
 
   const onConfirmInputChange = (inputText: string) => {
@@ -87,7 +146,19 @@ const DeletePage: RaitaNextPage = () => {
       setDeleteIsConfirmed(false);
     }
   };
-
+  const handleCheckboxChange = (zip: string) => {
+    if (selectedZips.includes(zip)) {
+      // If zip is already in the list, remove it
+      setSelectedZips(selectedZips.filter(selectedZip => selectedZip !== zip));
+    } else {
+      // Otherwise, add the zip to the list
+      setSelectedZips([...selectedZips, zip]);
+    }
+  };
+  const handleDeleteAllClick = () => {
+    setDeletePrefixes([prefixInput]);
+    setDeleteAll(true);
+  };
   const readyToDelete =
     confirmModalOpen &&
     deleteIsConfirmed &&
@@ -129,35 +200,84 @@ const DeletePage: RaitaNextPage = () => {
               <p>{t('admin:delete_files_not_found')}</p>
             ) : (
               <>
-                <p>
-                  {t('admin:delete_counts', {
-                    count: data?.search_raportti_by_key_prefix.count,
-                  })}
-                </p>
-                <label>
-                  {t('admin:delete_confirmation')}
-                  <TextInput
-                    onUpdate={onConfirmInputChange}
-                    value={confirmInput}
-                    placeholder={t('admin:delete_confirm_placeholder') || ''}
-                    resetSearchText={false}
-                    className={clsx(css.textInput)}
-                  />
-                </label>
+                {zipNamesByPrefix &&
+                zipNamesByPrefix.length > 1 &&
+                !deleteAll ? (
+                  <div>
+                    <p>{t('admin:multiple_zips_found')}</p>
+                    {zipNamesByPrefix &&
+                      zipNamesByPrefix.map(
+                        zip =>
+                          typeof zip === 'string' && zip ? ( // Ensure zip is a defined string
+                            <>
+                              <input
+                                type="checkbox"
+                                id={zip}
+                                name={zip}
+                                value={zip}
+                                onChange={() => handleCheckboxChange(zip)}
+                              />
+                              <label htmlFor={zip}> {zip}</label>
+                              <br />
+                            </>
+                          ) : null, // Return null if zip is not a valid string
+                      )}
+                  </div>
+                ) : null}
+
+                <div>
+                  <p>
+                    {t('admin:delete_counts', {
+                      count: data?.search_raportti_by_key_prefix.count,
+                    })}
+                  </p>
+
+                  <label>
+                    {t('admin:delete_confirmation')}
+                    <TextInput
+                      onUpdate={onConfirmInputChange}
+                      value={confirmInput}
+                      placeholder={t('admin:delete_confirm_placeholder') || ''}
+                      resetSearchText={false}
+                      className={clsx(css.textInput)}
+                    />
+                  </label>
+                </div>
               </>
             ))}
         </div>
-
-        <Button
-          onClick={deleteFiles}
-          disabled={!readyToDelete}
-          label={t('admin:delete_label')}
-        />
-        <Button
-          onClick={() => onCancelConfirmation()}
-          disabled={deleteInProgress}
-          label={t('common:cancel')}
-        />
+        {deleteAll || (zipNamesByPrefix && zipNamesByPrefix.length < 2) ? (
+          <div>
+            <Button
+              onClick={deleteFiles}
+              disabled={!readyToDelete}
+              label={t('admin:delete_label')}
+            />
+            <Button
+              onClick={() => onCancelConfirmation()}
+              disabled={deleteInProgress}
+              label={t('common:cancel')}
+            />
+          </div>
+        ) : (
+          <div>
+            <Button
+              onClick={deleteFiles}
+              disabled={!readyToDelete}
+              label={t('admin:delete_label')}
+            />
+            <Button
+              onClick={() => onCancelConfirmation()}
+              disabled={deleteInProgress}
+              label={t('common:cancel')}
+            />
+            <Button
+              onClick={handleDeleteAllClick}
+              disabled={deleteInProgress}
+              label={t('admin:choose_all')}
+            />
+          </div>
+        )}
         {deleteInProgress && <p>{t('admin:delete_in_progress')}</p>}
       </Modal>
       <Modal

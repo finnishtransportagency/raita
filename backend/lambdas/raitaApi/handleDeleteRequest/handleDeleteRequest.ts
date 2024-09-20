@@ -4,6 +4,7 @@ import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateAdminUser } from '../../../utils/userService';
 import {
+  addZipFileExtension,
   getKeyData,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
@@ -62,7 +63,7 @@ export async function handleDeleteRequest(
     if (!requestBody?.prefix) {
       throw new RaitaLambdaError('Prefix not specified', 400);
     }
-    const { prefix } = requestBody;
+    let { prefix } = requestBody;
     log.info({ prefix: prefix, user: user.uid }, 'Delete request received');
 
     await adminLogger.init('delete-process', prefix);
@@ -71,6 +72,8 @@ export async function handleDeleteRequest(
     );
 
     const { path, fileSuffix } = getKeyData(prefix);
+
+    prefix = prefix + '/';
 
     if (fileSuffix.length) {
       throw new RaitaLambdaError('Prefix must not have file suffix', 400);
@@ -92,7 +95,7 @@ export async function handleDeleteRequest(
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
-        prefix,
+        isZipPath(path) ? addZipFileExtension(prefix) : prefix,
         receptionBucket,
         s3,
       );
