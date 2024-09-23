@@ -164,7 +164,7 @@ export function addZipFileExtension(prefix: string) {
 export function isZipParentPath(arg: Array<string>): boolean {
   const [system] = arg;
   return (
-    arg.length > 0 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
+    arg.length > 0 && arg.length < 6 && !!system && isRaitaSourceSystem(system)
   );
 }
 
