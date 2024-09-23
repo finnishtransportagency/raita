@@ -151,6 +151,9 @@ export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
 }
+/**
+ * Check if arg file path references either 'system', 'year', 'campaign' or 'date' in the predefined file structure
+ */
 export function isZipParentPath(arg: Array<string>): boolean {
   const [system] = arg;
   return (
@@ -163,10 +166,6 @@ export function addZipFileExtension(prefix: string) {
   split.pop();
   return split.join('/') + '.zip';
 }
-
-/**
- * Check if arg file path references either 'system', 'year', 'campaign' or 'date' in the predefined file structure
- */
 
 /**
  * Check if arg is a valid zip path referencing a 'campaign' or 'date'
