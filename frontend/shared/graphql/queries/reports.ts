@@ -71,6 +71,7 @@ export const SEARCH_RAPORTTI_BY_KEY_PREFIX = gql(`
       ) {
       raportti {
         key
+        zip_name
       }
       count
       total_size

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'next-i18next';
 import { marked } from 'marked';
@@ -23,17 +23,34 @@ const DeletePage: RaitaNextPage = () => {
   const [deleteResult, setDeleteResult] = useState<DeleteResponse | null>(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteIsConfirmed, setDeleteIsConfirmed] = useState(false);
+  const [zipNamesByPrefix, setzipNamesByPrefix] = useState<string[]>([]);
 
   const { loading, error, data, refetch } = useQuery(
     SEARCH_RAPORTTI_BY_KEY_PREFIX,
     {
       variables: {
-        key: prefixInput,
+        key: prefixInput + '/',
         page: 1,
-        page_size: 10,
+        page_size: 1000,
       },
     },
   );
+
+  useEffect(() => {
+    const zipNames = data?.search_raportti_by_key_prefix.raportti
+      ? Array.from(
+          new Set(
+            data.search_raportti_by_key_prefix.raportti
+              .map(raportti => raportti.zip_name) // Extract zip_name
+              .filter(
+                (zipName): zipName is string =>
+                  zipName !== null && zipName !== undefined,
+              ), // Filter out null and undefined
+          ),
+        )
+      : [];
+    setzipNamesByPrefix(zipNames);
+  }, [data]);
 
   const fetchFilesToBeDeleted = () => {
     refetch();
@@ -50,8 +67,9 @@ const DeletePage: RaitaNextPage = () => {
     }
     setDeleteInProgress(true);
     try {
-      const response = await postDeleteRequest(prefixInput);
-      setDeleteResult(response);
+      const response = await postDeleteRequest(prefixInput + '/');
+      const deleteResponse: DeleteResponse = response;
+      setDeleteResult(deleteResponse);
       setDeleteInProgress(false);
       setConfirmModalOpen(false);
       setResultModalOpen(true);
@@ -61,7 +79,6 @@ const DeletePage: RaitaNextPage = () => {
       alert(`${t('admin:delete_error')} ${err.message ?? err}`);
     }
   };
-
   const onCancelConfirmation = () => {
     if (deleteInProgress) {
       return;
@@ -129,35 +146,50 @@ const DeletePage: RaitaNextPage = () => {
               <p>{t('admin:delete_files_not_found')}</p>
             ) : (
               <>
-                <p>
-                  {t('admin:delete_counts', {
-                    count: data?.search_raportti_by_key_prefix.count,
-                  })}
-                </p>
-                <label>
-                  {t('admin:delete_confirmation')}
-                  <TextInput
-                    onUpdate={onConfirmInputChange}
-                    value={confirmInput}
-                    placeholder={t('admin:delete_confirm_placeholder') || ''}
-                    resetSearchText={false}
-                    className={clsx(css.textInput)}
-                  />
-                </label>
+                {zipNamesByPrefix && zipNamesByPrefix.length > 1 ? (
+                  <div>
+                    <p>{t('admin:multiple_zips_found')}</p>
+                    {zipNamesByPrefix &&
+                      zipNamesByPrefix.map((zip, index) => (
+                        <p key={index}> {zip}</p>
+                      ))}
+                  </div>
+                ) : null}
+
+                <div>
+                  <p>
+                    {t('admin:delete_counts', {
+                      count: data?.search_raportti_by_key_prefix.count,
+                    })}
+                  </p>
+
+                  <label>
+                    {t('admin:delete_confirmation')}
+                    <TextInput
+                      onUpdate={onConfirmInputChange}
+                      value={confirmInput}
+                      placeholder={t('admin:delete_confirm_placeholder') || ''}
+                      resetSearchText={false}
+                      className={clsx(css.textInput)}
+                    />
+                  </label>
+                </div>
               </>
             ))}
         </div>
+        <div>
+          <Button
+            onClick={deleteFiles}
+            disabled={!readyToDelete}
+            label={t('admin:delete_label')}
+          />
+          <Button
+            onClick={() => onCancelConfirmation()}
+            disabled={deleteInProgress}
+            label={t('common:cancel')}
+          />
+        </div>
 
-        <Button
-          onClick={deleteFiles}
-          disabled={!readyToDelete}
-          label={t('admin:delete_label')}
-        />
-        <Button
-          onClick={() => onCancelConfirmation()}
-          disabled={deleteInProgress}
-          label={t('common:cancel')}
-        />
         {deleteInProgress && <p>{t('admin:delete_in_progress')}</p>}
       </Modal>
       <Modal
