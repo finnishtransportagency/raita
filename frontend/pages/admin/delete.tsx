@@ -152,7 +152,9 @@ const DeletePage: RaitaNextPage = () => {
                   <div>
                     <p>{t('admin:multiple_zips_found')}</p>
                     {zipNamesByPrefix &&
-                      zipNamesByPrefix.map(zip => <p> {zip}</p>)}
+                      zipNamesByPrefix.map((zip, index) => (
+                        <p key={index}> {zip}</p>
+                      ))}
                   </div>
                 ) : null}
 
