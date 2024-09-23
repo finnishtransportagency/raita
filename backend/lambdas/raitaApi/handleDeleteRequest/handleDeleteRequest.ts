@@ -63,7 +63,7 @@ export async function handleDeleteRequest(
     if (!requestBody?.prefix) {
       throw new RaitaLambdaError('Prefix not specified', 400);
     }
-    let { prefix } = requestBody;
+    const { prefix } = requestBody;
     log.info({ prefix: prefix, user: user.uid }, 'Delete request received');
 
     await adminLogger.init('delete-process', prefix);
@@ -76,7 +76,14 @@ export async function handleDeleteRequest(
     if (fileSuffix.length) {
       throw new RaitaLambdaError('Prefix must not have file suffix', 400);
     }
-    const validPath = isZipPath(path) || isZipParentPath(path);
+    if (prefix[prefix.length - 1] !== '/') {
+      throw new RaitaLambdaError('Prefix must end in "/"', 400);
+    }
+    // zip path checks assume no trailing '/', remove before checks
+    const pathTruncated = path.slice(0, path.length - 1);
+    const isZip = isZipPath(pathTruncated);
+    const isZipParent = isZipParentPath(pathTruncated);
+    const validPath = isZip || isZipParent;
 
     if (!validPath) {
       throw new RaitaLambdaError('Invalid prefix length', 400);
@@ -93,7 +100,7 @@ export async function handleDeleteRequest(
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
-        isZipPath(path) ? addZipFileExtension(prefix) : prefix,
+        isZip ? addZipFileExtension(prefix) : prefix,
         receptionBucket,
         s3,
       );

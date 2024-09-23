@@ -148,12 +148,10 @@ export type ZipPath = [
 // Type guards
 
 export function isZipPath(arg: Array<string>): arg is ZipPath {
-  if (arg[arg.length - 1] === '') arg.pop();
   const [system] = arg;
   return arg.length === 5 && !!system && isRaitaSourceSystem(system);
 }
 export function isZipParentPath(arg: Array<string>): boolean {
-  if (arg[arg.length - 1] === '') arg.pop();
   const [system] = arg;
   return (
     arg.length > 0 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
