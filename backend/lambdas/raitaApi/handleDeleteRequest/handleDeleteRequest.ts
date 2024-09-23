@@ -73,8 +73,6 @@ export async function handleDeleteRequest(
 
     const { path, fileSuffix } = getKeyData(prefix);
 
-    prefix = prefix + '/';
-
     if (fileSuffix.length) {
       throw new RaitaLambdaError('Prefix must not have file suffix', 400);
     }

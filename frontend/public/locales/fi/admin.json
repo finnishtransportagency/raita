@@ -19,7 +19,7 @@
   "log_show_only_warned_logrows": "Näytä vain varoitukselliset lokirivit",
   "log_row_counts": "Näytetään rivejä: {{ current }} / yhteensä: {{ total }}",
   "log_summary_current_page_count": "Näytetään tällä sivulla",
-  "multiple_zips_found": "Löytyi useampi Zip. Valitse poistettavat",
+  "multiple_zips_found": "Poistettavat Zip tiedostot",
   "choose_all": "Valitse kaikki",
   "delete_input_placeholder": "Syötä poistettava tiedostopolku",
   "delete_page_title": "Tiedostojen poisto",

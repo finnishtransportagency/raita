@@ -149,7 +149,7 @@ export type ZipPath = [
 
 export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
-  return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+  return arg.length === 6 && !!system && isRaitaSourceSystem(system);
 }
 
 export function addZipFileExtension(prefix: string) {
