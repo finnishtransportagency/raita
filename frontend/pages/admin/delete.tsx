@@ -24,7 +24,6 @@ const DeletePage: RaitaNextPage = () => {
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [deleteIsConfirmed, setDeleteIsConfirmed] = useState(false);
   const [zipNamesByPrefix, setzipNamesByPrefix] = useState<string[]>([]);
-  const [deleteAll, setDeleteAll] = useState(false);
 
   const { loading, error, data, refetch } = useQuery(
     SEARCH_RAPORTTI_BY_KEY_PREFIX,
@@ -88,7 +87,6 @@ const DeletePage: RaitaNextPage = () => {
     setDeleteIsConfirmed(false);
     setConfirmInput('');
     setDeleteInProgress(false);
-    setDeleteAll(false);
   };
 
   const resetAll = () => {

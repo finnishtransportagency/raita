@@ -8,8 +8,8 @@ import {
   getKeyData,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
-  isDeleteZipParentPath,
-  isDeleteZipPath,
+  isZipParentPath,
+  isZipPath,
   RaitaLambdaError,
 } from '../../utils';
 import MetadataPort from '../../../ports/metadataPort';
@@ -76,7 +76,7 @@ export async function handleDeleteRequest(
     if (fileSuffix.length) {
       throw new RaitaLambdaError('Prefix must not have file suffix', 400);
     }
-    const validPath = isDeleteZipPath(path) || isDeleteZipParentPath(path);
+    const validPath = isZipPath(path) || isZipParentPath(path);
 
     if (!validPath) {
       throw new RaitaLambdaError('Invalid prefix length', 400);
@@ -93,7 +93,7 @@ export async function handleDeleteRequest(
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
-        isDeleteZipPath(path) ? addZipFileExtension(prefix) : prefix,
+        isZipPath(path) ? addZipFileExtension(prefix) : prefix,
         receptionBucket,
         s3,
       );
