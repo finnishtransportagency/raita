@@ -54,9 +54,6 @@ const initialState: ReportsState = {
   extraRaporttiQueryVariables: {},
 };
 
-const maxFileSizeForZip = 5 * 1000 * 1000 * 1000;
-const maxFileCountForZip = 4000;
-
 /**
  * Fields that should not be shown in extra fields dropdown
  */
@@ -438,12 +435,12 @@ const ReportsIndex: RaitaNextPage = () => {
                       ) : null}
 
                       <div className="ml-2">
-                        {resultsData.total_size > maxFileSizeForZip ? (
+                        {resultsData.total_size > cfg.maxFileSizeForZip ? (
                           <p className="text-base">
                             {t('common:file_size_limit')}
                           </p>
                         ) : null}
-                        {resultsData.count > maxFileCountForZip ? (
+                        {resultsData.count > cfg.maxFileCountForZip ? (
                           <p className="text-base">
                             {t('common:file_count_limit')}
                           </p>
@@ -452,16 +449,6 @@ const ReportsIndex: RaitaNextPage = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-end">
-                    <div className="mt-1">{t('common:no_results')}</div>
-                    {localStorage.getItem('zipUrl') ||
-                    zipState.state.isLoading ? (
-                      <PollingHandler />
-                    ) : null}
-                  </div>
-                </>
               )}
 
               <div>

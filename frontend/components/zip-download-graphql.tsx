@@ -21,15 +21,15 @@ export function ZipDownload(props: Props) {
   const { state, setState } = useContext(zipContext);
   const { error, isLoading } = state;
 
-  const maxSize = 5 * 1000 * 1000 * 1000;
-  const bigSize = 1 * 1000 + 1000 + 1000;
-  const maxCount = 4000;
-
   const { t } = useTranslation(['common']);
 
   const [triggerKeyQuery, keyQuery] = useLazyQuery(SEARCH_RAPORTTI_KEYS_ONLY);
-  const isOverMaxSize = resultTotalSize ? resultTotalSize > maxSize : true;
-  const tooManyResults = aggregationSize ? aggregationSize > maxCount : true;
+  const isOverMaxSize = resultTotalSize
+    ? resultTotalSize > cfg.maxFileSizeForZip
+    : true;
+  const tooManyResults = aggregationSize
+    ? aggregationSize > cfg.maxFileCountForZip
+    : true;
 
   const triggerKeyFetching = () => {
     if (usedQueryVariables) {
