@@ -16,15 +16,14 @@ import InfoBanner from 'components/infobanner';
 
 import css from '../reports/reports.module.css';
 
-import { RaitaRole, useUser } from 'shared/user';
-import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
+import { RaitaRole } from 'shared/user';
+import { useLazyQuery, useQuery } from '@apollo/client';
 import {
   DateTimeIntervalInput,
   RaporttiInput,
   Search_Mittaus_CountQueryVariables,
 } from 'shared/graphql/__generated__/graphql';
 import {
-  GENERATE_MITTAUS_CSV,
   MITTAUS_META,
   SEARCH_CSV_RAPORTTI_DETAILS,
   SEARCH_MITTAUS_COUNT,
@@ -47,6 +46,7 @@ const initialState: CsvState = {
     raportti_keys: [],
   },
   extraRaporttiQueryVariables: {},
+  mittausCountIsFresh: false,
 };
 
 /**
@@ -112,6 +112,10 @@ const CsvIndex: RaitaNextPage = () => {
     setState(R.assoc('resetFilters', true));
   };
 
+  const setMittausCountIsFresh = (fresh: boolean) => {
+    setState(R.assocPath(['mittausCountIsFresh'], false));
+  };
+
   const updateDateRange = (range: Range<Date>) => {
     if (!range.start && !range.end) {
       setState(
@@ -138,10 +142,38 @@ const CsvIndex: RaitaNextPage = () => {
   };
   //
 
-  const triggerCountSearch = () => {
+  const triggerCountSearch = async () => {
     // TODO: initial query vs refetch? need to fix state management of the different queries
-    triggerMittausCountSearch({ variables: getQueryVariables(state) });
+    await triggerMittausCountSearch({ variables: getQueryVariables(state) });
+    setMittausCountIsFresh(true);
   };
+
+  const raporttiQueryIsLoading = raporttiQuery.loading;
+  const showRaporttiResults =
+    !raporttiQueryIsLoading && !!raporttiQuery.data?.search_raportti;
+  const showRaporttiQueryError = !raporttiQueryIsLoading && raporttiQuery.error;
+
+  const mittausQueryIsLoading = mittausCountQuery.loading;
+
+  const mittausCountResponseExists =
+    !mittausQueryIsLoading &&
+    !!mittausCountQuery.data &&
+    !!mittausCountQuery.data.search_mittaus_count;
+
+  const showMittausCountResults =
+    showRaporttiResults &&
+    mittausCountResponseExists &&
+    mittausCountQuery.data?.search_mittaus_count.status === 'ok';
+  const showStaleMittausCountWarning =
+    !state.mittausCountIsFresh && showMittausCountResults;
+
+  const showMittausCountSizeLimit =
+    showRaporttiResults &&
+    mittausCountResponseExists &&
+    mittausCountQuery.data?.search_mittaus_count.status === 'size_limit';
+
+  const showMittausCountError =
+    !mittausQueryIsLoading && !!mittausCountQuery.error;
 
   /**
    * Check whether any of our queries/mutations are loading,
@@ -224,6 +256,7 @@ const CsvIndex: RaitaNextPage = () => {
                         inputVariables,
                       ),
                     );
+                    setMittausCountIsFresh(false);
                   }}
                   fields={extraFields}
                   resetFilterSelector={state.resetFilters}
@@ -236,7 +269,10 @@ const CsvIndex: RaitaNextPage = () => {
 
                 <DateRange
                   range={inspectionDateRangeForSelector}
-                  onUpdate={updateDateRange}
+                  onUpdate={range => {
+                    updateDateRange(range);
+                    setMittausCountIsFresh(false);
+                  }}
                   resetDateRange={state.resetFilters}
                   inputId="reports-daterange"
                 />
@@ -264,6 +300,7 @@ const CsvIndex: RaitaNextPage = () => {
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
+                    setMittausCountIsFresh(false);
                   }}
                 />
               </section>
@@ -285,6 +322,7 @@ const CsvIndex: RaitaNextPage = () => {
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
+                    setMittausCountIsFresh(false);
                   }}
                 />
               </section>
@@ -305,6 +343,7 @@ const CsvIndex: RaitaNextPage = () => {
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
+                    setMittausCountIsFresh(false);
                   }}
                 />
               </section>
@@ -322,7 +361,10 @@ const CsvIndex: RaitaNextPage = () => {
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2"></header>
 
-            {raporttiQuery.data && (
+            {raporttiQueryIsLoading && <p>{t('common:loading')}</p>}
+            {showRaporttiQueryError && <p>{t('common:error_loading')}</p>}
+
+            {showRaporttiResults && (
               <>
                 <section className={clsx(css.subSection)}>
                   <MultiChoice
@@ -339,6 +381,7 @@ const CsvIndex: RaitaNextPage = () => {
                         ),
                       );
                       setState(R.assoc('resetFilters', false));
+                      setMittausCountIsFresh(false);
                     }}
                     sortFn={(a, b) => a.key.localeCompare(b.key)}
                   />
@@ -349,7 +392,7 @@ const CsvIndex: RaitaNextPage = () => {
                     inputId="keys-choice"
                     items={(raporttiQuery.loading
                       ? []
-                      : raporttiQuery.data.search_raportti.raportti || []
+                      : raporttiQuery.data?.search_raportti.raportti || []
                     )
                       .filter(raportti => raportti.key && raportti.file_name)
                       .map(raportti => ({
@@ -366,6 +409,7 @@ const CsvIndex: RaitaNextPage = () => {
                         ),
                       );
                       setState(R.assoc('resetFilters', false));
+                      setMittausCountIsFresh(false);
                     }}
                   />
                 </section>
@@ -375,48 +419,43 @@ const CsvIndex: RaitaNextPage = () => {
                 />
               </>
             )}
+            {mittausQueryIsLoading && <p>{t('common:loading')}</p>}
+            {showStaleMittausCountWarning && (
+              <p>{t('common:stale_mittaus_count')}</p>
+            )}
+            {showMittausCountError && <p>{t('common:error_loading')}</p>}
+            {showMittausCountSizeLimit && <p>{t('common:error_size_limit')}</p>}
 
-            {!raporttiQuery.loading &&
-              raporttiQuery.data &&
-              !mittausCountQuery.loading &&
-              mittausCountQuery.data &&
-              mittausCountQuery.data.search_mittaus_count.status ===
-                'size_limit' && <div>TODO: size limit reached</div>}
-
-            {!raporttiQuery.loading &&
-              raporttiQuery.data &&
-              !mittausCountQuery.loading &&
-              mittausCountQuery.data &&
-              mittausCountQuery.data.search_mittaus_count &&
-              mittausCountQuery.data.search_mittaus_count.status === 'ok' && (
-                <>
-                  <div>
-                    <div className="mt-1">
-                      {t('common:csv_row_count', {
-                        count:
-                          mittausCountQuery.data.search_mittaus_count.row_count,
-                      })}
-                    </div>
-                    <div>
-                      {t('common:csv_size_estimate', {
-                        sizeEstimate: sizeformatter(
-                          mittausCountQuery.data.search_mittaus_count
-                            .size_estimate,
-                        ),
-                      })}
-                    </div>
+            {showMittausCountResults && (
+              <>
+                <div>
+                  <div className="mt-1">
+                    {t('common:csv_row_count', {
+                      count:
+                        mittausCountQuery.data?.search_mittaus_count
+                          .row_count ?? NaN,
+                    })}
                   </div>
+                  <div>
+                    {t('common:csv_size_estimate', {
+                      sizeEstimate: sizeformatter(
+                        mittausCountQuery.data?.search_mittaus_count
+                          .size_estimate ?? NaN,
+                      ),
+                    })}
+                  </div>
+                </div>
 
-                  <CsvDownload
-                    resetState={
-                      raporttiQuery.loading ||
-                      state.resetFilters ||
-                      mittausCountQuery.loading
-                    }
-                    queryVariables={getQueryVariables(state)}
-                  />
-                </>
-              )}
+                <CsvDownload
+                  resetState={
+                    raporttiQuery.loading ||
+                    state.resetFilters ||
+                    mittausCountQuery.loading
+                  }
+                  queryVariables={getQueryVariables(state)}
+                />
+              </>
+            )}
           </section>
         </div>
       </div>
@@ -443,4 +482,5 @@ type CsvState = {
    * Separate variable to simplify state management on deletions
    */
   extraRaporttiQueryVariables: RaporttiInput;
+  mittausCountIsFresh: boolean;
 };
