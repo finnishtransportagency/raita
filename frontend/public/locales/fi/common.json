@@ -92,5 +92,7 @@
   "search_csv": "Hae mittausrivien määrä",
   "generate_csv": "Generoi CSV-tiedosto",
   "page_labels.graphql_reports": "Raportit",
-  "to_page": "Siirry sivulle"
+  "to_page": "Siirry sivulle",
+  "file_count_limit": "Tiedostomäärän oltava alle 4000",
+  "file_size_limit": "Tiedoston koko oltava alle 5 GB"
 }

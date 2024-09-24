@@ -14,10 +14,7 @@ export const PollingHandler = ({
   buttonType?: 'primary' | 'secondary' | 'tertiary';
 }) => {
   const { state, setState } = useContext(zipContext);
-  const { zipUrl, error, isLoading } = state;
-
-  const maxSize = 5 * 1000 * 1000 * 1000;
-  const bigSize = 1 * 1000 * 1000 * 1000;
+  const { error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
   /* useEffect(() => {
@@ -59,6 +56,7 @@ export const PollingHandler = ({
           setState(initialState);
           setState(R.assoc('zipUrl', data.progressData.url));
           localStorage.setItem('zipUrl', data.progressData.url);
+          localStorage.removeItem('pollingFileKey');
         } else if (data?.progressData?.status === ProgressStatus.FAILED) {
           setState(initialState);
           setState(R.assoc('error', `${t('common:zip_error')}`));
