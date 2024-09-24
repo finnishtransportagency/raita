@@ -44,9 +44,7 @@ import {
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 import { zipContext } from 'shared/zipContext';
-import { PollingHandler } from 'components/pollingHandler';
-
-//
+import { initialState as zipInitialState } from 'shared/zipContext';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -55,6 +53,9 @@ const initialState: ReportsState = {
   queryVariables: { page: 1, page_size: cfg.paging.pageSize, raportti: {} },
   extraRaporttiQueryVariables: {},
 };
+
+const maxFileSizeForZip = 5 * 1000 * 1000 * 1000;
+const maxFileCountForZip = 4000;
 
 /**
  * Fields that should not be shown in extra fields dropdown
@@ -99,6 +100,8 @@ const ReportsIndex: RaitaNextPage = () => {
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+    localStorage.removeItem('zipUrl');
+    zipState.setState(zipInitialState);
     triggerInitialSearch({
       variables: getQueryVariables(state),
     });
@@ -414,13 +417,6 @@ const ReportsIndex: RaitaNextPage = () => {
               {!searchQuery.data && (
                 <div className="flex items-end">
                   <div className="mt-1"> {t('common:no_results')}</div>
-                  {(zipState.state.zipUrl ||
-                    zipState.state.isLoading ||
-                    localStorage.getItem('zipUrl')) && (
-                    <div className="ml-2 flex">
-                      <PollingHandler />
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -439,9 +435,20 @@ const ReportsIndex: RaitaNextPage = () => {
                           usedQueryVariables={getQueryVariables(state)}
                           resultTotalSize={resultsData?.total_size}
                         />
-                      ) : (
-                        <PollingHandler />
-                      )}
+                      ) : null}
+
+                      <div className="ml-2">
+                        {resultsData.total_size > maxFileSizeForZip ? (
+                          <p className="text-base">
+                            {t('common:file_size_limit')}
+                          </p>
+                        ) : null}
+                        {resultsData.count > maxFileCountForZip ? (
+                          <p className="text-base">
+                            {t('common:file_count_limit')}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   )}
                 </div>

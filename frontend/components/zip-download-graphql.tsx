@@ -17,16 +17,19 @@ import { zipContext } from 'shared/zipContext';
 // Copied from zip-download.tsx
 // TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
-  const { usedQueryVariables, resultTotalSize } = props;
+  const { usedQueryVariables, resultTotalSize, aggregationSize } = props;
   const { state, setState } = useContext(zipContext);
   const { error, isLoading } = state;
 
-  const maxSize = 15 * 1000 * 1000 * 1000;
+  const maxSize = 5 * 1000 * 1000 * 1000;
   const bigSize = 1 * 1000 + 1000 + 1000;
+  const maxCount = 4000;
 
   const { t } = useTranslation(['common']);
 
   const [triggerKeyQuery, keyQuery] = useLazyQuery(SEARCH_RAPORTTI_KEYS_ONLY);
+  const isOverMaxSize = resultTotalSize ? resultTotalSize > maxSize : true;
+  const tooManyResults = aggregationSize ? aggregationSize > maxCount : true;
 
   const triggerKeyFetching = () => {
     if (usedQueryVariables) {
@@ -71,14 +74,15 @@ export function ZipDownload(props: Props) {
   }, [state]);
 
   return (
-    <div>
+    <div className="flex items-end">
       {!error && (
-        <div className="flex gap-2 mb-1">
+        <div className="flex gap-2 mb-1 h-auto">
           {isLoading ? (
             <Spinner size={4} bottomMargin={0} />
           ) : (
             <Button
               size="sm"
+              disabled={isOverMaxSize || tooManyResults}
               label={`${t('common:compress_all')} ${sizeformatter(
                 resultTotalSize ? resultTotalSize : undefined,
               )}`}
