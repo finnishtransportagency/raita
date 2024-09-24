@@ -45,6 +45,7 @@ import {
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 import { zipContext } from 'shared/zipContext';
 import { initialState as zipInitialState } from 'shared/zipContext';
+import { PollingHandler } from 'components/pollingHandler';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -452,16 +453,6 @@ const ReportsIndex: RaitaNextPage = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-end">
-                    <div className="mt-1">{t('common:no_results')}</div>
-                    {localStorage.getItem('zipUrl') ||
-                    zipState.state.isLoading ? (
-                      <PollingHandler />
-                    ) : null}
-                  </div>
-                </>
               )}
 
               <div>
