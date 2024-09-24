@@ -47,6 +47,7 @@ const initialState: CsvState = {
   },
   extraRaporttiQueryVariables: {},
   mittausCountIsFresh: false,
+  hideSearchResults: true,
 };
 
 /**
@@ -96,20 +97,22 @@ const CsvIndex: RaitaNextPage = () => {
 
   const [state, setState] = useState<CsvState>(initialState);
 
-  const doSearch = () => {
+  const doSearch = async () => {
     setState(R.assocPath(['queryVariables', 'columns'], []));
-    triggerRaporttiSearch({
+    await triggerRaporttiSearch({
       variables: {
         ...getQueryVariables(state),
         page: 1,
         page_size: 1000, // TODO: we want all?
       },
     });
+    setState(R.assocPath(['hideSearchResults'], false));
   };
 
   const resetSearch = () => {
     setState(() => JSON.parse(JSON.stringify(initialState)) as CsvState);
     setState(R.assoc('resetFilters', true));
+    setState(R.assoc('hideSearchResults', true));
   };
 
   const setMittausCountIsFresh = (fresh: boolean) => {
@@ -143,14 +146,15 @@ const CsvIndex: RaitaNextPage = () => {
   //
 
   const triggerCountSearch = async () => {
-    // TODO: initial query vs refetch? need to fix state management of the different queries
     await triggerMittausCountSearch({ variables: getQueryVariables(state) });
     setMittausCountIsFresh(true);
   };
 
   const raporttiQueryIsLoading = raporttiQuery.loading;
   const showRaporttiResults =
-    !raporttiQueryIsLoading && !!raporttiQuery.data?.search_raportti;
+    !state.hideSearchResults &&
+    !raporttiQueryIsLoading &&
+    !!raporttiQuery.data?.search_raportti;
   const showRaporttiQueryError = !raporttiQueryIsLoading && raporttiQuery.error;
 
   const mittausQueryIsLoading = mittausCountQuery.loading;
@@ -483,4 +487,8 @@ type CsvState = {
    */
   extraRaporttiQueryVariables: RaporttiInput;
   mittausCountIsFresh: boolean;
+  /**
+   * Use this to hide search results when query contains old data after UI inputs are reset
+   */
+  hideSearchResults: boolean;
 };
