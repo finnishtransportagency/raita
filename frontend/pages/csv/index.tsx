@@ -363,7 +363,7 @@ const CsvIndex: RaitaNextPage = () => {
           </section>
 
           <section className="col-span-2">
-            <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2"></header>
+            <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2 pt-9"></header>
 
             {raporttiQueryIsLoading && <p>{t('common:loading')}</p>}
             {showRaporttiQueryError && <p>{t('common:error_loading')}</p>}
