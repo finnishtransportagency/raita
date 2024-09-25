@@ -30,4 +30,4 @@ export const zipFileNameIndex = 5;
 export const currentMetadataDatabase: 'opensearch' | 'postgres' =
   process.env.NEXT_PUBLIC_METADATA_DATABASE;
 export const enableCsvPage: boolean =
-  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE ?? false;
+  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE || false;
