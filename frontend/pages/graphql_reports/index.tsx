@@ -44,9 +44,7 @@ import {
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
 import { zipContext } from 'shared/zipContext';
-import { PollingHandler } from 'components/pollingHandler';
-
-//
+import { initialState as zipInitialState } from 'shared/zipContext';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -99,6 +97,8 @@ const ReportsIndex: RaitaNextPage = () => {
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+    localStorage.removeItem('zipUrl');
+    zipState.setState(zipInitialState);
     triggerInitialSearch({
       variables: getQueryVariables(state),
     });
@@ -411,38 +411,44 @@ const ReportsIndex: RaitaNextPage = () => {
 
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              {searchQuery.data &&
-              resultsData?.total_size &&
-              resultsData?.total_size > 0 ? (
+              {!searchQuery.data && (
+                <div className="flex items-end">
+                  <div className="mt-1"> {t('common:no_results')}</div>
+                </div>
+              )}
+
+              {searchQuery.data && (
                 <div className="flex items-end">
                   <div className="mt-1">
                     {t('search_result_count', {
                       count: resultsData?.count,
                     })}
                   </div>
+                  {resultsData?.total_size && resultsData?.total_size > 0 && (
+                    <div className="ml-2 flex">
+                      {!localStorage.getItem('zipUrl') ? (
+                        <ZipDownload
+                          aggregationSize={resultsData?.count}
+                          usedQueryVariables={getQueryVariables(state)}
+                          resultTotalSize={resultsData?.total_size}
+                        />
+                      ) : null}
 
-                  <div className="ml-2 flex">
-                    {!localStorage.getItem('zipUrl') ? (
-                      <ZipDownload
-                        aggregationSize={resultsData?.count}
-                        usedQueryVariables={getQueryVariables(state)}
-                        resultTotalSize={resultsData?.total_size}
-                      />
-                    ) : (
-                      <PollingHandler />
-                    )}
-                  </div>
+                      <div className="ml-2">
+                        {resultsData.total_size > cfg.maxFileSizeForZip ? (
+                          <p className="text-base">
+                            {t('common:file_size_limit')}
+                          </p>
+                        ) : null}
+                        {resultsData.count > cfg.maxFileCountForZip ? (
+                          <p className="text-base">
+                            {t('common:file_count_limit')}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-end">
-                    <div className="mt-1">{t('common:no_results')}</div>
-                    {localStorage.getItem('zipUrl') ||
-                    zipState.state.isLoading ? (
-                      <PollingHandler />
-                    ) : null}
-                  </div>
-                </>
               )}
 
               <div>

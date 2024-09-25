@@ -1,4 +1,4 @@
-import { PropsWithChildren, useContext } from 'react';
+import { PropsWithChildren, useContext, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -9,7 +9,7 @@ import { PageDescription } from 'shared/pageRoutes';
 import LatestInspectionDate from 'components/latest_inspection_date';
 import { assetURL } from 'shared/config';
 import { zipContext } from 'shared/zipContext';
-import { ZipDownload } from 'components/zip-download-graphql';
+import * as R from 'rambda';
 import { PollingHandler } from 'components/pollingHandler';
 type Props = {
   pages: PageDescription[];
@@ -22,7 +22,13 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
   const router = useRouter();
   const pathSplit = router.pathname.split('/');
   const pageTitleKey = `page_labels${pathSplit.join('.')}`;
-  const zipState = useContext(zipContext);
+  const { state, setState } = useContext(zipContext);
+  useEffect(() => {
+    const storedZipUrl = localStorage.getItem('zipUrl');
+    if (typeof storedZipUrl === 'string') {
+      setState(R.assoc('zipUrl', storedZipUrl));
+    }
+  }, []);
   return (
     <>
       <header className="bg-primary text-white h-16">
@@ -52,8 +58,8 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
             <div className="flex flex-row justify-end">
               <LatestInspectionDate className="my-auto mr-4" />
             </div>
-            {(zipState.state.zipUrl ||
-              zipState.state.isLoading ||
+            {(state.isLoading ||
+              state.zipUrl ||
               localStorage.getItem('zipUrl') ||
               localStorage.getItem('pollingFileKey')) && (
               <div className="ml-2 flex justify-end">
