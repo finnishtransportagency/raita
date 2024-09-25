@@ -45,7 +45,6 @@ export async function handleCSVFileEvent(
     await adminLogger.init('data-csv', invocationId);
     const dbConnection = await postgresConnection;
 
-
     if (!dbConnection) {
       // No DB connection
       logCSVDBException.error('No db connection');
@@ -57,13 +56,13 @@ export async function handleCSVFileEvent(
       const recordResults: Promise<
         | null
         | {
-        bucket_arn: string;
-        size: number;
-        file_name: string;
-        bucket_name: string;
-        key: string;
-        tags: Record<string, string>;
-      }
+            bucket_arn: string;
+            size: number;
+            file_name: string;
+            bucket_name: string;
+            key: string;
+            tags: Record<string, string>;
+          }
         | any[]
       >[] = s3Event.Records.map(async eventRecord => {
         try {
@@ -91,7 +90,7 @@ export async function handleCSVFileEvent(
             );
             await adminLogger.warn(
               `Tiedoston ${currentKey} ei löytynyt S3:sta. Toinen prosessi on jo käsitellyt tiedoston.` +
-              err.message,
+                err.message,
             );
             return null;
           }
@@ -138,7 +137,7 @@ export async function handleCSVFileEvent(
           log.error(`An error occured while processing events: ${err}`);
           await adminLogger.error(
             `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu.` +
-            err.message,
+              err.message,
           );
           return null;
         }
@@ -167,7 +166,7 @@ export async function handleCSVFileEvent(
     log.error(`An error occured while processing events: ${err}`);
     await adminLogger.error(
       `Tiedoston ${currentKey} käsittely epäonnistui. csv dataa ei tallennettu. ` +
-      err.message,
+        err.message,
     );
   }
 }
