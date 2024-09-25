@@ -116,7 +116,7 @@ const CsvIndex: RaitaNextPage = () => {
   };
 
   const setMittausCountIsFresh = (fresh: boolean) => {
-    setState(R.assocPath(['mittausCountIsFresh'], false));
+    setState(R.assocPath(['mittausCountIsFresh'], fresh));
   };
 
   const updateDateRange = (range: Range<Date>) => {
