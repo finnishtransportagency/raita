@@ -2,7 +2,7 @@ import { Context, S3Event, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
 import { lambdaRequestTracker } from 'pino-lambda';
 
-import { log } from '../../../utils/logger';
+import { log, logLambdaInitializationError } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
 import {
   getGetEnvWithPreassignedContext,
@@ -41,16 +41,42 @@ const findReportByKey = async (key: string) => {
   });
   return foundReport;
 };
+const init = () => {
+  try {
+    const withRequest = lambdaRequestTracker();
 
-const withRequest = lambdaRequestTracker();
+    // init db connections and such
+    // TODO: there should only be one db library used
+    const prisma = getPrismaClient();
+    const postgresConnection: Promise<DBConnection> = getDBConnection();
+    const config = getLambdaConfigOrFail();
+    const backend = BackendFacade.getBackend(config);
+    const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
+    return {
+      withRequest,
+      prisma,
+      postgresConnection,
+      config,
+      backend,
+      adminLogger,
+    };
+  } catch (error) {
+    logLambdaInitializationError.error(
+      { error },
+      'Error in lambda initialization code, abort',
+    );
+    throw error;
+  }
+};
 
-// init db connections and such
-// TODO: there should only be one db library used
-const prisma = getPrismaClient();
-const postgresConnection: Promise<DBConnection> = getDBConnection();
-const config = getLambdaConfigOrFail();
-const backend = BackendFacade.getBackend(config);
-const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
+const {
+  withRequest,
+  prisma,
+  postgresConnection,
+  config,
+  backend,
+  adminLogger,
+} = init();
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -66,13 +92,16 @@ export async function handleInspectionFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  withRequest(event, context);
   const doCSVParsing =
     config.allowCSVInProd === 'true' ||
     config.environment !== ENVIRONMENTS.prod;
-  const dbConnection = await postgresConnection;
   let currentKey: string = ''; // for logging in case of errors
   try {
+    withRequest(event, context);
+    const dbConnection = await postgresConnection;
+    if (!dbConnection) {
+      throw new Error('No db connection');
+    }
     const spec = await backend.specs.getSpecification();
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
@@ -80,7 +109,6 @@ export async function handleInspectionFileEvent(
       const recordResults = s3Event.Records.map<
         Promise<FileMetadataEntry | null>
       >(async eventRecord => {
-        eventRecord;
         const key = getDecodedS3ObjectKey(eventRecord);
         currentKey = key;
         log.info({ fileName: key }, 'Start inspection file handler');
@@ -103,7 +131,7 @@ export async function handleInspectionFileEvent(
         if (eventRecord.s3.object.size === 0) {
           // empty file is probably an error and will mess up searching by hash
           log.error({ message: 'Empty file, skipping', key });
-          adminLogger.error(`Tyhjä tiedosto: ${key}`);
+          await adminLogger.error(`Tyhjä tiedosto: ${key}`);
           return null;
         }
         // Return empty null result if the top level folder does not match any of the names
@@ -152,12 +180,6 @@ export async function handleInspectionFileEvent(
             require_newer_parser_version: requireNewerParserVersion,
           },
         };
-
-        if (!dbConnection) {
-          // No DB connection
-          reportId = -1;
-          throw new Error('No db connection');
-        }
         let shouldParse = true;
         // DB connection exists
         const foundReport = await findReportByKey(key);
@@ -199,11 +221,14 @@ export async function handleInspectionFileEvent(
         } else {
           await adminLogger.info(`Tiedosto parsittu: ${key}`);
         }
-        // if parsed_at_datetime already exists on found report, don't update it
-        const parsed_at_datetime =
+        // if parsed_at_datetime already exists on found report, don't update it except if hash also changed
+        let parsed_at_datetime =
           foundReport?.parsed_at_datetime != null
             ? foundReport.parsed_at_datetime.toISOString()
             : parseResults.metadata.parsed_at_datetime;
+        if (foundReport && foundReport.hash !== hash) {
+          parsed_at_datetime = parseResults.metadata.parsed_at_datetime;
+        }
         return {
           ...entryBeforeParsing,
           metadata: {
@@ -219,22 +244,22 @@ export async function handleInspectionFileEvent(
       // Switch to granular error handling.
       // Check if lambda supports es2022 and if so, switch to Promise.allSettled
 
-      const entries = await Promise.all(recordResults).then(
-        results => results.filter(x => Boolean(x)) as Array<FileMetadataEntry>,
-      );
+      const entries = (await Promise.all(recordResults)).filter(x =>
+        Boolean(x),
+      ) as Array<FileMetadataEntry>;
+
+      if (!entries.length) {
+        log.info('Nothing to save, exit');
+        return null;
+      }
 
       if (doCSVParsing) {
-        if (dbConnection) {
-          await updateRaporttiMetadata(entries, dbConnection);
-        } else {
-          log.error(
-            'content parsing with called csv enabled and without dbconnection',
-          );
-        }
+        await updateRaporttiMetadata(entries, dbConnection);
       } else {
         log.warn('CSV postgres blocked in prod');
       }
-      return await backend.metadataStorage.saveFileMetadata(entries);
+      await backend.metadataStorage.saveFileMetadata(entries);
+      return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);
     await Promise.all(
@@ -248,12 +273,14 @@ export async function handleInspectionFileEvent(
             `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
           );
         }
+        return;
       }),
     );
   } catch (err) {
     // TODO: Figure out proper error handling.
     log.error({
       error: err,
+      currentKey,
       message: 'An error occured while processing events',
     });
     await adminLogger.error(

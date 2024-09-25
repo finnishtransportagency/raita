@@ -4,6 +4,7 @@ import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateAdminUser } from '../../../utils/userService';
 import {
+  addZipFileExtension,
   getKeyData,
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
@@ -75,7 +76,14 @@ export async function handleDeleteRequest(
     if (fileSuffix.length) {
       throw new RaitaLambdaError('Prefix must not have file suffix', 400);
     }
-    const validPath = isZipPath(path) || isZipParentPath(path);
+    if (prefix[prefix.length - 1] !== '/') {
+      throw new RaitaLambdaError('Prefix must end in "/"', 400);
+    }
+    // zip path checks assume no trailing '/', remove before checks
+    const pathTruncated = path.slice(0, path.length - 1);
+    const isZip = isZipPath(pathTruncated);
+    const isZipParent = isZipParentPath(pathTruncated);
+    const validPath = isZip || isZipParent;
 
     if (!validPath) {
       throw new RaitaLambdaError('Invalid prefix length', 400);
@@ -92,7 +100,7 @@ export async function handleDeleteRequest(
 
     if (deleteFrom.reception) {
       receptionDeleteCount = await deleteFromBucket(
-        prefix,
+        isZip ? addZipFileExtension(prefix) : prefix,
         receptionBucket,
         s3,
       );

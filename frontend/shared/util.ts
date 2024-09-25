@@ -1,4 +1,5 @@
-import * as R from 'rambda';
+import saveAs from 'file-saver';
+import { Dispatch, SetStateAction } from 'react';
 
 export function fst<T1, T2>([a, b]: [T1, T2]) {
   return a;
@@ -52,7 +53,7 @@ export const sizeformatter = (size: number | undefined, decimalPlaces = 2) => {
 };
 
 export const takeOptionValues = (fs: HTMLCollectionOf<HTMLOptionElement>) =>
-  Array.from(fs, (opt) => opt.value as string).filter(Boolean);
+  Array.from(fs, opt => opt.value as string).filter(Boolean);
 
 export const getKeyAggregations = (size: number | undefined) => {
   if (!size) return;

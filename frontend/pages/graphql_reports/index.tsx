@@ -1,4 +1,10 @@
-import { useState, Fragment, useEffect, SyntheticEvent } from 'react';
+import {
+  useState,
+  Fragment,
+  useEffect,
+  SyntheticEvent,
+  useContext,
+} from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
@@ -37,8 +43,8 @@ import {
   SelectorSupportedType,
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
-
-//
+import { zipContext } from 'shared/zipContext';
+import { initialState as zipInitialState } from 'shared/zipContext';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -77,7 +83,7 @@ const ReportsIndex: RaitaNextPage = () => {
   const [triggerInitialSearch, searchQuery] = useLazyQuery(SEARCH_RAPORTTI);
 
   const user = useUser();
-
+  const zipState = useContext(zipContext);
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -91,6 +97,8 @@ const ReportsIndex: RaitaNextPage = () => {
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+    localStorage.removeItem('zipUrl');
+    zipState.setState(zipInitialState);
     triggerInitialSearch({
       variables: getQueryVariables(state),
     });
@@ -403,29 +411,48 @@ const ReportsIndex: RaitaNextPage = () => {
 
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              {!searchQuery.data && t('no_search_results')}
+              {!searchQuery.data && (
+                <div className="flex items-end">
+                  <div className="mt-1"> {t('common:no_results')}</div>
+                </div>
+              )}
 
               {searchQuery.data && (
-                <div className="flex">
+                <div className="flex items-end">
                   <div className="mt-1">
                     {t('search_result_count', {
                       count: resultsData?.count,
                     })}
                   </div>
                   {resultsData?.total_size && resultsData?.total_size > 0 && (
-                    <div className="ml-2">
-                      <ZipDownload
-                        aggregationSize={resultsData?.count}
-                        usedQueryVariables={getQueryVariables(state)}
-                        resultTotalSize={resultsData?.total_size}
-                      />
+                    <div className="ml-2 flex">
+                      {!localStorage.getItem('zipUrl') ? (
+                        <ZipDownload
+                          aggregationSize={resultsData?.count}
+                          usedQueryVariables={getQueryVariables(state)}
+                          resultTotalSize={resultsData?.total_size}
+                        />
+                      ) : null}
+
+                      <div className="ml-2">
+                        {resultsData.total_size > cfg.maxFileSizeForZip ? (
+                          <p className="text-base">
+                            {t('common:file_size_limit')}
+                          </p>
+                        ) : null}
+                        {resultsData.count > cfg.maxFileCountForZip ? (
+                          <p className="text-base">
+                            {t('common:file_count_limit')}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
               <div>
-                {resultsData && (
+                {resultsData && resultsData.count > 0 && (
                   <div className="flex justify-between items-end">
                     <div className={css.headerRow + ' text-base'}>
                       <Dropdown
@@ -511,7 +538,8 @@ const ReportsIndex: RaitaNextPage = () => {
                         document.key
                           ?.split('/')
                           .slice(0, zipFileNameIndex)
-                          .join('/') ?? '';
+                          .join('/')
+                          .replace('.xlsx', '') ?? '';
 
                       // Bail out if we have nothing
                       if (!document) return null;

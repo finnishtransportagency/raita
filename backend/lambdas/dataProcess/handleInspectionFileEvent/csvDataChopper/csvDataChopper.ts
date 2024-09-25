@@ -24,7 +24,7 @@ async function writeFileChunkToQueueS3(
   invocationId: string,
 ) {
   try {
-    await adminLogger.init('data-csv-mass-import', key.keyWithoutSuffix);
+    await adminLogger.init('data-inspection', invocationId);
     const pathString = key.path.slice(0, key.path.length - 1).join('/');
     const outFileName =
       pathString +
@@ -101,7 +101,7 @@ export async function chopCSVFileStream(
     });
 
     let lineBuffer: string[] = [];
-    const maxBufferSize = 50000;
+    const maxBufferSize = 10000;
 
     let state = ReadState.READING_HEADER as ReadState;
 

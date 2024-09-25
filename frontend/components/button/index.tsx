@@ -19,6 +19,7 @@ const Button = ({
         css.root,
         size === 'sm' && css.buttonSmall,
         type === 'secondary' && css.secondary,
+        type === 'tertiary' && css.tertiary,
       )}
     >
       {label}
@@ -32,7 +33,7 @@ export default Button;
 
 export type Props = {
   label: any;
-  type?: 'primary' | 'secondary';
+  type?: 'primary' | 'secondary' | 'tertiary';
   size?: 'sm' | 'md';
   disabled?: boolean;
   onClick: (e: SyntheticEvent<HTMLButtonElement, Event>) => void;
