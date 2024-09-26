@@ -27,7 +27,7 @@ import { useFileQuery } from '../../shared/hooks';
 import css from '../reports/reports.module.css';
 
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
-import { ZipDownload } from 'components/zip-download-graphql';
+import { ZipDownload } from 'components/zip-download';
 
 import { RaitaRole, useUser } from 'shared/user';
 import { Tooltip } from 'react-tooltip';
