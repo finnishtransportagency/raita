@@ -359,6 +359,7 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
+      prismaLambdaLayer,
     });
 
     const csvAlarms = this.createCSVHandlerAlarms(
@@ -812,6 +813,7 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     csvBucketName: string;
@@ -820,6 +822,7 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier: string;
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -837,6 +840,8 @@ export class DataProcessStack extends NestedStack {
         REGION: this.region,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {

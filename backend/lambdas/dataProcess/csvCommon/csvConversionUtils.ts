@@ -76,7 +76,9 @@ export function readRunningDateFromLine(inputFirstLine: string) {
   const month = splitted[1];
   const year = splitted[2];
   const runningDate = new Date(Number(year), Number(month), Number(day));
-  return runningDate;
+  if (!Number.isNaN(runningDate)) {
+    return runningDate;
+  } else return new Date();
 }
 
 export function tidyUpFileBody(csvFileBody: string) {
@@ -187,11 +189,8 @@ function replaceKnownMisspellings(tidyedHeaderLine: string): string {
     .replace(/300_1000mm_fixed_mean/g, '300_1000mm_kiintea_keskia')
     .replace(/300_1000mm_fixed_stddev/g, '300_1000mm_kiintea_keskih')
 
-
     .replace(/45kuluma/g, '45_kuluma')
     .replace(/tg_slave_/g, '');
 
-
   return result;
 }
-

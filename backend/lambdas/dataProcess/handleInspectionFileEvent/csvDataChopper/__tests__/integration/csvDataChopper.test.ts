@@ -3,8 +3,11 @@ import { stringToStream } from '../../../__tests__/testUtils';
 import * as fs from 'fs';
 import { log } from '../../../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../../../types';
-import {getDBConnection, insertRaporttiData, updateRaporttiMetadata} from '../../../../csvCommon/db/dbUtil';
-
+import {
+  getDBConnection,
+  insertRaporttiData,
+  updateRaporttiMetadata,
+} from '../../../../csvCommon/db/dbUtil';
 
 const amsCsv =
   '"Running Date","22/11/2022 7:44:40 AM"\r\n' +
@@ -165,8 +168,6 @@ const ohlCsv: string =
   '25529,"006 KVRP 847",194+0415.00,"60.86959497° N","26.75753899° E",32.765,-55.91,,6204.75,,9.89,,0.00,0.20,5.31,,5.17,,0.34,,77.43,,0.45,,77.62,,0.0000,,,,33,,-20.48,2025.01';
 const ohlCsvStream = stringToStream(ohlCsv);
 
-
-
 describe('insert raportti success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
@@ -174,7 +175,6 @@ describe('insert raportti success', () => {
       'polku ja tiedostonimi',
       'tiedostonimi',
       'CHOPPING',
-      dbConnection
     );
     const updateData: Array<FileMetadataEntry> = [];
     const row: FileMetadataEntry = {
@@ -187,28 +187,28 @@ describe('insert raportti success', () => {
       size: 0,
       reportId: result,
       metadata: {
-        source_system: "Meeri",
-        zip_reception__year: "2022",
-        campaign: "Kamppis",
-        zip_reception__date: "20220202",
-        zip_name: "20221020_TG_AMS_OHL_CW_Reports",
-        track_number: "554",
-        track_part: "KONVUS",
-        track_id: "XX",
+        source_system: 'Meeri',
+        zip_reception__year: '2022',
+        campaign: 'Kamppis',
+        zip_reception__date: '20220202',
+        zip_name: '20221020_TG_AMS_OHL_CW_Reports',
+        track_number: '554',
+        track_part: 'KONVUS',
+        track_id: 'XX',
         year: 2022,
-        system: "OHL",
-        inspection_datetime: "2022-10-20T11:45:56.000Z",
-        report_category: "TextualReports",
-        file_type: "csv",
-        inspection_date: "2022-10-20T00:00:00.000Z",
+        system: 'OHL',
+        inspection_datetime: '2022-10-20T11:45:56.000Z',
+        report_category: 'TextualReports',
+        file_type: 'csv',
+        inspection_date: '2022-10-20T00:00:00.000Z',
         km_start: 662,
         km_end: 753,
-        parser_version: "1.2.0",
-        parsed_at_datetime: "2024-03-13T10:14:28.427Z"
+        parser_version: '1.2.0',
+        parsed_at_datetime: '2024-03-13T10:14:28.427Z',
       },
       options: {
         skip_hash_check: true,
-      }
+      },
     };
     updateData.push(row);
     await updateRaporttiMetadata(updateData, dbConnection);
@@ -219,8 +219,6 @@ describe('handle ams file success', () => {
   test('success: normal run', async () => {
     const dbConnection = await getDBConnection();
 
-
-
     const result = await chopCSVFileStream(
       {
         fileBaseName: 'AMS_20221122_008_KOKOL_LR_630_630.csv',
@@ -229,7 +227,7 @@ describe('handle ams file success', () => {
         keyWithoutSuffix:
           '2022/Kamppis/20220202/20221024_TG_AMS_OHL_CW_Reports/252/LHRP/1/2022/Running Dynamics/20221024_133538/TextualReports/VR_AMS_20221122_008_KOKOL_LR_630_630.csv',
         rootFolder: '',
-        path: []
+        path: [],
       },
       amsCsvStream,
       dbConnection,
@@ -239,4 +237,3 @@ describe('handle ams file success', () => {
     log.debug('report inserted: ' + result);
   }, 900000);
 });
-
