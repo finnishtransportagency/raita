@@ -14,8 +14,6 @@ import { useLazyQuery } from '@apollo/client';
 import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
 import { zipContext } from 'shared/zipContext';
 
-// Copied from zip-download.tsx
-// TODO: rename when removing opensearch
 export function ZipDownload(props: Props) {
   const { usedQueryVariables, resultTotalSize, aggregationSize } = props;
   const { state, setState } = useContext(zipContext);

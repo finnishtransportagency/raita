@@ -92,9 +92,7 @@ export async function handleInspectionFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  const doCSVParsing =
-    config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.prod;
+  const doCSVParsing = true;
   let currentKey: string = ''; // for logging in case of errors
   try {
     withRequest(event, context);

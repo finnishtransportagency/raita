@@ -49,9 +49,7 @@ export async function handleCSVMassImportFileEvent(
   try {
     withRequest(event, context);
     const dbConnection = await postgresConnection;
-    const doCSVParsing =
-      config.allowCSVInProd === 'true' ||
-      config.environment !== ENVIRONMENTS.prod;
+    const doCSVParsing = true;
     const spec = await backend.specs.getSpecification();
     // one event from sqs can contain multiple s3 events
     const sqsRecordResults = event.Records.map(async sqsRecord => {
