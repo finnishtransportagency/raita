@@ -1,5 +1,3 @@
-import { integer } from '@opensearch-project/opensearch/api/types';
-
 //todo all db fields
 export type Raportti = {
   key: string | null;

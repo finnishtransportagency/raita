@@ -9,7 +9,6 @@ export function getLambdaConfigOrFail() {
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
     environment: getEnv('ENVIRONMENT'),
-    allowCSVInProd: getEnv('ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD'),
   };
 }
 

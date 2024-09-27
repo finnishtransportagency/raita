@@ -27,8 +27,6 @@ For example to route to a local pipe on port 3001
 DEV_RAITA_API_BASEURL=http://localhost:3001/api DEV_RAITA_API_KEY=<apikey> npm run dev
 ```
 
-It might be possible to run the opensearch backend locally, but it is not tested currently. The api routes in the pages/api folder are only used for this purpose and are not included in the production build.
-
 ## Middleware
 
 The middleware.ts file is is only used for redirecting api requests in the local dev environment.

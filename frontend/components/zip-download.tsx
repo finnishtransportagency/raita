@@ -1,89 +1,63 @@
-import { useQuery } from '@tanstack/react-query';
-import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
-import { useState } from 'react';
+import { useContext, useEffect } from 'react';
 import * as R from 'rambda';
+import * as cfg from 'shared/config';
 
-import {
-  getKeysOfFiles,
-  getPollingProgress,
-  triggerZipLambda,
-} from 'shared/rest';
-import { getKeyAggregations, sizeformatter } from 'shared/util';
+import { triggerZipLambda } from 'shared/rest';
+import { initialState } from 'shared/zipContext';
+import { sizeformatter } from 'shared/util';
 import Button from './button';
 import { Spinner } from './spinner';
-import { ProgressStatus } from 'shared/types';
 
-const initialState: ZipState = {
-  shouldPoll: false,
-  pollingFileKey: undefined,
-  zipUrl: undefined,
-  error: undefined,
-  isLoading: false,
-};
+import { Search_RaporttiQueryVariables } from 'shared/graphql/__generated__/graphql';
+import { useLazyQuery } from '@apollo/client';
+import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
+import { zipContext } from 'shared/zipContext';
 
-// This version of zip-download is using old opensearch
-// TODO: remove this when not using opensearch
 export function ZipDownload(props: Props) {
-  const { aggregationSize, usedQuery, resultTotalSize } = props;
-  const [state, setState] = useState<ZipState>(initialState);
-  const { zipUrl, error, isLoading } = state;
+  const { usedQueryVariables, resultTotalSize, aggregationSize } = props;
+  const { state, setState } = useContext(zipContext);
+  const { error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
-  const resultTooBigToCompress =
-    resultTotalSize && resultTotalSize > 5000000000 ? true : false;
-  const bigCompression =
-    resultTotalSize && resultTotalSize > 1000000000 && !resultTooBigToCompress
-      ? true
-      : false;
 
-  const retryFunction = (failureCount: number) => {
-    if (failureCount === 3) {
-      setState(initialState);
-      setState(R.assoc('error', `${t('common:zip_error')}`));
-      return false;
+  const [triggerKeyQuery, keyQuery] = useLazyQuery(SEARCH_RAPORTTI_KEYS_ONLY);
+  const isOverMaxSize = resultTotalSize
+    ? resultTotalSize > cfg.maxFileSizeForZip
+    : true;
+  const tooManyResults = aggregationSize
+    ? aggregationSize > cfg.maxFileCountForZip
+    : true;
+
+  const triggerKeyFetching = () => {
+    if (usedQueryVariables) {
+      triggerKeyQuery({
+        variables: {
+          raportti: usedQueryVariables.raportti,
+          page: 1,
+          page_size: cfg.paging.maxZipPageSize,
+        },
+      });
     }
-    return true;
   };
 
-  const { data } = useQuery(
-    ['fileData', state.pollingFileKey],
-    () => {
-      if (!state.pollingFileKey) return;
-      return getPollingProgress(state.pollingFileKey);
-    },
-    {
-      enabled: state.shouldPoll,
-      refetchInterval: 2000,
-      retry: retryFunction,
-      retryDelay: 2000,
-      onSuccess: data => {
-        if (
-          data?.progressData?.status === ProgressStatus.SUCCESS &&
-          data?.progressData?.url
-        ) {
-          setState(initialState);
-          setState(R.assoc('zipUrl', data.progressData.url));
-        } else if (data?.progressData?.status === ProgressStatus.FAILED) {
-          setState(initialState);
-          setState(R.assoc('error', `${t('common:zip_error')}`));
-        }
-      },
-    },
-  );
+  useEffect(() => {
+    if (keyQuery.data && keyQuery.data.search_raportti) {
+      const keys =
+        keyQuery.data.search_raportti.raportti
+          ?.filter(raportti => raportti.key)
+          .map(raportti => `${raportti.key}`) ?? [];
+      triggerZipping(keys);
+    }
+  }, [keyQuery.data]);
 
-  const triggerZipping = async () => {
+  const triggerZipping = async (keys: string[]) => {
     setState(initialState);
     const pollingFileKey = `progress/data-${Date.now()}.json`;
     setState(R.assoc('pollingFileKey', pollingFileKey));
+    localStorage.setItem('pollingFileKey', pollingFileKey);
     setState(R.assoc('isLoading', true));
-    const keyAggs = getKeyAggregations(aggregationSize);
     try {
-      const keys = await getKeysOfFiles({
-        ...usedQuery,
-        aggs: keyAggs,
-        size: 0,
-      });
       triggerZipLambda(keys, pollingFileKey).then(() =>
         setState(R.assoc('shouldPoll', true)),
       );
@@ -93,32 +67,27 @@ export function ZipDownload(props: Props) {
     }
   };
 
-  const handleZipDownload = () => (zipUrl ? saveAs(zipUrl) : null);
+  useEffect(() => {
+    if (state.zipUrl == undefined) triggerKeyQuery();
+  }, [state]);
 
   return (
-    <div>
-      {!zipUrl || error ? (
-        <Button
-          disabled={isLoading || resultTooBigToCompress}
-          size="sm"
-          label={
-            isLoading ? (
-              <Spinner size={4} bottomMargin={0} />
-            ) : (
-              `${t('common:compress_all')} ${sizeformatter(resultTotalSize)}`
-            )
-          }
-          onClick={() => triggerZipping()}
-        />
-      ) : (
-        <Button
-          size="sm"
-          label={`${t('common:download_zip')}`}
-          onClick={() => handleZipDownload()}
-        />
-      )}
-      {bigCompression && (
-        <p className="text-xs">{t('common:big_compression')}</p>
+    <div className="flex items-end">
+      {!error && (
+        <div className="flex gap-2 mb-1 h-auto">
+          {isLoading ? (
+            <Spinner size={4} bottomMargin={0} />
+          ) : (
+            <Button
+              size="sm"
+              disabled={isOverMaxSize || tooManyResults}
+              label={`${t('common:compress_all')} ${sizeformatter(
+                resultTotalSize ? resultTotalSize : undefined,
+              )}`}
+              onClick={() => triggerKeyFetching()}
+            />
+          )}
+        </div>
       )}
       {error && (
         <div
@@ -134,14 +103,7 @@ export function ZipDownload(props: Props) {
 
 type Props = {
   aggregationSize: number | undefined;
-  usedQuery: object;
+  usedQueryVariables?: Search_RaporttiQueryVariables;
   resultTotalSize: number | undefined;
-};
-
-type ZipState = {
-  shouldPoll: boolean;
-  pollingFileKey?: string;
-  zipUrl?: string;
-  error?: string;
-  isLoading: boolean;
+  buttonType?: 'primary' | 'secondary' | 'tertiary';
 };

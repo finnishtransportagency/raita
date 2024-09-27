@@ -6,7 +6,6 @@ import {
   ImageKeyResponse,
   ManualDataProcessRequest,
   PollingProgress,
-  SearchResponse,
   SingleEventAdminLogsResponse,
 } from './types';
 
@@ -19,21 +18,9 @@ export const apiClient = A.create({ baseURL: baseURL });
 
 export const getUser = () =>
   apiClient.get<GetUserResult>('user').then(res => res.data);
-/**
- * Perform a search with the given OpenSearch `query` object
- * @param q
- * @returns
- */
-export const getKeysOfFiles = (q: object) => {
-  return apiClient.post<SearchResponse>('files', q).then(res => res.data.keys);
-};
 
 export const getFile = (key: string) =>
   apiClient.post<GetSignedUrlResult>('file', { key }).then(res => res.data);
-
-export const getMeta = () => {
-  return apiClient.get<GetMetaResult>('meta').then(res => res.data);
-};
 
 export const getPollingProgress = (queryKey: string) => {
   return apiClient
