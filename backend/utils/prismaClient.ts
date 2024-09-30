@@ -31,10 +31,6 @@ export const getPrismaClient = async () => {
       },
       {
         emit: 'stdout',
-        level: 'info',
-      },
-      {
-        emit: 'stdout',
         level: 'warn',
       },
     ],
