@@ -55,10 +55,22 @@ model ams_mittaus {
   long                                                        Decimal?                  @db.Decimal
   created                                                     DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                                    DateTime?                 @db.Timestamp(6)
+  geoviite_konvertoitu_lat                                    Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                                   Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero                       String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi                         String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero                           String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri                         Int?
+  geoviite_konvertoitu_rata_metrit                            Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti                               Unsupported("geography")?
+  geoviite_valimatka                                          Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus                               String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi                               String?                   @db.VarChar(40)
+  geoviite_updated_at                                         DateTime?                 @db.Timestamp(6)
   raportti                                                    raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "ams_index")
-
+  @@index([geoviite_updated_at], map: "ams_mittaus_geoviite_updated_index")
 }
 
 model data_process_lock {
@@ -79,28 +91,42 @@ model logging {
 
 /// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
 model mittaus {
-  id                   Int                       @id @default(autoincrement())
-  raportti_id          Int
-  running_date         DateTime                  @db.Timestamp(6)
-  jarjestelma          jarjestelma?
-  sscount              Int?
-  sijainti             Unsupported("geography")?
-  ajonopeus            Decimal?                  @db.Decimal
-  track                String?                   @db.VarChar(40)
-  location             String?                   @db.VarChar(40)
-  latitude             String?                   @db.VarChar(40)
-  longitude            String?                   @db.VarChar(40)
-  rataosuus_numero     String?                   @db.VarChar(40)
-  rataosuus_nimi       String?                   @db.VarChar(40)
-  raide_numero         String?                   @db.VarChar(40)
-  rata_kilometri       Int?
-  rata_metrit          Decimal?                  @db.Decimal
-  lat                  Decimal?                  @db.Decimal
-  long                 Decimal?                  @db.Decimal
-  created              DateTime?                 @default(now()) @db.Timestamp(6)
-  modified             DateTime?                 @db.Timestamp(6)
+  id                                    Int                       @id @default(autoincrement())
+  raportti_id                           Int
+  running_date                          DateTime                  @db.Timestamp(6)
+  jarjestelma                           jarjestelma?
+  sscount                               Int?
+  sijainti                              Unsupported("geography")?
+  ajonopeus                             Decimal?                  @db.Decimal
+  track                                 String?                   @db.VarChar(40)
+  location                              String?                   @db.VarChar(40)
+  latitude                              String?                   @db.VarChar(40)
+  longitude                             String?                   @db.VarChar(40)
+  rataosuus_numero                      String?                   @db.VarChar(40)
+  rataosuus_nimi                        String?                   @db.VarChar(40)
+  raide_numero                          String?                   @db.VarChar(40)
+  rata_kilometri                        Int?
+  rata_metrit                           Decimal?                  @db.Decimal
+  lat                                   Decimal?                  @db.Decimal
+  long                                  Decimal?                  @db.Decimal
+  created                               DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                              DateTime?                 @db.Timestamp(6)
+  geoviite_konvertoitu_lat              Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long             Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi   String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero     String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri   Int?
+  geoviite_konvertoitu_rata_metrit      Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti         Unsupported("geography")?
+  geoviite_valimatka                    Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus         String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi         String?                   @db.VarChar(40)
+  geoviite_updated_at                   DateTime?                 @db.Timestamp(6)
+  raportti                              raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  raportti             raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([geoviite_updated_at], map: "mittaus_geoviite_updated_index")
+  @@index([raportti_id], map: "mittaus_index")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -153,58 +179,80 @@ model ohl_mittaus {
   long                                       Decimal?                  @db.Decimal
   created                                    DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                   DateTime?                 @db.Timestamp(6)
-
+  geoviite_konvertoitu_lat                   Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                  Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero      String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi        String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero          String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri        Int?
+  geoviite_konvertoitu_rata_metrit           Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti              Unsupported("geography")?
+  geoviite_valimatka                         Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus              String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi              String?                   @db.VarChar(40)
+  geoviite_updated_at                        DateTime?                 @db.Timestamp(6)
   raportti                                   raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "ohl_index")
-
+  @@index([geoviite_updated_at], map: "ohl_mittaus_geoviite_updated_index")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model pi_mittaus {
-  id                   Int                       @id @default(autoincrement())
-  raportti_id          Int
-  running_date         DateTime                  @db.Timestamp(6)
-  jarjestelma          jarjestelma?
-  sscount              Int?
-  sijainti             Unsupported("geography")?
-  ajonopeus            Decimal?                  @db.Decimal
-  accz_1_1             Decimal?                  @db.Decimal
-  accz_1_2             Decimal?                  @db.Decimal
-  accz_2_1             Decimal?                  @db.Decimal
-  accz_2_2             Decimal?                  @db.Decimal
-  f_1_1                Decimal?                  @db.Decimal
-  f_1_2                Decimal?                  @db.Decimal
-  f_2_1                Decimal?                  @db.Decimal
-  f_2_2                Decimal?                  @db.Decimal
-  fint                 Decimal?                  @db.Decimal
-  fcomp                Decimal?                  @db.Decimal
-  fext                 Decimal?                  @db.Decimal
-  stagger              Decimal?                  @db.Decimal
-  height_ws            Decimal?                  @db.Decimal
-  track                String?                   @db.VarChar(40)
-  location             String?                   @db.VarChar(40)
-  latitude             String?                   @db.VarChar(40)
-  longitude            String?                   @db.VarChar(40)
-  rataosuus_numero     String?                   @db.VarChar(40)
-  rataosuus_nimi       String?                   @db.VarChar(40)
-  raide_numero         String?                   @db.VarChar(40)
-  rata_kilometri       Int?
-  rata_metrit          Decimal?                  @db.Decimal
-  lat                  Decimal?                  @db.Decimal
-  long                 Decimal?                  @db.Decimal
-  created              DateTime?                 @default(now()) @db.Timestamp(6)
-  modified             DateTime?                 @db.Timestamp(6)
-
-  raportti             raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                    Int                       @id @default(autoincrement())
+  raportti_id                           Int
+  running_date                          DateTime                  @db.Timestamp(6)
+  jarjestelma                           jarjestelma?
+  sscount                               Int?
+  sijainti                              Unsupported("geography")?
+  ajonopeus                             Decimal?                  @db.Decimal
+  accz_1_1                              Decimal?                  @db.Decimal
+  accz_1_2                              Decimal?                  @db.Decimal
+  accz_2_1                              Decimal?                  @db.Decimal
+  accz_2_2                              Decimal?                  @db.Decimal
+  f_1_1                                 Decimal?                  @db.Decimal
+  f_1_2                                 Decimal?                  @db.Decimal
+  f_2_1                                 Decimal?                  @db.Decimal
+  f_2_2                                 Decimal?                  @db.Decimal
+  fint                                  Decimal?                  @db.Decimal
+  fcomp                                 Decimal?                  @db.Decimal
+  fext                                  Decimal?                  @db.Decimal
+  stagger                               Decimal?                  @db.Decimal
+  height_ws                             Decimal?                  @db.Decimal
+  track                                 String?                   @db.VarChar(40)
+  location                              String?                   @db.VarChar(40)
+  latitude                              String?                   @db.VarChar(40)
+  longitude                             String?                   @db.VarChar(40)
+  rataosuus_numero                      String?                   @db.VarChar(40)
+  rataosuus_nimi                        String?                   @db.VarChar(40)
+  raide_numero                          String?                   @db.VarChar(40)
+  rata_kilometri                        Int?
+  rata_metrit                           Decimal?                  @db.Decimal
+  lat                                   Decimal?                  @db.Decimal
+  long                                  Decimal?                  @db.Decimal
+  created                               DateTime?                 @default(now()) @db.Timestamp(6)
+  modified                              DateTime?                 @db.Timestamp(6)
+  geoviite_konvertoitu_lat              Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long             Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi   String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero     String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri   Int?
+  geoviite_konvertoitu_rata_metrit      Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti         Unsupported("geography")?
+  geoviite_valimatka                    Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus         String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi         String?                   @db.VarChar(40)
+  geoviite_updated_at                   DateTime?                 @db.Timestamp(6)
+  raportti                              raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "pi_index")
-
+  @@index([geoviite_updated_at], map: "pi_mittaus_geoviite_updated_index")
 }
 
 model raportti {
   id                            Int                @id @default(autoincrement())
-  file_name                     String?            @db.VarChar(100)
+  file_name                     String?            @db.VarChar(200)
   file_type                     String?            @db.VarChar(40)
   source_system                 String?            @db.VarChar(40)
   zip_name                      String?            @db.VarChar(500)
@@ -246,6 +294,8 @@ model raportti {
   measurement_direction         String?            @db.VarChar(50)
   maintenance_level             String?            @db.VarChar(50)
   hash                          String?            @db.VarChar(64)
+  geoviite_update_at            DateTime?          @db.Timestamp(6)
+  geoviite_status               String?            @db.VarChar(20)
   ams_mittaus                   ams_mittaus[]
   mittaus                       mittaus[]
   ohl_mittaus                   ohl_mittaus[]
@@ -319,10 +369,22 @@ model rc_mittaus {
   long                                                        Decimal?                  @db.Decimal
   created                                                     DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                                    DateTime?                 @db.Timestamp(6)
-
+  geoviite_konvertoitu_lat                                    Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                                   Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero                       String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi                         String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero                           String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri                         Int?
+  geoviite_konvertoitu_rata_metrit                            Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti                               Unsupported("geography")?
+  geoviite_valimatka                                          Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus                               String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi                               String?                   @db.VarChar(40)
+  geoviite_updated_at                                         DateTime?                 @db.Timestamp(6)
   raportti                                                    raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "rc_index")
+  @@index([geoviite_updated_at], map: "rc_mittaus_geoviite_updated_index")
 
 }
 
@@ -446,11 +508,22 @@ model rp_mittaus {
   long                                                          Decimal?                  @db.Decimal
   created                                                       DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                                      DateTime?                 @db.Timestamp(6)
-
+  geoviite_konvertoitu_lat                                      Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                                     Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero                         String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi                           String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero                             String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri                           Int?
+  geoviite_konvertoitu_rata_metrit                              Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti                                 Unsupported("geography")?
+  geoviite_valimatka                                            Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus                                 String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi                                 String?                   @db.VarChar(40)
+  geoviite_updated_at                                           DateTime?                 @db.Timestamp(6)
   raportti                                                      raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "rp_index")
-
+  @@index([geoviite_updated_at], map: "rp_mittaus_geoviite_updated_index")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -516,10 +589,22 @@ model tg_mittaus {
   long                                              Decimal?                  @db.Decimal
   created                                           DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                          DateTime?                 @db.Timestamp(6)
-
+  geoviite_konvertoitu_lat                          Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                         Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero             String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi               String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero                 String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri               Int?
+  geoviite_konvertoitu_rata_metrit                  Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti                     Unsupported("geography")?
+  geoviite_valimatka                                Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus                     String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi                     String?                   @db.VarChar(40)
+  geoviite_updated_at                               DateTime?                 @db.Timestamp(6)
   raportti                                          raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "tg_index")
+  @@index([geoviite_updated_at], map: "tg_mittaus_geoviite_updated_index")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -570,11 +655,22 @@ model tsight_mittaus {
   long                                           Decimal?                  @db.Decimal
   created                                        DateTime?                 @default(now()) @db.Timestamp(6)
   modified                                       DateTime?                 @db.Timestamp(6)
-
+  geoviite_konvertoitu_lat                       Decimal?                  @db.Decimal
+  geoviite_konvertoitu_long                      Decimal?                  @db.Decimal
+  geoviite_konvertoitu_rataosuus_numero          String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rataosuus_nimi            String?                   @db.VarChar(40)
+  geoviite_konvertoitu_raide_numero              String?                   @db.VarChar(40)
+  geoviite_konvertoitu_rata_kilometri            Int?
+  geoviite_konvertoitu_rata_metrit               Decimal?                  @db.Decimal
+  geoviite_konvertoitu_sijainti                  Unsupported("geography")?
+  geoviite_valimatka                             Decimal?                  @db.Decimal
+  geoviite_sijaintiraide_kuvaus                  String?                   @db.VarChar(200)
+  geoviite_sijaintiraide_tyyppi                  String?                   @db.VarChar(40)
+  geoviite_updated_at                            DateTime?                 @db.Timestamp(6)
   raportti                                       raportti                  @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([raportti_id], map: "tsight_index")
-
+  @@index([geoviite_updated_at], map: "tsight_mittaus_geoviite_updated_index")
 }
 
 model puuttuva_kolumni {
@@ -584,6 +680,12 @@ model puuttuva_kolumni {
   raportti    raportti? @relation(fields: [raportti_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "puuttuva_kolumni_id_fkey")
 
   @@unique([raportti_id, column_name])
+}
+
+model raportti_deletions {
+  id         Int       @id @default(autoincrement())
+  deleted_at DateTime? @db.Timestamp(6)
+  key        String?   @db.VarChar(1500)
 }
 
 enum jarjestelma {
