@@ -50,7 +50,8 @@ export async function getConvertedTrackAddressWithCoords(
     y_koordinaatti_param: long,
     ...defaultTrackAddressWithCoordinatePostParams,
   };
-  return getConvertedTrackAddressesWithParams(new Array(postParams), defaultTrackAddressWithCoordinatePathParams);
+  const result: any = await getConvertedTrackAddressesWithParams(new Array(postParams), defaultTrackAddressWithCoordinatePathParams);
+  return result;
 }
 
 export interface LatLong {
@@ -65,50 +66,54 @@ export async function getConvertedTrackAddressesWithCoords(coords: Array<LatLong
     y_koordinaatti_param: latlong.long,
   ...defaultTrackAddressWithCoordinatePathParams}});
 
-  return getConvertedTrackAddressesWithParams(pathParamsArray, defaultTrackAddressWithCoordinatePathParams);
+  const result: any = await getConvertedTrackAddressesWithParams(pathParamsArray, defaultTrackAddressWithCoordinatePathParams);
+  return result;
 }
 
 // Erämuunnos koordinaateista rataosoitteeseen kaikilla parametreillä
 async function getConvertedTrackAddressesWithParams(
   postParams: Array<trackAddressWithCoordinatePostParams>, pathParams: trackAddressWithCoordinatePathParams ,
 ): Promise<any> {
+  return new Promise((resolve, reject) => {
+    //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
+    const cleanedPostParams = postParams.map(params => pickBy(params, v => v !== undefined))
+    const postData: string = JSON.stringify(cleanedPostParams);
 
-  //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
-  const cleanedPostParams = postParams.map(params=> pickBy(params, v => v !== undefined))
-  const postData: string = JSON.stringify(cleanedPostParams);
+    // some rest params have a '-' in their name which not allowed in js object. Convert them.
+    const convertedPostData = postData
+      .replace('_param', '-param')
+      .replace('_koordinaatti', '-koordinaatti');
+    log.trace('Post data: ' + convertedPostData);
 
-  // some rest params have a '-' in their name which not allowed in js object. Convert them.
-  const convertedPostData = postData
-    .replace('_param', '-param')
-    .replace('_koordinaatti', '-koordinaatti');
-  log.trace('Post data: ' + convertedPostData);
+    const options: RequestOptions = {
+      hostname: process.env.GEOVIITE_HOSTNAME,
+      path: '/rata-vkm/v1/rataosoitteet',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
 
-  const options: RequestOptions = {
-    hostname: process.env.GEOVIITE_HOSTNAME,
-    path: '/rata-vkm/v1/rataosoitteet',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
+    const req: ClientRequest = https.request(options, (res: IncomingMessage) => {
+      let body: string = '';
+      log.trace('statusCode' + res.statusCode);
 
-  const req: ClientRequest = https.request(options, (res: IncomingMessage) => {
-    let body: string = '';
-    log.trace('statusCode' + res.statusCode);
+      res.setEncoding('utf8');
+      res.on('data', chunk => (body += chunk));
 
-    res.setEncoding('utf8');
-    res.on('data', chunk => (body += chunk));
-
-    res.on('end', () => {
-      log.trace('Successfully processed HTTPS response');
-      log.trace('RES body' + body);
+      res.on('end', () => {
+        log.trace('Successfully processed HTTPS response');
+        log.trace('RES body' + body);
+        resolve(body);
+      });
     });
-  });
 
-  req.on('error', error => {
-    log.error(error);
-  });
+    req.on('error', error => {
+      log.error(error);
+      reject(error.message);
+    });
 
-  req.write(postData);
-  req.end();
+    req.write(postData);
+    req.end();
+  });
 }
