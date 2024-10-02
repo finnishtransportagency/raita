@@ -16,7 +16,7 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
-import { ro } from 'date-fns/locale';
+import { PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -25,44 +25,50 @@ let connReuseCount = 0;
 export async function getDBConnection(): Promise<{
   schema: string;
   sql: postgres.Sql<{}>;
+  prisma: PrismaClient;
 }> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
   const sql = await getConnection();
-  return { schema, sql };
+  const prisma = await getPrismaClient();
+  return { schema, sql, prisma };
 }
 
-export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
+export type DBConnection = {
+  schema: string;
+  sql: postgres.Sql<{}>;
+  prisma: PrismaClient;
+};
 
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     let count;
     switch (table) {
       case TableEnum.AMS:
-        count = await addAMSMittausRecord(parsedCSVRows);
+        count = await addAMSMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.OHL:
-        count = await addOHLMittausRecord(parsedCSVRows);
+        count = await addOHLMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.PI:
-        count = await addPIMittausRecord(parsedCSVRows);
+        count = await addPIMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.RC:
-        count = await addRCMittausRecord(parsedCSVRows);
+        count = await addRCMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.RP:
-        count = await addRPMittausRecord(parsedCSVRows);
+        count = await addRPMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.TG:
-        count = await addTGMittausRecord(parsedCSVRows);
+        count = await addTGMittausRecord(parsedCSVRows, prisma);
         break;
       case TableEnum.TSIGHT:
-        count = await addTsightMittausRecord(parsedCSVRows);
+        count = await addTsightMittausRecord(parsedCSVRows, prisma);
         break;
       default:
         throw new Error(`Unhandled table type: ${table}`);
@@ -301,8 +307,8 @@ export async function updateRaporttiStatus(
   error: null | string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
+
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -330,8 +336,7 @@ export async function updateRaporttiMetadataStatus(
   status: string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
   try {
     const a = await prisma.raportti.update({
       where: { id: id },
@@ -376,7 +381,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const prisma = await getPrismaClient();
+  const { prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -419,8 +424,7 @@ export async function updateRaporttiChunks(
   chunks: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -439,8 +443,7 @@ export async function substractRaporttiChunk(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -463,8 +466,8 @@ export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
+
   try {
     const chunks = await prisma.raportti.findUnique({
       where: { id: id },
@@ -486,6 +489,7 @@ export async function insertRaporttiData(
   key: string,
   fileName: string,
   status: string | null,
+  dbConnection: DBConnection,
 ): Promise<number> {
   const data: Raportti = {
     key,
@@ -495,7 +499,7 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  const prisma = await getPrismaClient();
+  const { prisma } = dbConnection;
   try {
     const raportti = await prisma.raportti.create({
       data: {
@@ -522,8 +526,8 @@ export async function writeMissingColumnsToDb(
   columnNames: string[],
   dbConnection: DBConnection,
 ): Promise<void> {
-  const { schema, sql } = dbConnection;
-  const prisma = await getPrismaClient();
+  const { schema, sql, prisma } = dbConnection;
+
   const values = columnNames.map(name => ({
     raportti_id: reportId,
     column_name: name,
@@ -535,8 +539,10 @@ export async function writeMissingColumnsToDb(
   }); // conflict comes from unique constraint when this is ran for each file chunk
 }
 
-async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
-  const prisma = await getPrismaClient();
+async function addAMSMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
   try {
     const recordCount = await prisma.ams_mittaus.createMany({
@@ -549,8 +555,10 @@ async function addAMSMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
-  const prisma = await getPrismaClient();
+async function addOHLMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
 
   try {
@@ -565,8 +573,10 @@ async function addOHLMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
-  const prisma = await getPrismaClient();
+async function addPIMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToPiMittausArray(parsedCSVRows);
 
   try {
@@ -581,9 +591,12 @@ async function addPIMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
+async function addRCMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToRcMittausArray(parsedCSVRows);
-  const prisma = await getPrismaClient();
+
   try {
     const recordCount = await prisma.rc_mittaus.createMany({
       data: convertedData,
@@ -595,9 +608,11 @@ async function addRCMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
+async function addRPMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToRpMittausArray(parsedCSVRows);
-  const prisma = await getPrismaClient();
 
   try {
     const recordCount = await prisma.rp_mittaus.createMany({
@@ -611,9 +626,11 @@ async function addRPMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
+async function addTGMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToTgMittausArray(parsedCSVRows);
-  const prisma = await getPrismaClient();
 
   try {
     const recordCount = await prisma.tg_mittaus.createMany({
@@ -627,9 +644,11 @@ async function addTGMittausRecord(parsedCSVRows: any[]): Promise<number> {
   }
 }
 
-async function addTsightMittausRecord(parsedCSVRows: any[]): Promise<number> {
+async function addTsightMittausRecord(
+  parsedCSVRows: any[],
+  prisma: PrismaClient,
+): Promise<number> {
   const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
-  const prisma = await getPrismaClient();
 
   try {
     const recordCount = await prisma.tsight_mittaus.createMany({

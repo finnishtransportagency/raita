@@ -171,7 +171,12 @@ export async function handleInspectionFileEvent(
           );
         } else {
           // Report not found, insert new report
-          reportId = await insertRaporttiData(key, keyData.fileName, null);
+          reportId = await insertRaporttiData(
+            key,
+            keyData.fileName,
+            null,
+            dbConnection,
+          );
         }
         if (!shouldParse) {
           log.info({ key, hash, reportId }, 'File not changed, skip parsing');
