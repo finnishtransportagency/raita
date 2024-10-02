@@ -70,6 +70,24 @@ export async function getConvertedTrackAddressesWithCoords(coords: Array<LatLong
   return result;
 }
 
+function addPathParams(path: string, pathParams: trackAddressWithCoordinatePathParams):string {
+  let resultPath = path;
+  resultPath += '?';
+  if(pathParams.geometriatiedot != undefined){
+    resultPath += 'geometriatiedot=' + pathParams.geometriatiedot + '&';
+  }
+  if(pathParams.lisatiedot != undefined){
+    resultPath += 'lisatiedot=' + pathParams.lisatiedot + '&';
+  }
+  if(pathParams.perustiedot != undefined){
+    resultPath += 'perustiedot=' + pathParams.perustiedot + '&';
+  }
+  resultPath = resultPath.substring(0, resultPath.length-1);
+
+
+  return resultPath;
+}
+
 // Erämuunnos koordinaateista rataosoitteeseen kaikilla parametreillä
 async function getConvertedTrackAddressesWithParams(
   postParams: Array<trackAddressWithCoordinatePostParams>, pathParams: trackAddressWithCoordinatePathParams ,
@@ -87,7 +105,7 @@ async function getConvertedTrackAddressesWithParams(
 
     const options: RequestOptions = {
       hostname: process.env.GEOVIITE_HOSTNAME,
-      path: '/rata-vkm/v1/rataosoitteet',
+      path: addPathParams('/rata-vkm/v1/rataosoitteet', pathParams),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
