@@ -1,4 +1,7 @@
 import * as https from 'node:https';
+import { log } from '../../utils/logger';
+import {RequestOptions} from "https";
+import {ClientRequest, IncomingMessage} from "node:http";
 
 export interface trackAddressWithCoordinateParams {
   x_koordinaatti_param: number;
@@ -13,7 +16,7 @@ export interface trackAddressWithCoordinateParams {
   lisatiedot?: boolean;
 }
 
-//default vals for optional params; if we happen no need such TODO
+//default vals for optional params; if we happen to need such TODO
 export const defaultTrackAddressWithCoordinateParams: Omit<
   trackAddressWithCoordinateParams,
   'x_koordinaatti_param' | 'y_koordinaatti_param'
@@ -28,7 +31,7 @@ export const defaultTrackAddressWithCoordinateParams: Omit<
   sijaintiraide_tyyppi_param: undefined,
 };
 
-// Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametrreille vakioarvot
+// Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot
 export async function getConvertedTrackAddressWithCoords(
   lat: number,
   long: number,
@@ -45,8 +48,7 @@ export async function getConvertedTrackAddressWithCoords(
 async function getConvertedTrackAddressWithParams(
   params: trackAddressWithCoordinateParams,
 ): Promise<any> {
-  // TODO post supervision metadata how?
-  const postData = JSON.stringify({
+  const postData: string = JSON.stringify({
     data: [
       {
         x_koordinaatti_param: params.x_koordinaatti_param,
@@ -74,32 +76,36 @@ async function getConvertedTrackAddressWithParams(
     ],
   });
 
-  const options = {
-    hostname: process.env.KTV_HOSTNAME,
-    path: '/ktv/api/public/KTJLisaaKuvia',
-    // path: '/ktv/api/ktv/KTJLisaaKuvia',
+  // some rest params have a '-' in their name which not allowed in js object. Convert them.
+  const convertedPostData = postData
+    .replace('_param', '-param')
+    .replace('_koordinaatti', '-koordinaatti');
+  log.trace('Post data: ' + convertedPostData);
+
+  const options:RequestOptions = {
+    hostname: process.env.GEOVIITE_HOSTNAME,
+    path: '/rata-vkm/v1/rataosoitteet',
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': 'apiKey',
     },
   };
 
-  const req = https.request(options, res => {
-    let body = '';
-    console.log('statusCode', res.statusCode);
+  const req: ClientRequest = https.request(options, (res: IncomingMessage) => {
+    let body: string = '';
+    log.trace('statusCode' + res.statusCode);
 
     res.setEncoding('utf8');
     res.on('data', chunk => (body += chunk));
 
     res.on('end', () => {
-      console.log('Successfully processed HTTPS response');
-      console.log('RES body', body);
+      log.trace('Successfully processed HTTPS response');
+      log.trace('RES body' + body);
     });
   });
 
   req.on('error', error => {
-    console.error(error);
+    log.error(error);
   });
 
   req.write(postData);
