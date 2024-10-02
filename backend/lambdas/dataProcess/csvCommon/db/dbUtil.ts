@@ -511,7 +511,6 @@ export async function insertRaporttiData(
       },
     });
 
-    console.debug(raportti.id);
     return raportti.id;
   } catch (e) {
     log.error('Error inserting raportti data');

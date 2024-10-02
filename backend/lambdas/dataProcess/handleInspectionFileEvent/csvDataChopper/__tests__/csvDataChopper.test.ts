@@ -185,6 +185,7 @@ describe.skip('insert raportti success', () => {
       'polku ja tiedostonimi',
       'tiedostonimi',
       'CHOPPING',
+      dbConnection,
     );
     const updateData: Array<FileMetadataEntry> = [];
     const row: FileMetadataEntry = {
