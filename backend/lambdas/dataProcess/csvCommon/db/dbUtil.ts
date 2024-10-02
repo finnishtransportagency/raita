@@ -6,6 +6,17 @@ import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
+import { getPrismaClient } from '../../../../utils/prismaClient';
+import {
+  convertDataToAMSMittausArray,
+  convertDataToOhlMittausArray,
+  convertDataToPiMittausArray,
+  convertDataToRcMittausArray,
+  convertDataToRpMittausArray,
+  convertDataToTgMittausArray,
+  convertDataToTsightMittausArray,
+} from './converters/dataConverters';
+import { PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -14,20 +25,26 @@ let connReuseCount = 0;
 export async function getDBConnection(): Promise<{
   schema: string;
   sql: postgres.Sql<{}>;
+  prisma: PrismaClient;
 }> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
   const sql = await getConnection();
-  return { schema, sql };
+  const prisma = await getPrismaClient();
+  return { schema, sql, prisma };
 }
 
-export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
+export type DBConnection = {
+  schema: string;
+  sql: postgres.Sql<{}>;
+  prisma: PrismaClient;
+};
 
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
@@ -274,7 +291,8 @@ export async function updateRaporttiStatus(
   error: null | string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
+
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -302,7 +320,7 @@ export async function updateRaporttiMetadataStatus(
   status: string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   try {
     const a = await sql`UPDATE ${sql(schema)}.raportti
                             SET metadata_status = ${status}
@@ -346,7 +364,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -390,7 +408,7 @@ export async function updateRaporttiChunks(
   chunks: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
@@ -408,7 +426,7 @@ export async function substractRaporttiChunk(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
     const a = await sql`UPDATE ${sql(
@@ -426,7 +444,8 @@ export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
+
   try {
     const chunks = await sql`SELECT chunks_to_process FROM ${sql(
       schema,
@@ -458,6 +477,7 @@ export async function insertRaporttiData(
     events: null,
   };
 
+  const { prisma } = dbConnection;
   const { schema, sql } = dbConnection;
   try {
     const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
@@ -479,7 +499,7 @@ export async function writeMissingColumnsToDb(
   columnNames: string[],
   dbConnection: DBConnection,
 ): Promise<void> {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   const values = columnNames.map(name => ({
     raportti_id: reportId,
