@@ -10,12 +10,19 @@ import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import Inline from 'yet-another-react-lightbox/plugins/inline';
 
 import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { Button, TextInput, CopyToClipboard, Dropdown } from 'components';
+import {
+  Button,
+  TextInput,
+  CopyToClipboard,
+  Dropdown,
+  Modal,
+} from 'components';
 import { DateRange } from 'components';
 import FilterSelector from 'components/filters-graphql';
 import MultiChoice from 'components/filters-graphql/multi-choice';
@@ -88,6 +95,9 @@ const ReportsIndex: RaitaNextPage = () => {
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imagePage, setImagePage] = useState(1);
+  const [imageCount, setimageCount] = useState(0);
+  const [imageKey, setImageKey] = useState<string>();
 
   // S3 file URL endpoint mutation
   const getFileUrl = useFileQuery();
@@ -111,8 +121,12 @@ const ReportsIndex: RaitaNextPage = () => {
 
   const handleImageUrlFetch = async (key: string) => {
     const keys = imageKeys.find(ik => ik.fileKey === key)?.imageKeys;
-    if (!keys) return;
-    return await Promise.all(keys.map(key => getFile(key).then(x => x.url)));
+    keys?.length && setimageCount(keys.length);
+    const slicedKeys = keys?.slice(imagePage, imagePage + 10);
+    if (!slicedKeys) return;
+    return await Promise.all(
+      slicedKeys.map(key => getFile(key).then(x => x.url)),
+    );
   };
 
   const handleLightBox = async (key: string) => {
@@ -122,6 +136,9 @@ const ReportsIndex: RaitaNextPage = () => {
       setLightboxOpen(true);
     }
   };
+  useEffect(() => {
+    imageKey && handleLightBox(imageKey);
+  }, [imagePage]);
 
   const resultsData = searchQuery.data?.search_raportti;
 
@@ -632,9 +649,12 @@ const ReportsIndex: RaitaNextPage = () => {
                                 <Button
                                   size="sm"
                                   label={t('common:show_images')}
-                                  onClick={() =>
-                                    document.key && handleLightBox(document.key)
-                                  }
+                                  onClick={() => {
+                                    if (document.key) {
+                                      setImageKey(document.key);
+                                      handleLightBox(document.key);
+                                    }
+                                  }}
                                 />
                               )}
 
@@ -665,17 +685,40 @@ const ReportsIndex: RaitaNextPage = () => {
           </section>
         </div>
       </div>
-
-      <Lightbox
-        open={lightboxOpen}
-        close={() => setLightboxOpen(false)}
-        slides={imageUrls.map((imageUrl, idx) => {
-          return {
-            src: imageUrl,
-            alt: `Image(${idx + 1})`,
-          };
-        })}
-      />
+      <Modal
+        isOpen={lightboxOpen}
+        onRequestClose={() => setLightboxOpen(false)}
+        headerText={`Kuvat ${(imagePage - 1) * 10}-${
+          (imagePage - 1) * 10 + 10
+        }/${imageCount}`}
+      >
+        <div className="flex justify-center">
+          <Lightbox
+            open={lightboxOpen}
+            close={() => setLightboxOpen(false)}
+            plugins={[Inline]}
+            inline={{
+              style: {
+                width: '100%',
+                maxWidth: '900px',
+                aspectRatio: '3 / 2',
+              },
+            }}
+            slides={imageUrls.map((imageUrl, idx) => {
+              return {
+                src: imageUrl,
+                alt: `Image(${idx + 1})`,
+              };
+            })}
+          />
+        </div>
+        <ResultsPager
+          currentPage={imagePage}
+          itemCount={imageCount}
+          pageSize={10}
+          onGotoPage={setImagePage}
+        />
+      </Modal>
     </div>
   );
 };
