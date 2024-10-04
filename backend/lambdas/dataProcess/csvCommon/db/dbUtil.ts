@@ -7,16 +7,8 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
-import {
-  convertDataToAMSMittausArray,
-  convertDataToOhlMittausArray,
-  convertDataToPiMittausArray,
-  convertDataToRcMittausArray,
-  convertDataToRpMittausArray,
-  convertDataToTgMittausArray,
-  convertDataToTsightMittausArray,
-} from './converters/dataConverters';
 import { PrismaClient } from '@prisma/client';
+import { prismaBundlingOptions } from '../../../../../lib/utils';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -47,7 +39,9 @@ export async function writeRowsToDB(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
+    const rows = await prisma.$queryRaw<
+      { latitude: number; longitude: number; id: number }[]
+    >`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
       parsedCSVRows,
     )} returning latitude, longitude, id`.catch(e => {
       log.error(e);
@@ -273,12 +267,12 @@ export async function emptyRaporttiMittausRows(
   reportId: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   try {
-    const result = await sql`DELETE FROM ${sql(
+    const result = await prisma.$queryRaw<number>`DELETE FROM ${sql(
       schema,
     )}.mittaus WHERE raportti_id = ${reportId}`;
-    log.info({ result: result[0] }, 'Deleted mittaus rows');
+    log.info({ result: result }, 'Deleted mittaus rows');
   } catch (error) {
     log.error({ error, reportId }, 'Error deleting mittaus rows');
     throw error;
@@ -298,7 +292,7 @@ export async function updateRaporttiStatus(
     errorSubstring = error.substring(0, 1000);
   }
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
+    const a = await prisma.$queryRaw`UPDATE ${sql(schema)}.raportti
                             SET status = ${status},
                                 error  = ${errorSubstring}
                             WHERE id = ${id}
@@ -322,7 +316,7 @@ export async function updateRaporttiMetadataStatus(
 ) {
   const { schema, sql, prisma } = dbConnection;
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
+    const a = await prisma.$queryRaw`UPDATE ${sql(schema)}.raportti
                             SET metadata_status = ${status}
                             WHERE id = ${id};`;
   } catch (error) {
@@ -364,7 +358,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { prisma } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -380,7 +374,7 @@ export async function updateRaporttiMetadata(
         throw new Error('ReportID undefined');
       }
       try {
-        const rowList = await sql`UPDATE ${sql(schema)}.raportti
+        const rowList = await prisma.$queryRaw`UPDATE ${sql(schema)}.raportti
                                   set ${sql(raporttiData)}
                                   WHERE id = ${id};`.catch(e => {
           log.error('Error updating metadata to db: ' + e);
@@ -411,7 +405,7 @@ export async function updateRaporttiChunks(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await sql`UPDATE ${sql(
+    const a = await prisma.$queryRaw`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
   } catch (e) {
@@ -429,7 +423,7 @@ export async function substractRaporttiChunk(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await sql`UPDATE ${sql(
+    const a = await prisma.$queryRaw`UPDATE ${sql(
       schema,
     )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
   } catch (e) {
@@ -447,14 +441,14 @@ export async function raporttiChunksToProcess(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const chunks = await sql`SELECT chunks_to_process FROM ${sql(
+    const chunks = await prisma.$queryRaw`SELECT chunks_to_process FROM ${sql(
       schema,
     )}.raportti  WHERE id = ${id};`.catch(e => {
       log.error(e);
       throw e;
     });
 
-    return Number(chunks[0].chunks_to_process);
+    return Number(chunks);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
@@ -480,9 +474,9 @@ export async function insertRaporttiData(
   const { prisma } = dbConnection;
   const { schema, sql } = dbConnection;
   try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
+    const id = await prisma.$queryRaw<{ id: number }>`INSERT INTO ${sql(
+      schema,
+    )}.raportti ${sql(data)} returning id`;
     log.debug(id);
 
     return id.id;
@@ -506,7 +500,7 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
+  await prisma.$queryRaw`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
     values,
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
 }
