@@ -7,8 +7,14 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
+import {
+  convertDataToAMSMittausArray,
+  convertDataToOhlMittausArray,
+  convertDataToPiMittausArray,
+  convertDataToRcMittausArray,
+  convertDataToRpMittausArray,
+} from './converters/dataConverters';
 import { PrismaClient } from '@prisma/client';
-import { prismaBundlingOptions } from '../../../../../lib/utils';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -52,8 +58,7 @@ export async function writeRowsToDB(
 
     return rows.length;
   } catch (e) {
-    // log.error('Error inserting measurement data: ' + table + ' ' + e);
-    // log.error(e);
+    log.error('Error inserting measurement data: ' + table + ' ' + e);
     throw e;
   }
 }
@@ -503,4 +508,89 @@ export async function writeMissingColumnsToDb(
   await prisma.$queryRaw`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
     values,
   )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+}
+
+async function addAMSMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.ams_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+async function addOHLMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.ohl_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addPIMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.pi_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addRCMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.rc_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addRPMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.rp_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addTGMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.tg_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+
+async function addTsightMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  const recordCount = await prisma.tsight_mittaus.createMany({
+    data: parsedCSVRows,
+  });
+
+  return recordCount.count;
+}
+enum TableEnum {
+  AMS = 'ams_mittaus',
+  OHL = 'ohl_mittaus',
+  PI = 'pi_mittaus',
+  RC = 'rc_mittaus',
+  RP = 'rp_mittaus',
+  TG = 'tg_mittaus',
+  TSIGHT = 'tsight_mittaus',
 }
