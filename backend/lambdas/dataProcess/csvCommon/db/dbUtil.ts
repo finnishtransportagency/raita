@@ -307,7 +307,6 @@ export async function updateRaporttiStatus(
   dbConnection: DBConnection,
 ) {
   const { schema, sql, prisma } = dbConnection;
-
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -386,6 +385,7 @@ export async function updateRaporttiMetadata(
       size: metaDataEntry.size,
       hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
+      track_number: metaDataEntry.metadata.track_number?.toString(),
     };
     try {
       let id;
