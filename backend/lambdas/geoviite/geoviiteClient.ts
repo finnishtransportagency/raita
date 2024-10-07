@@ -10,27 +10,26 @@ const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO add to cloudformation conf
 const apiClient = axios.create({ baseURL: baseUrl });
 
 //params that go to rest as url path params
-interface trackAddressWithCoordinatePathParams {
+type trackAddressWithCoordinatePathParams = {
   geometriatiedot?: boolean;
   perustiedot?: boolean;
   lisatiedot?: boolean;
-}
+};
 // Default vals for optional post params; if we happen to need such TODO
 //
 // Params with 'undefined' values are not posted to Geoviite and Geoviite uses it's default values:
 //    geometriatiedot: false,
 //    lisatiedot: true,
 //    perustiedot: true,
-export function defaultTrackAddressWithCoordinatePathParams(): trackAddressWithCoordinatePathParams {
-  return {
+export const defaultTrackAddressWithCoordinatePathParams: trackAddressWithCoordinatePathParams =
+  {
     geometriatiedot: undefined,
     lisatiedot: undefined,
     perustiedot: undefined,
   };
-}
 
 //params that go to rest post
-export interface trackAddressWithCoordinatePostParams {
+type trackAddressWithCoordinatePostParams = {
   x_koordinaatti_param: number;
   y_koordinaatti_param: number;
   koordinaatisto_param?: string;
@@ -38,13 +37,14 @@ export interface trackAddressWithCoordinatePostParams {
   ratanumero_param?: string;
   sijaintiraide_param?: string;
   sijaintiraide_tyyppi_param?: string;
-}
+};
+
 // Default vals for optional path params; if we happen to need such TODO
 //
-// Params with 'unndefined' values are not posted to Geoviite and Geoviite uses it's default values:
+// Params with 'undefined' values are not posted to Geoviite and Geoviite uses it's default values:
 //    koordinaatisto: EPSG:3067
 //    sade: 100
-export const defaultTrackAddressWithCoordinatePostParams: Omit<
+const defaultTrackAddressWithCoordinatePostParams: Omit<
   trackAddressWithCoordinatePostParams,
   'x_koordinaatti_param' | 'y_koordinaatti_param'
 > = {
@@ -55,19 +55,29 @@ export const defaultTrackAddressWithCoordinatePostParams: Omit<
   sijaintiraide_tyyppi_param: undefined,
 };
 
-// Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot
+// Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
+
 export async function getConvertedTrackAddressWithCoords(
   lat: number,
   long: number,
+  extraPathParams?: trackAddressWithCoordinatePathParams,
+  extraPostParams?: Omit<
+    trackAddressWithCoordinatePostParams,
+    'x_koordinaatti_param' | 'y_koordinaatti_param'
+  >,
 ): Promise<any> {
   const postParams: trackAddressWithCoordinatePostParams = {
     x_koordinaatti_param: long,
     y_koordinaatti_param: lat,
-    ...defaultTrackAddressWithCoordinatePostParams,
+    ...(extraPostParams
+      ? extraPostParams
+      : defaultTrackAddressWithCoordinatePostParams),
   };
   const resultData: any = await getConvertedTrackAddressesWithParams(
     new Array(postParams),
-    defaultTrackAddressWithCoordinatePathParams(),
+    extraPathParams
+      ? extraPathParams
+      : defaultTrackAddressWithCoordinatePathParams,
   );
   return resultData;
 }
@@ -77,47 +87,32 @@ export interface LatLong {
   long: number;
 }
 
-// Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot
+// Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
 export async function getConvertedTrackAddressesWithCoords(
   coords: Array<LatLong>,
+  extraPathParams?: trackAddressWithCoordinatePathParams,
+  extraPostParams?: Omit<
+    trackAddressWithCoordinatePostParams,
+    'x_koordinaatti_param' | 'y_koordinaatti_param'
+  >,
 ): Promise<any> {
   const postParamsArray = coords.map(latlong => {
     return {
       x_koordinaatti_param: latlong.long,
       y_koordinaatti_param: latlong.lat,
-      ...defaultTrackAddressWithCoordinatePostParams,
+      ...(extraPostParams
+        ? extraPostParams
+        : defaultTrackAddressWithCoordinatePostParams),
     };
   });
 
   const resultData: any = await getConvertedTrackAddressesWithParams(
     postParamsArray,
-    defaultTrackAddressWithCoordinatePathParams(),
+    extraPathParams
+      ? extraPathParams
+      : defaultTrackAddressWithCoordinatePathParams,
   );
   return resultData;
-}
-
-export async function simple(): Promise<string> {
-  console.log('hello');
-
-  const a = await apiClient
-    //.get<string>('https://jsonplaceholder.typicode.com/posts')
-    .get<string>('/posts')
-    .then(res => res.data)
-    .catch(error => {
-      // Handle the error in case of failure
-      log.error('at simple');
-      throw error;
-    });
-
-  return a;
-}
-
-export async function simple2() {
-  console.log('hello');
-  const res = await apiClient.get<string>(
-    'https://jsonplaceholder.typicode.com/posts',
-  );
-  log.info(res, 'res');
 }
 
 function addPathParams(
