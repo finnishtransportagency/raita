@@ -13,6 +13,7 @@ import { PsqlClientStack } from './raita-psql-client-ec2';
 import { SSM_API_KEY } from '../constants';
 import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import path from 'path';
+import { ConversionProcessStack } from './raita-geoviite-process';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -78,6 +79,19 @@ export class ApplicationStack extends NestedStack {
       loramPolicyUserId: loramPolicyUserId,
       prismaLambdaLayer,
     });
+
+    // Create geoviite conversion process resources
+    const conversionProcessStack = new ConversionProcessStack(
+      this,
+      'stack-conversion-process',
+      {
+        raitaStackIdentifier: raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        vpc,
+        prismaLambdaLayer,
+      },
+    );
 
     // Create API Gateway
     const raitaApiStack = new RaitaApiStack(this, 'stack-api', {
