@@ -7,6 +7,7 @@ import { SendMessageBatchCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
 import { asyncWait } from '../../../utils/common';
+import { ConversionMessage } from '../util';
 
 const init = () => {
   try {
@@ -99,7 +100,7 @@ export async function handleStartConversionProcess(
         const command = new SendMessageBatchCommand({
           QueueUrl: config.queueUrl,
           Entries: currentKeys.map((key, i) => {
-            const body = { key };
+            const body: ConversionMessage = { key };
             return {
               Id: `${i}`, // unique in single request only
               MessageBody: JSON.stringify(body),

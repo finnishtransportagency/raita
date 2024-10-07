@@ -14,6 +14,7 @@ import {
 } from './utils';
 
 import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 
 interface ConversionProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -57,7 +58,10 @@ export class ConversionProcessStack extends NestedStack {
     );
 
     // TODO is duplicate protection needed?
-    const conversionQueue = new Queue(this, 'geoviite-conversion-queue');
+    const conversionQueue = new Queue(this, 'geoviite-conversion-queue', {
+      visibilityTimeout: cdk.Duration.minutes(15),
+      retentionPeriod: cdk.Duration.days(7),
+    });
 
     const startConversionProcessHandler =
       this.createStartConversionProcessFunction({
@@ -70,8 +74,24 @@ export class ConversionProcessStack extends NestedStack {
         prismaLambdaLayer,
         conversionQueue,
       });
+    const doConversionProcessHandler = this.createDoGeoviiteConversionFunction({
+      name: 'geoviite-conversion-process-handler',
+      lambdaRole: this.conversionProcessLambdaRole,
+      raitaStackIdentifier,
+      vpc,
+      raitaEnv,
+      databaseEnvironmentVariables,
+      prismaLambdaLayer,
+      conversionQueue,
+    });
+
+    const coversionQueueSource = new SqsEventSource(conversionQueue, {
+      batchSize: 1,
+      maxConcurrency: 2, // TODO: is there a way to avoid having multiple invocations at the same time? minimum value here is 1
+    });
 
     conversionQueue.grantSendMessages(startConversionProcessHandler);
+    doConversionProcessHandler.addEventSource(coversionQueueSource);
     // TODO: how to trigger lambda?
   }
 
@@ -113,6 +133,54 @@ export class ConversionProcessStack extends NestedStack {
         `../backend/lambdas/conversionProcess/handleStartConversionProcess/handleStartConversionProcess.ts`,
       ),
       reservedConcurrentExecutions: 1, // only one process can be running at once to avoid processing files multiple times
+      environment: {
+        CONVERSION_QUEUE_URL: conversionQueue.queueUrl,
+        REGION: this.region,
+        ENVIRONMENT: raitaEnv,
+        ...databaseEnvironmentVariables,
+      },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      deadLetterQueue,
+    });
+  }
+
+  private createDoGeoviiteConversionFunction({
+    name,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    raitaEnv,
+    databaseEnvironmentVariables,
+    prismaLambdaLayer,
+    conversionQueue,
+  }: {
+    name: string;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    raitaEnv: string;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
+    conversionQueue: Queue;
+  }) {
+    const deadLetterQueue = new Queue(this, 'do-conversion-process-deadletter');
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(900), // TODO: what is a maximum realistic running time?
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleGeoviiteConversionProcess',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/conversionProcess/handleGeoviiteConversionProcess/handleGeoviiteConversionProcess.ts`,
+      ),
+      reservedConcurrentExecutions: 2, // TODO: how many parallel invocations to use?
       environment: {
         CONVERSION_QUEUE_URL: conversionQueue.queueUrl,
         REGION: this.region,
