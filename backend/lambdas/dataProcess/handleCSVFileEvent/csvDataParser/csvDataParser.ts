@@ -499,13 +499,15 @@ export async function parseCSVFileStream(
         }
       });
       rl.on('error', async () => {
-        log.error('rl on error. Error reading line from csv-file: ' + fileBaseName);
+        log.error(
+          'rl on error. Error reading line from csv-file: ' + fileBaseName,
+        );
         logCSVParsingException.error(
-          {errorType: 'CSV Readline error', fileName: fileBaseName},
+          { errorType: 'CSV Readline error', fileName: fileBaseName },
           `rl on error. Error reading line from csv-file: ${fileBaseName}`,
         );
         await adminLogger.error(
-          `rl on error. Error reading line from csv-file: ${fileBaseName}.`
+          `rl on error. Error reading line from csv-file: ${fileBaseName}.`,
         );
       });
       rl.on('close', async function () {
@@ -586,7 +588,7 @@ export async function parseCSVFileStream(
         dbConnection,
       );
       await adminLogger.error(
-        `Tiedoston ${fileBaseName} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` +
+        `Tiedoston ${fileBaseName} ${reportId} csv parsiminen epäonnistui. Raportti tallennettu ERROR-statuksella.` +
           error,
       );
     } catch (error) {
