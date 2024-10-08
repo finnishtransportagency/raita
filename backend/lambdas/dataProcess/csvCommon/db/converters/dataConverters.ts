@@ -1088,7 +1088,6 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
 }
 
 type rp_mittaus = {
-  id: number;
   raportti_id: number;
   running_date: Date;
   jarjestelma?: jarjestelma | null;
@@ -1222,7 +1221,6 @@ type rp_mittaus = {
 
 export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
   return data.map(item => ({
-    id: parseInt(item.id, 10),
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
@@ -1864,7 +1862,6 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
 }
 
 type tg_mittaus = {
-  id?: number;
   raportti_id: number;
   running_date: Date;
   jarjestelma?: jarjestelma | null;
@@ -2138,7 +2135,6 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
 }
 
 type TsightMittaus = {
-  id?: number;
   raportti_id: number;
   running_date: Date;
   jarjestelma?: jarjestelma | null;
