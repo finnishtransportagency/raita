@@ -290,9 +290,12 @@ export async function emptyRaporttiMittausRows(
 ) {
   const { schema, sql, prisma } = dbConnection;
   try {
-    const result = await prisma.$queryRaw<number>`DELETE FROM ${sql(
-      schema,
-    )}.mittaus WHERE raportti_id = ${reportId}`;
+    const result = await prisma.mittaus.deleteMany({
+      where: {
+        raportti_id: reportId, // Assuming reportId is the variable that holds the ID you want to delete
+      },
+    });
+
     log.info({ result: result }, 'Deleted mittaus rows');
   } catch (error) {
     log.error({ error, reportId }, 'Error deleting mittaus rows');
@@ -336,9 +339,10 @@ export async function updateRaporttiMetadataStatus(
 ) {
   const { schema, sql, prisma } = dbConnection;
   try {
-    const a = await prisma.$queryRaw`UPDATE ${sql(schema)}.raportti
-                            SET metadata_status = ${status}
-                            WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { metadata_status: status },
+    });
   } catch (error) {
     log.error({ error }, 'Error updating raportti metadata_status');
     throw error;
@@ -424,9 +428,10 @@ export async function updateRaporttiChunks(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await prisma.$queryRaw`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { chunks_to_process: chunks },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -442,9 +447,14 @@ export async function substractRaporttiChunk(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await prisma.$queryRaw`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: {
+        chunks_to_process: {
+          decrement: 1,
+        },
+      },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -460,13 +470,12 @@ export async function raporttiChunksToProcess(
   const { schema, sql, prisma } = dbConnection;
 
   try {
-    const chunks = await prisma.$queryRaw`SELECT chunks_to_process FROM ${sql(
-      schema,
-    )}.raportti  WHERE id = ${id};`.catch(e => {
-      log.error(e);
-      throw e;
+    const chunks = await prisma.raportti.findUnique({
+      where: { id: id },
+      select: {
+        chunks_to_process: true,
+      },
     });
-
     return Number(chunks);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
@@ -522,9 +531,10 @@ export async function writeMissingColumnsToDb(
     column_name: name,
   }));
 
-  await prisma.$queryRaw`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
-    values,
-  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+  const a = await prisma.puuttuva_kolumni.createMany({
+    data: values,
+    skipDuplicates: true,
+  }); // conflict comes from unique constraint when this is ran for each file chunk
 }
 
 async function addAMSMittausRecord(
