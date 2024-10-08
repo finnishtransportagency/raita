@@ -238,11 +238,6 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -488,11 +483,6 @@ export function convertDataToOhlMittausArray(data: any[]): OhlMittausData[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -643,11 +633,6 @@ export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -1080,11 +1065,6 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -1861,11 +1841,6 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -2140,11 +2115,6 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
@@ -2388,11 +2358,6 @@ export function convertDataToTsightMittausArray(data: any[]): TsightMittaus[] {
       ? new Decimal(item.geoviite_konvertoitu_rata_metrit)
       : null,
 
-    geoviite_konvertoitu_sijainti: sanitizeValue(
-      item.geoviite_konvertoitu_sijainti,
-    )
-      ? item.geoviite_konvertoitu_sijainti
-      : null,
     geoviite_valimatka: sanitizeValue(item.geoviite_valimatka)
       ? new Decimal(item.geoviite_valimatka)
       : null,
