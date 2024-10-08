@@ -531,83 +531,104 @@ async function addAMSMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
-  const recordCount = await prisma.ams_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
+    const recordCount = await prisma.ams_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 async function addOHLMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
-  const recordCount = await prisma.ohl_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
+    const recordCount = await prisma.ohl_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 
 async function addPIMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToPiMittausArray(parsedCSVRows);
-  const recordCount = await prisma.pi_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToPiMittausArray(parsedCSVRows);
+    const recordCount = await prisma.pi_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 
 async function addRCMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToRcMittausArray(parsedCSVRows);
-  const recordCount = await prisma.rc_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToRcMittausArray(parsedCSVRows);
+    const recordCount = await prisma.rc_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 
 async function addRPMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToRpMittausArray(parsedCSVRows);
-  const recordCount = await prisma.rp_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToRpMittausArray(parsedCSVRows);
+    const recordCount = await prisma.rp_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 
 async function addTGMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToTgMittausArray(parsedCSVRows);
-  const recordCount = await prisma.tg_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToTgMittausArray(parsedCSVRows);
+    const recordCount = await prisma.tg_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 
 async function addTsightMittausRecord(
   prisma: PrismaClient,
   parsedCSVRows: any[],
 ): Promise<number> {
-  const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
-  const recordCount = await prisma.tsight_mittaus.createMany({
-    data: convertedData,
-  });
-
-  return recordCount.count;
+  try {
+    const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
+    const recordCount = await prisma.tsight_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
 }
 enum TableEnum {
   AMS = 'ams_mittaus',
