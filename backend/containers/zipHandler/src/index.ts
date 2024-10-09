@@ -67,9 +67,17 @@ async function start() {
           throw new Error('Key missing');
         }
         const key = parsed.S3_SOURCE_KEY;
-        const success = await handleZip(bucket, key, targetBucket);
-        if (!success) {
-          throw new Error('Not success? more info logged?');
+        try {
+          const success = await handleZip(bucket, key, targetBucket);
+          if (!success) {
+            throw new Error('Not success? more info logged?');
+          }
+        } catch (error) {
+          // Error is likely caused by a bug or data error, and retrying will not fix it. Remove from queue even in case of errors and trust that error is noticed in admin log
+          log.error(
+            { error, message },
+            'Error caught from zip, removing from queue',
+          );
         }
         await sqsClient.send(
           new DeleteMessageCommand({
@@ -137,10 +145,10 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
         };
     const readStream = getObjectResult.Body as Readable;
     const ZIP_FILE_ON_DISK_PATH = '/tmp/file.zip';
-    return new Promise(resolve => {
+    return await new Promise((resolve, reject) => {
       const writeStream = fs.createWriteStream(ZIP_FILE_ON_DISK_PATH);
       writeStream.on('error', (err: unknown) => {
-        throw err;
+        reject(err);
       });
       writeStream.on('finish', () => {
         processZipFile({
@@ -169,8 +177,7 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
               entries.success.length +
               entries.skipped.length +
               entries.error.length;
-            let logMessage =
-              `Tiedostoja yhteensä: ${totalCount}`;
+            let logMessage = `Tiedostoja yhteensä: ${totalCount}`;
             if (entries.success.length) {
               logMessage += `\nPurettu onnistuneesti: ${entries.success.length}`;
             }
@@ -202,7 +209,7 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
           })
           .catch(err => {
             // Catches zip opening errors
-            throw err;
+            reject(err);
           });
       });
       readStream.pipe(writeStream);
@@ -210,7 +217,8 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
   } catch (err: any) {
     // TODO: Temporary logging
     await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
-    log.error(err);
+    log.error({ err }, 'Error caught');
+    throw err;
     // TODO: Possible recovery actions apart from logging
   }
 }
