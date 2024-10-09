@@ -562,7 +562,7 @@ async function addOHLMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions OHL`);
   }
 }
 
@@ -577,7 +577,7 @@ async function addPIMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions PI`);
   }
 }
 
@@ -592,7 +592,7 @@ async function addRCMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions RC`);
   }
 }
 
@@ -607,7 +607,7 @@ async function addRPMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions RP`);
   }
 }
 
@@ -622,7 +622,7 @@ async function addTGMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions TG`);
   }
 }
 
@@ -637,7 +637,7 @@ async function addTsightMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions TSIGHT`);
   }
 }
 enum TableEnum {
