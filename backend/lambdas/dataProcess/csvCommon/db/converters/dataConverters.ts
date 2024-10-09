@@ -1011,22 +1011,19 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
     latitude: sanitizeValue(item.latitude),
     longitude: sanitizeValue(item.longitude),
     rataosuus_numero: sanitizeValue(item.rataosuus_numero),
+
     rataosuus_nimi: sanitizeValue(item.rataosuus_nimi),
     raide_numero: sanitizeValue(item.raide_numero),
-    rata_kilometri: sanitizeValue(item.rata_kilometri),
+    rata_kilometri: sanitizeValue(item.rata_kilometri)
+      ? parseInt(item.rata_kilometri, 10)
+      : null,
     rata_metrit: sanitizeValue(item.rata_metrit)
-      ? new Decimal(sanitizeValue(item.rata_metrit))
+      ? new Decimal(item.rata_metrit)
       : null,
-    lat: sanitizeValue(item.lat) ? new Decimal(sanitizeValue(item.lat)) : null,
-    long: sanitizeValue(item.long)
-      ? new Decimal(sanitizeValue(item.long))
-      : null,
-    created: sanitizeValue(item.created)
-      ? new Date(sanitizeValue(item.created))
-      : null,
-    modified: sanitizeValue(item.modified)
-      ? new Date(sanitizeValue(item.modified))
-      : null,
+    lat: sanitizeValue(item.lat) ? new Decimal(item.lat) : null,
+    long: sanitizeValue(item.long) ? new Decimal(item.long) : null,
+    created: sanitizeValue(item.created) ? new Date(item.created) : null,
+    modified: sanitizeValue(item.modified) ? new Date(item.modified) : null,
     geoviite_konvertoitu_lat: sanitizeValue(item.geoviite_konvertoitu_lat)
       ? new Decimal(item.geoviite_konvertoitu_lat)
       : null,
