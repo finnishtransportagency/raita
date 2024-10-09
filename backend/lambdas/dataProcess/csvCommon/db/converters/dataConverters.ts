@@ -731,7 +731,7 @@ type RcMittausData = {
 
 export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
   return data.map(item => ({
-    raportti_id: parseInt(sanitizeValue(item.raportti_id), 10),
+    raportti_id: parseInt(item.raportti_id, 10),
     running_date: sanitizeValue(item.running_date),
 
     jarjestelma: sanitizeValue(item.jarjestelma),
