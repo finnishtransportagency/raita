@@ -67,7 +67,9 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma),
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
 
     ajonopeus: sanitizeValue(item.ajonopeus)
@@ -327,9 +329,9 @@ export function convertDataToOhlMittausArray(data: any[]): OhlMittausData[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma)
-      ? (item.jarjestelma as jarjestelma)
-      : undefined,
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
 
     ajonopeus: sanitizeValue(item.ajonopeus)
@@ -557,7 +559,9 @@ export function convertDataToPiMittausArray(data: any[]): PiMittausData[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma),
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
     ajonopeus: sanitizeValue(item.ajonopeus)
       ? new Decimal(item.ajonopeus)
@@ -734,7 +738,9 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: sanitizeValue(item.running_date),
 
-    jarjestelma: sanitizeValue(item.jarjestelma),
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount)
       ? parseInt(sanitizeValue(item.sscount), 10)
       : null,
@@ -1157,7 +1163,9 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma),
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
     sijainti: sanitizeValue(item.sijainti), // Handle Unsupported("geography") appropriately
     ajonopeus: sanitizeValue(item.ajonopeus)
@@ -1865,7 +1873,9 @@ export function convertDataToTgMittausArray(data: any[]): tg_mittaus[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma),
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
 
     ajonopeus: sanitizeValue(item.ajonopeus)
@@ -2132,7 +2142,9 @@ export function convertDataToTsightMittausArray(data: any[]): TsightMittaus[] {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
-    jarjestelma: sanitizeValue(item.jarjestelma) ? item.jarjestelma : null,
+    jarjestelma: sanitizeValue(
+      item.jarjestelma == 'LSI-TSI' ? 'LSI_TSI' : item.jarjestelma,
+    ),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
 
     ajonopeus: sanitizeValue(item.ajonopeus)
