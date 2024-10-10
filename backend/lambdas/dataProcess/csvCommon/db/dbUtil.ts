@@ -16,7 +16,7 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
-import { PrismaClient } from '@prisma/client';
+import { jarjestelma, PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -390,6 +390,10 @@ export async function updateRaporttiMetadata(
       hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
       track_number: metaDataEntry.metadata.track_number?.toString(),
+      system:
+        metaDataEntry.metadata.system == 'LSI-TSI'
+          ? jarjestelma.LSI_TSI
+          : (metaDataEntry.metadata.system as jarjestelma),
     };
     try {
       let id;
@@ -562,7 +566,7 @@ async function addOHLMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions OHL`);
   }
 }
 
@@ -577,7 +581,7 @@ async function addPIMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions PI`);
   }
 }
 
@@ -592,7 +596,7 @@ async function addRCMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions RC`);
   }
 }
 
@@ -607,7 +611,7 @@ async function addRPMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions RP`);
   }
 }
 
@@ -622,7 +626,7 @@ async function addTGMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions TG`);
   }
 }
 
@@ -637,7 +641,7 @@ async function addTsightMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions`);
+    throw new Error(`Error in mittaus additions TSIGHT`);
   }
 }
 enum TableEnum {
