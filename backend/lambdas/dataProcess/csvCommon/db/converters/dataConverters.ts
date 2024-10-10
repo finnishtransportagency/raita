@@ -740,271 +740,207 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
       : null,
 
     ajonopeus: sanitizeValue(item.ajonopeus)
-      ? new Decimal(sanitizeValue(item.ajonopeus))
+      ? new Decimal(item.ajonopeus)
       : null,
     oikea_raiteen_aallon_rms_10_30mm: sanitizeValue(
       item.oikea_raiteen_aallon_rms_10_30mm,
     )
-      ? new Decimal(sanitizeValue(item.oikea_raiteen_aallon_rms_10_30mm))
+      ? new Decimal(item.oikea_raiteen_aallon_rms_10_30mm)
       : null,
     vasen_raiteen_aallon_rms_10_30mm: sanitizeValue(
       item.vasen_raiteen_aallon_rms_10_30mm,
     )
-      ? new Decimal(sanitizeValue(item.vasen_raiteen_aallon_rms_10_30mm))
+      ? new Decimal(item.vasen_raiteen_aallon_rms_10_30mm)
       : null,
     oikea_raiteen_aallon_rms_30_100mm: sanitizeValue(
       item.oikea_raiteen_aallon_rms_30_100mm,
     )
-      ? new Decimal(sanitizeValue(item.oikea_raiteen_aallon_rms_30_100mm))
+      ? new Decimal(item.oikea_raiteen_aallon_rms_30_100mm)
       : null,
     vasen_raiteen_aallon_rms_30_100mm: sanitizeValue(
       item.vasen_raiteen_aallon_rms_30_100mm,
     )
-      ? new Decimal(sanitizeValue(item.vasen_raiteen_aallon_rms_30_100mm))
+      ? new Decimal(item.vasen_raiteen_aallon_rms_30_100mm)
       : null,
     oikea_raiteen_aallon_rms_100_300mm: sanitizeValue(
       item.oikea_raiteen_aallon_rms_100_300mm,
     )
-      ? new Decimal(sanitizeValue(item.oikea_raiteen_aallon_rms_100_300mm))
+      ? new Decimal(item.oikea_raiteen_aallon_rms_100_300mm)
       : null,
     vasen_raiteen_aallon_rms_100_300mm: sanitizeValue(
       item.vasen_raiteen_aallon_rms_100_300mm,
     )
-      ? new Decimal(sanitizeValue(item.vasen_raiteen_aallon_rms_100_300mm))
+      ? new Decimal(item.vasen_raiteen_aallon_rms_100_300mm)
       : null,
     oikea_raiteen_aallon_rms_300_1000mm: sanitizeValue(
       item.oikea_raiteen_aallon_rms_300_1000mm,
     )
-      ? new Decimal(sanitizeValue(item.oikea_raiteen_aallon_rms_300_1000mm))
+      ? new Decimal(item.oikea_raiteen_aallon_rms_300_1000mm)
       : null,
     vasen_raiteen_aallon_rms_300_1000mm: sanitizeValue(
       item.vasen_raiteen_aallon_rms_300_1000mm,
     )
-      ? new Decimal(sanitizeValue(item.vasen_raiteen_aallon_rms_300_1000mm))
+      ? new Decimal(item.vasen_raiteen_aallon_rms_300_1000mm)
       : null,
     oikea_raiteen_aallon_rms_10_30mm_keskiarvo: sanitizeValue(
       item.oikea_raiteen_aallon_rms_10_30mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_10_30mm_keskiarvo),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_10_30mm_keskiarvo)
       : null,
     vasen_raiteen_aallon_rms_10_30mm_keskiarvo: sanitizeValue(
       item.vasen_raiteen_aallon_rms_10_30mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_10_30mm_keskiarvo),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_10_30mm_keskiarvo)
       : null,
     oikea_raiteen_aallon_rms_30_100mm_keskiarvo: sanitizeValue(
       item.oikea_raiteen_aallon_rms_30_100mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_30_100mm_keskiarvo),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_30_100mm_keskiarvo)
       : null,
     vasen_raiteen_aallon_rms_30_100mm_keskiarvo: sanitizeValue(
       item.vasen_raiteen_aallon_rms_30_100mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_30_100mm_keskiarvo),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_30_100mm_keskiarvo)
       : null,
     oikea_raiteen_aallon_rms_100_300mm_keskiarvo: sanitizeValue(
       item.oikea_raiteen_aallon_rms_100_300mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_100_300mm_keskiarvo),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_100_300mm_keskiarvo)
       : null,
     vasen_raiteen_aallon_rms_100_300mm_keskiarvo: sanitizeValue(
       item.vasen_raiteen_aallon_rms_100_300mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_100_300mm_keskiarvo),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_100_300mm_keskiarvo)
       : null,
     oikea_raiteen_aallon_rms_300_1000mm_keskiarvo: sanitizeValue(
       item.oikea_raiteen_aallon_rms_300_1000mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_300_1000mm_keskiarvo),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_300_1000mm_keskiarvo)
       : null,
     vasen_raiteen_aallon_rms_300_1000mm_keskiarvo: sanitizeValue(
       item.vasen_raiteen_aallon_rms_300_1000mm_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_300_1000mm_keskiarvo),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_300_1000mm_keskiarvo)
       : null,
     oikea_raiteen_aallon_rms_10_30mm_keskihajonta: sanitizeValue(
       item.oikea_raiteen_aallon_rms_10_30mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_10_30mm_keskihajonta),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_10_30mm_keskihajonta)
       : null,
     vasen_raiteen_aallon_rms_10_30mm_keskihajonta: sanitizeValue(
       item.vasen_raiteen_aallon_rms_10_30mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_10_30mm_keskihajonta),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_10_30mm_keskihajonta)
       : null,
     oikea_raiteen_aallon_rms_30_100mm_keskihajonta: sanitizeValue(
       item.oikea_raiteen_aallon_rms_30_100mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_30_100mm_keskihajonta),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_30_100mm_keskihajonta)
       : null,
     vasen_raiteen_aallon_rms_30_100mm_keskihajonta: sanitizeValue(
       item.vasen_raiteen_aallon_rms_30_100mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_30_100mm_keskihajonta),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_30_100mm_keskihajonta)
       : null,
     oikea_raiteen_aallon_rms_10_300mm_keskihajonta: sanitizeValue(
       item.oikea_raiteen_aallon_rms_10_300mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_10_300mm_keskihajonta),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_10_300mm_keskihajonta)
       : null,
     vasen_raiteen_aallon_rms_100_300mm_keskihajonta: sanitizeValue(
       item.vasen_raiteen_aallon_rms_100_300mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_100_300mm_keskihajonta),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_100_300mm_keskihajonta)
       : null,
     oikea_raiteen_aallon_rms_300_1000mm_keskihajonta: sanitizeValue(
       item.oikea_raiteen_aallon_rms_300_1000mm_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallon_rms_300_1000mm_keskihajonta),
-        )
+      ? new Decimal(item.oikea_raiteen_aallon_rms_300_1000mm_keskihajonta)
       : null,
     vasen_raiteen_aallon_rms_300_1000_keskihajonta: sanitizeValue(
       item.vasen_raiteen_aallon_rms_300_1000_keskihajonta,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallon_rms_300_1000_keskihajonta),
-        )
+      ? new Decimal(item.vasen_raiteen_aallon_rms_300_1000_keskihajonta)
       : null,
     vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo: sanitizeValue(
       item.vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms10_30mm_kiintea_keskiarvo)
       : null,
     oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo: sanitizeValue(
       item.oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms10_30mm_kiintea_keskiarvo)
       : null,
     vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj: sanitizeValue(
       item.vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms10_30mm_kiintea_keskihaj)
       : null,
     oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj: sanitizeValue(
       item.oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms10_30mm_kiintea_keskihaj)
       : null,
     vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv: sanitizeValue(
       item.vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms30_100mm_kiintea_keskiarv)
       : null,
     oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv: sanitizeValue(
       item.oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms30_100mm_kiintea_keskiarv)
       : null,
     vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj: sanitizeValue(
       item.vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms30_100mm_kiintea_keskihaj)
       : null,
     oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj: sanitizeValue(
       item.oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj)
       : null,
     vasen_raiteen_aallonrms100_300mm_kiintea_keskiar: sanitizeValue(
       item.vasen_raiteen_aallonrms100_300mm_kiintea_keskiar,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskiar),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskiar)
       : null,
     oikea_raiteen_aallonrms100_300mm_kiintea_keskiar: sanitizeValue(
       item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiar,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiar),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiar)
       : null,
     vasen_raiteen_aallonrms100_300mm_kiintea_keskih: sanitizeValue(
       item.vasen_raiteen_aallonrms100_300mm_kiintea_keskih,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskih),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskih)
       : null,
     oikea_raiteen_aallonrms100_300mm_kiintea_keskih: sanitizeValue(
       item.oikea_raiteen_aallonrms100_300mm_kiintea_keskih,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskih),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskih)
       : null,
     vasen_raiteen_aallonrms300_1000mm_kiintea_keskia: sanitizeValue(
       item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskia,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskia),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskia)
       : null,
     oikea_raiteen_aallonrms300_1000mm_kiintea_keskia: sanitizeValue(
       item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskia,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskia),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskia)
       : null,
     vasen_raiteen_aallonrms300_1000mm_kiintea_keskih: sanitizeValue(
       item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskih,
     )
-      ? new Decimal(
-          sanitizeValue(item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskih),
-        )
+      ? new Decimal(item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskih)
       : null,
     oikea_raiteen_aallonrms300_1000mm_kiintea_keskih: sanitizeValue(
       item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskih,
     )
-      ? new Decimal(
-          sanitizeValue(item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskih),
-        )
+      ? new Decimal(item.oikea_raiteen_aallonrms300_1000mm_kiintea_keskih)
       : null,
     track: sanitizeValue(item.track),
     location: sanitizeValue(item.location),
@@ -1225,7 +1161,7 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
     sijainti: sanitizeValue(item.sijainti), // Handle Unsupported("geography") appropriately
     ajonopeus: sanitizeValue(item.ajonopeus)
-      ? new Decimal(sanitizeValue(item.ajonopeus))
+      ? new Decimal(item.ajonopeus)
       : null,
     vasen_pystysuora_kuluma: sanitizeValue(item.vasen_pystysuora_kuluma)
       ? new Decimal(item.vasen_pystysuora_kuluma)
