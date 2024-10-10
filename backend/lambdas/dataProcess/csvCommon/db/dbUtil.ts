@@ -390,9 +390,10 @@ export async function updateRaporttiMetadata(
       hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
       track_number: metaDataEntry.metadata.track_number?.toString(),
-      jarjestelma: metaDataEntry.metadata.jarjestelma
-        ?.toString()
-        .replace('-', '_'),
+      system:
+        metaDataEntry.metadata.system == 'LSI-TSI'
+          ? jarjestelma.LSI_TSI
+          : (metaDataEntry.metadata.system as jarjestelma),
     };
     try {
       let id;
