@@ -16,7 +16,7 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
-import { PrismaClient } from '@prisma/client';
+import { jarjestelma, PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
@@ -390,6 +390,9 @@ export async function updateRaporttiMetadata(
       hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
       track_number: metaDataEntry.metadata.track_number?.toString(),
+      jarjestelma: metaDataEntry.metadata.jarjestelma
+        ?.toString()
+        .replace('-', '_'),
     };
     try {
       let id;
