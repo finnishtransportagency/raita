@@ -694,8 +694,8 @@ type RcMittausData = {
   oikea_raiteen_aallonrms30_100mm_kiintea_keskihaj?: Decimal | null;
   vasen_raiteen_aallonrms100_300mm_kiintea_keskiar?: Decimal | null;
   oikea_raiteen_aallonrms100_300mm_kiintea_keskiar?: Decimal | null;
-  vasen_raiteen_aallonrms100_300mm_kiintea_keskih?: Decimal | null;
-  oikea_raiteen_aallonrms100_300mm_kiintea_keskih?: Decimal | null;
+  vasen_raiteen_aallonrms100_300mm_kiintea_keskiha?: Decimal | null;
+  oikea_raiteen_aallonrms100_300mm_kiintea_keskiha?: Decimal | null;
   vasen_raiteen_aallonrms300_1000mm_kiintea_keskia?: Decimal | null;
   oikea_raiteen_aallonrms300_1000mm_kiintea_keskia?: Decimal | null;
   vasen_raiteen_aallonrms300_1000mm_kiintea_keskih?: Decimal | null;
@@ -910,15 +910,15 @@ export function convertDataToRcMittausArray(data: any[]): RcMittausData[] {
     )
       ? new Decimal(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiar)
       : null,
-    vasen_raiteen_aallonrms100_300mm_kiintea_keskih: sanitizeValue(
-      item.vasen_raiteen_aallonrms100_300mm_kiintea_keskih,
+    vasen_raiteen_aallonrms100_300mm_kiintea_keskiha: sanitizeValue(
+      item.vasen_raiteen_aallonrms100_300mm_kiintea_keskiha,
     )
-      ? new Decimal(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskih)
+      ? new Decimal(item.vasen_raiteen_aallonrms100_300mm_kiintea_keskiha)
       : null,
-    oikea_raiteen_aallonrms100_300mm_kiintea_keskih: sanitizeValue(
-      item.oikea_raiteen_aallonrms100_300mm_kiintea_keskih,
+    oikea_raiteen_aallonrms100_300mm_kiintea_keskiha: sanitizeValue(
+      item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiha,
     )
-      ? new Decimal(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskih)
+      ? new Decimal(item.oikea_raiteen_aallonrms100_300mm_kiintea_keskiha)
       : null,
     vasen_raiteen_aallonrms300_1000mm_kiintea_keskia: sanitizeValue(
       item.vasen_raiteen_aallonrms300_1000mm_kiintea_keskia,
@@ -1157,7 +1157,6 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
 
     jarjestelma: sanitizeValue(item.jarjestelma),
     sscount: sanitizeValue(item.sscount) ? parseInt(item.sscount, 10) : null,
-    sijainti: sanitizeValue(item.sijainti), // Handle Unsupported("geography") appropriately
     ajonopeus: sanitizeValue(item.ajonopeus)
       ? new Decimal(item.ajonopeus)
       : null,
@@ -1677,10 +1676,10 @@ export function convertDataToRpMittausArray(data: any[]): rp_mittaus[] {
       ? new Decimal(item.oikea_ulkopuolisen_purseen_kiintea_keskiarvo)
       : null,
 
-    vasen_ulkopuolisen_purseen_kiintea_keskihajonta: sanitizeValue(
-      item.vasen_ulkopuolisen_purseen_kiintea_keskihajonta,
+    vasen_ulkopulisen_purseen_kiintea_keskihajonta: sanitizeValue(
+      item.vasen_ulkopulisen_purseen_kiintea_keskihajonta,
     )
-      ? new Decimal(item.vasen_ulkopuolisen_purseen_kiintea_keskihajonta)
+      ? new Decimal(item.vasen_ulkopulisen_purseen_kiintea_keskihajonta)
       : null,
 
     oikea_ulkopuolisen_purseen_kiintea_keskihajonta: sanitizeValue(

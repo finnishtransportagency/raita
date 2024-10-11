@@ -596,7 +596,7 @@ async function addRCMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions RC`);
+    throw new Error(`Error in mittaus additions`);
   }
 }
 
@@ -611,7 +611,7 @@ async function addRPMittausRecord(
     });
     return recordCount.count;
   } catch {
-    throw new Error(`Error in mittaus additions RP`);
+    throw new Error(`Error in mittaus additions`);
   }
 }
 
