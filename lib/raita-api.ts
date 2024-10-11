@@ -465,6 +465,12 @@ export class RaitaApiStack extends NestedStack {
       },
       // Endpoints for external API
       {
+        lambda: handleUserRequestFn,
+        priority: 500,
+        path: [`${apiBaseUrl}/ext/user`],
+        targetName: 'ext-user',
+      },
+      {
         lambda: handleFileRequestFn,
         priority: 501,
         path: [`${apiBaseUrl}/ext/file`],
@@ -487,6 +493,12 @@ export class RaitaApiStack extends NestedStack {
         priority: 504,
         path: [`${apiBaseUrl}/ext/polling`],
         targetName: 'ext-polling',
+      },
+      {
+        lambda: this.handleV2GraphqlRequest,
+        priority: 520,
+        path: [`${apiBaseUrl}/ext/v2/graphql`],
+        targetName: 'ext-v2-graphql',
       },
       // Note: delete request is missing from ext on purpose
     ];
