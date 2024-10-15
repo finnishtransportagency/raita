@@ -4,13 +4,13 @@ import { Port } from 'aws-cdk-lib/aws-ec2';
 import { BundlingOutput, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { RaitaEnvironment } from './config';
-import { isPermanentStack } from './utils';
+import { isPermanentStack, isProductionStack} from './utils';
 
 import { RaitaApiStack } from './raita-api';
 import { DataProcessStack } from './raita-data-process';
 import { BastionStack } from './raita-bastion';
 import { PsqlClientStack } from './raita-psql-client-ec2';
-import { SSM_API_KEY } from '../constants';
+import {GEOVIITE_HOSTNAME_DEV, GEOVIITE_HOSTNAME_PROD, SSM_API_KEY} from '../constants';
 import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import path from 'path';
 import { ConversionProcessStack } from './raita-geoviite-process';
@@ -81,6 +81,10 @@ export class ApplicationStack extends NestedStack {
     });
 
     // Create geoviite conversion process resources
+    const geoviiteHostname = isProductionStack(stackId, raitaEnv)? GEOVIITE_HOSTNAME_PROD : GEOVIITE_HOSTNAME_DEV;
+
+    console.log(geoviiteHostname,"geoviiteHostname");
+
     const conversionProcessStack = new ConversionProcessStack(
       this,
       'stack-conversion-process',
@@ -90,6 +94,7 @@ export class ApplicationStack extends NestedStack {
         stackId,
         vpc,
         prismaLambdaLayer,
+        geoviiteHostname,
       },
     );
 
@@ -166,7 +171,7 @@ export class ApplicationStack extends NestedStack {
     });
   }
 
-  private createManagedPolicy({
+  private  createManagedPolicy({
     name,
     serviceRoles,
     actions,

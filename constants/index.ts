@@ -71,3 +71,7 @@ export const DEVELOPMENT_MAIN_STACK_ID = DEVELOPMENT_MAIN_BRANCH;
 export const DEVELOPMENT_PREMAIN_BRANCH = 'test/pre-main';
 export const DEVELOPMENT_PREMAIN_STACK_ID = 'premain';
 export const CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT = 1000; // TODO: this is just a guess, determine a proper limit
+
+export const GEOVIITE_HOSTNAME_DEV = "https://TODO_dev";
+export const GEOVIITE_HOSTNAME_PROD = "https://TODO_prod";
+

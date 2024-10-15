@@ -77,7 +77,7 @@ export async function handleGeoviiteConversionProcess(
       const batch = batches[batchIndex];
       await prismaClient.$transaction(
         // transaction to group multiple updates in one connection
-        batch.map(result =>
+        batch.map((result: { id: any }) =>
           prismaClient.mittaus.update({
             where: {
               id: result.id,
