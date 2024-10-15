@@ -22,6 +22,7 @@ interface ConversionProcessStackProps extends NestedStackProps {
   readonly stackId: string;
   readonly vpc: IVpc;
   readonly prismaLambdaLayer: lambda.LayerVersion;
+  readonly geoviiteHostname: string;
 }
 
 export class ConversionProcessStack extends NestedStack {
@@ -33,7 +34,7 @@ export class ConversionProcessStack extends NestedStack {
     props: ConversionProcessStackProps,
   ) {
     super(scope, id, props);
-    const { raitaStackIdentifier, raitaEnv, stackId, vpc, prismaLambdaLayer } =
+    const { raitaStackIdentifier, raitaEnv, stackId, vpc, prismaLambdaLayer, geoviiteHostname } =
       props;
 
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
@@ -73,6 +74,7 @@ export class ConversionProcessStack extends NestedStack {
         databaseEnvironmentVariables,
         prismaLambdaLayer,
         conversionQueue,
+        geoviiteHostname,
       });
     const doConversionProcessHandler = this.createDoGeoviiteConversionFunction({
       name: 'geoviite-conversion-process-handler',
@@ -100,15 +102,16 @@ export class ConversionProcessStack extends NestedStack {
    * This will read files from database and put them to conversionQuueue to wait for processings
    */
   private createStartConversionProcessFunction({
-    name,
-    lambdaRole,
-    raitaStackIdentifier,
-    vpc,
-    raitaEnv,
-    databaseEnvironmentVariables,
-    prismaLambdaLayer,
-    conversionQueue,
-  }: {
+                                                 name,
+                                                 lambdaRole,
+                                                 raitaStackIdentifier,
+                                                 vpc,
+                                                 raitaEnv,
+                                                 databaseEnvironmentVariables,
+                                                 prismaLambdaLayer,
+                                                 conversionQueue,
+                                                 geoviiteHostname,
+                                               }: {
     name: string;
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
@@ -117,6 +120,7 @@ export class ConversionProcessStack extends NestedStack {
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
     conversionQueue: Queue;
+    geoviiteHostname: string;
   }) {
     const deadLetterQueue = new Queue(
       this,
@@ -134,9 +138,11 @@ export class ConversionProcessStack extends NestedStack {
       ),
       reservedConcurrentExecutions: 1, // only one process can be running at once to avoid processing files multiple times
       environment: {
+        GEOVIITE_HOSTNAME: geoviiteHostname,
         CONVERSION_QUEUE_URL: conversionQueue.queueUrl,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
+
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
