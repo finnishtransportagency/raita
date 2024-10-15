@@ -243,14 +243,14 @@ const getPartialMittausRows = async (
     ],
 
     select: {
-      sscount: true,
+      sscount: false,
       running_date: true,
       track: true,
-      jarjestelma: true,
+      jarjestelma: false,
       location: true,
       latitude: true,
       longitude: true,
-      ajonopeus: true,
+      ajonopeus: false,
       ...systemSpecificColumnSelections,
     },
     skip: offset,
@@ -290,16 +290,12 @@ const getPartialMittausRows = async (
   }
 };
 
-const mapMittausRowsToCsvRows = (
-  mittausRows: MittausDbResult[],
-  emptyCsvRow: CsvRow,
-) => {
+const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
   return mittausRows.map(mittaus => {
     let systemMittaus: { [column: string]: any } = mittaus;
-    const { ajonopeus, location, latitude, longitude, sscount, track } =
-      mittaus;
-    const emptyColumns = Object.assign({}, emptyCsvRow);
-    const filledColumns = Object.assign(emptyColumns, systemMittaus);
+    const { ajonopeus, location, latitude, longitude, track } = mittaus;
+
+    const filledColumns = Object.assign(systemMittaus);
 
     // map fields to string or number
     const newRow = {
@@ -312,7 +308,6 @@ const mapMittausRowsToCsvRows = (
       location,
       latitude,
       longitude,
-      sscount,
       ajonopeus: Number(ajonopeus),
       ...filledColumns,
     };
@@ -408,10 +403,7 @@ const readDbToReadable = async (
         );
 
         // map to csv format
-        const mittausMappedRows = mapMittausRowsToCsvRows(
-          mittausRows,
-          emptyCsvRow,
-        );
+        const mittausMappedRows = mapMittausRowsToCsvRows(mittausRows);
         const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
         const body = firstChunk
           ? objectToCsvHeader(mittausMappedRows[0]) +
