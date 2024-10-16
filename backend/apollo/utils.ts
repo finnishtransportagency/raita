@@ -230,7 +230,9 @@ export const getMittausFieldsPerSystem: () => SystemColumnsDescription[] =
       'ohl_ajonopeus',
       'rp_ajonopeus',
     ];
-    const allExcludedFields = commonFields.concat(filterOut);
+    const allExcludedFields = commonFields
+      .concat(filterOut)
+      .filter(field => field !== 'ajonopeus');
     const mittausSystems = [
       {
         name: 'AMS',

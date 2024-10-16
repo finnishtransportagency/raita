@@ -27,7 +27,7 @@ import {
 } from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { objectToCsvBody, objectToCsvHeader } from './utils';
+import { formatDate, objectToCsvBody, objectToCsvHeader } from './utils';
 import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
@@ -293,9 +293,12 @@ const getPartialMittausRows = async (
 const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
   return mittausRows.map(mittaus => {
     let systemMittaus: { [column: string]: any } = mittaus;
-    const { ajonopeus, location, latitude, longitude, track } = mittaus;
+    const { location, latitude, longitude, track, running_date } = mittaus;
 
     const filledColumns = Object.assign(systemMittaus);
+    const formatted_latitude = latitude?.replace(/[^\d.-]/g, '');
+    const formatted_longitude = longitude?.replace(/[^\d.-]/g, '');
+    const formatted_running_date = formatDate(running_date!);
 
     // map fields to string or number
     const newRow = {
@@ -304,12 +307,12 @@ const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
       // inspection_date: result.inspection_date?.toISOString(),
       // system: result.system,
       // track_part: result.track_part,
+      ...filledColumns,
       track,
       location,
-      latitude,
-      longitude,
-      ajonopeus: Number(ajonopeus),
-      ...filledColumns,
+      latitude: formatted_latitude,
+      longitude: formatted_longitude,
+      running_date: formatted_running_date,
     };
     return newRow;
   });
