@@ -27,7 +27,7 @@ import {
 } from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { objectToCsvBody, objectToCsvHeader } from './utils';
+import { objectToCsvBody, objectToCsvHeader, CsvRow } from './utils';
 import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
@@ -235,22 +235,23 @@ const getPartialMittausRows = async (
     },
     orderBy: [
       {
-        raportti_id: 'asc',
+        rata_kilometri: 'asc',
       },
       {
-        sscount: 'asc',
+        rata_metrit: 'asc',
       },
+      // {
+      //   track: 'asc',
+      // },
     ],
-
     select: {
-      sscount: false,
+      raportti_id: true,
+      rata_kilometri: true,
+      rata_metrit: true,
+      lat: true,
+      long: true,
       running_date: true,
       track: true,
-      jarjestelma: false,
-      location: true,
-      latitude: true,
-      longitude: true,
-      ajonopeus: false,
       ...systemSpecificColumnSelections,
     },
     skip: offset,
@@ -290,29 +291,48 @@ const getPartialMittausRows = async (
   }
 };
 
-const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
-  return mittausRows.map(mittaus => {
-    let systemMittaus: { [column: string]: any } = mittaus;
-    const { ajonopeus, location, latitude, longitude, track } = mittaus;
+const mapMittausRowsToCsvRows = (
+  mittausRows: MittausDbResult[],
+  raporttiIds: number[],
+): CsvRow[] => {
+  // TODO ensure last row is full?
 
-    const filledColumns = Object.assign(systemMittaus);
+  const raporttiOrder = [...raporttiIds].sort((a, b) => a - b);
 
-    // map fields to string or number
-    const newRow = {
-      // TODO: determine which metadata are to be included in csv
-      // file_name: result.file_name,
-      // inspection_date: result.inspection_date?.toISOString(),
-      // system: result.system,
-      // track_part: result.track_part,
-      track,
-      location,
-      latitude,
-      longitude,
-      ajonopeus: Number(ajonopeus),
-      ...filledColumns,
-    };
-    return newRow;
+  const mappedByRataosoite: { [rataosoite: string]: MittausDbResult[] } = {};
+  mittausRows.forEach(row => {
+    const key = `${row.rata_kilometri}-${row.rata_metrit}`;
+    if (mappedByRataosoite[key]) {
+      mappedByRataosoite[key].push(row);
+    } else {
+      mappedByRataosoite[key] = [row];
+    }
   });
+  const rows: { [key: string]: any }[] = [];
+  Object.keys(mappedByRataosoite).forEach(rataosoite => {
+    const currentRows = mappedByRataosoite[rataosoite];
+    const csvRow = {
+      rata_kilometri: currentRows[0].rata_kilometri,
+      rata_metrit: currentRows[0].rata_metrit,
+      track: currentRows[0].track, // TODO should this be part of key?
+      lat: null,
+      long: null,
+    };
+    // TODO order
+    raporttiOrder.forEach(raporttiId => {
+      const mittaus = currentRows.find(r => r.raportti_id === raporttiId);
+      const vals = {
+        [`lat ${raporttiId}`]: mittaus?.lat ?? null,
+        [`long ${raporttiId}`]: mittaus?.long ?? null,
+        [`track ${raporttiId}`]: mittaus?.track ?? null,
+        [`id ${raporttiId}`]: mittaus?.id ?? null,
+        // selected fields?
+      };
+      Object.assign(csvRow, vals);
+    });
+    rows.push(csvRow);
+  });
+  return rows;
 };
 
 const getEmptyCsvRowObject = (systems: string[]) => {
@@ -356,8 +376,6 @@ const readDbToReadable = async (
   const systemsInResults: string[] = systemsResult
     .filter(res => !!res.system)
     .map(res => res.system!);
-  const emptyCsvRow = getEmptyCsvRowObject(systemsInResults);
-
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
 
@@ -392,6 +410,7 @@ const readDbToReadable = async (
         partIndexInSystem < partCount;
         partIndexInSystem++
       ) {
+        // paging with rataosoite?
         const offset = partIndexInSystem * rowCountToRead;
         const mittausRows = await getPartialMittausRows(
           client,
@@ -403,7 +422,10 @@ const readDbToReadable = async (
         );
 
         // map to csv format
-        const mittausMappedRows = mapMittausRowsToCsvRows(mittausRows);
+        const mittausMappedRows: CsvRow[] = mapMittausRowsToCsvRows(
+          mittausRows,
+          raporttiIds,
+        );
         const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
         const body = firstChunk
           ? objectToCsvHeader(mittausMappedRows[0]) +
