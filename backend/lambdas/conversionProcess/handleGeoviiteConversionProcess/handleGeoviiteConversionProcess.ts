@@ -5,6 +5,9 @@ import { log, logLambdaInitializationError } from '../../../utils/logger';
 
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
+import {
+  getConvertedTrackAddressesWithPrismaCoords,
+} from '../../geoviite/geoviiteClient';
 
 const init = () => {
   try {
@@ -59,11 +62,10 @@ export async function handleGeoviiteConversionProcess(
       },
     });
 
-    // TODO: process mittausRows through geoviite api
-    // const convertedRows = ???
-    const convertedRows = mittausRows;
-    // TODO: fetch all results first, or save after fetching one batch?
 
+    const convertedRows = await getConvertedTrackAddressesWithPrismaCoords(mittausRows);
+    // TODO: fetch all results first, or save after fetching one batch?
+    convertedRows[0].
     // save result in batches
     const batchSize = 100;
     const batches: (typeof convertedRows)[] = [];
