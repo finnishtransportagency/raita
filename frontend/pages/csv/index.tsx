@@ -224,7 +224,6 @@ const CsvIndex: RaitaNextPage = () => {
       })),
     )
     .concat({ key: 'ajonopeus', value: 'ajonopeus' });
-  console.log('COLUMNCHOICES: ', columnChoices);
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
