@@ -201,6 +201,7 @@ const getColumnsSelectInputForSystem = (
     description => description.name === system,
   );
   const allColumns = systemDescription?.columns;
+  allColumns?.concat('ajonopeus');
   if (!allColumns) {
     throw new Error('TODO');
   }
@@ -227,6 +228,7 @@ const getPartialMittausRows = async (
     system,
     selectedColumns,
   );
+  const selectAjonopeus = selectedColumns.includes('ajonopeus');
   const params: AnyMittausTableWhereInput = {
     where: {
       raportti_id: {
@@ -243,15 +245,15 @@ const getPartialMittausRows = async (
     ],
 
     select: {
+      ...systemSpecificColumnSelections,
       sscount: false,
       running_date: true,
       track: true,
       jarjestelma: false,
       location: true,
-      latitude: true,
-      longitude: true,
-      ajonopeus: false,
-      ...systemSpecificColumnSelections,
+      lat: true,
+      long: true,
+      ajonopeus: selectAjonopeus,
     },
     skip: offset,
     take: pageSize,
@@ -293,13 +295,10 @@ const getPartialMittausRows = async (
 const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
   return mittausRows.map(mittaus => {
     let systemMittaus: { [column: string]: any } = mittaus;
-    const { location, latitude, longitude, track, running_date } = mittaus;
+    const { location, track, running_date, lat, long } = mittaus;
 
     const filledColumns = Object.assign(systemMittaus);
-    const formatted_latitude = latitude?.replace(/[^\d.-]/g, '');
-    const formatted_longitude = longitude?.replace(/[^\d.-]/g, '');
     const formatted_running_date = formatDate(running_date!);
-
     // map fields to string or number
     const newRow = {
       // TODO: determine which metadata are to be included in csv
@@ -310,8 +309,8 @@ const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
       ...filledColumns,
       track,
       location,
-      latitude: formatted_latitude,
-      longitude: formatted_longitude,
+      lat,
+      long,
       running_date: formatted_running_date,
     };
     return newRow;
