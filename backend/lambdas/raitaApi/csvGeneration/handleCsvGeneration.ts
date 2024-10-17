@@ -331,6 +331,7 @@ const readDbToReadable = async (
         partIndexInSystem++
       ) {
         // paging with rataosoite?
+
         const offset = partIndexInSystem * rowCountToRead;
         const mittausRows = await getPartialMittausRows(
           client,
@@ -341,11 +342,13 @@ const readDbToReadable = async (
           selectedColumns,
         );
 
+        const defaultSelectedColumns = ['lat', 'long', 'track'];
+
         // map to csv format
         const mittausMappedRows: CsvRow[] = mapMittausRowsToCsvRows(
           mittausRows,
           raporttiRows,
-          selectedColumns,
+          selectedColumns.concat(defaultSelectedColumns),
         );
         const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
         const body = firstChunk

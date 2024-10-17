@@ -47,10 +47,6 @@ export const mapMittausRowsToCsvRows = (
         header: 'rata_metrit',
         value: `${currentRows[0].rata_metrit ?? ''}`,
       },
-      {
-        header: 'track',
-        value: `${currentRows[0].track ?? ''}`,
-      },
     ];
 
     raporttiSorted.forEach(raportti => {
