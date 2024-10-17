@@ -17,9 +17,11 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import path from 'path';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { createRaitaServiceRole } from './raitaResourceCreators';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 interface PipelineLockStack extends NestedStackProps {
   readonly vpc: ec2.IVpc;
+  readonly prismaLambdaLayer: lambda.LayerVersion;
 }
 /**
  * The stack for funtions that acquire and release data process lock for pipeline
@@ -34,6 +36,7 @@ export class RaitaPipelineLockStack extends NestedStack {
     super(scope, `raita-pipeline-lock-stack-${config.stackId}`, {
       ...props,
     });
+    const { prismaLambdaLayer } = props;
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
       config.stackId,
       config.env,
@@ -71,6 +74,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       raitaStackIdentifier,
       databaseEnvironmentVariables,
       lambdaRole: lambdaLockServiceRole,
+      prismaLambdaLayer,
     });
     this.acquireLockStep = new RaitaLambdaStep(
       'AcquireLockStep',
@@ -82,6 +86,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       raitaStackIdentifier,
       databaseEnvironmentVariables,
       lambdaRole: lambdaLockServiceRole,
+      prismaLambdaLayer,
     });
     this.releaseLockStep = new RaitaLambdaStep(
       'ReleaseLockStep',
@@ -95,12 +100,14 @@ export class RaitaPipelineLockStack extends NestedStack {
     raitaStackIdentifier,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     lambdaRole: Role;
     raitaStackIdentifier: string;
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -115,6 +122,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       environment: {
         ...databaseEnvironmentVariables,
       },
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -128,12 +136,14 @@ export class RaitaPipelineLockStack extends NestedStack {
     raitaStackIdentifier,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     lambdaRole: Role;
     raitaStackIdentifier: string;
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -148,6 +158,7 @@ export class RaitaPipelineLockStack extends NestedStack {
       environment: {
         ...databaseEnvironmentVariables,
       },
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
