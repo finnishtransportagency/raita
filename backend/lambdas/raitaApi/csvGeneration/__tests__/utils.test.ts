@@ -161,8 +161,8 @@ describe('mapMittausRowsToCsvRows', () => {
           value: '1',
         },
         {
-          header: 'track',
-          value: 'track 1',
+          header: 'date',
+          value: '01.01.2023',
         },
         {
           header: 'siksak_1 01.01.2023',
@@ -171,6 +171,10 @@ describe('mapMittausRowsToCsvRows', () => {
         {
           header: 'korkeus_1 01.01.2023',
           value: '123',
+        },
+        {
+          header: 'date',
+          value: '17.10.2024',
         },
         {
           header: 'siksak_1 17.10.2024',
@@ -191,8 +195,8 @@ describe('mapMittausRowsToCsvRows', () => {
           value: '1.25',
         },
         {
-          header: 'track',
-          value: 'track 1',
+          header: 'date',
+          value: '01.01.2023',
         },
         {
           header: 'siksak_1 01.01.2023',
@@ -201,6 +205,10 @@ describe('mapMittausRowsToCsvRows', () => {
         {
           header: 'korkeus_1 01.01.2023',
           value: '',
+        },
+        {
+          header: 'date',
+          value: '17.10.2024',
         },
         {
           header: 'siksak_1 17.10.2024',

@@ -52,12 +52,18 @@ export const mapMittausRowsToCsvRows = (
     raporttiSorted.forEach(raportti => {
       const mittaus = currentRows.find(r => r.raportti_id === raportti.id);
       // if mittaus is undefined, still add values but as empty strings
-      const vals: CsvRow = []; // TODO map
+      const date = raportti.inspection_date
+        ? format(raportti.inspection_date, 'dd.MM.yyyy')
+        : 'missing_date';
+      const vals: CsvRow = [
+        {
+          header: 'date',
+          value: date,
+        },
+      ]; // TODO map
       selectedColumns.forEach(columnName => {
         const mittausAsObj: { [key: string]: any } = { ...mittaus };
-        const date = raportti.inspection_date
-          ? format(raportti.inspection_date, 'dd.MM.yyyy')
-          : 'missing_date';
+
         vals.push({
           header: `${columnName} ${date}`,
           value: convertPrismaValueToCsvValue(
