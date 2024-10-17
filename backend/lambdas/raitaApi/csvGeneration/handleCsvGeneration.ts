@@ -4,36 +4,32 @@ import {
   GetObjectCommand,
   S3Client,
   UploadPartCommand,
-  UploadPartCommandOutput,
 } from '@aws-sdk/client-s3';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { Context } from 'aws-lambda';
-import { MutationGenerate_Mittaus_CsvArgs } from '../../../apollo/__generated__/resolvers-types';
 import { getPrismaClient } from '../../../utils/prismaClient';
-import {
-  Prisma,
-  PrismaClient,
-  ams_mittaus,
-  jarjestelma,
-  mittaus,
-  ohl_mittaus,
-  pi_mittaus,
-  rc_mittaus,
-  rp_mittaus,
-  tg_mittaus,
-  tsight_mittaus,
-} from '@prisma/client';
+import { Prisma, PrismaClient, jarjestelma } from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { objectToCsvBody, objectToCsvHeader, CsvRow } from './utils';
+import {
+  objectToCsvBody,
+  objectToCsvHeader,
+  mapMittausRowsToCsvRows,
+} from './utils';
 import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
 } from '../../../apollo/utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../../constants';
 import { PassThrough, Readable } from 'stream';
+import {
+  AnyMittausTableWhereInput,
+  CsvGenerationEvent,
+  CsvRow,
+  MultipartUploadResultWithPartNumber,
+} from './types';
 
 const withRequest = lambdaRequestTracker();
 
@@ -50,39 +46,6 @@ function getLambdaConfigOrFail() {
     targetBucket: getEnv('TARGET_BUCKET'),
   };
 }
-
-export type CsvGenerationEvent = {
-  searchParameters: MutationGenerate_Mittaus_CsvArgs;
-  progressKey: string;
-  csvKey: string;
-};
-
-type MittausDbResult =
-  | Partial<ams_mittaus>
-  | Partial<ohl_mittaus>
-  | Partial<pi_mittaus>
-  | Partial<rc_mittaus>
-  | Partial<rp_mittaus>
-  | Partial<tg_mittaus>
-  | Partial<tsight_mittaus>;
-
-type AnyMittausTableWhereInput =
-  | Prisma.ams_mittausFindManyArgs
-  | Prisma.ohl_mittausFindManyArgs
-  | Prisma.pi_mittausFindManyArgs
-  | Prisma.rc_mittausFindManyArgs
-  | Prisma.rp_mittausFindManyArgs
-  | Prisma.tg_mittausFindManyArgs
-  | Prisma.tsight_mittausFindManyArgs;
-
-type CsvRow = {
-  [column: string]: string | number | null;
-};
-
-type MultipartUploadResultWithPartNumber = {
-  uploadPartCommandOutput: UploadPartCommandOutput;
-  partNumber: number;
-};
 
 export async function handleCsvGeneration(
   event: CsvGenerationEvent,
@@ -291,64 +254,20 @@ const getPartialMittausRows = async (
   }
 };
 
-const mapMittausRowsToCsvRows = (
-  mittausRows: MittausDbResult[],
-  raporttiIds: number[],
-): CsvRow[] => {
-  // TODO ensure last row is full?
-
-  const raporttiOrder = [...raporttiIds].sort((a, b) => a - b);
-
-  const mappedByRataosoite: { [rataosoite: string]: MittausDbResult[] } = {};
-  mittausRows.forEach(row => {
-    const key = `${row.rata_kilometri}-${row.rata_metrit}`;
-    if (mappedByRataosoite[key]) {
-      mappedByRataosoite[key].push(row);
-    } else {
-      mappedByRataosoite[key] = [row];
-    }
-  });
-  const rows: { [key: string]: any }[] = [];
-  Object.keys(mappedByRataosoite).forEach(rataosoite => {
-    const currentRows = mappedByRataosoite[rataosoite];
-    const csvRow = {
-      rata_kilometri: currentRows[0].rata_kilometri,
-      rata_metrit: currentRows[0].rata_metrit,
-      track: currentRows[0].track, // TODO should this be part of key?
-      lat: null,
-      long: null,
-    };
-    // TODO order
-    raporttiOrder.forEach(raporttiId => {
-      const mittaus = currentRows.find(r => r.raportti_id === raporttiId);
-      const vals = {
-        [`lat ${raporttiId}`]: mittaus?.lat ?? null,
-        [`long ${raporttiId}`]: mittaus?.long ?? null,
-        [`track ${raporttiId}`]: mittaus?.track ?? null,
-        [`id ${raporttiId}`]: mittaus?.id ?? null,
-        // selected fields?
-      };
-      Object.assign(csvRow, vals);
-    });
-    rows.push(csvRow);
-  });
-  return rows;
-};
-
-const getEmptyCsvRowObject = (systems: string[]) => {
-  const allColumnsPerSystem = getMittausFieldsPerSystem();
-  const allSystemSpecificColumnsInCsv = systems.flatMap(system => {
-    return allColumnsPerSystem
-      .filter(desc => desc.name === system)
-      .flatMap(desc => desc.columns);
-  });
-  // this includes columns from all systems in the query, to preserve field order between systems
-  const emptySystemSpecificColumns: CsvRow = {};
-  allSystemSpecificColumnsInCsv.forEach(
-    column => (emptySystemSpecificColumns[column] = null),
-  );
-  return emptySystemSpecificColumns;
-};
+// const getEmptyCsvRowObject = (systems: string[]) => {
+//   const allColumnsPerSystem = getMittausFieldsPerSystem();
+//   const allSystemSpecificColumnsInCsv = systems.flatMap(system => {
+//     return allColumnsPerSystem
+//       .filter(desc => desc.name === system)
+//       .flatMap(desc => desc.columns);
+//   });
+//   // this includes columns from all systems in the query, to preserve field order between systems
+//   const emptySystemSpecificColumns: CsvRow = {};
+//   allSystemSpecificColumnsInCsv.forEach(
+//     column => (emptySystemSpecificColumns[column] = ''),
+//   );
+//   return emptySystemSpecificColumns;
+// };
 
 /**
  * Get Readable stream that will eventually contain all csv data, fetched from dn
@@ -394,6 +313,7 @@ const readDbToReadable = async (
         where: { ...raporttiWhere, system: { equals: system as jarjestelma } },
         select: {
           id: true,
+          inspection_date: true,
         },
       });
       const raporttiIds = raporttiRows.map(raportti => raportti.id);
@@ -424,7 +344,8 @@ const readDbToReadable = async (
         // map to csv format
         const mittausMappedRows: CsvRow[] = mapMittausRowsToCsvRows(
           mittausRows,
-          raporttiIds,
+          raporttiRows,
+          selectedColumns,
         );
         const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
         const body = firstChunk
