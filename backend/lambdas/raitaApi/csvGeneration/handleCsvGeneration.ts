@@ -325,7 +325,7 @@ const readDbToReadable = async (
       const system = systemsInResults[systemIndex];
       // get list of raporttiIds to make queries faster
       const raporttiInSystem = raporttiRows.filter(
-        raportti => raportti.system === system,
+        raportti => `${raportti.system}` === system,
       );
       const raporttiIds = raporttiInSystem.map(raportti => raportti.id);
       const mittausCount = await client.mittaus.count({
@@ -336,7 +336,11 @@ const readDbToReadable = async (
         },
       });
       const partCount = Math.ceil(mittausCount / rowCountToRead);
-
+      log.info({
+        partCount,
+        mittausCount,
+        raporttiIds,
+      });
       // read data from db, but handle it one rataosoite at a time
       // these vars are read from inner loop, but data from last iteration will carry on to next db read
       // hold rows of same rataosoite to be converted to one csv row
