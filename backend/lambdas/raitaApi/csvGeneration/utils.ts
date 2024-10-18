@@ -20,7 +20,9 @@ export const mapMittausRowsToCsvRows = (
   raporttiRows: { id: number; inspection_date: Date | null }[],
   selectedColumns: string[],
 ): CsvRow[] => {
-  // TODO ensure last row is full?
+  if (mittausRows.length === 0) {
+    return [];
+  }
 
   const raporttiSorted = [...raporttiRows].sort((a, b) =>
     compareAsc(a.inspection_date ?? 0, b.inspection_date ?? 0),
@@ -40,12 +42,17 @@ export const mapMittausRowsToCsvRows = (
     const currentRows = mappedByRataosoite[rataosoite];
     const csvRow: CsvRow = [
       {
-        header: 'rata_kilometri',
-        value: `${currentRows[0].rata_kilometri ?? ''}`,
-      },
-      {
-        header: 'rata_metrit',
-        value: `${currentRows[0].rata_metrit ?? ''}`,
+        header: 'rataosoite',
+        value: `${currentRows[0].rata_kilometri ?? ''}+${
+          currentRows[0].rata_metrit
+            ? Intl.NumberFormat('en', {
+                minimumIntegerDigits: 4,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: false,
+              }).format(currentRows[0].rata_metrit.toNumber())
+            : ''
+        }`,
       },
     ];
 

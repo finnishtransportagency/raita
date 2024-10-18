@@ -28,6 +28,7 @@ import {
   AnyMittausTableWhereInput,
   CsvGenerationEvent,
   CsvRow,
+  MittausDbResult,
   MultipartUploadResultWithPartNumber,
 } from './types';
 
@@ -185,7 +186,7 @@ const getPartialMittausRows = async (
   offset: number,
   pageSize: number,
   selectedColumns: string[],
-) => {
+): Promise<MittausDbResult[]> => {
   const systemSpecificColumnSelections = getColumnsSelectInputForSystem(
     system,
     selectedColumns,
@@ -292,31 +293,41 @@ const readDbToReadable = async (
     },
   });
 
+  const raporttiRows = await client.raportti.findMany({
+    where: { ...raporttiWhere },
+    select: {
+      id: true,
+      inspection_date: true,
+      system: true,
+    },
+  });
+
   const systemsInResults: string[] = systemsResult
     .filter(res => !!res.system)
     .map(res => res.system!);
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
+  const defaultSelectedColumns = ['lat', 'long', 'track'];
 
-  const csvStream = new PassThrough();
-  csvStream.pause();
+  const outputStream = new PassThrough();
+  outputStream.pause();
+
   new Promise(async resolve => {
+    // TODO: can this be written without so many mutable vars?
+    let writeHeader = true;
     for (
       let systemIndex = 0;
       systemIndex < systemsInResults.length;
       systemIndex++
     ) {
+      // TODO: multiple systems don't work
       // get csv rows per system for faster queries
       const system = systemsInResults[systemIndex];
       // get list of raporttiIds to make queries faster
-      const raporttiRows = await client.raportti.findMany({
-        where: { ...raporttiWhere, system: { equals: system as jarjestelma } },
-        select: {
-          id: true,
-          inspection_date: true,
-        },
-      });
-      const raporttiIds = raporttiRows.map(raportti => raportti.id);
+      const raporttiInSystem = raporttiRows.filter(
+        raportti => raportti.system === system,
+      );
+      const raporttiIds = raporttiInSystem.map(raportti => raportti.id);
       const mittausCount = await client.mittaus.count({
         where: {
           raportti_id: {
@@ -325,15 +336,20 @@ const readDbToReadable = async (
         },
       });
       const partCount = Math.ceil(mittausCount / rowCountToRead);
+
+      // read data from db, but handle it one rataosoite at a time
+      // these vars are read from inner loop, but data from last iteration will carry on to next db read
+      // hold rows of same rataosoite to be converted to one csv row
+      let mittausBuffer: MittausDbResult[] = [];
+      let previousRataosoite = '';
+
       for (
         let partIndexInSystem = 0;
         partIndexInSystem < partCount;
         partIndexInSystem++
       ) {
-        // paging with rataosoite?
-
         const offset = partIndexInSystem * rowCountToRead;
-        const mittausRows = await getPartialMittausRows(
+        const mittausRows: MittausDbResult[] = await getPartialMittausRows(
           client,
           raporttiIds,
           system,
@@ -342,28 +358,51 @@ const readDbToReadable = async (
           selectedColumns,
         );
 
-        const defaultSelectedColumns = ['lat', 'long', 'track'];
-
-        // map to csv format
-        const mittausMappedRows: CsvRow[] = mapMittausRowsToCsvRows(
-          mittausRows,
-          raporttiRows,
-          selectedColumns.concat(defaultSelectedColumns),
-        );
-        const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
-        const body = firstChunk
-          ? objectToCsvHeader(mittausMappedRows[0]) +
-            objectToCsvBody(mittausMappedRows)
-          : objectToCsvBody(mittausMappedRows);
-
-        csvStream.write(body, 'utf8');
+        for (
+          let mittausRowIndex = 0;
+          mittausRowIndex < mittausRows.length;
+          mittausRowIndex++
+        ) {
+          const mittaus = mittausRows[mittausRowIndex];
+          const rataosoite = `${mittaus.rata_kilometri}-${mittaus.rata_metrit}`;
+          // trust that array is sorted by rataosoite, only check if it changes
+          if (rataosoite === previousRataosoite) {
+            mittausBuffer.push(mittaus);
+          } else {
+            // rataosoite changed, convert current chunk to one row
+            // TODO type not array of rows?
+            const row: CsvRow[] = mapMittausRowsToCsvRows(
+              mittausBuffer,
+              raporttiInSystem,
+              selectedColumns.concat(defaultSelectedColumns),
+            );
+            if (writeHeader) {
+              outputStream.write(objectToCsvHeader(row[0]), 'utf8');
+              writeHeader = false;
+            }
+            outputStream.write(objectToCsvBody(row), 'utf8');
+            mittausBuffer = [mittaus];
+          }
+        }
+        // at this point mittausBuffer still contains data to write but it is not known if next data will have same rataosoite, unless there is no more data
+        if (partIndexInSystem === partCount - 1) {
+          // last data (from this system?)
+          const row: CsvRow[] = mapMittausRowsToCsvRows(
+            mittausBuffer,
+            raporttiInSystem,
+            selectedColumns.concat(defaultSelectedColumns),
+          );
+          outputStream.write(objectToCsvBody(row), 'utf8');
+          mittausBuffer = [];
+          previousRataosoite = '';
+        }
       }
     }
-    csvStream.end();
+    outputStream.end();
     resolve(true);
   });
   // return stream immediately
-  return csvStream;
+  return outputStream;
 };
 
 const uploadReadableToS3 = async (

@@ -153,12 +153,8 @@ describe('mapMittausRowsToCsvRows', () => {
     expect(res).toEqual([
       [
         {
-          header: 'rata_kilometri',
-          value: '1',
-        },
-        {
-          header: 'rata_metrit',
-          value: '1',
+          header: 'rataosoite',
+          value: '1+0001.00',
         },
         {
           header: 'date',
@@ -187,12 +183,8 @@ describe('mapMittausRowsToCsvRows', () => {
       ],
       [
         {
-          header: 'rata_kilometri',
-          value: '1',
-        },
-        {
-          header: 'rata_metrit',
-          value: '1.25',
+          header: 'rataosoite',
+          value: '1+0001.25',
         },
         {
           header: 'date',
