@@ -7,8 +7,12 @@ import axios, {
 } from 'axios';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
 
-const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO add to cloudformation config
-const apiClient = axios.create({ baseURL: baseUrl });
+//const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO uncomment
+const baseUrl = 'https://avoinapi.testivaylapilvi.fi/';
+
+//TODO
+//const apiClient = axios.create({ baseURL: baseUrl });
+const apiClient = axios.create();
 
 /*{
   "type": "FeatureCollection",
@@ -34,8 +38,6 @@ const apiClient = axios.create({ baseURL: baseUrl });
   }
 ]
 }*/
-
-
 
 enum ResponseType {
   FEATURE_COLLECTION = 'FeatureCollection',
@@ -81,6 +83,7 @@ type trackAddressWithCoordinatePathParams = {
   geometriatiedot?: boolean;
   perustiedot?: boolean;
   lisatiedot?: boolean;
+  koordinaatisto?: string;
 };
 // Default vals for optional post params; if we happen to need such TODO
 //
@@ -93,13 +96,13 @@ export const defaultTrackAddressWithCoordinatePathParams: trackAddressWithCoordi
     geometriatiedot: undefined,
     lisatiedot: undefined,
     perustiedot: undefined,
+    koordinaatisto: encodeURIComponent('EPSG:4258'),
   };
 
 //params that go to rest post
 type trackAddressWithCoordinatePostParams = {
-  x_koordinaatti_param: string;
-  y_koordinaatti_param: string;
-  koordinaatisto_param?: string;
+  x: number | undefined;
+  y: number | undefined;
   sade_param?: number;
   ratanumero_param?: string;
   sijaintiraide_param?: string;
@@ -113,9 +116,8 @@ type trackAddressWithCoordinatePostParams = {
 //    sade: 100
 const defaultTrackAddressWithCoordinatePostParams: Omit<
   trackAddressWithCoordinatePostParams,
-  'x_koordinaatti_param' | 'y_koordinaatti_param'
+  'x' | 'y'
 > = {
-  koordinaatisto_param: 'EPSG:4258',
   ratanumero_param: undefined,
   sade_param: undefined,
   sijaintiraide_param: undefined,
@@ -133,8 +135,8 @@ export async function getConvertedTrackAddressWithCoords(
   >,
 ): Promise<any> {
   const postParams: trackAddressWithCoordinatePostParams = {
-    x_koordinaatti_param: long.toString(),
-    y_koordinaatti_param: lat.toString(),
+    x: long,
+    y: lat,
     ...(extraPostParams
       ? extraPostParams
       : defaultTrackAddressWithCoordinatePostParams),
@@ -159,8 +161,8 @@ export async function getConvertedTrackAddressesWithCoords(
 ): Promise<any> {
   const postParamsArray = coords.map(latlong => {
     return {
-      x_koordinaatti_param: latlong.long.toString(),
-      y_koordinaatti_param: latlong.lat.toString(),
+      x: latlong.long,
+      y: latlong.lat,
       ...(extraPostParams
         ? extraPostParams
         : defaultTrackAddressWithCoordinatePostParams),
@@ -198,8 +200,8 @@ export async function getConvertedTrackAddressesWithPrismaCoords(
 ): Promise<any> {
   const postParamsArray = coords.map(latlong => {
     return {
-      x_koordinaatti_param: latlong.long ? latlong.long.toString() : '',
-      y_koordinaatti_param: latlong.lat ? latlong.lat.toString() : '',
+      x: latlong.long?.toNumber(),
+      y: latlong.lat?.toNumber(),
       ...(extraPostParams
         ? extraPostParams
         : defaultTrackAddressWithCoordinatePostParams),
@@ -234,6 +236,9 @@ function addPathParams(
   if (pathParams.perustiedot != undefined) {
     resultPath += 'perustiedot=' + pathParams.perustiedot + '&';
   }
+  if (pathParams.koordinaatisto != undefined) {
+    resultPath += 'koordinaatisto=' + pathParams.koordinaatisto + '&';
+  }
   resultPath = resultPath.substring(0, resultPath.length - 1);
 
   return resultPath;
@@ -248,6 +253,7 @@ async function getConvertedTrackAddressesWithParams(
   const cleanedPostParams = postParams.map(params =>
     pickBy(params, v => v !== undefined),
   );
+  log.info(cleanedPostParams,"cleanedPostParams");
   const postData: string = JSON.stringify(cleanedPostParams);
 
   // some rest params have a '-' in their name which not allowed in js object. Convert them.
@@ -262,10 +268,14 @@ async function getConvertedTrackAddressesWithParams(
     } as RawAxiosRequestHeaders,
   };
 
-  const path = addPathParams('/rata-vkm/v1/rataosoitteet', pathParams);
-  log.trace('path: ' + path);
+  const path = addPathParams('https://avoinapi.testivaylapilvi.fi/rata-vkm/v1/rataosoitteet/rata-vkm/v1/rataosoitteet', pathParams);
+  log.info('path: ' + path);
+  log.info(postParams);
+  log.info(pathParams);
+  log.info(convertedPostData);
+
   const responseData: AxiosResponse<any> | void = await apiClient
-    .post(path, config)
+    .post(path, cleanedPostParams, config)
     .then(response => {
       log.trace(response.data, 'response:');
       return response.data;
