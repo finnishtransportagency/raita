@@ -16,7 +16,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   objectToCsvBody,
   objectToCsvHeader,
-  mapMittausRowsToCsvRows,
+  mapMittausRowsToCsvRow,
 } from './utils';
 import {
   getMittausFieldsPerSystem,
@@ -369,30 +369,35 @@ const readDbToReadable = async (
           if (rataosoite === previousRataosoite) {
             mittausBuffer.push(mittaus);
           } else {
+            previousRataosoite = rataosoite;
+            if (mittausBuffer.length === 0) {
+              // first row
+              continue;
+            }
             // rataosoite changed, convert current chunk to one row
             // TODO type not array of rows?
-            const row: CsvRow[] = mapMittausRowsToCsvRows(
+            const row: CsvRow = mapMittausRowsToCsvRow(
               mittausBuffer,
               raporttiInSystem,
               selectedColumns.concat(defaultSelectedColumns),
             );
             if (writeHeader) {
-              outputStream.write(objectToCsvHeader(row[0]), 'utf8');
+              outputStream.write(objectToCsvHeader(row), 'utf8');
               writeHeader = false;
             }
-            outputStream.write(objectToCsvBody(row), 'utf8');
+            outputStream.write(objectToCsvBody([row]), 'utf8');
             mittausBuffer = [mittaus];
           }
         }
         // at this point mittausBuffer still contains data to write but it is not known if next data will have same rataosoite, unless there is no more data
         if (partIndexInSystem === partCount - 1) {
           // last data (from this system?)
-          const row: CsvRow[] = mapMittausRowsToCsvRows(
+          const row: CsvRow = mapMittausRowsToCsvRow(
             mittausBuffer,
             raporttiInSystem,
             selectedColumns.concat(defaultSelectedColumns),
           );
-          outputStream.write(objectToCsvBody(row), 'utf8');
+          outputStream.write(objectToCsvBody([row]), 'utf8');
           mittausBuffer = [];
           previousRataosoite = '';
         }

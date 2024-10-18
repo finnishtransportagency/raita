@@ -2,6 +2,7 @@ import * as CSV from 'csv-string';
 import { CsvRow, MittausDbResult } from './types';
 import { Decimal } from '@prisma/client/runtime/library';
 import { compareAsc, format } from 'date-fns';
+import { error } from 'console';
 
 const separator = ',';
 
@@ -15,75 +16,79 @@ export const objectToCsvBody = (rows: CsvRow[]) => {
   return CSV.stringify(bodyRows, separator);
 };
 
-export const mapMittausRowsToCsvRows = (
+/**
+ * Map mittaus entries for one rataosoite into one csv row
+ * All mittausRows entries should have same rataosoite
+ *
+ * raporttiRows should have an entry for each raportti that can be in the data
+ * mittausRows should have one or zero mittaus entries for each raportti
+ */
+export const mapMittausRowsToCsvRow = (
   mittausRows: MittausDbResult[],
   raporttiRows: { id: number; inspection_date: Date | null }[],
   selectedColumns: string[],
-): CsvRow[] => {
+): CsvRow => {
   if (mittausRows.length === 0) {
     return [];
   }
+  const rata_kilometri = mittausRows[0].rata_kilometri;
+  const rata_metrit = mittausRows[0].rata_metrit;
+  mittausRows.forEach(mittaus => {
+    if (
+      mittaus.rata_kilometri !== rata_kilometri ||
+      mittaus.rata_metrit !== mittaus.rata_metrit
+    ) {
+      throw new Error('All mittaus rows should have same rataosoite');
+    }
+  });
 
   const raporttiSorted = [...raporttiRows].sort((a, b) =>
     compareAsc(a.inspection_date ?? 0, b.inspection_date ?? 0),
   );
 
-  const mappedByRataosoite: { [rataosoite: string]: MittausDbResult[] } = {};
-  mittausRows.forEach(row => {
-    const key = `${row.rata_kilometri}-${row.rata_metrit}`;
-    if (mappedByRataosoite[key]) {
-      mappedByRataosoite[key].push(row);
-    } else {
-      mappedByRataosoite[key] = [row];
-    }
-  });
-  const rows: CsvRow[] = [];
-  Object.keys(mappedByRataosoite).forEach(rataosoite => {
-    const currentRows = mappedByRataosoite[rataosoite];
-    const csvRow: CsvRow = [
+  const csvRow: CsvRow = [
+    {
+      header: 'rataosoite',
+      value: `${rata_kilometri ?? ''}+${
+        rata_metrit
+          ? Intl.NumberFormat('en', {
+              minimumIntegerDigits: 4,
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+              useGrouping: false,
+            }).format(rata_metrit.toNumber())
+          : ''
+      }`,
+    },
+  ];
+
+  raporttiSorted.forEach(raportti => {
+    const mittaus = mittausRows.find(r => r.raportti_id === raportti.id);
+    // dat might be missing for some raportti
+    // if mittaus is undefined, still add values but as empty strings
+    const date = raportti.inspection_date
+      ? format(raportti.inspection_date, 'dd.MM.yyyy')
+      : 'missing_date';
+    const vals: CsvRow = [
       {
-        header: 'rataosoite',
-        value: `${currentRows[0].rata_kilometri ?? ''}+${
-          currentRows[0].rata_metrit
-            ? Intl.NumberFormat('en', {
-                minimumIntegerDigits: 4,
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-                useGrouping: false,
-              }).format(currentRows[0].rata_metrit.toNumber())
-            : ''
-        }`,
+        header: 'date',
+        value: date,
       },
     ];
+    selectedColumns.forEach(columnName => {
+      const mittausAsObj: { [key: string]: any } = { ...mittaus };
 
-    raporttiSorted.forEach(raportti => {
-      const mittaus = currentRows.find(r => r.raportti_id === raportti.id);
-      // if mittaus is undefined, still add values but as empty strings
-      const date = raportti.inspection_date
-        ? format(raportti.inspection_date, 'dd.MM.yyyy')
-        : 'missing_date';
-      const vals: CsvRow = [
-        {
-          header: 'date',
-          value: date,
-        },
-      ]; // TODO map
-      selectedColumns.forEach(columnName => {
-        const mittausAsObj: { [key: string]: any } = { ...mittaus };
-
-        vals.push({
-          header: `${columnName} ${date}`,
-          value: convertPrismaValueToCsvValue(
-            columnName,
-            mittausAsObj[columnName],
-          ),
-        });
+      vals.push({
+        header: `${columnName} ${date}`,
+        value: convertPrismaValueToCsvValue(
+          columnName,
+          mittausAsObj[columnName],
+        ),
       });
-      csvRow.push(...vals);
     });
-    rows.push(csvRow);
+    csvRow.push(...vals);
   });
-  return rows;
+  return csvRow;
 };
 
 const convertPrismaValueToCsvValue = (
