@@ -1,5 +1,6 @@
 import {
-  getConvertedTrackAddressesWithCoords, getConvertedTrackAddressesWithPrismaCoords,
+  getConvertedTrackAddressesWithCoords,
+  getConvertedTrackAddressesWithPrismaCoords,
   getConvertedTrackAddressWithCoords,
 } from '../geoviiteClient';
 
@@ -19,11 +20,10 @@ describe('geoviite single point with default params', () => {
     }
 
     const loggings = logSpy.mock.calls.map(call => call.toString());
-
     expect(loggings.includes('path: /rata-vkm/v1/rataosoitteet')).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241"}]',
+        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241","koordinaatisto_param":"EPSG:4258"}]',
       ),
     ).toBeTruthy();
   });
@@ -98,7 +98,7 @@ describe('geoviite single point with two custom path params', () => {
     ).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241"}]',
+        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241","koordinaatisto_param":"EPSG:4258"}]',
       ),
     ).toBeTruthy();
   });
@@ -120,11 +120,10 @@ describe('geoviite multiple points with default params', () => {
       //testing our api request format; response error ignored
     }
     const loggings = logSpy.mock.calls.map(call => call.toString());
-
     expect(loggings.includes('path: /rata-vkm/v1/rataosoitteet')).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241"},{"x_koordinaatti_param":"24.7182","y_koordinaatti_param":"61.5641"},{"x_koordinaatti_param":"25.1482","y_koordinaatti_param":"61.1231"}]',
+        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241","koordinaatisto_param":"EPSG:4258"},{"x_koordinaatti_param":"24.7182","y_koordinaatti_param":"61.5641","koordinaatisto_param":"EPSG:4258"},{"x_koordinaatti_param":"25.1482","y_koordinaatti_param":"61.1231","koordinaatisto_param":"EPSG:4258"}]',
       ),
     ).toBeTruthy();
   });
@@ -133,14 +132,15 @@ describe('geoviite multiple points with default params', () => {
 describe('geoviite multiple points with Prisma coords', () => {
   test('success: basic operation', async () => {
     const logSpy = jest.spyOn(log, 'trace');
-    const points: Array<{ lat: Decimal; long: Decimal }> = [
-      { lat: new Decimal(61.9241), long: new Decimal(25.7482) },
-      { lat: new Decimal(61.5641), long: new Decimal(24.7182) },
-      { lat: new Decimal(61.1231), long: new Decimal(25.1482) },
+    const points: Array<{ lat: Decimal; long: Decimal; id: number }> = [
+      { lat: new Decimal(61.9241), long: new Decimal(25.7482), id: 123 },
+      { lat: new Decimal(61.5641), long: new Decimal(24.7182), id: 124 },
+      { lat: new Decimal(61.1231), long: new Decimal(25.1482), id: 125 },
     ];
 
     try {
-      const converted = await getConvertedTrackAddressesWithPrismaCoords(points);
+      const converted =
+        await getConvertedTrackAddressesWithPrismaCoords(points);
       log.info(converted, 'converted');
     } catch (error) {
       //testing our api request format; response error ignored
@@ -150,7 +150,7 @@ describe('geoviite multiple points with Prisma coords', () => {
     expect(loggings.includes('path: /rata-vkm/v1/rataosoitteet')).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241"},{"x_koordinaatti_param":"24.7182","y_koordinaatti_param":"61.5641"},{"x_koordinaatti_param":"25.1482","y_koordinaatti_param":"61.1231"}]',
+        'Post data: [{"x-koordinaatti-param":"25.7482","y_koordinaatti_param":"61.9241","koordinaatisto_param":"EPSG:4258"},{"x_koordinaatti_param":"24.7182","y_koordinaatti_param":"61.5641","koordinaatisto_param":"EPSG:4258"},{"x_koordinaatti_param":"25.1482","y_koordinaatti_param":"61.1231","koordinaatisto_param":"EPSG:4258"}]',
       ),
     ).toBeTruthy();
   });
