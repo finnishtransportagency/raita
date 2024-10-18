@@ -10,7 +10,6 @@ import { Decimal } from 'prisma/prisma-client/runtime/library';
 const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO add to cloudformation config
 const apiClient = axios.create({ baseURL: baseUrl });
 
-
 /*{
   "type": "FeatureCollection",
   "features": [
@@ -35,10 +34,47 @@ const apiClient = axios.create({ baseURL: baseUrl });
   }
 ]
 }*/
-type getConvertedTrackAddressesWithCoordsResultType = {
 
+
+
+enum ResponseType {
+  FEATURE_COLLECTION = 'FeatureCollection',
+}
+enum GeometryType {
+  POINT = 'Point',
+}
+enum FeatureType {
+  FEATURE = 'Feature',
 }
 
+export type GetConvertedTrackAddressesWithCoordsResultType = {
+  type: ResponseType;
+  features: Feature[];
+};
+
+type Feature = {
+  geometry: Geometry;
+  properties: Properties;
+  type: FeatureType;
+};
+
+type Geometry = {
+  type: GeometryType;
+  coordinates: Array<any>;
+};
+
+type Properties = {
+  x: number;
+  y: number;
+  valimatka: number;
+  ratanumero: string;
+  sijaintiraide: string;
+  sijaintiraide_kuvaus: string;
+  sijaintiraide_tyyppi: string;
+  ratakilometri: number;
+  ratametri: number;
+  ratametri_desimaalit: number;
+};
 
 //params that go to rest as url path params
 type trackAddressWithCoordinatePathParams = {
@@ -79,7 +115,7 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   trackAddressWithCoordinatePostParams,
   'x_koordinaatti_param' | 'y_koordinaatti_param'
 > = {
-  koordinaatisto_param: undefined,
+  koordinaatisto_param: 'EPSG:4258',
   ratanumero_param: undefined,
   sade_param: undefined,
   sijaintiraide_param: undefined,
@@ -140,9 +176,20 @@ export async function getConvertedTrackAddressesWithCoords(
   return resultData;
 }
 
+function convertResultToRaitaStyle(
+  resultData: GetConvertedTrackAddressesWithCoordsResultType,
+  ids: Array<{
+    id: number;
+  }>,
+) {
+  console.log(resultData);
+  console.log(ids);
+  //resultData.features.entries()[0].perustiedot.
+}
+
 // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
 export async function getConvertedTrackAddressesWithPrismaCoords(
-  coords: Array<{ lat: Decimal | null; long: Decimal | null }>,
+  coords: Array<{ lat: Decimal | null; long: Decimal | null; id: number }>,
   extraPathParams?: trackAddressWithCoordinatePathParams,
   extraPostParams?: Omit<
     trackAddressWithCoordinatePostParams,
@@ -159,13 +206,17 @@ export async function getConvertedTrackAddressesWithPrismaCoords(
     };
   });
 
-  const resultData: any = await getConvertedTrackAddressesWithParams(
-    postParamsArray,
-    extraPathParams
-      ? extraPathParams
-      : defaultTrackAddressWithCoordinatePathParams,
-  );
-  return resultData;
+  const resultData: GetConvertedTrackAddressesWithCoordsResultType =
+    await getConvertedTrackAddressesWithParams(
+      postParamsArray,
+      extraPathParams
+        ? extraPathParams
+        : defaultTrackAddressWithCoordinatePathParams,
+    );
+
+  const convertedResult = convertResultToRaitaStyle(resultData, coords);
+
+  return convertedResult;
 }
 
 function addPathParams(
