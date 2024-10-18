@@ -1,5 +1,5 @@
 import { subMinutes } from 'date-fns';
-import { DBConnection } from '../lambdas/dataProcess/csvCommon/db/dbUtil';
+import { PostgresDBConnection } from '../lambdas/dataProcess/csvCommon/db/dbUtil';
 
 /**
  * This file handles the data process lock
@@ -29,7 +29,7 @@ async function acquireLockOrFail(
   holderType: LockHolderType,
   holderTypeToFailOn: LockHolderType,
   filename: string | null,
-  dbConnection: DBConnection,
+  dbConnection: PostgresDBConnection,
 ) {
   const sql = dbConnection.sql;
   const schema = dbConnection.schema;
@@ -71,7 +71,7 @@ async function acquireLockOrFail(
 async function releaseLock(
   holderType: LockHolderType,
   filename: string | null,
-  dbConnection: DBConnection,
+  dbConnection: PostgresDBConnection,
 ) {
   const sql = dbConnection.sql;
   const schema = dbConnection.schema;
@@ -82,7 +82,7 @@ async function releaseLock(
   `;
 }
 
-export function acquirePipelineLockOrFail(dbConnection: DBConnection) {
+export function acquirePipelineLockOrFail(dbConnection: PostgresDBConnection) {
   return acquireLockOrFail(
     LockHolderType.Pipeline,
     LockHolderType.DataProcess,
@@ -92,7 +92,7 @@ export function acquirePipelineLockOrFail(dbConnection: DBConnection) {
 }
 export function acquireDataProcessLockOrFail(
   filename: string,
-  dbConnection: DBConnection,
+  dbConnection: PostgresDBConnection,
 ) {
   return acquireLockOrFail(
     LockHolderType.DataProcess,
@@ -101,12 +101,12 @@ export function acquireDataProcessLockOrFail(
     dbConnection,
   );
 }
-export function releasePipelineLock(dbConnection: DBConnection) {
+export function releasePipelineLock(dbConnection: PostgresDBConnection) {
   return releaseLock(LockHolderType.Pipeline, 'pipeline', dbConnection);
 }
 export function releaseDataProcessLock(
   filename: string,
-  dbConnection: DBConnection,
+  dbConnection: PostgresDBConnection,
 ) {
   return releaseLock(LockHolderType.DataProcess, filename, dbConnection);
 }
@@ -114,7 +114,7 @@ export function releaseDataProcessLock(
 /**
  * This should only be used from the pipeline
  */
-export async function lockTableExists(dbConnection: DBConnection) {
+export async function lockTableExists(dbConnection: PostgresDBConnection) {
   const sql = dbConnection.sql;
   const schema = dbConnection.schema;
   const result = await sql`SELECT EXISTS (

@@ -22,14 +22,17 @@ let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getDBConnection(): Promise<{
-  schema: string;
-  sql: postgres.Sql<{}>;
-  prisma: PrismaClient;
-}> {
+export async function getPostgresDBConnection(): Promise<PostgresDBConnection> {
+  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const sql = await getConnection();
+  return { schema, sql };
+}
+
+export async function getDBConnection(): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
   const sql = await getConnection();
   const prisma = await getPrismaClient();
+
   return { schema, sql, prisma };
 }
 
@@ -37,6 +40,10 @@ export type DBConnection = {
   schema: string;
   sql: postgres.Sql<{}>;
   prisma: PrismaClient;
+};
+export type PostgresDBConnection = {
+  schema: string;
+  sql: postgres.Sql<{}>;
 };
 
 export async function writeRowsToDB(
