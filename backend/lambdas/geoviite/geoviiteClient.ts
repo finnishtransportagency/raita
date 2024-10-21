@@ -7,13 +7,13 @@ import axios, {
 } from 'axios';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
 
-//const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO uncomment
+//const baseUrl = process.env.GEOVIITE_HOSTNAME;
 const baseUrl = 'https://avoinapi.testivaylapilvi.fi/';
+const apiClient = axios.create({ baseURL: baseUrl });
 
-//TODO
-//const apiClient = axios.create({ baseURL: baseUrl });
-const apiClient = axios.create();
 
+
+//Type of geoviite trackadresseses post response
 /*{
   "type": "FeatureCollection",
   "features": [
@@ -39,6 +39,11 @@ const apiClient = axios.create();
 ]
 }*/
 
+export type GetConvertedTrackAddressesWithCoordsResultType = {
+  type: ResponseType;
+  features: Feature[];
+};
+
 enum ResponseType {
   FEATURE_COLLECTION = 'FeatureCollection',
 }
@@ -48,11 +53,6 @@ enum GeometryType {
 enum FeatureType {
   FEATURE = 'Feature',
 }
-
-export type GetConvertedTrackAddressesWithCoordsResultType = {
-  type: ResponseType;
-  features: Feature[];
-};
 
 type Feature = {
   geometry: Geometry;
@@ -184,7 +184,8 @@ function convertResultToRaitaStyle(
     id: number;
   }>,
 ) {
-  console.log(resultData);
+  resultData.features.forEach(f=>console.log(f));
+
   console.log(ids);
   //resultData.features.entries()[0].perustiedot.
 }
@@ -250,29 +251,29 @@ async function getConvertedTrackAddressesWithParams(
   pathParams: trackAddressWithCoordinatePathParams,
 ): Promise<any> {
   //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
-  const cleanedPostParams = postParams.map(params =>
-    pickBy(params, v => v !== undefined),
+  const cleanedPostParams: trackAddressWithCoordinatePostParams[] = postParams.map<trackAddressWithCoordinatePostParams>(params =>
+    // @ts-ignore
+    pickBy(params, (value, key) => (key == 'x' || key == 'y' || value !== undefined)),
   );
-  log.info(cleanedPostParams,"cleanedPostParams");
-  const postData: string = JSON.stringify(cleanedPostParams);
 
-  // some rest params have a '-' in their name which not allowed in js object. Convert them.
-  const convertedPostData = postData
-    .replace('_param', '-param')
-    .replace('_koordinaatti', '-koordinaatti');
-  log.trace('Post data: ' + convertedPostData);
+  log.info(postParams, "postParams");
+  log.info(cleanedPostParams,"cleanedPostParams");
+  // const postData: string = JSON.stringify(cleanedPostParams);
 
   const config: AxiosRequestConfig = {
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     } as RawAxiosRequestHeaders,
   };
 
-  const path = addPathParams('https://avoinapi.testivaylapilvi.fi/rata-vkm/v1/rataosoitteet/rata-vkm/v1/rataosoitteet', pathParams);
-  log.info('path: ' + path);
-  log.info(postParams);
-  log.info(pathParams);
-  log.info(convertedPostData);
+  const path = addPathParams(
+    'rata-vkm/v1/rataosoitteet',
+    pathParams,
+  );
+
+
+
 
   const responseData: AxiosResponse<any> | void = await apiClient
     .post(path, cleanedPostParams, config)
