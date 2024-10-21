@@ -6,10 +6,10 @@ import {
 import { CodePipeline } from 'aws-sdk';
 import { logPipeline } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
-import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
+import { getPostgresDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 
 const withRequest = lambdaRequestTracker();
-const dbConnection = getDBConnection();
+const dbConnection = getPostgresDBConnection();
 
 export async function handleReleasePipelineLock(
   event: CodePipelineEvent,
