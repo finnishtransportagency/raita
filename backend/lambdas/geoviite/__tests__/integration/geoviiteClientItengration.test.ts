@@ -1,14 +1,10 @@
-import {
-  getConvertedTrackAddressesWithCoords,
-  getConvertedTrackAddressesWithPrismaCoords,
-  getConvertedTrackAddressWithCoords,
-} from '../../geoviiteClient';
+import { GeoviiteClient } from '../../geoviiteClient';
 
 import { log } from '../../../../utils/logger';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
 import axios, { AxiosResponse } from 'axios';
 
-describe('geoviite simple', () => {
+describe('geoviite simple axios test', () => {
   test('success: basic operation', async () => {
     const apiClient = axios.create();
 
@@ -27,8 +23,9 @@ describe('geoviite simple', () => {
   });
 });
 
-describe('geoviite multiple points with Prisma coords', () => {
+describe('geoviite multiple points with Prisma coords with geoviiteclient', () => {
   test('success: basic operation', async () => {
+    const client = new GeoviiteClient('https://avoinapi.testivaylapilvi.fi/');
     const points: Array<{ lat: Decimal; long: Decimal; id: number }> = [
       { lat: new Decimal(60.42316751), long: new Decimal(25.1106662), id: 123 },
       {
@@ -39,13 +36,8 @@ describe('geoviite multiple points with Prisma coords', () => {
       { lat: new Decimal(60.423172), long: new Decimal(25.11066497), id: 125 },
     ];
 
-    try {
-      const converted =
-        await getConvertedTrackAddressesWithPrismaCoords(points);
-      log.info(converted, 'converted');
-    } catch (error) {
-      //testing our api request format; response error ignored
-    }
+    const converted = await client.getConvertedTrackAddressesWithPrismaCoords(points);
+    log.info(converted, 'converted');
 
     expect(true).toBeTruthy();
   });
