@@ -190,9 +190,12 @@ export class GeoviiteClient {
       id: number;
     }>,
   ) {
-    resultData.features.forEach(f => console.log(f));
+    const resultArray = [];
+    for (let [index, val] of resultData.features.entries()) {
+      resultArray.push({ id: ids[index].id, ...val.properties });
+    }
 
-    console.log(ids);
+    console.log(resultArray);
     //resultData.features.entries()[0].perustiedot.
   }
 
@@ -265,10 +268,6 @@ export class GeoviiteClient {
           (value, key) => key == 'x' || key == 'y' || value !== undefined,
         ),
       );
-
-    log.info(postParams, 'postParams');
-    log.info(cleanedPostParams, 'cleanedPostParams');
-    // const postData: string = JSON.stringify(cleanedPostParams);
 
     const config: AxiosRequestConfig = {
       headers: {
