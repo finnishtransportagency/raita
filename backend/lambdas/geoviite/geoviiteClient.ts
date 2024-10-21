@@ -1,15 +1,13 @@
 import { log } from '../../utils/logger';
 import { pickBy } from 'lodash';
 import axios, {
+  AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
   RawAxiosRequestHeaders,
 } from 'axios';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
-
-//const baseUrl = process.env.GEOVIITE_HOSTNAME;
-const baseUrl = 'https://avoinapi.testivaylapilvi.fi/';
-const apiClient = axios.create({ baseURL: baseUrl });
+import {AdminLogSource} from "../../containers/zipHandler/src/adminLog/postgresLogger";
 
 
 
@@ -38,18 +36,22 @@ const apiClient = axios.create({ baseURL: baseUrl });
   }
 ]
 }*/
+enum ResponseType {
+  FEATURE_COLLECTION = 'FeatureCollection'
+  ,
+}
+
 
 export type GetConvertedTrackAddressesWithCoordsResultType = {
   type: ResponseType;
   features: Feature[];
 };
 
-enum ResponseType {
-  FEATURE_COLLECTION = 'FeatureCollection',
-}
+
 enum GeometryType {
   POINT = 'Point',
 }
+
 enum FeatureType {
   FEATURE = 'Feature',
 }
@@ -124,8 +126,20 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   sijaintiraide_tyyppi_param: undefined,
 };
 
+export class GeoviiteClient {
+
+  private baseUrl: string;
+  private axiosClient: AxiosInstance;
+
+
+  constructor(baseUrl: string) {
+    this.baseUrl=baseUrl;
+    this.axiosClient = axios.create({baseURL: baseUrl});
+  }
+
+
 // Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
-export async function getConvertedTrackAddressWithCoords(
+async getConvertedTrackAddressWithCoords(
   lat: number,
   long: number,
   extraPathParams?: trackAddressWithCoordinatePathParams,
@@ -141,7 +155,7 @@ export async function getConvertedTrackAddressWithCoords(
       ? extraPostParams
       : defaultTrackAddressWithCoordinatePostParams),
   };
-  const resultData: any = await getConvertedTrackAddressesWithParams(
+  const resultData: any = await this.getConvertedTrackAddressesWithParams(
     new Array(postParams),
     extraPathParams
       ? extraPathParams
@@ -151,7 +165,7 @@ export async function getConvertedTrackAddressWithCoords(
 }
 
 // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
-export async function getConvertedTrackAddressesWithCoords(
+async getConvertedTrackAddressesWithCoords(
   coords: Array<{ lat: number; long: number }>,
   extraPathParams?: trackAddressWithCoordinatePathParams,
   extraPostParams?: Omit<
@@ -169,7 +183,7 @@ export async function getConvertedTrackAddressesWithCoords(
     };
   });
 
-  const resultData: any = await getConvertedTrackAddressesWithParams(
+  const resultData: any = await this.getConvertedTrackAddressesWithParams(
     postParamsArray,
     extraPathParams
       ? extraPathParams
@@ -178,20 +192,20 @@ export async function getConvertedTrackAddressesWithCoords(
   return resultData;
 }
 
-function convertResultToRaitaStyle(
+private convertResultToRaitaStyle(
   resultData: GetConvertedTrackAddressesWithCoordsResultType,
   ids: Array<{
     id: number;
   }>,
 ) {
-  resultData.features.forEach(f=>console.log(f));
+  resultData.features.forEach(f => console.log(f));
 
   console.log(ids);
   //resultData.features.entries()[0].perustiedot.
 }
 
 // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
-export async function getConvertedTrackAddressesWithPrismaCoords(
+async getConvertedTrackAddressesWithPrismaCoords(
   coords: Array<{ lat: Decimal | null; long: Decimal | null; id: number }>,
   extraPathParams?: trackAddressWithCoordinatePathParams,
   extraPostParams?: Omit<
@@ -210,19 +224,19 @@ export async function getConvertedTrackAddressesWithPrismaCoords(
   });
 
   const resultData: GetConvertedTrackAddressesWithCoordsResultType =
-    await getConvertedTrackAddressesWithParams(
+    await this.getConvertedTrackAddressesWithParams(
       postParamsArray,
       extraPathParams
         ? extraPathParams
         : defaultTrackAddressWithCoordinatePathParams,
     );
 
-  const convertedResult = convertResultToRaitaStyle(resultData, coords);
+  const convertedResult = this.convertResultToRaitaStyle(resultData, coords);
 
   return convertedResult;
 }
 
-function addPathParams(
+private addPathParams(
   path: string,
   pathParams: trackAddressWithCoordinatePathParams,
 ): string {
@@ -246,7 +260,7 @@ function addPathParams(
 }
 
 // Erämuunnos koordinaateista rataosoitteeseen kaikilla parametreillä
-async function getConvertedTrackAddressesWithParams(
+private async getConvertedTrackAddressesWithParams(
   postParams: Array<trackAddressWithCoordinatePostParams>,
   pathParams: trackAddressWithCoordinatePathParams,
 ): Promise<any> {
@@ -257,7 +271,7 @@ async function getConvertedTrackAddressesWithParams(
   );
 
   log.info(postParams, "postParams");
-  log.info(cleanedPostParams,"cleanedPostParams");
+  log.info(cleanedPostParams, "cleanedPostParams");
   // const postData: string = JSON.stringify(cleanedPostParams);
 
   const config: AxiosRequestConfig = {
@@ -267,24 +281,23 @@ async function getConvertedTrackAddressesWithParams(
     } as RawAxiosRequestHeaders,
   };
 
-  const path = addPathParams(
+  const path = this.addPathParams(
     'rata-vkm/v1/rataosoitteet',
     pathParams,
   );
 
 
-
-
-  const responseData: AxiosResponse<any> | void = await apiClient
+  const responseData: AxiosResponse<any> | void = await this.axiosClient
     .post(path, cleanedPostParams, config)
-    .then(response => {
+    .then((response: AxiosResponse<any>)=> {
       log.trace(response.data, 'response:');
       return response.data;
     })
-    .catch(error => {
+    .catch((error: any) => {
       // Handle the error in case of failure
       log.error(error, 'at getConvertedTrackAddressesWithParams');
       throw error;
     });
   return responseData;
+}
 }
