@@ -1,16 +1,16 @@
 import { log } from '../logger';
 import { AdminLogLevel, AdminLogSource, IAdminLogger } from './types';
 import {
-  DBConnection,
-  getDBConnection,
+  PostgresDBConnection,
+  getPostgresDBConnection,
 } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
 
 export class PostgresLogger implements IAdminLogger {
   private source: AdminLogSource;
   private invocationId: string;
-  private connection: Promise<DBConnection>;
+  private connection: Promise<PostgresDBConnection>;
 
-  constructor(dbConnection?: Promise<DBConnection>) {
+  constructor(dbConnection?: Promise<PostgresDBConnection>) {
     if (dbConnection) {
       this.connection = dbConnection;
     }
@@ -41,7 +41,7 @@ export class PostgresLogger implements IAdminLogger {
     }
     // other login info is read from pg env vars
     // TODO: show some error if they are not found?
-    this.connection = getDBConnection();
+    this.connection = getPostgresDBConnection();
     return this.connection;
   }
 
