@@ -6,9 +6,9 @@ import { log, logLambdaInitializationError } from '../../../utils/logger';
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
 import {
-  GetConvertedTrackAddressesWithCoordsResultType,
-  getConvertedTrackAddressesWithPrismaCoords,
+  GeoviiteClient
 } from '../../geoviite/geoviiteClient';
+import {getEnvOrFail} from "../../../../utils";
 
 const init = () => {
   try {
@@ -39,6 +39,8 @@ export async function handleGeoviiteConversionProcess(
   context: Context,
 ): Promise<void> {
   let key = '';
+  const geoviiteHostname = getEnvOrFail('GEOVIITE_HOSTNAME');
+  const geoviiteClient =  new GeoviiteClient(geoviiteHostname);
   const prismaClient = await prisma;
   try {
     withRequest(event, context);
@@ -64,7 +66,8 @@ export async function handleGeoviiteConversionProcess(
     });
 
 
-    const clientResult: GetConvertedTrackAddressesWithCoordsResultType = await getConvertedTrackAddressesWithPrismaCoords(mittausRows);
+
+    const clientResult: any = await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(mittausRows);
 
     const convertedRows = clientResult.features;
     // TODO: fetch all results first, or save after fetching one batch?
@@ -82,7 +85,7 @@ export async function handleGeoviiteConversionProcess(
       const batch = batches[batchIndex];
       await prismaClient.$transaction(
         // transaction to group multiple updates in one connection
-        batch.map((result: { id: any }) =>
+        batch.map((result) =>
           prismaClient.mittaus.update({
             where: {
               id: result.id,
