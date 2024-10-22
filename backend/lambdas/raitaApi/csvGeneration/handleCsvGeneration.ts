@@ -327,11 +327,6 @@ const readDbToReadable = async (
           },
         });
         const partCount = Math.ceil(mittausCount / rowCountToRead);
-        log.info({
-          partCount,
-          mittausCount,
-          raporttiIds,
-        });
         // read data from db, but handle it one rataosoite at a time
 
         for (
@@ -348,9 +343,6 @@ const readDbToReadable = async (
             rowCountToRead,
             selectedColumns,
           );
-          log.info({
-            length: mittausRows.length,
-          });
           let mittausRowIndex = 0;
           while (mittausRowIndex < mittausRows.length) {
             const mittaus = mittausRows[mittausRowIndex];
@@ -375,15 +367,11 @@ const readDbToReadable = async (
               raporttiInSystem,
               selectedColumns.concat(defaultSelectedColumns),
             );
-            // if (!row || row.length === 0) {
-            //   log.info({ row, msg: 'empty row' });
-            // }
             const writeHeader =
               systemIndex === 0 &&
               partIndexInSystem === 0 &&
               mittausRowIndex === 0;
             if (writeHeader) {
-              // log.info('write header');
               outputStream.write(objectToCsvHeader(row), 'utf8');
             }
             outputStream.write(objectToCsvBody([row]), 'utf8');
@@ -487,7 +475,7 @@ const uploadReadableToS3 = async (
   return new Promise((resolve, reject) => {
     stream.on('readable', async () => {
       // there can be multiple readable events, but the easiest way is to have read loop running continuously until env event
-      log.info('readable');
+      // log.info('readable');
       if (!reading) {
         reading = true;
         await read();
