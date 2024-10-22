@@ -102,10 +102,10 @@ export const defaultTrackAddressWithCoordinatePathParams: trackAddressWithCoordi
 type trackAddressWithCoordinatePostParams = {
   x: number | undefined;
   y: number | undefined;
-  sade_param?: number;
-  ratanumero_param?: string;
-  sijaintiraide_param?: string;
-  sijaintiraide_tyyppi_param?: string;
+  sade?: number;
+  ratanumero?: string;
+  sijaintiraide?: string;
+  sijaintiraide_tyyppi?: string;
 };
 
 // Default vals for optional path params; if we happen to need such TODO
@@ -117,10 +117,10 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   trackAddressWithCoordinatePostParams,
   'x' | 'y'
 > = {
-  ratanumero_param: undefined,
-  sade_param: undefined,
-  sijaintiraide_param: undefined,
-  sijaintiraide_tyyppi_param: undefined,
+  ratanumero: undefined,
+  sade: undefined,
+  sijaintiraide: undefined,
+  sijaintiraide_tyyppi: undefined,
 };
 
 export class GeoviiteClient {
@@ -139,7 +139,7 @@ export class GeoviiteClient {
     extraPathParams?: trackAddressWithCoordinatePathParams,
     extraPostParams?: Omit<
       trackAddressWithCoordinatePostParams,
-      'x_koordinaatti_param' | 'y_koordinaatti_param'
+      'x' | 'y'
     >,
   ): Promise<any> {
     const postParams: trackAddressWithCoordinatePostParams = {
@@ -164,7 +164,7 @@ export class GeoviiteClient {
     extraPathParams?: trackAddressWithCoordinatePathParams,
     extraPostParams?: Omit<
       trackAddressWithCoordinatePostParams,
-      'x_koordinaatti_param' | 'y_koordinaatti_param'
+      'x' | 'y'
     >,
   ): Promise<any> {
     const postParamsArray = coords.map(latlong => {
@@ -198,7 +198,7 @@ export class GeoviiteClient {
     }
 
     console.log(resultArray);
-    //resultData.features.entries()[0].perustiedot.
+    return resultArray;
   }
 
   // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
@@ -207,7 +207,7 @@ export class GeoviiteClient {
     extraPathParams?: trackAddressWithCoordinatePathParams,
     extraPostParams?: Omit<
       trackAddressWithCoordinatePostParams,
-      'x_koordinaatti_param' | 'y_koordinaatti_param'
+      'x' | 'y'
     >,
   ): Promise<any> {
     const postParamsArray = coords.map(latlong => {
@@ -271,6 +271,8 @@ export class GeoviiteClient {
         ),
       );
 
+    log.trace('Post data: ' + JSON.stringify(cleanedPostParams));
+
     const config: AxiosRequestConfig = {
       headers: {
         'Content-Type': 'application/json',
@@ -279,6 +281,8 @@ export class GeoviiteClient {
     };
 
     const path = this.addPathParams('rata-vkm/v1/rataosoitteet', pathParams);
+
+    log.trace('path: ' + path);
 
     const responseData: AxiosResponse<any> | void = await this.axiosClient
       .post(path, cleanedPostParams, config)
