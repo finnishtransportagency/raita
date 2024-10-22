@@ -4,40 +4,38 @@ import {
   GetObjectCommand,
   S3Client,
   UploadPartCommand,
-  UploadPartCommandOutput,
 } from '@aws-sdk/client-s3';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { Context } from 'aws-lambda';
-import { MutationGenerate_Mittaus_CsvArgs } from '../../../apollo/__generated__/resolvers-types';
 import { getPrismaClient } from '../../../utils/prismaClient';
-import {
-  Prisma,
-  PrismaClient,
-  ams_mittaus,
-  jarjestelma,
-  mittaus,
-  ohl_mittaus,
-  pi_mittaus,
-  rc_mittaus,
-  rp_mittaus,
-  tg_mittaus,
-  tsight_mittaus,
-} from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { formatDate, objectToCsvBody, objectToCsvHeader } from './utils';
+import {
+  objectToCsvBody,
+  objectToCsvHeader,
+  mapMittausRowsToCsvRow,
+  getRataosoite,
+} from './utils';
 import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
 } from '../../../apollo/utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../../constants';
 import { PassThrough, Readable } from 'stream';
+import {
+  AnyMittausTableWhereInput,
+  CsvGenerationEvent,
+  CsvRow,
+  MittausDbResult,
+  MultipartUploadResultWithPartNumber,
+} from './types';
 
 const withRequest = lambdaRequestTracker();
 
-const CSV_CHUNK_SIZE = 50000;
+const CSV_CHUNK_SIZE = 10000;
 
 const wait = (time: number) =>
   new Promise(resolve => {
@@ -50,39 +48,6 @@ function getLambdaConfigOrFail() {
     targetBucket: getEnv('TARGET_BUCKET'),
   };
 }
-
-export type CsvGenerationEvent = {
-  searchParameters: MutationGenerate_Mittaus_CsvArgs;
-  progressKey: string;
-  csvKey: string;
-};
-
-type MittausDbResult =
-  | Partial<ams_mittaus>
-  | Partial<ohl_mittaus>
-  | Partial<pi_mittaus>
-  | Partial<rc_mittaus>
-  | Partial<rp_mittaus>
-  | Partial<tg_mittaus>
-  | Partial<tsight_mittaus>;
-
-type AnyMittausTableWhereInput =
-  | Prisma.ams_mittausFindManyArgs
-  | Prisma.ohl_mittausFindManyArgs
-  | Prisma.pi_mittausFindManyArgs
-  | Prisma.rc_mittausFindManyArgs
-  | Prisma.rp_mittausFindManyArgs
-  | Prisma.tg_mittausFindManyArgs
-  | Prisma.tsight_mittausFindManyArgs;
-
-type CsvRow = {
-  [column: string]: string | number | null;
-};
-
-type MultipartUploadResultWithPartNumber = {
-  uploadPartCommandOutput: UploadPartCommandOutput;
-  partNumber: number;
-};
 
 export async function handleCsvGeneration(
   event: CsvGenerationEvent,
@@ -152,10 +117,9 @@ async function generateCsv(
 
   // use a readable stream to read data from db and write to s3
   // this is because the desired data chunk sizes when reading from db and writing to s3 are different
-  const csvStream: Readable = await readDbToReadable(
-    raporttiWhere,
-    selectedColumns,
-  );
+  const csvReadResult = await readDbToReadable(raporttiWhere, selectedColumns);
+
+  const csvStream = csvReadResult.outputStream;
 
   const uploadResult = await uploadReadableToS3(
     csvStream,
@@ -166,6 +130,8 @@ async function generateCsv(
   if (!uploadResult) {
     throw new Error('S3 upload: uploadResult failed');
   }
+  // await csv read from db here, this should throw if promise failed
+  await csvReadResult;
 
   const downloadCommand = new GetObjectCommand({
     Bucket: targetBucket,
@@ -223,7 +189,7 @@ const getPartialMittausRows = async (
   offset: number,
   pageSize: number,
   selectedColumns: string[],
-) => {
+): Promise<MittausDbResult[]> => {
   const systemSpecificColumnSelections = getColumnsSelectInputForSystem(
     system,
     selectedColumns,
@@ -237,24 +203,25 @@ const getPartialMittausRows = async (
     },
     orderBy: [
       {
-        raportti_id: 'asc',
+        rata_kilometri: 'asc',
       },
       {
-        sscount: 'asc',
+        rata_metrit: 'asc',
       },
     ],
-
     select: {
       ...systemSpecificColumnSelections,
+      raportti_id: true,
       sscount: false,
-      running_date: true,
-      track: true,
       jarjestelma: false,
-      location: true,
+      ajonopeus: selectAjonopeus,
+      rata_kilometri: true,
+      rata_metrit: true,
       lat: true,
       long: true,
-      ajonopeus: selectAjonopeus,
+      track: true,
     },
+    // TODO: offset paging could be too slow?
     skip: offset,
     take: pageSize,
   };
@@ -292,53 +259,15 @@ const getPartialMittausRows = async (
   }
 };
 
-const mapMittausRowsToCsvRows = (mittausRows: MittausDbResult[]) => {
-  return mittausRows.map(mittaus => {
-    let systemMittaus: { [column: string]: any } = mittaus;
-    const { location, track, running_date, lat, long } = mittaus;
-
-    const filledColumns = Object.assign(systemMittaus);
-    const formatted_running_date = formatDate(running_date!);
-    // map fields to string or number
-    const newRow = {
-      // TODO: determine which metadata are to be included in csv
-      // file_name: result.file_name,
-      // inspection_date: result.inspection_date?.toISOString(),
-      // system: result.system,
-      // track_part: result.track_part,
-      ...filledColumns,
-      track,
-      location,
-      lat,
-      long,
-      running_date: formatted_running_date,
-    };
-    return newRow;
-  });
-};
-
-const getEmptyCsvRowObject = (systems: string[]) => {
-  const allColumnsPerSystem = getMittausFieldsPerSystem();
-  const allSystemSpecificColumnsInCsv = systems.flatMap(system => {
-    return allColumnsPerSystem
-      .filter(desc => desc.name === system)
-      .flatMap(desc => desc.columns);
-  });
-  // this includes columns from all systems in the query, to preserve field order between systems
-  const emptySystemSpecificColumns: CsvRow = {};
-  allSystemSpecificColumnsInCsv.forEach(
-    column => (emptySystemSpecificColumns[column] = null),
-  );
-  return emptySystemSpecificColumns;
-};
-
 /**
  * Get Readable stream that will eventually contain all csv data, fetched from dn
+ *
+ * result promise will resolve after writing is done, or reject with error
  */
 const readDbToReadable = async (
   raporttiWhere: Prisma.raporttiWhereInput,
   selectedColumns: string[],
-): Promise<Readable> => {
+): Promise<{ outputStream: Readable; result: Promise<any> }> => {
   const client = await getPrismaClient();
   const raporttiCount = await client.raportti.count({
     where: raporttiWhere,
@@ -355,71 +284,127 @@ const readDbToReadable = async (
     },
   });
 
+  const raporttiRows = await client.raportti.findMany({
+    where: { ...raporttiWhere },
+    select: {
+      id: true,
+      inspection_date: true,
+      system: true,
+    },
+  });
+
   const systemsInResults: string[] = systemsResult
     .filter(res => !!res.system)
     .map(res => res.system!);
-  const emptyCsvRow = getEmptyCsvRowObject(systemsInResults);
-
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
+  const defaultSelectedColumns = ['lat', 'long', 'track'];
 
-  const csvStream = new PassThrough();
-  csvStream.pause();
-  new Promise(async resolve => {
-    for (
-      let systemIndex = 0;
-      systemIndex < systemsInResults.length;
-      systemIndex++
-    ) {
-      // get csv rows per system for faster queries
-      const system = systemsInResults[systemIndex];
-      // get list of raporttiIds to make queries faster
-      const raporttiRows = await client.raportti.findMany({
-        where: { ...raporttiWhere, system: { equals: system as jarjestelma } },
-        select: {
-          id: true,
-        },
-      });
-      const raporttiIds = raporttiRows.map(raportti => raportti.id);
-      const mittausCount = await client.mittaus.count({
-        where: {
-          raportti_id: {
-            in: raporttiIds,
-          },
-        },
-      });
-      const partCount = Math.ceil(mittausCount / rowCountToRead);
+  const outputStream = new PassThrough();
+  outputStream.pause();
+
+  const result = new Promise(async (resolve, reject) => {
+    try {
+      // TODO: multiple systems don't work currently
+      // how to make them work?
       for (
-        let partIndexInSystem = 0;
-        partIndexInSystem < partCount;
-        partIndexInSystem++
+        let systemIndex = 0;
+        systemIndex < systemsInResults.length;
+        systemIndex++
       ) {
-        const offset = partIndexInSystem * rowCountToRead;
-        const mittausRows = await getPartialMittausRows(
-          client,
-          raporttiIds,
-          system,
-          offset,
-          rowCountToRead,
-          selectedColumns,
+        // get csv rows per system for faster queries
+        const system = systemsInResults[systemIndex];
+        // get list of raporttiIds to make queries faster
+        const raporttiInSystem = raporttiRows.filter(
+          raportti => `${raportti.system}` === system,
         );
+        const raporttiIds = raporttiInSystem.map(raportti => raportti.id);
+        const mittausCount = await client.mittaus.count({
+          where: {
+            raportti_id: {
+              in: raporttiIds,
+            },
+          },
+        });
+        const partCount = Math.ceil(mittausCount / rowCountToRead);
+        log.info({
+          partCount,
+          mittausCount,
+          raporttiIds,
+        });
+        // read data from db, but handle it one rataosoite at a time
 
-        // map to csv format
-        const mittausMappedRows = mapMittausRowsToCsvRows(mittausRows);
-        const firstChunk = systemIndex === 0 && partIndexInSystem === 0;
-        const body = firstChunk
-          ? objectToCsvHeader(mittausMappedRows[0]) +
-            objectToCsvBody(mittausMappedRows)
-          : objectToCsvBody(mittausMappedRows);
-
-        csvStream.write(body, 'utf8');
+        for (
+          let partIndexInSystem = 0;
+          partIndexInSystem < partCount;
+          partIndexInSystem++
+        ) {
+          const offset = partIndexInSystem * rowCountToRead;
+          const mittausRows: MittausDbResult[] = await getPartialMittausRows(
+            client,
+            raporttiIds,
+            system,
+            offset,
+            rowCountToRead,
+            selectedColumns,
+          );
+          log.info({
+            length: mittausRows.length,
+          });
+          let mittausRowIndex = 0;
+          while (mittausRowIndex < mittausRows.length) {
+            const mittaus = mittausRows[mittausRowIndex];
+            const rataosoite = getRataosoite(mittaus);
+            // array is sorted by rataosoite
+            // get mittaus rows with same rataosoite from rowStart (inclusive) to rowEnd(exclusive)
+            const rowStart = mittausRowIndex;
+            let rowEnd = rowStart + 1;
+            while (
+              rowEnd < mittausRows.length &&
+              getRataosoite(mittausRows[rowEnd]) === rataosoite
+            ) {
+              rowEnd++;
+            }
+            const mittausBuffer: MittausDbResult[] = mittausRows.slice(
+              rowStart,
+              rowEnd,
+            );
+            // convert rows of same rataosoite to a single csv row
+            const row: CsvRow = mapMittausRowsToCsvRow(
+              mittausBuffer,
+              raporttiInSystem,
+              selectedColumns.concat(defaultSelectedColumns),
+            );
+            // if (!row || row.length === 0) {
+            //   log.info({ row, msg: 'empty row' });
+            // }
+            const writeHeader =
+              systemIndex === 0 &&
+              partIndexInSystem === 0 &&
+              mittausRowIndex === 0;
+            if (writeHeader) {
+              // log.info('write header');
+              outputStream.write(objectToCsvHeader(row), 'utf8');
+            }
+            outputStream.write(objectToCsvBody([row]), 'utf8');
+            mittausRowIndex = rowEnd;
+          }
+        }
       }
+      outputStream.end();
+      resolve(true);
+    } catch (err) {
+      outputStream.end();
+      log.error(err);
+      reject(err);
     }
-    csvStream.end();
-    resolve(true);
   });
+
   // return stream immediately
-  return csvStream;
+  return {
+    outputStream,
+    result,
+  };
 };
 
 const uploadReadableToS3 = async (
@@ -449,7 +434,7 @@ const uploadReadableToS3 = async (
           log.info('Stream end');
           break;
         }
-        log.info('Data null but stream not over');
+        // log.info('Data null but stream not over');
         await wait(10);
         continue;
       }
