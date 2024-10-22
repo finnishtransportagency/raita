@@ -93,38 +93,23 @@ export async function handleGeoviiteConversionProcess(
             data: {
               // TODO: actual values here
               geoviite_updated_at: timestamp,
-              long: result.x,
-              lat: result.y,
-              geoviite_valimatka: result.valimatka,
+              geoviite_konvertoitu_long: result.x,
+              geoviite_konvertoitu_lat: result.y,
               geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
-              geoviite_ratanumero_oid: result.ratanumer.oid,
-              geoviite_raide: sijaintiraide: '007 PR KE-HLT',
-              geoviite_sijaintiraide_kuvaus: 'Kerava - Hakosilta oikorata pohjoinen raide',
-              geoviite_sijaintiraide_tyyppi: 'pääraide',
-              geoviite_sijaintiraide_oid: '1.2.246.578.3.10002.191405',
-              geoviite_konvertoitu_ratakilometri: 30,
-              geoviite_konvertoitu_ratametri: 995,
-              ratametri_desimaalit: 738
+              geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
+              geoviite_konvertoitu_rata_metrit: result.ratametri + result.ratametri_desimaalit,
+              geoviite_konvertoitu_raide_numero  : result.sijaintiraide,
+              geoviite_valimatka: result.valimatka,
+              geoviite_sijaintiraide_kuvaus : result.sijaintiraide_kuvaus,
+              geoviite_sijaintiraide_tyyppi: result.sijaintiraide_tyyppi,
+              geoviite_sijaintiraide_oid: result.sijaintiraide_oid,
+              geoviite_ratanumero_oid: result.ratanumero_oid,
             },
           }),
         ),
       );
       // TODO: check errors?
     }
-
-    geoviite_konvertoitu_lat                       Decimal?                  @db.Decimal
-      geoviite_konvertoitu_long                      Decimal?                  @db.Decimal
-      geoviite_konvertoitu_rataosuus_numero          String?                   @db.VarChar(40)
-      geoviite_konvertoitu_rataosuus_nimi            String?                   @db.VarChar(40)
-      geoviite_konvertoitu_raide_numero              String?                   @db.VarChar(40)
-      geoviite_konvertoitu_rata_kilometri            Int?
-      geoviite_konvertoitu_rata_metrit               Decimal?                  @db.Decimal
-        geoviite_konvertoitu_sijainti                  Unsupported("geography")?
-      geoviite_valimatka                             Decimal?                  @db.Decimal
-        geoviite_sijaintiraide_kuvaus                  String?                   @db.VarChar(200)
-      geoviite_sijaintiraide_tyyppi
-
-
 
     await prismaClient.raportti.updateMany({
       // updateMany because key is not set as unique. TODO: should it be?

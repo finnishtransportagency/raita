@@ -73,6 +73,8 @@ type Properties = {
   ratakilometri: number;
   ratametri: number;
   ratametri_desimaalit: number;
+  sijaintiraide_oid: string;
+  ratanumero_oid: string,
 };
 
 //params that go to rest as url path params
