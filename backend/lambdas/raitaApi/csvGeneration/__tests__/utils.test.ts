@@ -15,13 +15,13 @@ const csvString =
 describe('objectToCsvHeader', () => {
   test('success: basic operation', () => {
     const header = objectToCsvHeader(testData[0]);
-    expect(header).toEqual(headerString);
+    expect(header).toEqual(headerString.replace(/,/g, ';'));
   });
 });
 describe('objectToCsvBody', () => {
   test('success: basic operation', () => {
     const body = objectToCsvBody(testData);
-    expect(body).toEqual(bodyString);
+    expect(body).toEqual(bodyString.replace(/,/g, ';'));
   });
 });
 describe('objectToCsvHeader and objectToCsvBody', () => {
@@ -29,6 +29,6 @@ describe('objectToCsvHeader and objectToCsvBody', () => {
     // important to make sure header ans body columns are aligned
     const header = objectToCsvHeader(testData[0]);
     const body = objectToCsvBody(testData);
-    expect(header + body).toEqual(csvString);
+    expect(header + body).toEqual(csvString.replace(/,/g, ';'));
   });
 });

@@ -1,7 +1,7 @@
 import * as CSV from 'csv-string';
 
 type Row = { [key: string]: any };
-const separator = ',';
+const separator = ';';
 
 export const objectToCsvHeader = (row: Row) => {
   const csvHeader = Object.keys(row);
