@@ -123,6 +123,24 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   sijaintiraide_tyyppi: undefined,
 };
 
+
+
+export type GeoviiteClientResultItem = {
+  ratametri: number;
+  sijaintiraide_kuvaus: string;
+  sijaintiraide_tyyppi: string;
+  ratametri_desimaalit: number;
+  sijaintiraide_oid: string;
+  ratanumero_oid: string;
+  sijaintiraide: string;
+  valimatka: number;
+  x: number;
+  ratanumero: string;
+  y: number;
+  id: number;
+  ratakilometri: number;
+}
+
 export class GeoviiteClient {
   private baseUrl: string;
   private axiosClient: AxiosInstance;
@@ -137,10 +155,7 @@ export class GeoviiteClient {
     lat: number,
     long: number,
     extraPathParams?: trackAddressWithCoordinatePathParams,
-    extraPostParams?: Omit<
-      trackAddressWithCoordinatePostParams,
-      'x' | 'y'
-    >,
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
   ): Promise<any> {
     const postParams: trackAddressWithCoordinatePostParams = {
       x: long,
@@ -162,10 +177,7 @@ export class GeoviiteClient {
   async getConvertedTrackAddressesWithCoords(
     coords: Array<{ lat: number; long: number }>,
     extraPathParams?: trackAddressWithCoordinatePathParams,
-    extraPostParams?: Omit<
-      trackAddressWithCoordinatePostParams,
-      'x' | 'y'
-    >,
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
   ): Promise<any> {
     const postParamsArray = coords.map(latlong => {
       return {
@@ -186,7 +198,7 @@ export class GeoviiteClient {
     return resultData;
   }
 
-  private convertResultToRaitaStyle(
+  private mergeIdsToResults(
     resultData: GetConvertedTrackAddressesWithCoordsResultType,
     ids: Array<{
       id: number;
@@ -196,8 +208,6 @@ export class GeoviiteClient {
     for (let [index, val] of resultData.features.entries()) {
       resultArray.push({ id: ids[index].id, ...val.properties });
     }
-
-    console.log(resultArray);
     return resultArray;
   }
 
@@ -205,11 +215,8 @@ export class GeoviiteClient {
   async getConvertedTrackAddressesWithPrismaCoords(
     coords: Array<{ lat: Decimal | null; long: Decimal | null; id: number }>,
     extraPathParams?: trackAddressWithCoordinatePathParams,
-    extraPostParams?: Omit<
-      trackAddressWithCoordinatePostParams,
-      'x' | 'y'
-    >,
-  ): Promise<any> {
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
+  ): Promise<GeoviiteClientResultItem[]> {
     const postParamsArray = coords.map(latlong => {
       return {
         x: latlong.long?.toNumber(),
@@ -228,7 +235,10 @@ export class GeoviiteClient {
           : defaultTrackAddressWithCoordinatePathParams,
       );
 
-    const convertedResult = this.convertResultToRaitaStyle(resultData, coords);
+    const convertedResult: GeoviiteClientResultItem[] = this.mergeIdsToResults(
+      resultData,
+      coords,
+    );
 
     return convertedResult;
   }

@@ -6,7 +6,7 @@ import { log, logLambdaInitializationError } from '../../../utils/logger';
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
 import {
-  GeoviiteClient
+  GeoviiteClient, GeoviiteClientResultItem
 } from '../../geoviite/geoviiteClient';
 import {getEnvOrFail} from "../../../../utils";
 
@@ -67,9 +67,9 @@ export async function handleGeoviiteConversionProcess(
 
 
 
-    const clientResult: any = await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(mittausRows);
+    const convertedRows: GeoviiteClientResultItem[] = await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(mittausRows);
 
-    const convertedRows = clientResult.features;
+
     // TODO: fetch all results first, or save after fetching one batch?
 
     // save result in batches
@@ -91,7 +91,6 @@ export async function handleGeoviiteConversionProcess(
               id: result.id,
             },
             data: {
-              // TODO: actual values here
               geoviite_updated_at: timestamp,
               geoviite_konvertoitu_long: result.x,
               geoviite_konvertoitu_lat: result.y,
