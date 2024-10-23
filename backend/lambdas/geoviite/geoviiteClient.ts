@@ -84,8 +84,8 @@ type trackAddressWithCoordinatePathParams = {
   lisatiedot?: boolean;
   koordinaatisto?: string;
 };
-// Default vals for optional post params; if we happen to need such TODO
-//
+// Default vals for optional post params.
+// These are only used if the caller doesn't give any other post params than x and y; so if you give any extra post params it's your responsablity to give all the needed.
 // Params with 'undefined' values are not posted to Geoviite and Geoviite uses it's default values:
 //    geometriatiedot: false,
 //    lisatiedot: true,
