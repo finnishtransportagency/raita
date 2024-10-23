@@ -6,9 +6,10 @@ import { log, logLambdaInitializationError } from '../../../utils/logger';
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
 import {
-  GeoviiteClient, GeoviiteClientResultItem
+  GeoviiteClient,
+  GeoviiteClientResultItem,
 } from '../../geoviite/geoviiteClient';
-import {getEnvOrFail} from "../../../../utils";
+import { getEnvOrFail } from '../../../../utils';
 
 const init = () => {
   try {
@@ -40,7 +41,7 @@ export async function handleGeoviiteConversionProcess(
 ): Promise<void> {
   let key = '';
   const geoviiteHostname = getEnvOrFail('GEOVIITE_HOSTNAME');
-  const geoviiteClient =  new GeoviiteClient(geoviiteHostname);
+  const geoviiteClient = new GeoviiteClient(geoviiteHostname);
   const prismaClient = await prisma;
   try {
     withRequest(event, context);
@@ -65,16 +66,16 @@ export async function handleGeoviiteConversionProcess(
       },
     });
 
-
-
-    const convertedRows: GeoviiteClientResultItem[] = await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(mittausRows);
-
+    const convertedRows: GeoviiteClientResultItem[] =
+      await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
+        mittausRows,
+      );
 
     // TODO: fetch all results first, or save after fetching one batch?
 
     // save result in batches
     const batchSize = 100;
-    const batches: (typeof convertedRows)[] = [];
+    const batches: GeoviiteClientResultItem[][] = [];
     for (let i = 0; i < convertedRows.length; i += batchSize) {
       batches.push(convertedRows.slice(i, i + batchSize));
     }
@@ -85,7 +86,7 @@ export async function handleGeoviiteConversionProcess(
       const batch = batches[batchIndex];
       await prismaClient.$transaction(
         // transaction to group multiple updates in one connection
-        batch.map((result:any) =>
+        batch.map((result: GeoviiteClientResultItem) =>
           prismaClient.mittaus.update({
             where: {
               id: result.id,
@@ -96,10 +97,12 @@ export async function handleGeoviiteConversionProcess(
               geoviite_konvertoitu_lat: result.y,
               geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
               geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
-              geoviite_konvertoitu_rata_metrit: result.ratametri + result.ratametri_desimaalit,
-              geoviite_konvertoitu_raide_numero  : result.sijaintiraide,
+              geoviite_konvertoitu_rata_metrit:
+                result.ratametri.toString() + '.' + result.ratametri_desimaalit.toString(),
+              geoviite_konvertoitu_raide_numero: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
               geoviite_valimatka: result.valimatka,
-              geoviite_sijaintiraide_kuvaus : result.sijaintiraide_kuvaus,
+              geoviite_sijaintiraide: result.sijaintiraide,
+              geoviite_sijaintiraide_kuvaus: result.sijaintiraide_kuvaus,
               geoviite_sijaintiraide_tyyppi: result.sijaintiraide_tyyppi,
               geoviite_sijaintiraide_oid: result.sijaintiraide_oid,
               geoviite_ratanumero_oid: result.ratanumero_oid,
