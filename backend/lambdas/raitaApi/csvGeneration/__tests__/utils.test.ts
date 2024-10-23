@@ -4,7 +4,9 @@ import {
   mapMittausRowsToCsvRow,
   objectToCsvBody,
   objectToCsvHeader,
+  writeDbChunkToStream,
 } from '../utils';
+import { PassThrough } from 'stream';
 
 const testData = [
   [
@@ -90,49 +92,48 @@ describe('objectToCsvHeader and objectToCsvBody', () => {
   });
 });
 
+const testMittaus1: MittausDbResult = {
+  id: 1,
+  raportti_id: 1001,
+  rata_kilometri: 1,
+  rata_metrit: new Prisma.Decimal(1.0),
+  lat: new Prisma.Decimal(1),
+  long: new Prisma.Decimal(2),
+  track: 'track 1',
+  jarjestelma: jarjestelma.OHL,
+  siksak_1: new Prisma.Decimal(1),
+  siksak_2: new Prisma.Decimal(1.2),
+  korkeus_1: new Prisma.Decimal(12),
+};
+const testMittaus2: MittausDbResult = {
+  id: 2,
+  raportti_id: 1002,
+  rata_kilometri: 1,
+  rata_metrit: new Prisma.Decimal(1.0),
+  lat: new Prisma.Decimal(1),
+  long: new Prisma.Decimal(2),
+  track: 'track 1',
+  jarjestelma: jarjestelma.OHL,
+  siksak_1: new Prisma.Decimal(2),
+  siksak_2: new Prisma.Decimal(2.2),
+  korkeus_1: new Prisma.Decimal(123),
+};
+const differentRataosoiteMittaus: MittausDbResult = {
+  id: 3,
+  raportti_id: 1003,
+  rata_kilometri: 123,
+  rata_metrit: new Prisma.Decimal(1.0),
+  lat: new Prisma.Decimal(1),
+  long: new Prisma.Decimal(2),
+  track: 'track 1',
+  jarjestelma: jarjestelma.OHL,
+  siksak_1: new Prisma.Decimal(2),
+  siksak_2: new Prisma.Decimal(2.2),
+  korkeus_1: new Prisma.Decimal(123),
+};
 describe('mapMittausRowsToCsvRows', () => {
-  const mittaus1: MittausDbResult = {
-    id: 1,
-    raportti_id: 1001,
-    rata_kilometri: 1,
-    rata_metrit: new Prisma.Decimal(1.0),
-    lat: new Prisma.Decimal(1),
-    long: new Prisma.Decimal(2),
-    track: 'track 1',
-    jarjestelma: jarjestelma.OHL,
-    siksak_1: new Prisma.Decimal(1),
-    siksak_2: new Prisma.Decimal(1.2),
-    korkeus_1: new Prisma.Decimal(12),
-  };
-  const mittaus2: MittausDbResult = {
-    id: 2,
-    raportti_id: 1002,
-    rata_kilometri: 1,
-    rata_metrit: new Prisma.Decimal(1.0),
-    lat: new Prisma.Decimal(1),
-    long: new Prisma.Decimal(2),
-    track: 'track 1',
-    jarjestelma: jarjestelma.OHL,
-    siksak_1: new Prisma.Decimal(2),
-    siksak_2: new Prisma.Decimal(2.2),
-    korkeus_1: new Prisma.Decimal(123),
-  };
-  const differentRataosoiteMittaus: MittausDbResult = {
-    id: 2,
-    raportti_id: 1003,
-    rata_kilometri: 123,
-    rata_metrit: new Prisma.Decimal(1.0),
-    lat: new Prisma.Decimal(1),
-    long: new Prisma.Decimal(2),
-    track: 'track 1',
-    jarjestelma: jarjestelma.OHL,
-    siksak_1: new Prisma.Decimal(2),
-    siksak_2: new Prisma.Decimal(2.2),
-    korkeus_1: new Prisma.Decimal(123),
-  };
-
   test('success: basic operation', () => {
-    const mittausRows: MittausDbResult[] = [mittaus1, mittaus2];
+    const mittausRows: MittausDbResult[] = [testMittaus1, testMittaus2];
     const raporttiRows = [
       {
         id: 1001,
@@ -182,7 +183,7 @@ describe('mapMittausRowsToCsvRows', () => {
     ]);
   });
   test('success: missing mittaus for one raportti', () => {
-    const mittausRows: MittausDbResult[] = [mittaus1, mittaus2];
+    const mittausRows: MittausDbResult[] = [testMittaus1, testMittaus2];
     const raporttiRows = [
       {
         id: 1001,
@@ -249,8 +250,8 @@ describe('mapMittausRowsToCsvRows', () => {
   });
   test('error: different rataosoite', () => {
     const mittausRows: MittausDbResult[] = [
-      mittaus1,
-      mittaus2,
+      testMittaus1,
+      testMittaus2,
       differentRataosoiteMittaus,
     ];
     const raporttiRows = [
@@ -272,5 +273,102 @@ describe('mapMittausRowsToCsvRows', () => {
     expect(() =>
       mapMittausRowsToCsvRow(mittausRows, raporttiRows, selectedColumns),
     ).toThrow();
+  });
+});
+
+describe('writeDbChunkToStream', () => {
+  test('success: normal operation', () => {
+    const mittausRows = [testMittaus1, testMittaus2];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+    const mockStream = new PassThrough();
+    mockStream.write = jest.fn();
+    const writeHeader = true;
+    const raporttiInSystem = [
+      { id: 1001, inspection_date: new Date('2024-01-01') },
+      { id: 1002, inspection_date: new Date('2024-01-02') },
+    ];
+    writeDbChunkToStream(
+      mittausRows,
+      selectedColumns,
+      mockStream,
+      writeHeader,
+      raporttiInSystem,
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      'rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledTimes(2);
+  });
+  test('success: some missing entries', () => {
+    const mittausRows = [
+      testMittaus1,
+      testMittaus2,
+      differentRataosoiteMittaus,
+    ];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+    const mockStream = new PassThrough();
+    mockStream.write = jest.fn();
+    const writeHeader = true;
+    const raporttiInSystem = [
+      { id: 1001, inspection_date: new Date('2024-01-01') },
+      { id: 1002, inspection_date: new Date('2024-01-02') },
+      { id: 1003, inspection_date: new Date('2024-01-02') },
+    ];
+    writeDbChunkToStream(
+      mittausRows,
+      selectedColumns,
+      mockStream,
+      writeHeader,
+      raporttiInSystem,
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      'rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123;02.01.2024;;\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '123+0001.00;01.01.2024;;;02.01.2024;;;02.01.2024;2;123\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledTimes(3);
+  });
+  test('success: some missing entries', () => {
+    const mittausRows = [testMittaus1, testMittaus2, testMittaus1];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+    const mockStream = new PassThrough();
+    mockStream.write = jest.fn();
+    const writeHeader = true;
+    const raporttiInSystem = [
+      { id: 1001, inspection_date: new Date('2024-01-01') },
+      { id: 1002, inspection_date: new Date('2024-01-02') },
+    ];
+    writeDbChunkToStream(
+      mittausRows,
+      selectedColumns,
+      mockStream,
+      writeHeader,
+      raporttiInSystem,
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      'rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '1+0001.00;01.01.2024;1;12;02.01.2024;;\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledTimes(3);
   });
 });

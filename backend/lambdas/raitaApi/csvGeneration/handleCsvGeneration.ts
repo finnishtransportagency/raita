@@ -13,12 +13,7 @@ import { getPrismaClient } from '../../../utils/prismaClient';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { ProgressStatus, uploadProgressData } from '../handleZipRequest/utils';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import {
-  objectToCsvBody,
-  objectToCsvHeader,
-  mapMittausRowsToCsvRow,
-  getRataosoite,
-} from './utils';
+import { writeDbChunkToStream } from './utils';
 import {
   getMittausFieldsPerSystem,
   getRaporttiWhereInput,
@@ -343,40 +338,13 @@ const readDbToReadable = async (
             rowCountToRead,
             selectedColumns,
           );
-          let mittausRowIndex = 0;
-          while (mittausRowIndex < mittausRows.length) {
-            const mittaus = mittausRows[mittausRowIndex];
-            const rataosoite = getRataosoite(mittaus);
-            // array is sorted by rataosoite
-            // get mittaus rows with same rataosoite from rowStart (inclusive) to rowEnd(exclusive)
-            const rowStart = mittausRowIndex;
-            let rowEnd = rowStart + 1;
-            while (
-              rowEnd < mittausRows.length &&
-              getRataosoite(mittausRows[rowEnd]) === rataosoite
-            ) {
-              rowEnd++;
-            }
-            const mittausBuffer: MittausDbResult[] = mittausRows.slice(
-              rowStart,
-              rowEnd,
-            );
-            // convert rows of same rataosoite to a single csv row
-            const row: CsvRow = mapMittausRowsToCsvRow(
-              mittausBuffer,
-              raporttiInSystem,
-              selectedColumns.concat(defaultSelectedColumns),
-            );
-            const writeHeader =
-              systemIndex === 0 &&
-              partIndexInSystem === 0 &&
-              mittausRowIndex === 0;
-            if (writeHeader) {
-              outputStream.write(objectToCsvHeader(row), 'utf8');
-            }
-            outputStream.write(objectToCsvBody([row]), 'utf8');
-            mittausRowIndex = rowEnd;
-          }
+          writeDbChunkToStream(
+            mittausRows,
+            selectedColumns.concat(defaultSelectedColumns),
+            outputStream,
+            systemIndex === 0 && partIndexInSystem === 0,
+            raporttiInSystem,
+          );
         }
       }
       outputStream.end();

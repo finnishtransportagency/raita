@@ -3,6 +3,7 @@ import { CsvRow, MittausDbResult } from './types';
 import { Decimal } from '@prisma/client/runtime/library';
 import { compareAsc, format } from 'date-fns';
 import { log } from '../../../utils/logger';
+import { Writable } from 'stream';
 
 const separator = ';';
 
@@ -119,4 +120,65 @@ export const getRataosoite = (mittaus: MittausDbResult) => {
         }).format(rata_metrit.toNumber())
       : ''
   }`;
+};
+
+export const writeDbChunkToStream = (
+  mittausRows: MittausDbResult[],
+  selectedColumns: string[],
+  outputStream: Writable,
+  writeHeader: boolean,
+  raporttiInSystem: { id: number; inspection_date: Date | null }[],
+) => {
+  let mittausRowIndex = 0;
+  while (mittausRowIndex < mittausRows.length) {
+    const mittaus = mittausRows[mittausRowIndex];
+    const rataosoite = getRataosoite(mittaus);
+    // array is sorted by rataosoite
+    // get mittaus rows with same rataosoite from rowStart (inclusive) to rowEnd(exclusive)
+    const rowStart = mittausRowIndex;
+    let rowEnd = rowStart + 1;
+    while (
+      rowEnd < mittausRows.length &&
+      getRataosoite(mittausRows[rowEnd]) === rataosoite
+    ) {
+      rowEnd++;
+    }
+    const sameRataosoite: MittausDbResult[] = mittausRows.slice(
+      rowStart,
+      rowEnd,
+    );
+    // check if there are duplicates: same rataosoite from the same raportti
+    // these will be put in separate rows
+    let duplicates: MittausDbResult[] = [];
+    let nonDuplicates: MittausDbResult[] = [];
+    sameRataosoite.forEach(mittaus => {
+      if (
+        nonDuplicates.filter(m => m.raportti_id === mittaus.raportti_id).length
+      ) {
+        duplicates.push(mittaus);
+      } else {
+        nonDuplicates.push(mittaus);
+      }
+    });
+    // convert rows of same rataosoite to a single csv row
+    const row: CsvRow = mapMittausRowsToCsvRow(
+      nonDuplicates,
+      raporttiInSystem,
+      selectedColumns,
+    );
+    if (writeHeader && rowStart === 0) {
+      outputStream.write(objectToCsvHeader(row), 'utf8');
+    }
+    outputStream.write(objectToCsvBody([row]), 'utf8');
+    // put each duplicate into its own row
+    duplicates.forEach(mittaus => {
+      const duplicateRow: CsvRow = mapMittausRowsToCsvRow(
+        [mittaus],
+        raporttiInSystem,
+        selectedColumns,
+      );
+      outputStream.write(objectToCsvBody([duplicateRow]), 'utf8');
+    });
+    mittausRowIndex = rowEnd;
+  }
 };
