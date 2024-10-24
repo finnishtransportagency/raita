@@ -122,6 +122,17 @@ export const getRataosoite = (mittaus: MittausDbResult) => {
   }`;
 };
 
+/**
+ * Write the given mittausRows to a writable stream, with mittaus entries from the same rataosoite combined on the same row. Adds every column in selectedColumns to the csv for each raportti entry.
+ *
+ * TODO: some other way to combine mittaus data in the same row?
+ *
+ * @param mittausRows This needs to be sorted by rata_kilometri and rata_metrit
+ * @param selectedColumns List of column names that should appear in the csv per mittaus. Some values added by default: rataosoite for each row, date for each mittaus
+ * @param outputStream
+ * @param writeHeader Should csv header be written in the first row?
+ * @param raporttiInSystem List of raportti entries that are related to the mittausRows. For each entry in this list, the columns according to selectedColumns are added to the result.
+ */
 export const writeDbChunkToStream = (
   mittausRows: MittausDbResult[],
   selectedColumns: string[],
