@@ -500,12 +500,6 @@ export class RaitaApiStack extends NestedStack {
         path: [`${apiBaseUrl}/ext/v2/graphql`],
         targetName: 'ext-v2-graphql',
       },
-      {
-        lambda: this.handleV2GraphqlRequest,
-        priority: 520,
-        path: [`${apiBaseUrl}/ext/v2/graphql`],
-        targetName: 'ext-v2-graphql',
-      },
       // Note: delete request is missing from ext on purpose
     ];
 
