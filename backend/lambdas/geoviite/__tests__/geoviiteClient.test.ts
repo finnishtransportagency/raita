@@ -1,12 +1,10 @@
-import {
-  GeoviiteClient
-} from '../geoviiteClient';
+import { GeoviiteClient } from '../geoviiteClient';
 
 import { log } from '../../../utils/logger';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
-import {jest} from "@jest/globals";
+import { jest } from '@jest/globals';
 
-const client = new GeoviiteClient('https://avoinapi.testivaylapilvi.fi/');
+const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -26,12 +24,14 @@ describe('geoviite single point with default params', () => {
     }
 
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
-    expect(loggings.includes('path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258')).toBeTruthy();
+
     expect(
       loggings.includes(
-        'Post data: [{"x":25.7482,"y":61.9241}]',
+        'path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258',
       ),
+    ).toBeTruthy();
+    expect(
+      loggings.includes('Post data: [{"x":25.7482,"y":61.9241}]'),
     ).toBeTruthy();
   });
 });
@@ -63,7 +63,7 @@ describe('geoviite single point with a custom path param and extra post params',
     }
 
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
+
     log.info(loggings);
     expect(
       loggings.includes(
@@ -71,9 +71,7 @@ console.log(loggings);
       ),
     ).toBeTruthy();
     expect(
-      loggings.includes(
-        'Post data: [{"x":257482,"y":619241,"sade":120}]',
-      ),
+      loggings.includes('Post data: [{"x":257482,"y":619241,"sade":120}]'),
     ).toBeTruthy();
   });
 });
@@ -98,7 +96,7 @@ describe('geoviite single point with two custom path params', () => {
     }
 
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
+
     log.info(loggings);
     expect(
       loggings.includes(
@@ -106,9 +104,7 @@ console.log(loggings);
       ),
     ).toBeTruthy();
     expect(
-      loggings.includes(
-        'Post data: [{"x":25.7482,"y":61.9241}]',
-      ),
+      loggings.includes('Post data: [{"x":25.7482,"y":61.9241}]'),
     ).toBeTruthy();
   });
 });
@@ -123,14 +119,19 @@ describe('geoviite multiple points with default params', () => {
     ];
 
     try {
-      const converted = await client.getConvertedTrackAddressesWithCoords(points);
+      const converted =
+        await client.getConvertedTrackAddressesWithCoords(points);
       log.info(converted, 'converted');
     } catch (error) {
       //testing our api request format; response error ignored
     }
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
-    expect(loggings.includes('path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258')).toBeTruthy();
+
+    expect(
+      loggings.includes(
+        'path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258',
+      ),
+    ).toBeTruthy();
     expect(
       loggings.includes(
         'Post data: [{"x":25.7482,"y":61.9241},{"x":24.7182,"y":61.5641},{"x":25.1482,"y":61.1231}]',
@@ -156,9 +157,12 @@ describe('geoviite multiple points with Prisma coords', () => {
       //testing our api request format; response error ignored
     }
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
 
-    expect(loggings.includes('path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258')).toBeTruthy();
+    expect(
+      loggings.includes(
+        'path: rata-vkm/v1/rataosoitteet?koordinaatisto=EPSG%3A4258',
+      ),
+    ).toBeTruthy();
     expect(
       loggings.includes(
         'Post data: [{"x":25.7482,"y":61.9241},{"x":24.7182,"y":61.5641},{"x":25.1482,"y":61.1231}]',
@@ -202,7 +206,7 @@ describe('geoviite multiple points with extra params', () => {
       //testing our api request format; response error ignored
     }
     const loggings = logSpy.mock.calls.map(call => call.toString());
-console.log(loggings);
+
     log.info(loggings);
     expect(
       loggings.includes(
