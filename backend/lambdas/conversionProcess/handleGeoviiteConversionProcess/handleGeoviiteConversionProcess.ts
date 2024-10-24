@@ -53,6 +53,7 @@ export async function handleGeoviiteConversionProcess(
     log.info({ key }, 'Start conversion');
 
     // TODO: can row count be too large to fetch in one query?
+    // Yes, a raportti can have 500 0000 mittauses. Geoviite has made an initial promise of 1000 per conversion.
     const mittausRows = await prismaClient.mittaus.findMany({
       where: {
         raportti: {
@@ -90,6 +91,11 @@ export async function handleGeoviiteConversionProcess(
           prismaClient.mittaus.update({
             where: {
               id: result.id,
+              // Sadly checking mittaus.id not enough. Mittaus subtables can share id.
+              // See: https://stackoverflow.com/questions/56637251/violation-of-uniqueness-in-primary-key-when-using-inheritance
+              raportti: {
+                key,
+              },
             },
             data: {
               geoviite_updated_at: timestamp,
@@ -98,7 +104,10 @@ export async function handleGeoviiteConversionProcess(
               geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
               geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
               geoviite_konvertoitu_rata_metrit:
-                result.ratametri.toString() + '.' + result.ratametri_desimaalit.toString(),
+                result.ratametri.toString() +
+                '.' +
+                result.ratametri_desimaalit.toString(),
+              geoviite_konvertoitu_rataosuus_nimi: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
               geoviite_konvertoitu_raide_numero: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
               geoviite_valimatka: result.valimatka,
               geoviite_sijaintiraide: result.sijaintiraide,
