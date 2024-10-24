@@ -6,43 +6,82 @@ import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry, ParseValueResult } from '../../../../types';
 import { Raportti } from './model/Raportti';
+import { getPrismaClient } from '../../../../utils/prismaClient';
+import {
+  convertDataToAMSMittausArray,
+  convertDataToOhlMittausArray,
+  convertDataToPiMittausArray,
+  convertDataToRcMittausArray,
+  convertDataToRpMittausArray,
+  convertDataToTgMittausArray,
+  convertDataToTsightMittausArray,
+} from './converters/dataConverters';
+import { jarjestelma, PrismaClient } from '@prisma/client';
 
 let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getDBConnection(): Promise<{
-  schema: string;
-  sql: postgres.Sql<{}>;
-}> {
+export async function getPostgresDBConnection(): Promise<PostgresDBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
   const sql = await getConnection();
   return { schema, sql };
 }
 
-export type DBConnection = { schema: string; sql: postgres.Sql<{}> };
+export async function getDBConnection(): Promise<DBConnection> {
+  const schema = getEnvOrFail('RAITA_PGSCHEMA');
+  const sql = await getConnection();
+  const prisma = await getPrismaClient();
+
+  return { schema, sql, prisma };
+}
+
+export type DBConnection = {
+  schema: string;
+  sql: postgres.Sql<{}>;
+  prisma: PrismaClient;
+};
+export type PostgresDBConnection = {
+  schema: string;
+  sql: postgres.Sql<{}>;
+};
 
 export async function writeRowsToDB(
   parsedCSVRows: any[],
   table: string,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql } = dbConnection;
-
+  const { schema, sql, prisma } = dbConnection;
   try {
-    const rows = await sql`INSERT INTO ${sql(schema)}.${sql(table)} ${sql(
-      parsedCSVRows,
-    )} returning latitude, longitude, id`.catch(e => {
-      log.error(e);
-      throw e;
-    });
-    //  await populateGisPoints(rows, schema, table, sql);
-    //  log.info("populatedGisPoints ");
-
-    return rows.length;
+    let count;
+    switch (table) {
+      case TableEnum.AMS:
+        count = addAMSMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.OHL:
+        count = addOHLMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.PI:
+        count = addPIMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.RC:
+        count = addRCMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.RP:
+        count = addRPMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.TG:
+        count = addTGMittausRecord(prisma, parsedCSVRows);
+        break;
+      case TableEnum.TSIGHT:
+        count = addTsightMittausRecord(prisma, parsedCSVRows);
+        break;
+      default:
+        throw new Error(`Unhandled table type: ${table}`);
+    }
+    return count;
   } catch (e) {
-    // log.error('Error inserting measurement data: ' + table + ' ' + e);
-    // log.error(e);
+    log.error('Error inserting measurement data: ' + table + ' ' + e);
     throw e;
   }
 }
@@ -256,12 +295,15 @@ export async function emptyRaporttiMittausRows(
   reportId: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   try {
-    const result = await sql`DELETE FROM ${sql(
-      schema,
-    )}.mittaus WHERE raportti_id = ${reportId}`;
-    log.info({ result: result[0] }, 'Deleted mittaus rows');
+    const result = await prisma.mittaus.deleteMany({
+      where: {
+        raportti_id: reportId, // Assuming reportId is the variable that holds the ID you want to delete
+      },
+    });
+
+    log.info({ result: result }, 'Deleted mittaus rows');
   } catch (error) {
     log.error({ error, reportId }, 'Error deleting mittaus rows');
     throw error;
@@ -274,21 +316,21 @@ export async function updateRaporttiStatus(
   error: null | string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
   }
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
-                            SET status = ${status},
-                                error  = ${errorSubstring}
-                            WHERE id = ${id}
-                            AND (status IS NULL
-                            OR status <> 'ERROR');`.catch(e => {
-      log.error('Error updateRaporttiStatus: ' + e);
-
-      throw e;
+    const updatedRaportti = await prisma.raportti.updateMany({
+      where: {
+        id: id,
+        OR: [{ status: null }, { status: { not: 'ERROR' } }],
+      },
+      data: {
+        status: status,
+        error: errorSubstring,
+      },
     });
   } catch (e) {
     log.error('Error updating raportti status');
@@ -302,11 +344,12 @@ export async function updateRaporttiMetadataStatus(
   status: string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   try {
-    const a = await sql`UPDATE ${sql(schema)}.raportti
-                            SET metadata_status = ${status}
-                            WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { metadata_status: status },
+    });
   } catch (error) {
     log.error({ error }, 'Error updating raportti metadata_status');
     throw error;
@@ -346,13 +389,18 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
       size: metaDataEntry.size,
       hash: metaDataEntry.hash,
       ...metaDataEntry.metadata,
+      track_number: metaDataEntry.metadata.track_number?.toString(),
+      system:
+        metaDataEntry.metadata.system == 'LSI-TSI'
+          ? jarjestelma.LSI_TSI
+          : (metaDataEntry.metadata.system as jarjestelma),
     };
     try {
       let id;
@@ -362,11 +410,9 @@ export async function updateRaporttiMetadata(
         throw new Error('ReportID undefined');
       }
       try {
-        const rowList = await sql`UPDATE ${sql(schema)}.raportti
-                                  set ${sql(raporttiData)}
-                                  WHERE id = ${id};`.catch(e => {
-          log.error('Error updating metadata to db: ' + e);
-          throw e;
+        await prisma.raportti.update({
+          where: { id: id },
+          data: raporttiData,
         });
         if (parsingErrors) {
           await updateRaporttiMetadataStatus(id, 'ERROR', dbConnection);
@@ -390,12 +436,13 @@ export async function updateRaporttiChunks(
   chunks: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await sql`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = ${chunks} WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: { chunks_to_process: chunks },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -408,12 +455,17 @@ export async function substractRaporttiChunk(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   try {
-    const a = await sql`UPDATE ${sql(
-      schema,
-    )}.raportti SET chunks_to_process = chunks_to_process - 1  WHERE id = ${id};`;
+    const a = await prisma.raportti.update({
+      where: { id: id },
+      data: {
+        chunks_to_process: {
+          decrement: 1,
+        },
+      },
+    });
   } catch (e) {
     log.error('Error updating raportti status');
     log.error(e);
@@ -426,16 +478,16 @@ export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql } = dbConnection;
-  try {
-    const chunks = await sql`SELECT chunks_to_process FROM ${sql(
-      schema,
-    )}.raportti  WHERE id = ${id};`.catch(e => {
-      log.error(e);
-      throw e;
-    });
+  const { schema, sql, prisma } = dbConnection;
 
-    return Number(chunks[0].chunks_to_process);
+  try {
+    const chunks = await prisma.raportti.findUnique({
+      where: { id: id },
+      select: {
+        chunks_to_process: true,
+      },
+    });
+    return Number(chunks);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
@@ -458,14 +510,18 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
   try {
-    const [id] = await sql`INSERT INTO ${sql(schema)}.raportti ${sql(
-      data,
-    )} returning id`;
-    log.debug(id);
-
-    return id.id;
+    const raportti = await prisma.raportti.create({
+      data: {
+        key: key,
+        status: status,
+        file_name: fileName,
+        chunks_to_process: -1,
+        events: null,
+      },
+    });
+    return raportti.id;
   } catch (e) {
     log.error('Error inserting raportti data');
     log.error(e);
@@ -479,14 +535,128 @@ export async function writeMissingColumnsToDb(
   columnNames: string[],
   dbConnection: DBConnection,
 ): Promise<void> {
-  const { schema, sql } = dbConnection;
+  const { schema, sql, prisma } = dbConnection;
 
   const values = columnNames.map(name => ({
     raportti_id: reportId,
     column_name: name,
   }));
 
-  await sql`INSERT INTO ${sql(schema)}.puuttuva_kolumni ${sql(
-    values,
-  )} ON CONFLICT DO NOTHING`; // conflict comes from unique constraint when this is ran for each file chunk
+  const a = await prisma.puuttuva_kolumni.createMany({
+    data: values,
+    skipDuplicates: true,
+  }); // conflict comes from unique constraint when this is ran for each file chunk
+}
+
+async function addAMSMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
+    const recordCount = await prisma.ams_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
+}
+async function addOHLMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
+    const recordCount = await prisma.ohl_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions OHL`);
+  }
+}
+
+async function addPIMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToPiMittausArray(parsedCSVRows);
+    const recordCount = await prisma.pi_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions PI`);
+  }
+}
+
+async function addRCMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToRcMittausArray(parsedCSVRows);
+    const recordCount = await prisma.rc_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
+}
+
+async function addRPMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToRpMittausArray(parsedCSVRows);
+    const recordCount = await prisma.rp_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions`);
+  }
+}
+
+async function addTGMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToTgMittausArray(parsedCSVRows);
+    const recordCount = await prisma.tg_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions TG`);
+  }
+}
+
+async function addTsightMittausRecord(
+  prisma: PrismaClient,
+  parsedCSVRows: any[],
+): Promise<number> {
+  try {
+    const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
+    const recordCount = await prisma.tsight_mittaus.createMany({
+      data: convertedData,
+    });
+    return recordCount.count;
+  } catch {
+    throw new Error(`Error in mittaus additions TSIGHT`);
+  }
+}
+enum TableEnum {
+  AMS = 'ams_mittaus',
+  OHL = 'ohl_mittaus',
+  PI = 'pi_mittaus',
+  RC = 'rc_mittaus',
+  RP = 'rp_mittaus',
+  TG = 'tg_mittaus',
+  TSIGHT = 'tsight_mittaus',
 }

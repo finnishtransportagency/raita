@@ -2,17 +2,12 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import {
-  S3EventSource,
-  SqsEventSource,
-} from 'aws-cdk-lib/aws-lambda-event-sources';
+import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
-import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
@@ -53,8 +48,6 @@ interface DataProcessStackProps extends NestedStackProps {
   readonly raitaEnv: RaitaEnvironment;
   readonly stackId: string;
   readonly vpc: IVpc;
-  readonly openSearchDomain: Domain;
-  readonly openSearchMetadataIndex: string;
   readonly parserConfigurationFile: string;
   readonly sftpPolicyAccountId: string;
   readonly sftpPolicyUserId: string;
@@ -82,8 +75,6 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       stackId,
       vpc,
-      openSearchDomain,
-      openSearchMetadataIndex,
       parserConfigurationFile,
       sftpPolicyAccountId,
       sftpPolicyUserId,
@@ -309,11 +300,9 @@ export class DataProcessStack extends NestedStack {
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
       name: 'dp-handler-inspection-file',
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
       configurationBucketName: configurationBucket.bucketName,
       inspectionBucketName: this.inspectionDataBucket.bucketName,
       csvBucketName: this.csvDataBucket.bucketName,
-      openSearchMetadataIndex: openSearchMetadataIndex,
       configurationFile: parserConfigurationFile,
       lambdaRole: this.dataProcessorLambdaServiceRole,
       raitaStackIdentifier,
@@ -330,11 +319,6 @@ export class DataProcessStack extends NestedStack {
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
     this.inspectionDataBucket.grantRead(this.handleInspectionFileEventFn);
     this.csvDataBucket.grantReadWrite(this.handleInspectionFileEventFn);
-    // Grant lamba permissions to OpenSearch index
-    openSearchDomain.grantIndexReadWrite(
-      openSearchMetadataIndex,
-      this.handleInspectionFileEventFn,
-    );
 
     // route inspection s3 events through a queue
     const inspectionQueue = new Queue(this, 'inspection-queue', {
@@ -359,6 +343,7 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
+      prismaLambdaLayer,
     });
 
     const csvAlarms = this.createCSVHandlerAlarms(
@@ -386,9 +371,7 @@ export class DataProcessStack extends NestedStack {
     // Create csv data parser lambda for mass import that is triggered from csv-mass-import bucket so existing csv files can be imported separately from normal data process, grant permissions and create event sources
     this.handleCSVFileMassImportEventFn =
       this.createCsvFileMassImportEventHandler({
-        openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
         inspectionBucketName: this.inspectionDataBucket.bucketName,
-        openSearchMetadataIndex: openSearchMetadataIndex,
         name: 'dp-handler-csv-file-mass-import',
         csvMassImportBucketName: this.csvMassImportDataBucket.bucketName,
         csvBucketName: this.csvDataBucket.bucketName,
@@ -501,12 +484,10 @@ export class DataProcessStack extends NestedStack {
    */
   private createInspectionFileEventHandler({
     name,
-    openSearchDomainEndpoint,
     configurationBucketName,
     inspectionBucketName,
     csvBucketName,
     configurationFile,
-    openSearchMetadataIndex,
     lambdaRole,
     raitaStackIdentifier,
     vpc,
@@ -515,13 +496,11 @@ export class DataProcessStack extends NestedStack {
     prismaLambdaLayer,
   }: {
     name: string;
-    openSearchDomainEndpoint: string;
     configurationBucketName: string;
     inspectionBucketName: string;
     csvBucketName: string;
     configurationFile: string;
     lambdaRole: iam.Role;
-    openSearchMetadataIndex: string;
     raitaStackIdentifier: string;
     vpc: IVpc;
     raitaEnv: string;
@@ -546,15 +525,12 @@ export class DataProcessStack extends NestedStack {
       ),
       reservedConcurrentExecutions: 100,
       environment: {
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         CONFIGURATION_BUCKET: configurationBucketName,
         INSPECTION_BUCKET: inspectionBucketName,
         CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
-        METADATA_INDEX: openSearchMetadataIndex,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
-        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'true',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -812,6 +788,7 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier,
     vpc,
     databaseEnvironmentVariables,
+    prismaLambdaLayer,
   }: {
     name: string;
     csvBucketName: string;
@@ -820,6 +797,7 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier: string;
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -837,6 +815,8 @@ export class DataProcessStack extends NestedStack {
         REGION: this.region,
         ...databaseEnvironmentVariables,
       },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       role: lambdaRole,
       vpc,
       vpcSubnets: {
@@ -855,8 +835,6 @@ export class DataProcessStack extends NestedStack {
     csvBucketName,
     configurationFile,
     configurationBucketName,
-    openSearchMetadataIndex,
-    openSearchDomainEndpoint,
     inspectionBucketName,
     lambdaRole,
     raitaStackIdentifier,
@@ -869,9 +847,7 @@ export class DataProcessStack extends NestedStack {
     csvBucketName: string;
     configurationFile: string;
     configurationBucketName: string;
-    openSearchDomainEndpoint: string;
     inspectionBucketName: string;
-    openSearchMetadataIndex: string;
     lambdaRole: iam.Role;
     raitaStackIdentifier: string;
     vpc: IVpc;
@@ -897,12 +873,8 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         CONFIGURATION_BUCKET: configurationBucketName,
         REGION: this.region,
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
         INSPECTION_BUCKET: inspectionBucketName,
-        METADATA_INDEX: openSearchMetadataIndex,
         ENVIRONMENT: raitaEnv,
-        ALLOW_CSV_MASS_IMPORT_PARSING_IN_PROD: 'true',
-        ALLOW_CSV_INSPECTION_EVENT_PARSING_IN_PROD: 'undefined', //this has no effect here but cvsDataChopper needs it to be in the env
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
@@ -933,6 +905,15 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'reception-any-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `parsing-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
     const errorAlarm = new Alarm(this, 'reception-errors-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
@@ -945,7 +926,19 @@ export class DataProcessStack extends NestedStack {
         statistic: Stats.SUM,
       }),
     });
-    return [errorAlarm];
+    const anyErrorAlarm = new Alarm(this, 'reception-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `reception-any-errors-alarm-${raitaStackIdentifier}`,
+      metric: anyErrorMetricFilter.metric({
+        label: `Reception any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm, anyErrorAlarm];
   }
 
   /**

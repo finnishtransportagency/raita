@@ -1,168 +1,103 @@
-/**
- * @todo Handle empty search queries
- * @todo Handle form data validation
- */
-import { useState, useMemo, Fragment, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import {
+  useState,
+  Fragment,
+  useEffect,
+  SyntheticEvent,
+  useContext,
+} from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
+import Inline from 'yet-another-react-lightbox/plugins/inline';
 
-// TODO: this could be loaded dynamically using filename from config
 import * as cfg from 'shared/config';
 import { App, BannerType, ImageKeys, RaitaNextPage, Range } from 'shared/types';
 import { sizeformatter, takeOptionValues } from 'shared/util';
 
-import { makeFromMulti, makeQuery } from 'shared/query-builder';
-import { Button, TextInput, CopyToClipboard } from 'components';
+import {
+  Button,
+  TextInput,
+  CopyToClipboard,
+  Dropdown,
+  Modal,
+} from 'components';
 import { DateRange } from 'components';
-import FilterSelector from 'components/filters';
-import { Entry } from 'components/filters/selector';
-import MultiChoice from 'components/filters/multi-choice';
+import FilterSelector from 'components/filters-graphql';
+import MultiChoice from 'components/filters-graphql/multi-choice';
 import ResultsPager from 'components/results-pager';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
 
-import { useMetadataQuery, useSearch, useFileQuery } from '../../shared/hooks';
-import css from './reports.module.css';
+import { useFileQuery } from '../../shared/hooks';
+import css from '../reports/reports.module.css';
+
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
 import { ZipDownload } from 'components/zip-download';
 
 import { RaitaRole, useUser } from 'shared/user';
 import { Tooltip } from 'react-tooltip';
-
-//
+import { useLazyQuery, useQuery } from '@apollo/client';
+import { META, SEARCH_RAPORTTI } from 'shared/graphql/queries/reports';
+import {
+  DateTimeIntervalInput,
+  RaporttiInput,
+  Search_RaporttiQueryVariables,
+} from 'shared/graphql/__generated__/graphql';
+import {
+  FieldDict,
+  SelectorSupportedType,
+} from 'components/filters-graphql/selector';
+import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
+import { zipContext } from 'shared/zipContext';
+import { initialState as zipInitialState } from 'shared/zipContext';
 
 const initialState: ReportsState = {
-  text: '',
-  filters: {},
-  filter: [],
   resetFilters: false,
-  special: {
-    dateRange: { start: undefined, end: undefined },
-    fileType: undefined,
-    reportTypes: [],
-  },
-  subQueries: {
-    reportTypes: {},
-    fileTypes: {},
-  },
-  dateRange: {
-    end: undefined,
-    start: undefined,
-  },
-  reportTypes: [],
-  paging: {
-    size: cfg.paging.pageSize,
-    page: 1,
-  },
   debug: false,
-  waitingToUpdateMutation: false,
+  waitingToUpdateSearchQuery: false,
+  queryVariables: { page: 1, page_size: cfg.paging.pageSize, raportti: {} },
+  extraRaporttiQueryVariables: {},
 };
 
-//
+/**
+ * Fields that should not be shown in extra fields dropdown
+ */
+const disabledExtraFields = [
+  'file_name',
+  'inspection_date',
+  'inspection_datetime',
+  'system',
+  'track_part',
+  'tilirataosanumero',
+  'file_type',
+];
+
+const getQueryVariables = (state: ReportsState) => {
+  return {
+    ...state.queryVariables,
+    raportti: {
+      ...state.queryVariables.raportti,
+      ...state.extraRaporttiQueryVariables,
+    },
+  };
+};
 
 const ReportsIndex: RaitaNextPage = () => {
   const { t } = useTranslation(['common', 'metadata']);
-  const meta = useMetadataQuery();
-  const router = useRouter();
+  const meta = useQuery(META);
+  const [triggerInitialSearch, searchQuery] = useLazyQuery(SEARCH_RAPORTTI);
 
   const user = useUser();
-
-  const isDebug = !!(router.query['debug'] === '1');
-
+  const zipState = useContext(zipContext);
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-
-  // #region Special extra filters
-
-  const hasFileTypeFilter = !!state.special.fileType;
-  const hasRangeFilter =
-    !!state.special.dateRange?.start || !!state.special.dateRange?.end;
-
-  const fileTypeFilter: Entry = {
-    field: 'file_type',
-    type: 'match',
-    rel: 'eq',
-    value: state.special.fileType,
-  };
-
-  const dateRangeFilter = [
-    state?.special?.dateRange?.start
-      ? {
-          field: 'inspection_datetime',
-          type: 'range',
-          rel: 'gte',
-          value: state?.special?.dateRange?.start?.toISOString(),
-        }
-      : {},
-    state?.special?.dateRange?.end
-      ? {
-          field: 'inspection_datetime',
-          type: 'range',
-          rel: 'lte',
-          value: state?.special?.dateRange?.end?.toISOString(),
-        }
-      : {},
-  ]
-    .filter(R.complement(R.isEmpty))
-    .filter(x => !!x) as Entry[]; // <- because we like to roll like that
-
-  const reportTypeFilter = {
-    bool: {
-      should: state.special.reportTypes?.map(t => ({
-        match: {
-          [`metadata.report_type`]: t,
-        },
-      })),
-    },
-  };
-
-  // #endregion
-
-  const newFilters = [...state.filter, hasFileTypeFilter && fileTypeFilter]
-    .concat(hasRangeFilter ? dateRangeFilter : [])
-    .filter(R.identity) as Entry[];
-
-  /**
-   * Use query builder to get an OpenSearch query based on the filters
-   */
-  const query = useMemo(
-    () =>
-      makeQuery(
-        newFilters,
-        {
-          paging: {
-            curPage: state.paging.page,
-            size: state.paging.size,
-          },
-        },
-        Object.values(state.subQueries).filter(x => !R.isEmpty(x)),
-        state.text,
-      ),
-    [
-      newFilters,
-      reportTypeFilter,
-      state.subQueries,
-      state.paging.page,
-      state.text,
-    ],
-  );
-
-  /**
-   * Mutations in React Query lingo don't mutate data per se,
-   * they are more like invokable queries; where regular queries are meant to be
-   * more automatic, mutations are used for things where we want to explicitly
-   * make a query as a result of some action, e.g. like doing a POST request.
-   */
-  // #region Mutations
-
-  // Search mutation
-  const mutation = useSearch();
+  const [imagePage, setImagePage] = useState(1);
+  const [imageCount, setimageCount] = useState(0);
+  const [imageKey, setImageKey] = useState<string>();
 
   // S3 file URL endpoint mutation
   const getFileUrl = useFileQuery();
@@ -170,20 +105,28 @@ const ReportsIndex: RaitaNextPage = () => {
   // #endregion
 
   const doSearch = () => {
-    setState(R.assocPath(['paging', 'page'], 1));
-    setState(R.assocPath(['waitingToUpdateMutation'], true));
+    setState(R.assocPath(['queryVariables', 'page'], 1));
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+    localStorage.removeItem('zipUrl');
+    zipState.setState(zipInitialState);
+    triggerInitialSearch({
+      variables: getQueryVariables(state),
+    });
   };
 
   const resetSearch = () => {
     setState(() => JSON.parse(JSON.stringify(initialState)) as ReportsState);
     setState(R.assoc('resetFilters', true));
-    mutation.reset();
   };
 
   const handleImageUrlFetch = async (key: string) => {
     const keys = imageKeys.find(ik => ik.fileKey === key)?.imageKeys;
-    if (!keys) return;
-    return await Promise.all(keys.map(key => getFile(key).then(x => x.url)));
+    keys?.length && setimageCount(keys.length);
+    const slicedKeys = keys?.slice(imagePage, imagePage + 10);
+    if (!slicedKeys) return;
+    return await Promise.all(
+      slicedKeys.map(key => getFile(key).then(x => x.url)),
+    );
   };
 
   const handleLightBox = async (key: string) => {
@@ -193,13 +136,19 @@ const ReportsIndex: RaitaNextPage = () => {
       setLightboxOpen(true);
     }
   };
+  useEffect(() => {
+    imageKey && handleLightBox(imageKey);
+  }, [imagePage]);
 
-  const resultsData = mutation.data;
+  const resultsData = searchQuery.data?.search_raportti;
 
   useEffect(() => {
-    const fileKeys = resultsData?.hits.map(x => x.source.key);
+    const fileKeys = resultsData?.raportti?.map(document => document.key) ?? [];
     if (fileKeys?.length) {
-      fileKeys.map(async fileKey => {
+      fileKeys.forEach(async fileKey => {
+        if (!fileKey) {
+          return;
+        }
         const fileImageKeys = await getImageKeysForFileKey(fileKey);
         if (!fileImageKeys.length) return;
         setImageKeys(prevImageKeys => [
@@ -212,53 +161,67 @@ const ReportsIndex: RaitaNextPage = () => {
 
   // make sure mutation is updated only after query object is changed
   useEffect(() => {
-    if (state.waitingToUpdateMutation) {
-      mutation.mutate(query);
-      setState(R.assoc('waitingToUpdateMutation', false));
+    if (state.waitingToUpdateSearchQuery) {
+      searchQuery.refetch(getQueryVariables(state));
+      setState(R.assoc('waitingToUpdateSearchQuery', false));
     }
-  }, [state.waitingToUpdateMutation]);
+  }, [state.waitingToUpdateSearchQuery]);
 
   const updateDateRange = (range: Range<Date>) => {
-    setState(R.assocPath(['special', 'dateRange'], range));
-    setState(R.assoc('resetFilters', false));
-  };
-
-  const updateFilterList = (fs: Entry[]) => {
-    setState(R.assoc('filter', fs));
+    if (!range.start && !range.end) {
+      setState(
+        R.assocPath(
+          ['queryVariables', 'raportti', 'inspection_datetime'],
+          undefined,
+        ),
+      );
+      return;
+    }
+    const input: DateTimeIntervalInput = {
+      start: range.start?.toISOString(),
+      end: range.end?.toISOString(),
+    };
+    // TODO: typing for setState is lost with R.assocPath
+    setState(
+      R.assocPath(['queryVariables', 'raportti', 'inspection_datetime'], input),
+    );
     setState(R.assoc('resetFilters', false));
   };
 
   const updateSearchText = (text: string) => {
-    setState(R.assoc('text', text));
+    setState(R.assocPath(['queryVariables', 'raportti', 'file_name'], text));
     setState(R.assoc('resetFilters', false));
   };
   //
 
   const setPage = (n: number) => {
-    setState(R.assocPath(['paging', 'page'], n));
-    setState(R.assocPath(['waitingToUpdateMutation'], true));
+    setState(R.assocPath(['queryVariables', 'page'], n));
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
+  };
+  const updateSort = (event: SyntheticEvent<HTMLSelectElement, Event>) => {
+    setState(
+      R.assocPath(
+        ['queryVariables', 'order_by_variable'],
+        event.currentTarget.value,
+      ),
+    );
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
   const handleChangePageSize = (newSize: number) => {
-    setState(prevState => ({
-      ...prevState,
-      paging: {
-        ...prevState.paging,
-        size: newSize,
-      },
-    }));
-    setState(R.assocPath(['waitingToUpdateMutation'], true));
+    setState(R.assocPath(['queryVariables', 'page_size'], newSize));
+    setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
   };
 
   /**
    * Check whether any of our queries/mutations are loading,
    * so that we can do things like disable UI controls.
    */
-  const isLoading = [meta.isLoading, mutation.isLoading].some(R.identity);
+  const isLoading = [meta.loading, searchQuery.loading].some(R.identity);
 
-  if (meta.isLoading || !meta.data) return <LoadingOverlay />;
+  if (meta.loading || !meta.data) return <LoadingOverlay />;
 
-  if (meta.isError) return <div>Error</div>;
+  if (meta.error) return <div>Error</div>;
 
   const showAdminFields =
     user.user && user.user.roles.includes(RaitaRole.Admin);
@@ -266,7 +229,30 @@ const ReportsIndex: RaitaNextPage = () => {
 
   // some fields are hidden on non-admin users
   const adminOnlyMetadataFields = ['parser_version'];
+  const hiddenMetadataFields = ['__typename', 'key', 'file_name', 'status'];
 
+  const inspectionDateRangeForSelector: Range<Date> = {
+    // TODO: mapping function
+    start: state.queryVariables.raportti.inspection_datetime?.start
+      ? new Date(state.queryVariables.raportti.inspection_datetime.start)
+      : undefined,
+    end: state.queryVariables.raportti.inspection_datetime?.end
+      ? new Date(state.queryVariables.raportti.inspection_datetime.end)
+      : undefined,
+  };
+
+  const extraFields: FieldDict = {};
+  meta.data?.meta.input_fields?.forEach(fieldInfo => {
+    if (!fieldInfo.name) {
+      return;
+    }
+    if (disabledExtraFields.includes(fieldInfo.name)) {
+      return;
+    }
+    extraFields[fieldInfo.name] = {
+      type: fieldInfo.type! as SelectorSupportedType,
+    };
+  });
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
       <InfoBanner
@@ -275,14 +261,6 @@ const ReportsIndex: RaitaNextPage = () => {
       />
 
       <div className="container mx-auto px-16 py-6">
-        {resultsData?.total && resultsData.total >= 10000 && (
-          <InfoBanner
-            bannerType={BannerType.WARNING}
-            text={t('common:too_many_results')}
-            className="object-right w-4/6 ml-auto rounded"
-          />
-        )}
-
         <div className="grid grid-cols-3 gap-12">
           <section className="space-y-4">
             <header className="text-3xl border-primary border-b-2 mb-4 pb-2">
@@ -291,7 +269,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
             <TextInput
               onUpdate={updateSearchText}
-              value={state.text}
+              value={state.queryVariables.raportti.file_name ?? ''}
               placeholder={t('common:search_by_filename')}
               resetSearchText={state.resetFilters}
             />
@@ -299,11 +277,20 @@ const ReportsIndex: RaitaNextPage = () => {
             <div className="space-y-4 divide-y-2 divide-main-gray-10">
               <section className={clsx(css.subSection)}>
                 <header>{t('common:reports_metadata')}</header>
-
                 <FilterSelector
                   filters={[]}
-                  onChange={updateFilterList}
-                  fields={meta.data?.fields!}
+                  onChange={entries => {
+                    const inputVariables =
+                      getInputVariablesFromEntries(entries);
+                    // replace the whole
+                    setState(
+                      R.assocPath(
+                        ['extraRaporttiQueryVariables'],
+                        inputVariables,
+                      ),
+                    );
+                  }}
+                  fields={extraFields}
                   resetFilterSelector={state.resetFilters}
                 />
               </section>
@@ -313,7 +300,7 @@ const ReportsIndex: RaitaNextPage = () => {
                 <header>{t('common:reports_timespan')}</header>
 
                 <DateRange
-                  range={state.special.dateRange}
+                  range={inspectionDateRangeForSelector}
                   onUpdate={updateDateRange}
                   resetDateRange={state.resetFilters}
                   inputId="reports-daterange"
@@ -324,19 +311,16 @@ const ReportsIndex: RaitaNextPage = () => {
                 <MultiChoice
                   label={t('common:reports_report_types')}
                   inputId="report-type"
-                  items={(meta.data?.reportTypes || []).map(it => ({
-                    key: it.reportType,
-                    value: it.reportType,
+                  items={(meta.data.meta.report_type || []).map(it => ({
+                    key: it.value,
+                    value: it.value,
                   }))}
                   resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'reportTypes'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'report_type',
-                        ),
+                        ['queryVariables', 'raportti', 'report_type'],
+                        takeOptionValues(e.target.selectedOptions),
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
@@ -348,7 +332,7 @@ const ReportsIndex: RaitaNextPage = () => {
                 <MultiChoice
                   label={t('common:reports_systems')}
                   inputId="report-system"
-                  items={(meta.data?.systems || []).map(x => ({
+                  items={(meta.data.meta.system || []).map(x => ({
                     key: i18n?.exists(`metadata:${x.value}`)
                       ? `${x.value} / ${t(`metadata:${x.value}`)}`
                       : x.value,
@@ -358,11 +342,8 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'systems'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'system',
-                        ),
+                        ['queryVariables', 'raportti', 'system'],
+                        takeOptionValues(e.target.selectedOptions),
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
@@ -374,7 +355,7 @@ const ReportsIndex: RaitaNextPage = () => {
                 <MultiChoice
                   label={t('common:reports_track_parts')}
                   inputId="report-track-part"
-                  items={(meta.data?.trackParts || []).map(it => ({
+                  items={(meta.data?.meta.track_part || []).map(it => ({
                     key: it.value,
                     value: it.value,
                   }))}
@@ -382,11 +363,8 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'trackParts'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'track_part',
-                        ),
+                        ['queryVariables', 'raportti', 'track_part'],
+                        takeOptionValues(e.target.selectedOptions),
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
@@ -397,7 +375,7 @@ const ReportsIndex: RaitaNextPage = () => {
                 <MultiChoice
                   label={t('common:reports_tilirataosanumerot')}
                   inputId="report-tilirataosanumero"
-                  items={(meta.data?.tilirataosanumerot || []).map(it => ({
+                  items={(meta.data?.meta.tilirataosanumero || []).map(it => ({
                     key: it.value,
                     value: it.value,
                   }))}
@@ -405,11 +383,8 @@ const ReportsIndex: RaitaNextPage = () => {
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'tilirataosanumerot'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'tilirataosanumero',
-                        ),
+                        ['queryVariables', 'raportti', 'tilirataosanumero'],
+                        takeOptionValues(e.target.selectedOptions),
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
@@ -424,19 +399,16 @@ const ReportsIndex: RaitaNextPage = () => {
                 <MultiChoice
                   label={t('common:reports_file_types')}
                   inputId="report-file-type"
-                  items={(meta.data?.fileTypes || []).map(x => ({
-                    key: x.fileType,
-                    value: x.fileType,
+                  items={(meta.data?.meta.file_type || []).map(x => ({
+                    key: x.value,
+                    value: x.value,
                   }))}
                   resetFilters={state.resetFilters}
                   onChange={e => {
                     setState(
                       R.assocPath(
-                        ['subQueries', 'fileTypes'],
-                        makeFromMulti(
-                          takeOptionValues(e.target.selectedOptions),
-                          'file_type',
-                        ),
+                        ['queryVariables', 'raportti', 'file_type'],
+                        takeOptionValues(e.target.selectedOptions),
                       ),
                     );
                     setState(R.assoc('resetFilters', false));
@@ -456,40 +428,79 @@ const ReportsIndex: RaitaNextPage = () => {
 
           <section className="col-span-2">
             <header className="text-3xl border-b-2 border-gray-500 mb-4 pb-2">
-              {!mutation.data && t('no_search_results')}
+              {!searchQuery.data && (
+                <div className="flex items-end">
+                  <div className="mt-1"> {t('common:no_results')}</div>
+                </div>
+              )}
 
-              {mutation.data && (
-                <div className="flex">
+              {searchQuery.data && (
+                <div className="flex items-end">
                   <div className="mt-1">
                     {t('search_result_count', {
-                      count: resultsData?.total,
+                      count: resultsData?.count,
                     })}
                   </div>
-                  {resultsData?.totalSize && resultsData?.totalSize > 0 && (
-                    <div className="ml-2">
-                      <ZipDownload
-                        aggregationSize={resultsData?.total}
-                        usedQuery={query}
-                        resultTotalSize={resultsData?.totalSize}
-                      />
+                  {resultsData?.total_size && resultsData?.total_size > 0 && (
+                    <div className="ml-2 flex">
+                      {!localStorage.getItem('zipUrl') ? (
+                        <ZipDownload
+                          aggregationSize={resultsData?.count}
+                          usedQueryVariables={getQueryVariables(state)}
+                          resultTotalSize={resultsData?.total_size}
+                        />
+                      ) : null}
+
+                      <div className="ml-2">
+                        {resultsData.total_size > cfg.maxFileSizeForZip ? (
+                          <p className="text-base">
+                            {t('common:file_size_limit')}
+                          </p>
+                        ) : null}
+                        {resultsData.count > cfg.maxFileCountForZip ? (
+                          <p className="text-base">
+                            {t('common:file_count_limit')}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
               <div>
-                {mutation.isSuccess && (
-                  <div className="flex justify-between">
+                {resultsData && resultsData.count > 0 && (
+                  <div className="flex justify-between items-end">
+                    <div className={css.headerRow + ' text-base'}>
+                      <Dropdown
+                        label={t('common:sort')}
+                        items={[
+                          {
+                            key: t('metadata:label_inspection_datetime'),
+                            value: 'inspection_datetime',
+                          },
+                          {
+                            key: t('metadata:label_km_start'),
+                            value: 'km_start',
+                          },
+                        ]}
+                        onChange={updateSort}
+                      />
+                    </div>
                     <div className={css.headerRow}>
+                      <div className="text-base my-2">
+                        {t('common:show_results')}
+                      </div>
                       <ul className={css.itemList}>
-                        <li className="text-base mr-2">
-                          {t('common:show_results')}
-                        </li>
                         <li className={css.item}>
                           <Button
                             label={10}
                             onClick={() => handleChangePageSize(PageSize.Ten)}
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size == PageSize.Ten
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
@@ -499,7 +510,12 @@ const ReportsIndex: RaitaNextPage = () => {
                             onClick={() =>
                               handleChangePageSize(PageSize.TwentyFive)
                             }
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size ==
+                              PageSize.TwentyFive
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
@@ -507,16 +523,20 @@ const ReportsIndex: RaitaNextPage = () => {
                           <Button
                             label={50}
                             onClick={() => handleChangePageSize(PageSize.Fifty)}
-                            type="secondary"
+                            type={
+                              state.queryVariables.page_size == PageSize.Fifty
+                                ? 'primary'
+                                : 'secondary'
+                            }
                             size="sm"
                           />
                         </li>
                       </ul>
                     </div>
                     <ResultsPager
-                      currentPage={state.paging.page}
-                      itemCount={mutation.data?.total || 0}
-                      pageSize={state.paging.size}
+                      currentPage={state.queryVariables.page}
+                      itemCount={resultsData.count || 0}
+                      pageSize={state.queryVariables.page_size}
                       onGotoPage={setPage}
                     />
                   </div>
@@ -527,23 +547,24 @@ const ReportsIndex: RaitaNextPage = () => {
             <section>
               {!resultsData && <div>{t('common:no_results')}</div>}
 
-              {mutation.isSuccess && mutation.data && (
+              {!searchQuery.error && searchQuery.data && (
                 <div>
                   <ul className="space-y-2 divide-y-2">
-                    {resultsData?.hits.map((it, ix) => {
-                      const { source: doc } = it;
-                      const zipPath = doc.key
-                        .split('/')
-                        .slice(0, zipFileNameIndex)
-                        .join('/');
+                    {resultsData?.raportti?.map((document, index: number) => {
+                      const zipPath =
+                        document.key
+                          ?.split('/')
+                          .slice(0, zipFileNameIndex)
+                          .join('/')
+                          .replace('.xlsx', '') ?? '';
 
                       // Bail out if we have nothing
-                      if (!doc) return null;
+                      if (!document) return null;
 
                       return (
-                        <li key={`result-${ix}`}>
+                        <li key={`result-${index}`}>
                           <article className="py-2 space-y-2">
-                            <header>{doc.file_name}</header>
+                            <header>{document.file_name}</header>
 
                             <div className="text-xs">
                               {showAdminFields && (
@@ -551,26 +572,28 @@ const ReportsIndex: RaitaNextPage = () => {
                                   <dt>
                                     {t('common:zip_path_label')}
                                     <CopyToClipboard
-                                      tooltipId={`${doc.key}-zip-label`}
+                                      tooltipId={`${document.key}-zip-label`}
                                       textToCopy={zipPath}
                                     />
                                   </dt>
                                   <dd
                                     className="truncate"
-                                    data-tooltip-id={`${ix}-zip-name`}
+                                    data-tooltip-id={`${index}-zip-name`}
                                     data-tooltip-content={zipPath}
                                   >
                                     {zipPath}
-                                    <Tooltip id={`${ix}-zip-name`} />
+                                    <Tooltip id={`${index}-zip-name`} />
                                   </dd>
                                 </dl>
                               )}
                               <dl className={clsx(css.metadataGrid)}>
-                                {Object.entries(doc.metadata)
+                                {Object.entries(document)
                                   .filter(
                                     ([k, v]) =>
-                                      !adminOnlyMetadataFields.includes(k) ||
-                                      showAdminFields,
+                                      (!adminOnlyMetadataFields.includes(k) ||
+                                        showAdminFields) &&
+                                      !hiddenMetadataFields.includes(k) &&
+                                      v != null,
                                   )
                                   .map(([k, v], index) => (
                                     <Fragment key={index}>
@@ -579,17 +602,19 @@ const ReportsIndex: RaitaNextPage = () => {
                                       </dt>
                                       <dd className="truncate">
                                         <span
-                                          data-tooltip-id={`${doc.key}_val_${k}`}
-                                          data-tooltip-content={v}
+                                          data-tooltip-id={`${document.key}_val_${k}`}
+                                          data-tooltip-content={`${v}`}
                                         >
                                           {`${v}`}
                                         </span>
                                       </dd>
-                                      <Tooltip id={`${doc.key}_val_${k}`} />
+                                      <Tooltip
+                                        id={`${document.key}_val_${k}`}
+                                      />
                                     </Fragment>
                                   ))}
-                                {doc.size && (
-                                  <Fragment>
+                                {document.size && (
+                                  <>
                                     <dt
                                       className="truncate"
                                       title={t('metadata:label_size')}
@@ -598,31 +623,38 @@ const ReportsIndex: RaitaNextPage = () => {
                                     </dt>
                                     <dd
                                       className="truncate"
-                                      title={`${sizeformatter(doc.size)}`}
+                                      title={`${sizeformatter(document.size)}`}
                                     >
                                       <span
-                                        data-tooltip-id={`${doc.key}_val_size`}
+                                        data-tooltip-id={`${document.key}_val_size`}
                                         data-tooltip-content={`${sizeformatter(
-                                          doc.size,
+                                          document.size,
                                         )}`}
                                       >
-                                        {`${sizeformatter(doc.size)}`}
+                                        {`${sizeformatter(document.size)}`}
                                       </span>
-                                      <Tooltip id={`${doc.key}_val_size`} />
+                                      <Tooltip
+                                        id={`${document.key}_val_size`}
+                                      />
                                     </dd>
-                                  </Fragment>
+                                  </>
                                 )}
                               </dl>
                             </div>
 
                             <footer className="text-right space-x-2">
                               {imageKeys.find(
-                                imageKey => imageKey.fileKey === doc.key,
+                                imageKey => imageKey.fileKey === document.key,
                               ) && (
                                 <Button
                                   size="sm"
                                   label={t('common:show_images')}
-                                  onClick={() => handleLightBox(doc.key)}
+                                  onClick={() => {
+                                    if (document.key) {
+                                      setImageKey(document.key);
+                                      handleLightBox(document.key);
+                                    }
+                                  }}
                                 />
                               )}
 
@@ -630,9 +662,12 @@ const ReportsIndex: RaitaNextPage = () => {
                                 size="sm"
                                 label={t('common:download')}
                                 onClick={() => {
+                                  if (!document.key || !document.file_name) {
+                                    return;
+                                  }
                                   const opts = {
-                                    key: doc.key,
-                                    fileName: doc.file_name,
+                                    key: document.key,
+                                    fileName: document.file_name,
                                   };
 
                                   getFileUrl.mutate(opts);
@@ -646,59 +681,44 @@ const ReportsIndex: RaitaNextPage = () => {
                   </ul>
                 </div>
               )}
-
-              <footer className="space-y-2 flex justify-center mt-2">
-                {mutation.isSuccess && (
-                  <ResultsPager
-                    currentPage={state.paging.page}
-                    itemCount={mutation.data?.total || 0}
-                    pageSize={state.paging.size}
-                    onGotoPage={setPage}
-                  />
-                )}
-              </footer>
             </section>
           </section>
         </div>
       </div>
-
-      <Lightbox
-        open={lightboxOpen}
-        close={() => setLightboxOpen(false)}
-        slides={imageUrls.map((imageUrl, idx) => {
-          return {
-            src: imageUrl,
-            alt: `Image(${idx + 1})`,
-          };
-        })}
-      />
-
-      {isDebug && (
-        <div className="container mx-auto px-16 pb-4">
-          <details>
-            <summary>{t('debug:debug')}</summary>
-            <div className="opacity-40 space-y-4 text-xs mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <fieldset>
-                  <legend>{t('debug:state')}</legend>
-
-                  <pre className="max-h-96 overflow-auto">
-                    <code>{JSON.stringify(state, null, 2)}</code>
-                  </pre>
-                </fieldset>
-
-                <fieldset>
-                  <legend>query</legend>
-
-                  <pre className="max-h-96 overflow-auto">
-                    <code>{JSON.stringify(query, null, 2)}</code>
-                  </pre>
-                </fieldset>
-              </div>
-            </div>
-          </details>
+      <Modal
+        isOpen={lightboxOpen}
+        onRequestClose={() => setLightboxOpen(false)}
+        headerText={`Kuvat ${(imagePage - 1) * 10}-${
+          (imagePage - 1) * 10 + 10
+        }/${imageCount}`}
+      >
+        <div className="flex justify-center">
+          <Lightbox
+            open={lightboxOpen}
+            close={() => setLightboxOpen(false)}
+            plugins={[Inline]}
+            inline={{
+              style: {
+                width: '100%',
+                maxWidth: '900px',
+                aspectRatio: '3 / 2',
+              },
+            }}
+            slides={imageUrls.map((imageUrl, idx) => {
+              return {
+                src: imageUrl,
+                alt: `Image(${idx + 1})`,
+              };
+            })}
+          />
         </div>
-      )}
+        <ResultsPager
+          currentPage={imagePage}
+          itemCount={imageCount}
+          pageSize={10}
+          onGotoPage={setImagePage}
+        />
+      </Modal>
     </div>
   );
 };
@@ -714,27 +734,15 @@ export type StaticProps = {
 };
 
 type ReportsState = {
-  text: string;
-  filters: Record<string, string>;
-  filter: Entry[];
   resetFilters: boolean;
-  special: {
-    dateRange?: Partial<Range<Date>>;
-    fileType?: 'csv' | 'pdf' | 'txt' | 'xlsx';
-    reportTypes?: string[];
-  };
-  subQueries: {
-    reportTypes: object;
-    fileTypes: object;
-  };
-  dateRange: Partial<Range<Date>>;
-  reportTypes: string[];
-  paging: {
-    size: PageSize;
-    page: number;
-  };
   debug?: boolean;
-  waitingToUpdateMutation: boolean;
+  waitingToUpdateSearchQuery: boolean;
+  queryVariables: Search_RaporttiQueryVariables;
+  /**
+   * For "extra variables" that are chosen separately from the filter selectors.
+   * Separate variable to simplify state management on deletions
+   */
+  extraRaporttiQueryVariables: RaporttiInput;
 };
 
 export enum PageSize {

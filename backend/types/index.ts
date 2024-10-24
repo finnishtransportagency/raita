@@ -1,7 +1,6 @@
 import { Readable } from 'stream';
 
 export * from './specification';
-export * from './portDataStorage';
 export * from './portFile';
 export * from './portSpecification';
 

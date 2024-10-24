@@ -1,4 +1,4 @@
-import { currentMetadataDatabase, enableCsvPage } from './config';
+import { enableCsvPage } from './config';
 import { RaitaRole } from './user';
 
 export type PageDescription = {

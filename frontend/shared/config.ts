@@ -1,11 +1,3 @@
-/**
- * OpenSearch configuration
- * @deprecated This is only for local dev usage, will be removed
- */
-export const openSearch = {
-  indexName: 'metadata-index-v2',
-} as const;
-
 export const baseURL = process.env.NEXT_PUBLIC_RAITA_BASEURL
   ? `${process.env.NEXT_PUBLIC_RAITA_BASEURL}/api`
   : process.env.API_BASEURL || '/api';
@@ -27,7 +19,5 @@ export const maxFileCountForZip = 4000;
 // index of zip file name in file key
 export const zipFileNameIndex = 5;
 
-export const currentMetadataDatabase: 'opensearch' | 'postgres' =
-  process.env.NEXT_PUBLIC_METADATA_DATABASE;
 export const enableCsvPage: boolean =
-  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE ?? false;
+  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE || false;

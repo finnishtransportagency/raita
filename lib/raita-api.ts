@@ -16,7 +16,6 @@ import {
   createRaitaBucket,
   createRaitaServiceRole,
 } from './raitaResourceCreators';
-import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import {
   getDatabaseEnvironmentVariables,
@@ -36,9 +35,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly inspectionDataBucket: Bucket;
   readonly dataReceptionBucket: Bucket;
   readonly csvDataBucket: Bucket;
-  readonly openSearchMetadataIndex: string;
   readonly vpc: ec2.IVpc;
-  readonly openSearchDomain: Domain;
   readonly cloudfrontDomainName: string;
   readonly raitaSecurityGroup: ec2.ISecurityGroup;
   prismaLambdaLayer: lambda.LayerVersion;
@@ -63,8 +60,6 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiZipRequestLambdaServiceRole: Role;
   public readonly raitaApiDeleteRequestLambdaServiceRole: Role;
   public readonly raitaApiManualDataProcessLambdaServiceRole: Role;
-  public readonly handleFilesRequestFn: NodejsFunction;
-  public readonly handleMetaRequestFn: NodejsFunction;
   public readonly handleZipProcessFn: NodejsFunction;
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
@@ -83,12 +78,10 @@ export class RaitaApiStack extends NestedStack {
       raitaEnv,
       stackId,
       jwtTokenIssuer,
-      openSearchMetadataIndex,
       vpc,
       inspectionDataBucket,
       dataReceptionBucket,
       csvDataBucket,
-      openSearchDomain,
       cloudfrontDomainName,
       raitaSecurityGroup,
       prismaLambdaLayer,
@@ -172,14 +165,6 @@ export class RaitaApiStack extends NestedStack {
       }),
     );
 
-    // Write permission is needed here (the Write part in ReadWrite) as it adds POST permissions to
-    // the metadata index. RaitaApiLambdaServiceRole does not need to make any
-    // data modifications to metadata index but under the hood the client from
-    // @opensearch-project/opensearch utilizes POST to retrieve data from the index.
-    openSearchDomain.grantIndexReadWrite(
-      openSearchMetadataIndex,
-      this.raitaApiLambdaServiceRole,
-    );
     inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
     dataCollectionBucket.grantRead(this.raitaApiLambdaServiceRole);
     csvDataBucket.grantRead(this.raitaApiLambdaServiceRole);
@@ -208,10 +193,6 @@ export class RaitaApiStack extends NestedStack {
       policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
       raitaStackIdentifier,
     });
-    openSearchDomain.grantIndexReadWrite(
-      openSearchMetadataIndex,
-      this.raitaApiDeleteRequestLambdaServiceRole,
-    );
     inspectionDataBucket.grantRead(this.raitaApiDeleteRequestLambdaServiceRole);
     inspectionDataBucket.grantDelete(
       this.raitaApiDeleteRequestLambdaServiceRole,
@@ -316,29 +297,6 @@ export class RaitaApiStack extends NestedStack {
       vpc,
     });
 
-    this.handleFilesRequestFn = this.createFilesRequestHandler({
-      name: 'api-handler-files',
-      raitaStackIdentifier,
-      raitaEnv,
-      stackId,
-      jwtTokenIssuer,
-      lambdaRole: this.raitaApiLambdaServiceRole,
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex,
-      vpc,
-    });
-
-    this.handleMetaRequestFn = this.createMetaRequestHandler({
-      name: 'api-handler-meta',
-      raitaStackIdentifier,
-      raitaEnv,
-      stackId,
-      jwtTokenIssuer,
-      lambdaRole: this.raitaApiLambdaServiceRole,
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex,
-      vpc,
-    });
     this.handleDeleteRequestFn = this.createDeleteRequestHandler({
       name: 'api-handler-delete',
       raitaStackIdentifier,
@@ -346,8 +304,6 @@ export class RaitaApiStack extends NestedStack {
       stackId,
       jwtTokenIssuer,
       lambdaRole: this.raitaApiDeleteRequestLambdaServiceRole,
-      openSearchDomainEndpoint: openSearchDomain.domainEndpoint,
-      openSearchMetadataIndex,
       vpc,
       receptionBucket: dataReceptionBucket,
       inspectionBucket: inspectionDataBucket,
@@ -472,18 +428,6 @@ export class RaitaApiStack extends NestedStack {
         targetName: 'polling',
       },
       {
-        lambda: this.handleFilesRequestFn,
-        priority: 300,
-        path: [`${apiBaseUrl}/files`],
-        targetName: 'files',
-      },
-      {
-        lambda: this.handleMetaRequestFn,
-        priority: 310,
-        path: [`${apiBaseUrl}/meta`],
-        targetName: 'meta',
-      },
-      {
         lambda: this.handleDeleteRequestFn,
         priority: 320,
         path: [`${apiBaseUrl}/delete`],
@@ -551,16 +495,10 @@ export class RaitaApiStack extends NestedStack {
         targetName: 'ext-polling',
       },
       {
-        lambda: this.handleFilesRequestFn,
-        priority: 505,
-        path: [`${apiBaseUrl}/ext/files`],
-        targetName: 'ext-files',
-      },
-      {
-        lambda: this.handleMetaRequestFn,
-        priority: 510,
-        path: [`${apiBaseUrl}/ext/meta`],
-        targetName: 'ext-meta',
+        lambda: this.handleV2GraphqlRequest,
+        priority: 520,
+        path: [`${apiBaseUrl}/ext/v2/graphql`],
+        targetName: 'ext-v2-graphql',
       },
       {
         lambda: this.handleV2GraphqlRequest,
@@ -953,108 +891,6 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
-   * Creates and returns handler for querying files
-   */
-  private createFilesRequestHandler({
-    name,
-    raitaStackIdentifier,
-    raitaEnv,
-    stackId,
-    jwtTokenIssuer,
-    lambdaRole,
-    openSearchDomainEndpoint,
-    openSearchMetadataIndex,
-    vpc,
-  }: {
-    name: string;
-    raitaStackIdentifier: string;
-    raitaEnv: string;
-    stackId: string;
-    jwtTokenIssuer: string;
-    lambdaRole: Role;
-    openSearchDomainEndpoint: string;
-    openSearchMetadataIndex: string;
-    vpc: ec2.IVpc;
-  }) {
-    return new NodejsFunction(this, name, {
-      functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleFilesRequest',
-      entry: path.join(
-        __dirname,
-        `../backend/lambdas/raitaApi/handleFilesRequest/handleFilesRequest.ts`,
-      ),
-      environment: {
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
-        METADATA_INDEX: openSearchMetadataIndex,
-        REGION: this.region,
-        JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: stackId,
-        ENVIRONMENT: raitaEnv,
-      },
-      role: lambdaRole,
-      vpc,
-      vpcSubnets: {
-        subnets: vpc.privateSubnets,
-      },
-      logRetention: RetentionDays.SIX_MONTHS,
-    });
-  }
-
-  /**
-   * Creates and returns handler for meta information
-   */
-  private createMetaRequestHandler({
-    name,
-    raitaStackIdentifier,
-    raitaEnv,
-    stackId,
-    jwtTokenIssuer,
-    lambdaRole,
-    openSearchDomainEndpoint,
-    openSearchMetadataIndex,
-    vpc,
-  }: {
-    name: string;
-    raitaStackIdentifier: string;
-    raitaEnv: string;
-    stackId: string;
-    jwtTokenIssuer: string;
-    lambdaRole: Role;
-    openSearchDomainEndpoint: string;
-    openSearchMetadataIndex: string;
-    vpc: ec2.IVpc;
-  }) {
-    return new NodejsFunction(this, name, {
-      functionName: `lambda-${raitaStackIdentifier}-${name}`,
-      memorySize: 512,
-      timeout: cdk.Duration.seconds(5),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleMetaRequest',
-      entry: path.join(
-        __dirname,
-        `../backend/lambdas/raitaApi/handleMetaRequest/handleMetaRequest.ts`,
-      ),
-      environment: {
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
-        METADATA_INDEX: openSearchMetadataIndex,
-        REGION: this.region,
-        JWT_TOKEN_ISSUER: jwtTokenIssuer,
-        STACK_ID: stackId,
-        ENVIRONMENT: raitaEnv,
-      },
-      role: lambdaRole,
-      vpc,
-      vpcSubnets: {
-        subnets: vpc.privateSubnets,
-      },
-      logRetention: RetentionDays.SIX_MONTHS,
-    });
-  }
-
-  /**
    * Creates and returns handler for admin log request
    */
   private createAdminLogsRequestHandler({
@@ -1317,8 +1153,6 @@ export class RaitaApiStack extends NestedStack {
     jwtTokenIssuer,
     lambdaRole,
     vpc,
-    openSearchDomainEndpoint,
-    openSearchMetadataIndex,
     receptionBucket,
     inspectionBucket,
     databaseEnvironmentVariables,
@@ -1331,8 +1165,6 @@ export class RaitaApiStack extends NestedStack {
     jwtTokenIssuer: string;
     lambdaRole: Role;
     vpc: ec2.IVpc;
-    openSearchDomainEndpoint: string;
-    openSearchMetadataIndex: string;
     receptionBucket: Bucket;
     inspectionBucket: Bucket;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
@@ -1355,8 +1187,6 @@ export class RaitaApiStack extends NestedStack {
         REGION: this.region,
         RECEPTION_BUCKET: receptionBucket.bucketName,
         INSPECTION_BUCKET: inspectionBucket.bucketName,
-        OPENSEARCH_DOMAIN: openSearchDomainEndpoint,
-        METADATA_INDEX: openSearchMetadataIndex,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,

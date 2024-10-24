@@ -92,9 +92,7 @@ export async function handleInspectionFileEvent(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  const doCSVParsing =
-    config.allowCSVInProd === 'true' ||
-    config.environment !== ENVIRONMENTS.prod;
+  const doCSVParsing = true;
   let currentKey: string = ''; // for logging in case of errors
   try {
     withRequest(event, context);
@@ -253,12 +251,8 @@ export async function handleInspectionFileEvent(
         return null;
       }
 
-      if (doCSVParsing) {
-        await updateRaporttiMetadata(entries, dbConnection);
-      } else {
-        log.warn('CSV postgres blocked in prod');
-      }
-      await backend.metadataStorage.saveFileMetadata(entries);
+      await updateRaporttiMetadata(entries, dbConnection);
+
       return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);

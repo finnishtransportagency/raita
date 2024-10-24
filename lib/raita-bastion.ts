@@ -8,7 +8,6 @@ interface BastionStackProps extends cdk.NestedStackProps {
   readonly vpc: ec2.IVpc;
   readonly securityGroup: ec2.ISecurityGroup;
   readonly albDns: string;
-  readonly databaseDomainEndpoint: string;
 }
 
 export class BastionStack extends cdk.NestedStack {
@@ -16,13 +15,7 @@ export class BastionStack extends cdk.NestedStack {
 
   constructor(scope: Construct, id: string, props: BastionStackProps) {
     super(scope, id, props);
-    const {
-      raitaStackIdentifier,
-      vpc,
-      securityGroup,
-      albDns,
-      databaseDomainEndpoint,
-    } = props;
+    const { raitaStackIdentifier, vpc, securityGroup, albDns } = props;
 
     this.bastionRole = new Role(this, 'RaitaEc2BastionRole', {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
@@ -32,7 +25,6 @@ export class BastionStack extends cdk.NestedStack {
     });
     const userData = this.createBastionUserData({
       albDns,
-      databaseDomainEndpoint,
     });
     this.createBastionHost({
       name: 'bastion',
@@ -46,15 +38,9 @@ export class BastionStack extends cdk.NestedStack {
 
   /**
    * Creates user data for bastion host.
-   * Requires databaseDomainEndpoint parameter, which is currently unused, in preparation
    * for setting a pipe directly to the database (to be added later).
    */
-  private createBastionUserData({
-    albDns,
-  }: {
-    albDns: string;
-    databaseDomainEndpoint: string;
-  }) {
+  private createBastionUserData({ albDns }: { albDns: string }) {
     const userData = ec2.UserData.forLinux();
     const userDataCommands = [
       'sudo yum update -y',

@@ -51,11 +51,6 @@ export class RaitaPipelineStack extends Stack {
       tags: config.tags,
     });
 
-    // temporary flag for opensearch/postgres transition. TODO: remove later
-    const currentMetadataDatabase = StringParameter.valueFromLookup(
-      this,
-      'raita-metadata-database',
-    );
     //temporary flag to show csv page. TODO: remove later
     const enableCsvPage = StringParameter.valueFromLookup(
       this,
@@ -155,8 +150,6 @@ export class RaitaPipelineStack extends Stack {
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
-            NEXT_PUBLIC_METADATA_DATABASE:
-              currentMetadataDatabase ?? 'opensearch',
             NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage === '1' ? '1' : '',
           },
           commands: [

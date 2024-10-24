@@ -1,0 +1,1 @@
+ALTER TABLE raportti ALTER COLUMN file_name TYPE VARCHAR(200);
