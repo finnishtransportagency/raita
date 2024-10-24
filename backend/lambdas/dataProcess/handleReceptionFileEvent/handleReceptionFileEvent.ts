@@ -23,7 +23,7 @@ import {
 } from '../../../utils/dataProcessLock';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { SQSClient } from '@aws-sdk/client-sqs';
-import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
+import { DBConnection, getPostgresDBConnection } from '../csvCommon/db/dbUtil';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -37,7 +37,7 @@ const withRequest = lambdaRequestTracker();
 
 const config = getLambdaConfigOrFail();
 const sqsClient = new SQSClient({});
-const dbConnection = getDBConnection();
+const dbConnection = getPostgresDBConnection();
 const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
 export async function handleReceptionFileEvent(

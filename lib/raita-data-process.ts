@@ -905,6 +905,15 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
+    const anyErrorMetricFilter = logGroup.addMetricFilter(
+      'reception-any-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'Error'),
+        metricName: `parsing-any-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
     const errorAlarm = new Alarm(this, 'reception-errors-alarm', {
       comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
       threshold: 1,
@@ -917,7 +926,19 @@ export class DataProcessStack extends NestedStack {
         statistic: Stats.SUM,
       }),
     });
-    return [errorAlarm];
+    const anyErrorAlarm = new Alarm(this, 'reception-any-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `reception-any-errors-alarm-${raitaStackIdentifier}`,
+      metric: anyErrorMetricFilter.metric({
+        label: `Reception any errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm, anyErrorAlarm];
   }
 
   /**
