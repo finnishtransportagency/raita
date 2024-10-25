@@ -370,7 +370,30 @@ const CsvIndex: RaitaNextPage = () => {
             {showRaporttiQueryError && <p>{t('common:error_loading')}</p>}
 
             {showRaporttiResults && (
-              <>
+              /*Keijo tänne ratakilometrit */ <>
+                <section className={clsx(css.subSection)}>
+                  <header>Mittausarvojen tiedot</header>
+                  <FilterSelector
+                    filters={[]}
+                    onChange={entries => {
+                      const inputVariables =
+                        getInputVariablesFromEntries(entries);
+                      // replace the whole
+                      setState(
+                        R.assocPath(
+                          ['extraRaporttiQueryVariables'],
+                          inputVariables,
+                        ),
+                      );
+                      setMittausCountIsFresh(false);
+                    }}
+                    fields={{
+                      km_start: { type: 'IntIntervalInput' }, // väärä type
+                      km_end: { type: 'IntIntervalInput' },
+                    }}
+                    resetFilterSelector={state.resetFilters}
+                  />
+                </section>
                 <section className={clsx(css.subSection)}>
                   <MultiChoice
                     label={t('common:choose_columns')}
