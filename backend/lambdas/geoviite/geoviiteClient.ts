@@ -1,22 +1,91 @@
 import { log } from '../../utils/logger';
 import { pickBy } from 'lodash';
 import axios, {
+  AxiosInstance,
   AxiosRequestConfig,
   AxiosResponse,
   RawAxiosRequestHeaders,
 } from 'axios';
+import { Decimal } from 'prisma/prisma-client/runtime/library';
+import { AdminLogSource } from '../../containers/zipHandler/src/adminLog/postgresLogger';
 
-const baseUrl = process.env.GEOVIITE_HOSTNAME; //TODO add to cloudformation config
-const apiClient = axios.create({ baseURL: baseUrl });
+//Type of geoviite trackadresseses post response
+/*{
+  "type": "FeatureCollection",
+  "features": [
+  {
+    "geometry": {
+      "type": "Point",
+      "coordinates": []
+    },
+    "properties": {
+      "x": 259348.20489785323,
+      "y": 6804094.514968412,
+      "valimatka": 2.0372681319713593E-10,
+      "ratanumero": "002",
+      "sijaintiraide": "002",
+      "sijaintiraide_kuvaus": "Lielahti-Kokemäki-Pori-Mäntyluoto",
+      "sijaintiraide_tyyppi": "pääraide",
+      "ratakilometri": 270,
+      "ratametri": 300,
+      "ratametri_desimaalit": 0
+    },
+    "type": "Feature"
+  }
+]
+}*/
+enum ResponseType {
+  FEATURE_COLLECTION = 'FeatureCollection',
+}
+
+export type GetConvertedTrackAddressesWithCoordsResultType = {
+  type: ResponseType;
+  features: Feature[];
+};
+
+enum GeometryType {
+  POINT = 'Point',
+}
+
+enum FeatureType {
+  FEATURE = 'Feature',
+}
+
+type Feature = {
+  geometry: Geometry;
+  properties: Properties;
+  type: FeatureType;
+};
+
+type Geometry = {
+  type: GeometryType;
+  coordinates: Array<any>;
+};
+
+type Properties = {
+  x: number;
+  y: number;
+  valimatka: number;
+  ratanumero: string;
+  sijaintiraide: string;
+  sijaintiraide_kuvaus: string;
+  sijaintiraide_tyyppi: string;
+  ratakilometri: number;
+  ratametri: number;
+  ratametri_desimaalit: number;
+  sijaintiraide_oid: string;
+  ratanumero_oid: string,
+};
 
 //params that go to rest as url path params
 type trackAddressWithCoordinatePathParams = {
   geometriatiedot?: boolean;
   perustiedot?: boolean;
   lisatiedot?: boolean;
+  koordinaatisto?: string;
 };
-// Default vals for optional post params; if we happen to need such TODO
-//
+// Default vals for optional post params.
+// These are only used if the caller doesn't give any other post params than x and y; so if you give any extra post params it's your responsablity to give all the needed.
 // Params with 'undefined' values are not posted to Geoviite and Geoviite uses it's default values:
 //    geometriatiedot: false,
 //    lisatiedot: true,
@@ -26,17 +95,17 @@ export const defaultTrackAddressWithCoordinatePathParams: trackAddressWithCoordi
     geometriatiedot: undefined,
     lisatiedot: undefined,
     perustiedot: undefined,
+    koordinaatisto: encodeURIComponent('EPSG:4258'),
   };
 
 //params that go to rest post
 type trackAddressWithCoordinatePostParams = {
-  x_koordinaatti_param: number;
-  y_koordinaatti_param: number;
-  koordinaatisto_param?: string;
-  sade_param?: number;
-  ratanumero_param?: string;
-  sijaintiraide_param?: string;
-  sijaintiraide_tyyppi_param?: string;
+  x: number | undefined;
+  y: number | undefined;
+  sade?: number;
+  ratanumero?: string;
+  sijaintiraide?: string;
+  sijaintiraide_tyyppi?: string;
 };
 
 // Default vals for optional path params; if we happen to need such TODO
@@ -46,130 +115,196 @@ type trackAddressWithCoordinatePostParams = {
 //    sade: 100
 const defaultTrackAddressWithCoordinatePostParams: Omit<
   trackAddressWithCoordinatePostParams,
-  'x_koordinaatti_param' | 'y_koordinaatti_param'
+  'x' | 'y'
 > = {
-  koordinaatisto_param: undefined,
-  ratanumero_param: undefined,
-  sade_param: undefined,
-  sijaintiraide_param: undefined,
-  sijaintiraide_tyyppi_param: undefined,
+  ratanumero: undefined,
+  sade: undefined,
+  sijaintiraide: undefined,
+  sijaintiraide_tyyppi: undefined,
 };
 
-// Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
 
-export async function getConvertedTrackAddressWithCoords(
-  lat: number,
-  long: number,
-  extraPathParams?: trackAddressWithCoordinatePathParams,
-  extraPostParams?: Omit<
-    trackAddressWithCoordinatePostParams,
-    'x_koordinaatti_param' | 'y_koordinaatti_param'
-  >,
-): Promise<any> {
-  const postParams: trackAddressWithCoordinatePostParams = {
-    x_koordinaatti_param: long,
-    y_koordinaatti_param: lat,
-    ...(extraPostParams
-      ? extraPostParams
-      : defaultTrackAddressWithCoordinatePostParams),
-  };
-  const resultData: any = await getConvertedTrackAddressesWithParams(
-    new Array(postParams),
-    extraPathParams
-      ? extraPathParams
-      : defaultTrackAddressWithCoordinatePathParams,
-  );
-  return resultData;
+
+export type GeoviiteClientResultItem = {
+  ratametri: number;
+  sijaintiraide_kuvaus: string;
+  sijaintiraide_tyyppi: string;
+  ratametri_desimaalit: number;
+  sijaintiraide_oid: string;
+  ratanumero_oid: string;
+  sijaintiraide: string;
+  valimatka: number;
+  x: number;
+  ratanumero: string;
+  y: number;
+  id: number;
+  ratakilometri: number;
 }
 
-export interface LatLong {
-  lat: number;
-  long: number;
-}
+export class GeoviiteClient {
+  private baseUrl: string;
+  private axiosClient: AxiosInstance;
 
-// Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
-export async function getConvertedTrackAddressesWithCoords(
-  coords: Array<LatLong>,
-  extraPathParams?: trackAddressWithCoordinatePathParams,
-  extraPostParams?: Omit<
-    trackAddressWithCoordinatePostParams,
-    'x_koordinaatti_param' | 'y_koordinaatti_param'
-  >,
-): Promise<any> {
-  const postParamsArray = coords.map(latlong => {
-    return {
-      x_koordinaatti_param: latlong.long,
-      y_koordinaatti_param: latlong.lat,
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+    this.axiosClient = axios.create({ baseURL: baseUrl });
+  }
+
+  // Yksittäismuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
+  async getConvertedTrackAddressWithCoords(
+    lat: number,
+    long: number,
+    extraPathParams?: trackAddressWithCoordinatePathParams,
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
+  ): Promise<any> {
+    const postParams: trackAddressWithCoordinatePostParams = {
+      x: long,
+      y: lat,
       ...(extraPostParams
         ? extraPostParams
         : defaultTrackAddressWithCoordinatePostParams),
     };
-  });
-
-  const resultData: any = await getConvertedTrackAddressesWithParams(
-    postParamsArray,
-    extraPathParams
-      ? extraPathParams
-      : defaultTrackAddressWithCoordinatePathParams,
-  );
-  return resultData;
-}
-
-function addPathParams(
-  path: string,
-  pathParams: trackAddressWithCoordinatePathParams,
-): string {
-  let resultPath = path;
-  resultPath += '?';
-  if (pathParams.geometriatiedot != undefined) {
-    resultPath += 'geometriatiedot=' + pathParams.geometriatiedot + '&';
+    const resultData: any = await this.getConvertedTrackAddressesWithParams(
+      new Array(postParams),
+      extraPathParams
+        ? extraPathParams
+        : defaultTrackAddressWithCoordinatePathParams,
+    );
+    return resultData;
   }
-  if (pathParams.lisatiedot != undefined) {
-    resultPath += 'lisatiedot=' + pathParams.lisatiedot + '&';
-  }
-  if (pathParams.perustiedot != undefined) {
-    resultPath += 'perustiedot=' + pathParams.perustiedot + '&';
-  }
-  resultPath = resultPath.substring(0, resultPath.length - 1);
 
-  return resultPath;
-}
-
-// Erämuunnos koordinaateista rataosoitteeseen kaikilla parametreillä
-async function getConvertedTrackAddressesWithParams(
-  postParams: Array<trackAddressWithCoordinatePostParams>,
-  pathParams: trackAddressWithCoordinatePathParams,
-): Promise<any> {
-  //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
-  const cleanedPostParams = postParams.map(params =>
-    pickBy(params, v => v !== undefined),
-  );
-  const postData: string = JSON.stringify(cleanedPostParams);
-
-  // some rest params have a '-' in their name which not allowed in js object. Convert them.
-  const convertedPostData = postData
-    .replace('_param', '-param')
-    .replace('_koordinaatti', '-koordinaatti');
-  log.trace('Post data: ' + convertedPostData);
-
-  const config: AxiosRequestConfig = {
-    headers: {
-      'Content-Type': 'application/json',
-    } as RawAxiosRequestHeaders,
-  };
-
-  const path = addPathParams('/rata-vkm/v1/rataosoitteet', pathParams);
-  log.trace('path: ' + path);
-  const responseData: AxiosResponse<any> | void = await apiClient
-    .post(path)
-    .then(response => {
-      log.trace(response.data, 'response:');
-      return response.data;
-    })
-    .catch(error => {
-      // Handle the error in case of failure
-      log.error(error, 'at getConvertedTrackAddressesWithParams');
-      throw error;
+  // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
+  async getConvertedTrackAddressesWithCoords(
+    coords: Array<{ lat: number; long: number }>,
+    extraPathParams?: trackAddressWithCoordinatePathParams,
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
+  ): Promise<any> {
+    const postParamsArray = coords.map(latlong => {
+      return {
+        x: latlong.long,
+        y: latlong.lat,
+        ...(extraPostParams
+          ? extraPostParams
+          : defaultTrackAddressWithCoordinatePostParams),
+      };
     });
-  return responseData;
+
+    const resultData: any = await this.getConvertedTrackAddressesWithParams(
+      postParamsArray,
+      extraPathParams
+        ? extraPathParams
+        : defaultTrackAddressWithCoordinatePathParams,
+    );
+    return resultData;
+  }
+
+  private mergeIdsToResults(
+    resultData: GetConvertedTrackAddressesWithCoordsResultType,
+    ids: Array<{
+      id: number;
+    }>,
+  ) {
+    const resultArray = [];
+    for (let [index, val] of resultData.features.entries()) {
+      resultArray.push({ id: ids[index].id, ...val.properties });
+    }
+    return resultArray;
+  }
+
+  // Erämuunnos pelkistä koordinaateista rataosoitteeseen; muille parametreille vakioarvot defaultTrackAddressWithCoordinate*Params -vakioista ellei vastaava extra*Params parametrinä.
+  async getConvertedTrackAddressesWithPrismaCoords(
+    coords: Array<{ lat: Decimal | null; long: Decimal | null; id: number }>,
+    extraPathParams?: trackAddressWithCoordinatePathParams,
+    extraPostParams?: Omit<trackAddressWithCoordinatePostParams, 'x' | 'y'>,
+  ): Promise<GeoviiteClientResultItem[]> {
+    const postParamsArray = coords.map(latlong => {
+      return {
+        x: latlong.long?.toNumber(),
+        y: latlong.lat?.toNumber(),
+        ...(extraPostParams
+          ? extraPostParams
+          : defaultTrackAddressWithCoordinatePostParams),
+      };
+    });
+
+    const resultData: GetConvertedTrackAddressesWithCoordsResultType =
+      await this.getConvertedTrackAddressesWithParams(
+        postParamsArray,
+        extraPathParams
+          ? extraPathParams
+          : defaultTrackAddressWithCoordinatePathParams,
+      );
+
+    const convertedResult: GeoviiteClientResultItem[] = this.mergeIdsToResults(
+      resultData,
+      coords,
+    );
+
+    return convertedResult;
+  }
+
+  private addPathParams(
+    path: string,
+    pathParams: trackAddressWithCoordinatePathParams,
+  ): string {
+    let resultPath = path;
+    resultPath += '?';
+    if (pathParams.geometriatiedot != undefined) {
+      resultPath += 'geometriatiedot=' + pathParams.geometriatiedot + '&';
+    }
+    if (pathParams.lisatiedot != undefined) {
+      resultPath += 'lisatiedot=' + pathParams.lisatiedot + '&';
+    }
+    if (pathParams.perustiedot != undefined) {
+      resultPath += 'perustiedot=' + pathParams.perustiedot + '&';
+    }
+    if (pathParams.koordinaatisto != undefined) {
+      resultPath += 'koordinaatisto=' + pathParams.koordinaatisto + '&';
+    }
+    resultPath = resultPath.substring(0, resultPath.length - 1);
+
+    return resultPath;
+  }
+
+  // Erämuunnos koordinaateista rataosoitteeseen kaikilla parametreillä
+  private async getConvertedTrackAddressesWithParams(
+    postParams: Array<trackAddressWithCoordinatePostParams>,
+    pathParams: trackAddressWithCoordinatePathParams,
+  ): Promise<any> {
+    //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
+    const cleanedPostParams: trackAddressWithCoordinatePostParams[] =
+      postParams.map<trackAddressWithCoordinatePostParams>(params =>
+        // @ts-ignore
+        pickBy(
+          params,
+          (value, key) => key == 'x' || key == 'y' || value !== undefined,
+        ),
+      );
+
+    log.trace('Post data: ' + JSON.stringify(cleanedPostParams));
+
+    const config: AxiosRequestConfig = {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      } as RawAxiosRequestHeaders,
+    };
+
+    const path = this.addPathParams('rata-vkm/v1/rataosoitteet', pathParams);
+
+    log.trace('path: ' + path);
+
+    const responseData: AxiosResponse<any> | void = await this.axiosClient
+      .post(path, cleanedPostParams, config)
+      .then((response: AxiosResponse<any>) => {
+        log.trace(response.data, 'response:');
+        return response.data;
+      })
+      .catch((error: any) => {
+        // Handle the error in case of failure
+        log.error(error, 'at getConvertedTrackAddressesWithParams');
+        throw error;
+      });
+    return responseData;
+  }
 }
