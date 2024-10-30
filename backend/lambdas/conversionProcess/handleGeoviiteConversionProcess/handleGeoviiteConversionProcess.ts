@@ -50,77 +50,133 @@ export async function handleGeoviiteConversionProcess(
 
     const message: ConversionMessage = JSON.parse(sqsRecord.body);
     key = message.key;
-    log.info({ key }, 'Start conversion');
+    log.info({ message }, 'Start conversion');
 
-    // TODO: can row count be too large to fetch in one query?
-    // Yes, a raportti can have 500 0000 mittauses. Geoviite has made an initial promise of 1000 per conversion.
-    const mittausRows = await prismaClient.mittaus.findMany({
+    // how many to handle in this invocation
+    const invocationTotalBatchSize = message.batchSize;
+    const invocationTotalBatchIndex = message.batchIndex;
+    const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
+    // how many to handle in one request
+    const requestBatchSize = 1000;
+
+    if (message.orderBy !== 'id') {
+      throw new Error('orderBy value other than id not implemented');
+    }
+
+    const raportti = await prismaClient.raportti.findFirst({
       where: {
-        raportti: {
-          key,
-        },
+        key,
       },
       select: {
-        lat: true,
-        long: true,
         id: true,
       },
     });
-
-    const convertedRows: GeoviiteClientResultItem[] =
-      await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
-        mittausRows,
-      );
-
-    // TODO: fetch all results first, or save after fetching one batch?
-
-    // save result in batches
-    const batchSize = 100;
-    const batches: GeoviiteClientResultItem[][] = [];
-    for (let i = 0; i < convertedRows.length; i += batchSize) {
-      batches.push(convertedRows.slice(i, i + batchSize));
+    if (!raportti) {
+      throw new Error('Raportti not found');
     }
+    // separate mittaus count query for optimization
+    const totalMittausCount = await prismaClient.mittaus.count({
+      where: {
+        raportti_id: raportti.id,
+      },
+    });
+    // this will be smaller on last batch
+    const remainingMittausCount = totalMittausCount - startingSkip;
+    if (totalMittausCount === 0) {
+      throw new Error('Mittaus count 0');
+    }
+    // how many to handle in this invocation
+    const mittausCount = Math.min(remainingMittausCount, message.batchSize);
+    log.info({ mittausCount, remainingMittausCount, totalMittausCount });
+    // loop through array in batches: get results for batch and save to db
+    for (
+      let requestIndex = 0;
+      requestIndex < mittausCount;
+      requestIndex += requestBatchSize
+    ) {
+      const mittausRows = await prismaClient.mittaus.findMany({
+        where: {
+          raportti: {
+            key,
+          },
+        },
+        select: {
+          lat: true,
+          long: true,
+          id: true,
+        },
+        orderBy: { id: 'asc' },
+        take: requestBatchSize,
+        skip: startingSkip + requestIndex,
+      });
+      log.info({ length: mittausRows.length }, 'Got from db');
 
-    // one timestamp for all
-    const timestamp = new Date().toISOString();
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
-      await prismaClient.$transaction(
-        // transaction to group multiple updates in one connection
-        batch.map((result: GeoviiteClientResultItem) =>
-          prismaClient.mittaus.update({
-            where: {
-              id: result.id,
-              // Sadly checking mittaus.id not enough. Mittaus subtables can share id.
-              // See: https://stackoverflow.com/questions/56637251/violation-of-uniqueness-in-primary-key-when-using-inheritance
-              raportti: {
-                key,
+      const convertedRows: GeoviiteClientResultItem[] =
+        await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
+          mittausRows,
+        );
+      log.info({ length: convertedRows.length }, 'converted');
+      if (convertedRows.length !== mittausRows.length) {
+        // TODO can this happen? or other errors from geoviite api?
+        log.error('Size mismatch');
+      }
+
+      // save result in smaller batches
+      const saveBatchSize = 100;
+
+      // one timestamp for all
+      const timestamp = new Date().toISOString();
+      for (
+        let saveBatchIndex = 0;
+        saveBatchIndex < convertedRows.length;
+        saveBatchIndex += saveBatchSize
+      ) {
+        const batch = convertedRows.slice(
+          saveBatchIndex,
+          saveBatchIndex + saveBatchSize,
+        );
+        await prismaClient.$transaction(
+          // transaction to group multiple updates in one connection
+          batch.map((result: GeoviiteClientResultItem) => {
+            // get a sensible value if ratametri or ratametri_desimaalit is missing
+            let rata_metrit = '';
+            if (result.ratametri) {
+              rata_metrit = `${result.ratametri}`;
+            }
+            if (result.ratametri_desimaalit) {
+              rata_metrit = `${rata_metrit}.${result.ratametri_desimaalit}`;
+            }
+            return prismaClient.mittaus.update({
+              where: {
+                id: result.id,
+                // Sadly checking mittaus.id not enough. Mittaus subtables can share id.
+                // See: https://stackoverflow.com/questions/56637251/violation-of-uniqueness-in-primary-key-when-using-inheritance
+                raportti_id: raportti.id,
               },
-            },
-            data: {
-              geoviite_updated_at: timestamp,
-              geoviite_konvertoitu_long: result.x,
-              geoviite_konvertoitu_lat: result.y,
-              geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
-              geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
-              geoviite_konvertoitu_rata_metrit:
-                result.ratametri.toString() +
-                '.' +
-                result.ratametri_desimaalit.toString(),
-              geoviite_konvertoitu_rataosuus_nimi: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
-              geoviite_konvertoitu_raide_numero: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
-              geoviite_valimatka: result.valimatka,
-              geoviite_sijaintiraide: result.sijaintiraide,
-              geoviite_sijaintiraide_kuvaus: result.sijaintiraide_kuvaus,
-              geoviite_sijaintiraide_tyyppi: result.sijaintiraide_tyyppi,
-              geoviite_sijaintiraide_oid: result.sijaintiraide_oid,
-              geoviite_ratanumero_oid: result.ratanumero_oid,
-            },
+              data: {
+                geoviite_updated_at: timestamp,
+                geoviite_konvertoitu_long: result.x,
+                geoviite_konvertoitu_lat: result.y,
+                geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
+                geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
+                geoviite_konvertoitu_rata_metrit: Number(rata_metrit),
+                geoviite_konvertoitu_rataosuus_nimi: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
+                geoviite_konvertoitu_raide_numero: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
+                geoviite_valimatka: result.valimatka,
+                geoviite_sijaintiraide: result.sijaintiraide,
+                geoviite_sijaintiraide_kuvaus: result.sijaintiraide_kuvaus,
+                geoviite_sijaintiraide_tyyppi: result.sijaintiraide_tyyppi,
+                geoviite_sijaintiraide_oid: result.sijaintiraide_oid,
+                geoviite_ratanumero_oid: result.ratanumero_oid,
+              },
+            });
           }),
-        ),
-      );
-      // TODO: check errors?
+        );
+        // TODO: check errors?
+      }
     }
+
+    const readyTimestamp = new Date().toISOString();
 
     await prismaClient.raportti.updateMany({
       // updateMany because key is not set as unique. TODO: should it be?
@@ -129,12 +185,12 @@ export async function handleGeoviiteConversionProcess(
       },
       data: {
         geoviite_status: 'SUCCESS',
-        geoviite_update_at: timestamp,
+        geoviite_update_at: readyTimestamp,
       },
     });
   } catch (err) {
+    log.error(err);
     log.error({
-      error: err,
       message: 'Error in conversion process',
       key,
     });

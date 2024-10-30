@@ -74,7 +74,7 @@ type Properties = {
   ratametri: number;
   ratametri_desimaalit: number;
   sijaintiraide_oid: string;
-  ratanumero_oid: string,
+  ratanumero_oid: string;
 };
 
 //params that go to rest as url path params
@@ -123,8 +123,6 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   sijaintiraide_tyyppi: undefined,
 };
 
-
-
 export type GeoviiteClientResultItem = {
   ratametri: number;
   sijaintiraide_kuvaus: string;
@@ -139,7 +137,7 @@ export type GeoviiteClientResultItem = {
   y: number;
   id: number;
   ratakilometri: number;
-}
+};
 
 export class GeoviiteClient {
   private baseUrl: string;
@@ -272,6 +270,9 @@ export class GeoviiteClient {
     pathParams: trackAddressWithCoordinatePathParams,
   ): Promise<any> {
     //remove params with 'undefined' value; we dont to send those to rest to mess geoviite defaults
+    if (postParams.length > 1000) {
+      throw new Error('Exceeding max limit of 1000 coord pairs');
+    }
     const cleanedPostParams: trackAddressWithCoordinatePostParams[] =
       postParams.map<trackAddressWithCoordinatePostParams>(params =>
         // @ts-ignore
