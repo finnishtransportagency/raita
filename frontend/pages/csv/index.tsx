@@ -83,6 +83,10 @@ const getQueryVariables = (state: CsvState) => {
       ...state.queryVariables.raportti,
       ...state.extraRaporttiQueryVariables,
     },
+    mittaus: {
+      ...state.queryVariables.mittaus,
+      rata_kilometri: state.queryVariables.mittaus.rata_kilometri ?? null,
+    },
   };
 };
 
@@ -223,7 +227,7 @@ const CsvIndex: RaitaNextPage = () => {
         value: columnName,
       })),
     )
-    .concat({ key: 'ajonopeus', value: 'ajonopeus' });
+    .concat([{ key: 'ajonopeus', value: 'ajonopeus' }]);
 
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
@@ -370,26 +374,25 @@ const CsvIndex: RaitaNextPage = () => {
             {showRaporttiQueryError && <p>{t('common:error_loading')}</p>}
 
             {showRaporttiResults && (
-              /*Keijo tänne ratakilometrit */ <>
+              <>
                 <section className={clsx(css.subSection)}>
-                  <header>Mittausarvojen tiedot</header>
+                  <header>{t('common:csv_filter_header')}</header>
                   <FilterSelector
                     filters={[]}
                     onChange={entries => {
                       const inputVariables =
                         getInputVariablesFromEntries(entries);
-                      // replace the whole
+
                       setState(
                         R.assocPath(
-                          ['extraRaporttiQueryVariables'],
+                          ['queryVariables', 'mittaus'],
                           inputVariables,
                         ),
                       );
                       setMittausCountIsFresh(false);
                     }}
                     fields={{
-                      km_start: { type: 'IntIntervalInput' }, // väärä type
-                      km_end: { type: 'IntIntervalInput' },
+                      rata_kilometri: { type: 'IntIntervalInput' },
                     }}
                     resetFilterSelector={state.resetFilters}
                   />

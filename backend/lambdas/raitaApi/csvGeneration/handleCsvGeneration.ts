@@ -27,6 +27,7 @@ import {
   MittausDbResult,
   MultipartUploadResultWithPartNumber,
 } from './types';
+import { MittausInput } from '../../../apollo/__generated__/resolvers-types';
 
 const withRequest = lambdaRequestTracker();
 
@@ -112,7 +113,11 @@ async function generateCsv(
 
   // use a readable stream to read data from db and write to s3
   // this is because the desired data chunk sizes when reading from db and writing to s3 are different
-  const csvReadResult = await readDbToReadable(raporttiWhere, selectedColumns);
+  const csvReadResult = await readDbToReadable(
+    raporttiWhere,
+    selectedColumns,
+    mittaus,
+  );
 
   const csvStream = csvReadResult.outputStream;
 
@@ -184,6 +189,7 @@ const getPartialMittausRows = async (
   offset: number,
   pageSize: number,
   selectedColumns: string[],
+  mittaus: MittausInput,
 ): Promise<MittausDbResult[]> => {
   const systemSpecificColumnSelections = getColumnsSelectInputForSystem(
     system,
@@ -195,6 +201,17 @@ const getPartialMittausRows = async (
       raportti_id: {
         in: raporttiIds,
       },
+      ...((mittaus.rata_kilometri?.start !== undefined ||
+        mittaus.rata_kilometri?.end !== undefined) && {
+        rata_kilometri: {
+          ...(mittaus.rata_kilometri?.start !== undefined && {
+            gte: mittaus.rata_kilometri.start,
+          }),
+          ...(mittaus.rata_kilometri?.end !== undefined && {
+            lte: mittaus.rata_kilometri.end,
+          }),
+        },
+      }),
     },
     orderBy: [
       {
@@ -262,6 +279,7 @@ const getPartialMittausRows = async (
 const readDbToReadable = async (
   raporttiWhere: Prisma.raporttiWhereInput,
   selectedColumns: string[],
+  mittaus: MittausInput,
 ): Promise<{ outputStream: Readable; result: Promise<any> }> => {
   const client = await getPrismaClient();
   const raporttiCount = await client.raportti.count({
@@ -337,6 +355,7 @@ const readDbToReadable = async (
             offset,
             rowCountToRead,
             selectedColumns,
+            mittaus,
           );
           writeDbChunkToStream(
             mittausRows,

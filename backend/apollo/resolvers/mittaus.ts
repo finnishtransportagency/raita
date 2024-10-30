@@ -61,6 +61,18 @@ export const mittausResolvers: Resolvers = {
             // TODO: search with mittaus specific fields
             in: raporttiRows.map(raportti => raportti.id),
           },
+
+          ...((mittaus.rata_kilometri?.start !== undefined ||
+            mittaus.rata_kilometri?.end !== undefined) && {
+            rata_kilometri: {
+              ...(mittaus.rata_kilometri?.start !== undefined && {
+                gte: mittaus.rata_kilometri.start,
+              }),
+              ...(mittaus.rata_kilometri?.end !== undefined && {
+                lte: mittaus.rata_kilometri.end,
+              }),
+            },
+          }),
         },
       });
       return {
