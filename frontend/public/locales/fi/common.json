@@ -1,6 +1,7 @@
 {
   "page_labels": {
     "reports": "Raportit",
+    "csv": "Csv-haku",
     "admin": {
       "logs": "Adminloki",
       "delete": "Tietojen poisto",
