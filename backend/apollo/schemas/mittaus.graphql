@@ -35,7 +35,7 @@ type MittausGenerateResponse {
 input MittausInput {
   ## Mittaus common fields
   # track: String
-  rata_kilometri: Int ## TODO: is it useful to search with these at all? they are not consistent between files
+  rata_kilometri: IntIntervalInput ## TODO: is it useful to search with these at all? they are not consistent between files
   rata_metrit: Float
   ## TODO: system specific fields
 }

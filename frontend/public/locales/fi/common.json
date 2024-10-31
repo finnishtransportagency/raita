@@ -97,5 +97,6 @@
   "file_count_limit": "Tiedostomäärän oltava alle 4000",
   "file_size_limit": "Tiedoston koko oltava alle 5 GB",
   "stale_mittaus_count": "Huom: hakuehtoja on muutettu, näytetty mittausten määrä ei välttämättä enää vastaa valittuja hakuehtoja. Tee uusi haku päivittääksesi mittausten määrä.",
-  "error_size_limit": "Virhe: liian suuri datamäärä. Rajaa hakuehtoja tarkemmaksi"
+  "error_size_limit": "Virhe: liian suuri datamäärä. Rajaa hakuehtoja tarkemmaksi",
+  "csv_filter_header": "Mittausarvojen suodatin"
 }
