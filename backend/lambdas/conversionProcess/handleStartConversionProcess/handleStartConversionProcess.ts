@@ -1,8 +1,8 @@
 import { Context } from 'aws-lambda';
-import { lambdaRequestTracker } from 'pino-lambda';
+import { LambdaEvent, lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
-import { SendMessageBatchCommand, SQSClient } from '@aws-sdk/client-sqs';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
@@ -35,36 +35,48 @@ const init = () => {
 const { withRequest, prisma, config, sqsClient } = init();
 const pageCount = 1000;
 
+const conversionBatchSize = 50000;
+
 // TODO: how are possible status values defined?
 const waitingForConversionStatus = 'WAITING';
 const inProgressStatus = 'IN_PROGRESS';
+
+// for manual testing
+type TestEvent = {
+  key: string;
+} & LambdaEvent;
 
 /**
  * Handle conversion process:
  * Fetch list of raporttis to convert and add them to SQS
  */
 export async function handleStartConversionProcess(
-  event: any, // TODO what event will be the trigger?
+  event: TestEvent, // TODO what event will be the trigger?
   context: Context,
 ): Promise<void> {
   try {
     withRequest(event, context);
+    log.info({ event });
     log.info('Start conversion process');
+    const prismaClient = await prisma;
     // TODO: extract some input from event, like prefix path?
 
-    // currently fetch all files with a specific status. TODO: do we need to limit maximum amount somehow?
-    const whereInput = {
-      geoviite_status: {
-        equals: waitingForConversionStatus,
-      },
-      file_type: {
-        equals: 'csv',
-      },
-    };
-    // TODO: do we need to account for more raportti being added during this process?
-    const totalCount = await (
-      await prisma
-    ).raportti.count({
+    // if no key is given, fetch all with status WAITING
+    const whereInput = event.key
+      ? {
+          key: {
+            equals: event.key,
+          },
+        }
+      : {
+          geoviite_status: {
+            equals: waitingForConversionStatus,
+          },
+          file_type: {
+            equals: 'csv',
+          },
+        };
+    const totalCount = await prismaClient.raportti.count({
       where: whereInput,
     });
 
@@ -77,55 +89,55 @@ export async function handleStartConversionProcess(
     ) {
       // get next set of files
       // as raportti entries are handled the status is changed, so always search the next available ones
-      const files = await (
-        await prisma
-      ).raportti.findMany({
+      // TODO: make sure this paging works with other ways to determine raporttis than status
+      const raporttis = await prismaClient.raportti.findMany({
         where: whereInput,
         select: {
           key: true,
+          id: true,
         },
         take: pageCount,
       });
-      const keys = files.map(file => file.key).filter(key => key !== null);
-      // sending to queue has a batch limit of 10
-      const queueBatchSize = 10;
       let successfulKeys: string[] = [];
       let failedKeys: string[] = [];
-      for (
-        let keyIndex = 0;
-        keyIndex < keys.length;
-        keyIndex += queueBatchSize
-      ) {
-        const currentKeys = keys.slice(keyIndex, keyIndex + queueBatchSize);
-        const command = new SendMessageBatchCommand({
-          QueueUrl: config.queueUrl,
-          Entries: currentKeys.map((key, i) => {
-            const body: ConversionMessage = { key };
-            return {
-              Id: `${i}`, // unique in single request only
-              MessageBody: JSON.stringify(body),
-            };
-          }),
+      for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
+        const raportti = raporttis[fileIndex];
+        // faster to fetch mittaus count for each raportti separately than to do in initial raportti query
+        const mittausCount = await prismaClient.mittaus.count({
+          where: {
+            raportti_id: raportti.id,
+          },
         });
-        const queueResponse = await sqsClient.send(command);
-        if (queueResponse.Failed?.length) {
-          log.error({ queueResponse }, 'Some keys failed');
-          const failed = queueResponse.Failed?.map(
-            result => currentKeys[Number(result.Id)],
-          );
-          failedKeys = failedKeys.concat(failed);
-        }
-        const succeeded =
-          queueResponse.Successful?.map(
-            result => currentKeys[Number(result.Id)],
-          ) ?? [];
-        successfulKeys = successfulKeys.concat(succeeded);
 
-        await asyncWait(5); // wait to avoid hitting rate limits
+        const key = raportti.key;
+        if (key === null) {
+          log.error('File with no key?');
+          continue;
+        }
+        // split one raportti into batches
+        const batchCount = Math.ceil(mittausCount / conversionBatchSize);
+        for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+          const body: ConversionMessage = {
+            key,
+            batchSize: conversionBatchSize,
+            batchIndex,
+            orderBy: 'id',
+          };
+          const command = new SendMessageCommand({
+            QueueUrl: config.queueUrl,
+            MessageBody: JSON.stringify(body),
+          });
+          const queueResponse = await sqsClient.send(command);
+          if (queueResponse.$metadata.httpStatusCode !== 200) {
+            log.error({ queueResponse, key, batchIndex }, 'Some key failed');
+            failedKeys = failedKeys.concat(key);
+          } else {
+            successfulKeys = successfulKeys.concat(key);
+          }
+          await asyncWait(5); // wait to avoid hitting rate limits
+        }
       }
-      await (
-        await prisma
-      ).raportti.updateMany({
+      await prismaClient.raportti.updateMany({
         data: {
           geoviite_status: inProgressStatus,
         },
@@ -141,8 +153,8 @@ export async function handleStartConversionProcess(
       }
     }
   } catch (err) {
+    log.error(err);
     log.error({
-      error: err,
       message: 'An error occured while processing events',
     });
   }
