@@ -17,9 +17,6 @@ export const PollingHandler = ({
   const { error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
-  /* useEffect(() => {
-    if (state.zipUrl == undefined) triggerKeyQuery();
-  }, [state]);*/
   const retryFunction = (failureCount: number) => {
     if (failureCount === 3) {
       setState(initialState);
