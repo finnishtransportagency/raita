@@ -50,8 +50,10 @@ import {
   SelectorSupportedType,
 } from 'components/filters-graphql/selector';
 import { getInputVariablesFromEntries } from 'components/filters-graphql/utils';
-import { zipContext } from 'shared/zipContext';
-import { initialState as zipInitialState } from 'shared/zipContext';
+import {
+  fileDownloadContext,
+  initialState as fileDownloadInitialState,
+} from 'shared/fileDownloadContext';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -90,7 +92,7 @@ const ReportsIndex: RaitaNextPage = () => {
   const [triggerInitialSearch, searchQuery] = useLazyQuery(SEARCH_RAPORTTI);
 
   const user = useUser();
-  const zipState = useContext(zipContext);
+  const fileDownloadState = useContext(fileDownloadContext);
   const [state, setState] = useState<ReportsState>(initialState);
   const [imageKeys, setImageKeys] = useState<ImageKeys[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -108,7 +110,7 @@ const ReportsIndex: RaitaNextPage = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));
     setState(R.assocPath(['waitingToUpdateSearchQuery'], true));
     localStorage.removeItem('zipUrl');
-    zipState.setState(zipInitialState);
+    fileDownloadState.setState(fileDownloadInitialState);
     triggerInitialSearch({
       variables: getQueryVariables(state),
     });

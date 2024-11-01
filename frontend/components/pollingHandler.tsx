@@ -1,4 +1,8 @@
-import { handleZipDownload, initialState, zipContext } from 'shared/zipContext';
+import {
+  handleFileDownload,
+  initialState,
+  fileDownloadContext,
+} from 'shared/fileDownloadContext';
 import Button from './button';
 import { ProgressStatus } from 'shared/types';
 import { getPollingProgress } from 'shared/rest';
@@ -13,7 +17,7 @@ export const PollingHandler = ({
 }: {
   buttonType?: 'primary' | 'secondary' | 'tertiary';
 }) => {
-  const { state, setState } = useContext(zipContext);
+  const { state, setState } = useContext(fileDownloadContext);
   const { error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
@@ -51,8 +55,8 @@ export const PollingHandler = ({
           data?.progressData?.url
         ) {
           setState(initialState);
-          setState(R.assoc('zipUrl', data.progressData.url));
-          localStorage.setItem('zipUrl', data.progressData.url);
+          setState(R.assoc('fileUrl', data.progressData.url));
+          localStorage.setItem('fileUrl', data.progressData.url);
           localStorage.removeItem('pollingFileKey');
         } else if (data?.progressData?.status === ProgressStatus.FAILED) {
           setState(initialState);
@@ -63,7 +67,7 @@ export const PollingHandler = ({
   );
   const resetInitials = () => {
     setState(initialState);
-    localStorage.removeItem('zipUrl');
+    localStorage.removeItem('fileUrl');
     localStorage.removeItem('pollingFileKey');
   };
   return (
@@ -78,7 +82,7 @@ export const PollingHandler = ({
             type={buttonType ? buttonType : 'primary'}
             size="sm"
             label={`${t('common:download_zip')}`}
-            onClick={() => handleZipDownload(localStorage.getItem('zipUrl'))}
+            onClick={() => handleFileDownload(localStorage.getItem('fileUrl'))}
           />
           <Button
             size="sm"

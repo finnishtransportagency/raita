@@ -5,7 +5,7 @@ import Button from './button';
 import { Generate_Mittaus_CsvMutationVariables } from 'shared/graphql/__generated__/graphql';
 import { useMutation } from '@apollo/client';
 import { GENERATE_MITTAUS_CSV } from 'shared/graphql/queries/csv';
-import { initialState, zipContext } from 'shared/zipContext';
+import { initialState, fileDownloadContext } from 'shared/fileDownloadContext';
 import * as R from 'rambda';
 import { Spinner } from './spinner';
 
@@ -15,7 +15,7 @@ export function CsvDownload(props: Props) {
   const [shouldPoll, setShouldPoll] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null); // TODO show somehow
-  const { state, setState } = useContext(zipContext);
+  const { state, setState } = useContext(fileDownloadContext);
 
   const [mutateGenerateCsv, generateCsvStatus] =
     useMutation(GENERATE_MITTAUS_CSV);

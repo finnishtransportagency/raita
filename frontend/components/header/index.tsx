@@ -8,7 +8,7 @@ import Navigation from 'components/navigation';
 import { PageDescription } from 'shared/pageRoutes';
 import LatestInspectionDate from 'components/latest_inspection_date';
 import { assetURL } from 'shared/config';
-import { zipContext } from 'shared/zipContext';
+import { fileDownloadContext } from 'shared/fileDownloadContext';
 import * as R from 'rambda';
 import { PollingHandler } from 'components/pollingHandler';
 type Props = {
@@ -22,7 +22,7 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
   const router = useRouter();
   const pathSplit = router.pathname.split('/');
   const pageTitleKey = `page_labels${pathSplit.join('.')}`;
-  const { state, setState } = useContext(zipContext);
+  const { state, setState } = useContext(fileDownloadContext);
   useEffect(() => {
     const storedZipUrl = localStorage.getItem('zipUrl');
     if (typeof storedZipUrl === 'string') {
@@ -59,7 +59,7 @@ const Header = ({ pages, children }: PropsWithChildren<Props>) => {
               <LatestInspectionDate className="my-auto mr-4" />
             </div>
             {(state.isLoading ||
-              state.zipUrl ||
+              state.fileUrl ||
               localStorage.getItem('zipUrl') ||
               localStorage.getItem('pollingFileKey')) && (
               <div className="ml-2 flex justify-end">
