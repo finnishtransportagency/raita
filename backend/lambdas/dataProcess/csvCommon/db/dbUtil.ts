@@ -474,10 +474,13 @@ export async function substractRaporttiChunk(
   }
 }
 
+/**
+ *  @return amount of chunks left to process
+ */
 export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
-) {
+): Promise<number> {
   const { schema, sql, prisma } = dbConnection;
 
   try {
@@ -487,7 +490,7 @@ export async function raporttiChunksToProcess(
         chunks_to_process: true,
       },
     });
-    return Number(chunks);
+    return Number(chunks?.chunks_to_process);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
