@@ -123,7 +123,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result in smaller batches
-      const saveBatchSize = 1000;
+      const saveBatchSize = 10;
 
       // one timestamp for all
       const timestamp = new Date().toISOString();
@@ -150,19 +150,63 @@ export async function handleGeoviiteConversionProcess(
         WHERE id IN (27554660, 27554661);
         */
 
-        let query: string = 'UPDATE mittaus SET ';
-        let longPart: string = 'geoviite_konvertoitu_long = CASE';
-        let latPart: string = 'geoviite_konvertoitu_lat = CASE';
-        let wherePart: string = 'WHERE id IN (';
+        let query: string = 'UPDATE mittaus SET';
+        let longPart: string = ' geoviite_konvertoitu_long = CASE';
+        let latPart: string = ' geoviite_konvertoitu_lat = CASE';
+        let osuusNumPart: string =
+          ' geoviite_konvertoitu_rataosuus_numero = CASE';
+        let kmPart: string = ' geoviite_konvertoitu_rata_kilometri = CASE';
+        let mPart: string = ' geoviite_konvertoitu_rata_metrit = CASE';
+        let osuusNimiPart: string =
+          ' geoviite_konvertoitu_rataosuus_nimi = CASE';
+        let raideNumPart: string = ' geoviite_konvertoitu_raide_numero = CASE';
+        let valimatkaPart: string = ' geoviite_valimatka = CASE';
+        let sijRaidePart: string = ' geoviite_sijaintiraide = CASE';
+        let sijRaideKuvPart: string = ' geoviite_sijaintiraide_kuvaus = CASE';
+        let sijRaideTyypPart: string = ' geoviite_sijaintiraide_tyyppi = CASE';
+        let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
+        let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
+
+        let wherePart: string = ' WHERE id IN (';
         batch.forEach((row: GeoviiteClientResultItem) => {
           longPart += ' when id in (' + row.id + ') then ' + row.x;
-          latPart += 'when id in (' + row.id + ') then ' + row.y;
-          wherePart += ''+row.id+',';
+          latPart += ' when id in (' + row.id + ') then ' + row.y;
+          osuusNumPart +=
+            ' when id in (' + row.id + ') then ' + "'" + row.ratanumero + "'";
+          kmPart += ' when id in (' + row.id + ') then ' + row.y;
+          let rata_metrit = '';
+          if (row.ratametri) {
+            rata_metrit = `${row.ratametri}`;
+          }
+          if (row.ratametri_desimaalit) {
+            rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
+          }
+          mPart += ' when id in (' + row.id + ') then ' + rata_metrit;
+          osuusNimiPart += ' when id in (' + row.id + ') then ' + "''";
+          raideNumPart += ' when id in (' + row.id + ') then ' + "''";
+          valimatkaPart += ' when id in (' + row.id + ') then ' + row.valimatka;
+          sijRaidePart +=
+            ' when id in (' +
+            row.id +
+            ') then ' +
+            "'" +
+            row.sijaintiraide +
+            "'";
+          sijRaideKuvPart +=
+            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_kuvaus + "'";
+          sijRaideTyypPart +=
+            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_tyyppi + "'";
+          sijRaideOidPart +=
+            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
+          ratanumOidPart +=
+            ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
+          wherePart += '' + row.id + ',';
         });
-        longPart+= 'END,'
-        latPart+= 'END'
+        longPart += ' END,';
+        latPart += ' END';
 
-        wherePart = wherePart.substring(0, wherePart.length -1 );
+        wherePart = wherePart.substring(0, wherePart.length - 1);
+        wherePart += ');';
         query += longPart + latPart + wherePart;
         console.info(query, 'HELLO query');
 
