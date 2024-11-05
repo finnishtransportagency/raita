@@ -123,7 +123,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result in smaller batches
-      const saveBatchSize = 100;
+      const saveBatchSize = 1000;
 
       // one timestamp for all
       const timestamp = new Date().toISOString();
@@ -136,6 +136,36 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex,
           saveBatchIndex + saveBatchSize,
         );
+
+        /*        UPDATE kalle.mittaus SET geoviite_updated_at = '2024-11-01 07:55:49.194 UTC', geoviite_konvertoitu_long = 23.07481750580574, geoviite_konvertoitu_lat = 63.77560873588688,
+          geoviite_konvertoitu_rataosuus_numero = 008, geoviite_konvertoitu_rata_kilometri = 543, geoviite_konvertoitu_rata_metrit = 983.849, geoviite_konvertoitu_rataosuus_nimi = 'KALLETEST',
+          geoviite_konvertoitu_raide_numero = '', geoviite_valimatka = 0.77748252596, geoviite_sijaintiraide = '008 LPA-KOK', geoviite_sijaintiraide_kuvaus = 'Ratanumeron raide: 008 Lapua - Kokkola',
+          geoviite_sijaintiraide_tyyppi = 'pääraide', geoviite_sijaintiraide_oid = '1.2.246.578.3.10002.190470', geoviite_ratanumero_oid = '1.2.246.578.3.10002.190470' WHERE raportti_id = 1411;
+
+        UPDATE kalle.mittaus SET geoviite_konvertoitu_long = CASE
+        when id in (27554660) then 23.07481750580574
+        when id in (27554661) then 22.01481
+        END,
+          geoviite_konvertoitu_lat = 60
+        WHERE id IN (27554660, 27554661);
+        */
+
+        let query: string = 'UPDATE mittaus SET ';
+        let longPart: string = 'geoviite_konvertoitu_long = CASE';
+        let latPart: string = 'geoviite_konvertoitu_lat = CASE';
+        let wherePart: string = 'WHERE id IN (';
+        batch.forEach((row: GeoviiteClientResultItem) => {
+          longPart += ' when id in (' + row.id + ') then ' + row.x;
+          latPart += 'when id in (' + row.id + ') then ' + row.y;
+          wherePart += ''+row.id+',';
+        });
+        longPart+= 'END,'
+        latPart+= 'END'
+
+        wherePart = wherePart.substring(0, wherePart.length -1 );
+        query += longPart + latPart + wherePart;
+        console.info(query, 'HELLO query');
+
         await prismaClient.$transaction(
           // transaction to group multiple updates in one connection
           batch.map((result: GeoviiteClientResultItem) => {
