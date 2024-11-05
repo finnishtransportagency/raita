@@ -33,6 +33,78 @@ const init = () => {
 
 const { withRequest, prisma } = init();
 
+function produceUpdateSql(
+  batch: GeoviiteClientResultItem[],
+  timestamp: string,
+): string {
+  let query: string = 'UPDATE mittaus SET';
+  let longPart: string = ' geoviite_konvertoitu_long = CASE';
+  let latPart: string = ' geoviite_konvertoitu_lat = CASE';
+  let osuusNumPart: string = ' geoviite_konvertoitu_rataosuus_numero = CASE';
+  let kmPart: string = ' geoviite_konvertoitu_rata_kilometri = CASE';
+  let mPart: string = ' geoviite_konvertoitu_rata_metrit = CASE';
+  let osuusNimiPart: string = ' geoviite_konvertoitu_rataosuus_nimi = CASE';
+  let raideNumPart: string = ' geoviite_konvertoitu_raide_numero = CASE';
+  let valimatkaPart: string = ' geoviite_valimatka = CASE';
+  let sijRaidePart: string = ' geoviite_sijaintiraide = CASE';
+  let sijRaideKuvPart: string = ' geoviite_sijaintiraide_kuvaus = CASE';
+  let sijRaideTyypPart: string = ' geoviite_sijaintiraide_tyyppi = CASE';
+  let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
+  let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
+
+
+  let wherePart: string = ' WHERE id IN (';
+  batch.forEach((row: GeoviiteClientResultItem) => {
+    longPart += ' when id in (' + row.id + ') then ' + row.x;
+    latPart += ' when id in (' + row.id + ') then ' + row.y;
+    osuusNumPart +=
+      ' when id in (' + row.id + ') then ' + "'" + row.ratanumero + "'";
+    kmPart += ' when id in (' + row.id + ') then ' + row.y;
+    let rata_metrit = '';
+    if (row.ratametri) {
+      rata_metrit = `${row.ratametri}`;
+    }
+    if (row.ratametri_desimaalit) {
+      rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
+    }
+    mPart += ' when id in (' + row.id + ') then ' + rata_metrit;
+    osuusNimiPart += ' when id in (' + row.id + ') then ' + "''";
+    raideNumPart += ' when id in (' + row.id + ') then ' + "''";
+    valimatkaPart += ' when id in (' + row.id + ') then ' + row.valimatka;
+    sijRaidePart +=
+      ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide + "'";
+    sijRaideKuvPart +=
+      ' when id in (' +
+      row.id +
+      ') then ' +
+      "'" +
+      row.sijaintiraide_kuvaus +
+      "'";
+    sijRaideTyypPart +=
+      ' when id in (' +
+      row.id +
+      ') then ' +
+      "'" +
+      row.sijaintiraide_tyyppi +
+      "'";
+    sijRaideOidPart +=
+      ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
+    ratanumOidPart +=
+      ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
+
+    wherePart += '' + row.id + ',';
+  });
+  longPart += ' END,';
+  latPart += ' END';
+
+  wherePart = wherePart.substring(0, wherePart.length - 1);
+  wherePart += ');';
+  const timestampPart: string = ' geoviite_updated_at =  ' +timestamp;
+  query += longPart + latPart + timestampPart + wherePart;
+  log.info(query);
+  return query;
+}
+
 /**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
  */
@@ -137,116 +209,9 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-        /*        UPDATE kalle.mittaus SET geoviite_updated_at = '2024-11-01 07:55:49.194 UTC', geoviite_konvertoitu_long = 23.07481750580574, geoviite_konvertoitu_lat = 63.77560873588688,
-          geoviite_konvertoitu_rataosuus_numero = 008, geoviite_konvertoitu_rata_kilometri = 543, geoviite_konvertoitu_rata_metrit = 983.849, geoviite_konvertoitu_rataosuus_nimi = 'KALLETEST',
-          geoviite_konvertoitu_raide_numero = '', geoviite_valimatka = 0.77748252596, geoviite_sijaintiraide = '008 LPA-KOK', geoviite_sijaintiraide_kuvaus = 'Ratanumeron raide: 008 Lapua - Kokkola',
-          geoviite_sijaintiraide_tyyppi = 'pääraide', geoviite_sijaintiraide_oid = '1.2.246.578.3.10002.190470', geoviite_ratanumero_oid = '1.2.246.578.3.10002.190470' WHERE raportti_id = 1411;
 
-        UPDATE kalle.mittaus SET geoviite_konvertoitu_long = CASE
-        when id in (27554660) then 23.07481750580574
-        when id in (27554661) then 22.01481
-        END,
-          geoviite_konvertoitu_lat = 60
-        WHERE id IN (27554660, 27554661);
-        */
-
-        let query: string = 'UPDATE mittaus SET';
-        let longPart: string = ' geoviite_konvertoitu_long = CASE';
-        let latPart: string = ' geoviite_konvertoitu_lat = CASE';
-        let osuusNumPart: string =
-          ' geoviite_konvertoitu_rataosuus_numero = CASE';
-        let kmPart: string = ' geoviite_konvertoitu_rata_kilometri = CASE';
-        let mPart: string = ' geoviite_konvertoitu_rata_metrit = CASE';
-        let osuusNimiPart: string =
-          ' geoviite_konvertoitu_rataosuus_nimi = CASE';
-        let raideNumPart: string = ' geoviite_konvertoitu_raide_numero = CASE';
-        let valimatkaPart: string = ' geoviite_valimatka = CASE';
-        let sijRaidePart: string = ' geoviite_sijaintiraide = CASE';
-        let sijRaideKuvPart: string = ' geoviite_sijaintiraide_kuvaus = CASE';
-        let sijRaideTyypPart: string = ' geoviite_sijaintiraide_tyyppi = CASE';
-        let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
-        let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
-
-        let wherePart: string = ' WHERE id IN (';
-        batch.forEach((row: GeoviiteClientResultItem) => {
-          longPart += ' when id in (' + row.id + ') then ' + row.x;
-          latPart += ' when id in (' + row.id + ') then ' + row.y;
-          osuusNumPart +=
-            ' when id in (' + row.id + ') then ' + "'" + row.ratanumero + "'";
-          kmPart += ' when id in (' + row.id + ') then ' + row.y;
-          let rata_metrit = '';
-          if (row.ratametri) {
-            rata_metrit = `${row.ratametri}`;
-          }
-          if (row.ratametri_desimaalit) {
-            rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
-          }
-          mPart += ' when id in (' + row.id + ') then ' + rata_metrit;
-          osuusNimiPart += ' when id in (' + row.id + ') then ' + "''";
-          raideNumPart += ' when id in (' + row.id + ') then ' + "''";
-          valimatkaPart += ' when id in (' + row.id + ') then ' + row.valimatka;
-          sijRaidePart +=
-            ' when id in (' +
-            row.id +
-            ') then ' +
-            "'" +
-            row.sijaintiraide +
-            "'";
-          sijRaideKuvPart +=
-            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_kuvaus + "'";
-          sijRaideTyypPart +=
-            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_tyyppi + "'";
-          sijRaideOidPart +=
-            ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
-          ratanumOidPart +=
-            ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
-          wherePart += '' + row.id + ',';
-        });
-        longPart += ' END,';
-        latPart += ' END';
-
-        wherePart = wherePart.substring(0, wherePart.length - 1);
-        wherePart += ');';
-        query += longPart + latPart + wherePart;
-        console.info(query, 'HELLO query');
-
-        await prismaClient.$transaction(
-          // transaction to group multiple updates in one connection
-          batch.map((result: GeoviiteClientResultItem) => {
-            // get a sensible value if ratametri or ratametri_desimaalit is missing
-            let rata_metrit = '';
-            if (result.ratametri) {
-              rata_metrit = `${result.ratametri}`;
-            }
-            if (result.ratametri_desimaalit) {
-              rata_metrit = `${rata_metrit}.${result.ratametri_desimaalit}`;
-            }
-            return prismaClient.mittaus.update({
-              where: {
-                id: result.id,
-                // Sadly checking mittaus.id not enough. Mittaus subtables can share id.
-                // See: https://stackoverflow.com/questions/56637251/violation-of-uniqueness-in-primary-key-when-using-inheritance
-                raportti_id: raportti.id,
-              },
-              data: {
-                geoviite_updated_at: timestamp,
-                geoviite_konvertoitu_long: result.x,
-                geoviite_konvertoitu_lat: result.y,
-                geoviite_konvertoitu_rataosuus_numero: result.ratanumero,
-                geoviite_konvertoitu_rata_kilometri: result.ratakilometri,
-                geoviite_konvertoitu_rata_metrit: Number(rata_metrit),
-                geoviite_konvertoitu_rataosuus_nimi: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
-                geoviite_konvertoitu_raide_numero: '', //TODO saataisiinko parsittua tiedosta result.sijaintiraide? Muoto näyttää epäjohdonmukaiselta.
-                geoviite_valimatka: result.valimatka,
-                geoviite_sijaintiraide: result.sijaintiraide,
-                geoviite_sijaintiraide_kuvaus: result.sijaintiraide_kuvaus,
-                geoviite_sijaintiraide_tyyppi: result.sijaintiraide_tyyppi,
-                geoviite_sijaintiraide_oid: result.sijaintiraide_oid,
-                geoviite_ratanumero_oid: result.ratanumero_oid,
-              },
-            });
-          }),
-        );
+        const updateSql:string = produceUpdateSql(batch, timestamp);
+        await prismaClient.$executeRawUnsafe(updateSql);
         // TODO: check errors?
       }
     }
