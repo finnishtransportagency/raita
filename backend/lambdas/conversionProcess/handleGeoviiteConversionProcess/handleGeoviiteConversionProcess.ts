@@ -52,7 +52,6 @@ function produceUpdateSql(
   let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
   let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
 
-
   let wherePart: string = ' WHERE id IN (';
   batch.forEach((row: GeoviiteClientResultItem) => {
     longPart += ' when id in (' + row.id + ') then ' + row.x;
@@ -95,12 +94,38 @@ function produceUpdateSql(
     wherePart += '' + row.id + ',';
   });
   longPart += ' END,';
-  latPart += ' END';
+  latPart += ' END,';
+  osuusNumPart += ' END,';
+  kmPart += ' END,';
+  mPart += ' END,';
+  osuusNimiPart += ' END,';
+  raideNumPart += ' END,';
+  valimatkaPart += ' END,';
+  sijRaidePart += ' END,';
+  sijRaideKuvPart += ' END,';
+  sijRaideTyypPart += ' END,';
+  sijRaideOidPart += ' END,';
+  ratanumOidPart += ' END,';
 
-  wherePart = wherePart.substring(0, wherePart.length - 1);
+  const timestampPart: string =
+    ' geoviite_updated_at =  ' + "'" + timestamp + "'";
   wherePart += ');';
-  const timestampPart: string = ' geoviite_updated_at =  ' +timestamp;
-  query += longPart + latPart + timestampPart + wherePart;
+  query +=
+    longPart +
+    latPart +
+    osuusNumPart +
+    kmPart +
+    mPart +
+    osuusNimiPart +
+    raideNumPart +
+    valimatkaPart +
+    sijRaidePart +
+    sijRaideKuvPart +
+    sijRaideTyypPart +
+    sijRaideOidPart +
+    ratanumOidPart +
+    timestampPart +
+    wherePart;
   log.info(query);
   return query;
 }
@@ -209,8 +234,7 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-
-        const updateSql:string = produceUpdateSql(batch, timestamp);
+        const updateSql: string = produceUpdateSql(batch, timestamp);
         await prismaClient.$executeRawUnsafe(updateSql);
         // TODO: check errors?
       }
