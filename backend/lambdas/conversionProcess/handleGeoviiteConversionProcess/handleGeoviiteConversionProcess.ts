@@ -109,7 +109,7 @@ function produceUpdateSql(
 
   const timestampPart: string =
     ' geoviite_updated_at =  ' + "'" + timestamp + "'";
-  wherePart = wherePart.substring(0, wherePart.length -1);
+  wherePart = wherePart.substring(0, wherePart.length - 1);
   wherePart += ');';
   query +=
     longPart +
@@ -236,7 +236,12 @@ export async function handleGeoviiteConversionProcess(
         );
 
         const updateSql: string = produceUpdateSql(batch, timestamp);
-        await prismaClient.$executeRawUnsafe(updateSql);
+        try {
+          await prismaClient.$executeRawUnsafe(updateSql);
+        } catch (err) {
+          log.error(updateSql);
+          throw err;
+        }
         // TODO: check errors?
       }
     }
