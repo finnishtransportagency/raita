@@ -221,7 +221,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result in smaller batches
-      const saveBatchSize = 10;
+      const saveBatchSize = 1000;
 
       // one timestamp for all
       const timestamp = new Date().toISOString();
