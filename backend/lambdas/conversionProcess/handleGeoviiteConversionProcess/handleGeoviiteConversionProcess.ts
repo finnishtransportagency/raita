@@ -127,7 +127,7 @@ function produceUpdateSql(
     ratanumOidPart +
     timestampPart +
     wherePart;
-  log.info(query);
+
   return query;
 }
 
