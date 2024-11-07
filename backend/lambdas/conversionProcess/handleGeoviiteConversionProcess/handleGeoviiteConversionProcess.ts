@@ -33,7 +33,7 @@ const init = () => {
 
 const { withRequest, prisma } = init();
 
-function produceUpdateSql(
+export function produceUpdateSql(
   batch: GeoviiteClientResultItem[],
   timestamp: string,
 ): string {
@@ -51,7 +51,7 @@ function produceUpdateSql(
   let sijRaideTyypPart: string = ' geoviite_sijaintiraide_tyyppi = CASE';
   let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
   let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
-
+  let virhePart: string = ' geoviite_virhe = CASE';
   let wherePart: string = ' WHERE id IN (';
   batch.forEach((row: GeoviiteClientResultItem) => {
     longPart += ' when id in (' + row.id + ') then ' + row.x;
@@ -90,6 +90,14 @@ function produceUpdateSql(
       ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
     ratanumOidPart +=
       ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
+    const virhe: string = row.virheet
+      ? row.virheet.toString().length > 200
+        ? row.virheet?.toString().substring(0, 200)
+        : row.virheet.toString()
+      : '';
+    if (virhe) {
+      virhePart += ' when id in (' + row.id + ') then ' + "'" + virhe + "'";
+    }
 
     wherePart += '' + row.id + ',';
   });
@@ -163,8 +171,6 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('orderBy value other than id not implemented');
     }
 
-
-
     // separate mittaus count query for optimization
     const totalMittausCount = await prismaClient.mittaus.count({
       where: {
@@ -209,6 +215,21 @@ export async function handleGeoviiteConversionProcess(
       log.info({ length: convertedRows.length }, 'converted');
       if (convertedRows.length !== mittausRows.length) {
         // TODO can this happen? or other errors from geoviite api?
+        // Empty lat and long is a normal case.
+        // Invalid lat and long also possibele. For example swapped lat and long (to be handled). Also in wrong projection possible (not found any yet).
+        // Invalid rows return from geoviite per row:
+        //{
+        //       "geometry": {
+        //         "type": "Point",
+        //         "coordinates": []
+        //       },
+        //       "properties": {
+        //         "virheet": [
+        //           "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
+        //         ]
+        //       },
+        //       "type": "Feature"
+        //     }
         log.error('Size mismatch');
       }
 

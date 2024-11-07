@@ -3,6 +3,9 @@ import { GeoviiteClient } from '../geoviiteClient';
 import { log } from '../../../utils/logger';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
 import { jest } from '@jest/globals';
+import {
+  produceUpdateSql
+} from "../../conversionProcess/handleGeoviiteConversionProcess/handleGeoviiteConversionProcess";
 
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
@@ -218,5 +221,85 @@ describe('geoviite multiple points with extra params', () => {
         'Post data: [{"x":25.7482,"y":61.9241,"sade":120},{"x":24.7182,"y":61.5641,"sade":120},{"x":25.1482,"y":61.1231,"sade":120}]',
       ),
     ).toBeTruthy();
+  });
+});
+
+describe('geoviite parse sql from repsonse', () => {
+  test('success: basic operation', async () => {
+    console.log('hello');
+    const a = produceUpdateSql(
+      [
+        {
+          x: 259348.20489785323,
+          y: 6804094.514968412,
+          valimatka: 2.0372681319713593e-10,
+          ratanumero: '002',
+          sijaintiraide: '002',
+          sijaintiraide_kuvaus: 'Lielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'pääraide',
+          ratakilometri: 270,
+          ratametri: 300,
+          ratametri_desimaalit: 0,
+          id:123,
+        },
+        {
+          x: 245348.20489785323,
+          y: 6704094.514968412,
+          valimatka: 1.0372681319713593e-10,
+          ratanumero: '001',
+          sijaintiraide: '003',
+          sijaintiraide_kuvaus: 'Vielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'sivuraide',
+          ratakilometri: 170,
+          ratametri: 200,
+          ratametri_desimaalit: 123,
+          id:124,
+        },
+      ],
+      'a date',
+    );
+    console.log(a);
+  });
+});
+
+describe('geoviite parse sql from repsonse with virhe', () => {
+  test('success: basic operation', async () => {
+    console.log('hello');
+    const a = produceUpdateSql(
+      [
+        {
+          x: 259348.20489785323,
+          y: 6804094.514968412,
+          valimatka: 2.0372681319713593e-10,
+          ratanumero: '002',
+          sijaintiraide: '002',
+          sijaintiraide_kuvaus: 'Lielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'pääraide',
+          ratakilometri: 270,
+          ratametri: 300,
+          ratametri_desimaalit: 0,
+          id:123,
+        },
+        {
+          x: 245348.20489785323,
+          y: 6704094.514968412,
+          valimatka: 1.0372681319713593e-10,
+          ratanumero: '001',
+          sijaintiraide: '003',
+          sijaintiraide_kuvaus: 'Vielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'sivuraide',
+          ratakilometri: 170,
+          ratametri: 200,
+          ratametri_desimaalit: 123,
+          id:124,
+        },
+        {
+          virheet: ['virhe1','virhe2','virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj'],
+          id:124,
+        }
+      ],
+      'a date',
+    );
+    console.log(a);
   });
 });
