@@ -221,7 +221,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result in smaller batches
-      const saveBatchSize = 1000;
+      const saveBatchSize = 5;
 
       // one timestamp for all
       const timestamp = new Date().toISOString();
@@ -237,7 +237,9 @@ export async function handleGeoviiteConversionProcess(
 
         const updateSql: string = produceUpdateSql(batch, timestamp);
         try {
+          log.info('start geoviite db update');
           await prismaClient.$executeRawUnsafe(updateSql);
+          log.info('done geoviite db update');
         } catch (err) {
           log.error(updateSql);
           throw err;
