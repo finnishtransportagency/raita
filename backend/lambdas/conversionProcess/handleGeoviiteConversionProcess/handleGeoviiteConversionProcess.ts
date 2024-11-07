@@ -149,6 +149,7 @@ export async function handleGeoviiteConversionProcess(
 
     const message: ConversionMessage = JSON.parse(sqsRecord.body);
     key = message.key;
+    const id = message.id;
     log.info({ message }, 'Start conversion');
 
     // how many to handle in this invocation
@@ -162,21 +163,12 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('orderBy value other than id not implemented');
     }
 
-    const raportti = await prismaClient.raportti.findFirst({
-      where: {
-        key,
-      },
-      select: {
-        id: true,
-      },
-    });
-    if (!raportti) {
-      throw new Error('Raportti not found');
-    }
+
+
     // separate mittaus count query for optimization
     const totalMittausCount = await prismaClient.mittaus.count({
       where: {
-        raportti_id: raportti.id,
+        raportti_id: id,
       },
     });
     // this will be smaller on last batch
@@ -220,7 +212,7 @@ export async function handleGeoviiteConversionProcess(
         log.error('Size mismatch');
       }
 
-      // save result in smaller batches
+      // save result all at once to save db call time cost
       const saveBatchSize = 1000;
 
       // one timestamp for all

@@ -149,6 +149,7 @@ export async function handleStartConversionProcess(
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const body: ConversionMessage = {
             key,
+            id: raportti.id,
             batchSize: conversionBatchSize,
             batchIndex,
             orderBy: 'id',

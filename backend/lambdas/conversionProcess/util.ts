@@ -1,4 +1,5 @@
 export type ConversionMessage = {
+  id: number;
   key: string;
   /**
    * how many mittaus entries to handle in one invocation
