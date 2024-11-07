@@ -167,6 +167,21 @@ const mittausWithGeoviiteRataosoiteToRoundDown: MittausDbResult = {
   siksak_2: new Prisma.Decimal(2.2),
   korkeus_1: new Prisma.Decimal(123),
 };
+const mittausWithGeoviiteRataosoiteRoundedDifferently: MittausDbResult = {
+  id: 5,
+  raportti_id: 1002,
+  rata_kilometri: 1,
+  rata_metrit: new Prisma.Decimal(1.0),
+  geoviite_konvertoitu_rata_kilometri: 1,
+  geoviite_konvertoitu_rata_metrit: new Prisma.Decimal(1.13),
+  lat: new Prisma.Decimal(1),
+  long: new Prisma.Decimal(2),
+  track: 'track 1',
+  jarjestelma: jarjestelma.OHL,
+  siksak_1: new Prisma.Decimal(2),
+  siksak_2: new Prisma.Decimal(2.2),
+  korkeus_1: new Prisma.Decimal(123),
+};
 describe('mapMittausRowsToCsvRows', () => {
   test('success: basic operation', () => {
     const mittausRows: MittausDbResult[] = [testMittaus1, testMittaus2];
@@ -337,9 +352,105 @@ describe('mapMittausRowsToCsvRows', () => {
       ),
     ).toThrow();
   });
+  test('success: geoviite rataosoite rounding behaviour', () => {
+    const mittausRows: MittausDbResult[] = [
+      mittausWithGeoviiteRataosoiteToRoundUp,
+      mittausWithGeoviiteRataosoiteToRoundDown,
+    ];
+    const raporttiRows = [
+      {
+        id: 1001,
+        inspection_date: new Date('2024-10-17'),
+      },
+      {
+        id: 1002,
+        inspection_date: new Date('2023-01-01'),
+      },
+    ];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+
+    const res = mapMittausRowsToCsvRow(
+      mittausRows,
+      raporttiRows,
+      selectedColumns,
+      'GEOVIITE_RATAOSOITE_ROUNDED',
+    );
+    expect(res).toEqual([
+      {
+        header: 'Geoviite rataosoite pyöristetty',
+        value: '1+0001.00',
+      },
+      {
+        header: 'date',
+        value: '01.01.2023',
+      },
+      {
+        header: 'Meeri rataosoite 01.01.2023',
+        value: '1+0001.00',
+      },
+      {
+        header: 'Geoviite rataosoite 01.01.2023',
+        value: '1+0001.12',
+      },
+      {
+        header: 'siksak_1 01.01.2023',
+        value: '2',
+      },
+      {
+        header: 'korkeus_1 01.01.2023',
+        value: '123',
+      },
+      {
+        header: 'date',
+        value: '17.10.2024',
+      },
+      {
+        header: 'Meeri rataosoite 17.10.2024',
+        value: '1+0001.00',
+      },
+      {
+        header: 'Geoviite rataosoite 17.10.2024',
+        value: '1+0000.88',
+      },
+      {
+        header: 'siksak_1 17.10.2024',
+        value: '1',
+      },
+      {
+        header: 'korkeus_1 17.10.2024',
+        value: '12',
+      },
+    ]);
+  });
+  test('success: geoviite rataosoite rounding behaviour', () => {
+    const mittausRows: MittausDbResult[] = [
+      mittausWithGeoviiteRataosoiteToRoundUp,
+      mittausWithGeoviiteRataosoiteRoundedDifferently,
+    ];
+    const raporttiRows = [
+      {
+        id: 1001,
+        inspection_date: new Date('2024-10-17'),
+      },
+      {
+        id: 1002,
+        inspection_date: new Date('2023-01-01'),
+      },
+    ];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+
+    expect(() =>
+      mapMittausRowsToCsvRow(
+        mittausRows,
+        raporttiRows,
+        selectedColumns,
+        'GEOVIITE_RATAOSOITE_ROUNDED',
+      ),
+    ).toThrow();
+  });
 });
 
-describe('writeDbChunkToStream', () => {
+describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
   test('success: normal operation with Meeri rataosoite', () => {
     const mittausRows = [testMittaus1, testMittaus2];
     const selectedColumns = ['siksak_1', 'korkeus_1'];
@@ -364,34 +475,6 @@ describe('writeDbChunkToStream', () => {
     );
     expect(mockStream.write).toHaveBeenCalledWith(
       '1+0001.00;01.01.2024;1+0001.01;1;12;02.01.2024;1+0001.01;2;123\r\n',
-      'utf8',
-    );
-    expect(mockStream.write).toHaveBeenCalledTimes(2);
-  });
-  test('success: normal operation with geoviite rataosoite rounded', () => {
-    const mittausRows = [testMittaus1, testMittaus2];
-    const selectedColumns = ['siksak_1', 'korkeus_1'];
-    const mockStream = new PassThrough();
-    mockStream.write = jest.fn();
-    const writeHeader = true;
-    const raporttiInSystem = [
-      { id: 1001, inspection_date: new Date('2024-01-01') },
-      { id: 1002, inspection_date: new Date('2024-01-02') },
-    ];
-    writeDbChunkToStream(
-      mittausRows,
-      selectedColumns,
-      mockStream,
-      writeHeader,
-      raporttiInSystem,
-      'GEOVIITE_RATAOSOITE_ROUNDED',
-    );
-    expect(mockStream.write).toHaveBeenCalledWith(
-      'Geoviite rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
-      'utf8',
-    );
-    expect(mockStream.write).toHaveBeenCalledWith(
-      '1+0001.00;01.01.2024;1+0001.00;1+0001.01;1;12;02.01.2024;1+0001.00;1+0001.01;2;123\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledTimes(2);
@@ -464,6 +547,37 @@ describe('writeDbChunkToStream', () => {
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('writeDbChunkToStream with GEOVIITE_RATAOSOITE_ROUNDED', () => {
+  test('success: normal operation with geoviite rataosoite rounded', () => {
+    const mittausRows = [testMittaus1, testMittaus2];
+    const selectedColumns = ['siksak_1', 'korkeus_1'];
+    const mockStream = new PassThrough();
+    mockStream.write = jest.fn();
+    const writeHeader = true;
+    const raporttiInSystem = [
+      { id: 1001, inspection_date: new Date('2024-01-01') },
+      { id: 1002, inspection_date: new Date('2024-01-02') },
+    ];
+    writeDbChunkToStream(
+      mittausRows,
+      selectedColumns,
+      mockStream,
+      writeHeader,
+      raporttiInSystem,
+      'GEOVIITE_RATAOSOITE_ROUNDED',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      'Geoviite rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledWith(
+      '1+0001.00;01.01.2024;1+0001.00;1+0001.01;1;12;02.01.2024;1+0001.00;1+0001.01;2;123\r\n',
+      'utf8',
+    );
+    expect(mockStream.write).toHaveBeenCalledTimes(2);
   });
   test('success: geoviite rataosoite rounded with different rataosoite that round to the same', () => {
     const mittausRows = [
