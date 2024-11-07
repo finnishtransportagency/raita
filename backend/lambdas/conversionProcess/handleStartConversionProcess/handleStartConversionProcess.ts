@@ -130,6 +130,15 @@ export async function handleStartConversionProcess(
           },
         });
 
+        let flippedLatLong:boolean = false;
+        const a = await prismaClient.mittaus.findFirst({
+          where: {
+            raportti_id: raportti.id,
+            lat:{not:null}
+          },
+        });
+
+
         const key = raportti.key;
         if (key === null) {
           log.error('File with no key?');
