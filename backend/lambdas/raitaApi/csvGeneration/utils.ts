@@ -47,10 +47,11 @@ export const mapMittausRowsToCsvRow = (
       : getGeoviiteRataosoiteRounded(mittausRows[0]);
   mittausRows.forEach(mittaus => {
     if (
-      mittausCombinationLogic === 'MEERI_RATAOSOITE' &&
-      getRataosoite(mittaus) !== mainRataosoite
+      (mittausCombinationLogic === 'MEERI_RATAOSOITE' &&
+        getRataosoite(mittaus) !== mainRataosoite) ||
+      (mittausCombinationLogic === 'GEOVIITE_RATAOSOITE_ROUNDED' &&
+        getGeoviiteRataosoiteRounded(mittaus) !== mainRataosoite)
     ) {
-      // TODO: verification for geoviite rataosoite?
       throw new Error('All mittaus rows should have same rataosoite');
     }
   });
