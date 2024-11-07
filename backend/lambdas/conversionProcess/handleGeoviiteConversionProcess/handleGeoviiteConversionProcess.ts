@@ -60,7 +60,7 @@ function produceUpdateSql(
       ' when id in (' + row.id + ') then ' + "'" + row.ratanumero + "'";
     kmPart += ' when id in (' + row.id + ') then ' + row.y;
     let rata_metrit = '';
-    if (row.ratametri) {
+    if (row.ratametri || row.ratametri == 0) {
       rata_metrit = `${row.ratametri}`;
     }
     if (row.ratametri_desimaalit) {
@@ -221,7 +221,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result in smaller batches
-      const saveBatchSize = 5;
+      const saveBatchSize = 1000;
 
       // one timestamp for all
       const timestamp = new Date().toISOString();
