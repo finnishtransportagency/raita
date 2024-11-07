@@ -26,13 +26,15 @@ export const GENERATE_MITTAUS_CSV = gql(`
     $raportti: RaporttiInput!,
     $raportti_keys: [String!]!,
     $mittaus: MittausInput!,
-    $columns: [String!]!
+    $columns: [String!]!,
+    $settings: CsvGenerationSettingsInput!
     ) {
     generate_mittaus_csv(
       raportti: $raportti,
       raportti_keys: $raportti_keys,
       mittaus: $mittaus,
-      columns: $columns
+      columns: $columns,
+      settings: $settings
       ) {
       polling_key
     }

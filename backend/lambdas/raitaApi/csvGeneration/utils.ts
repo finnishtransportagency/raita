@@ -1,9 +1,10 @@
 import * as CSV from 'csv-string';
-import { CsvRow, MittausDbResult } from './types';
+import { CsvRow, MittausCombinationLogic, MittausDbResult } from './types';
 import { Decimal } from '@prisma/client/runtime/library';
 import { compareAsc, format } from 'date-fns';
 import { log } from '../../../utils/logger';
 import { Writable } from 'stream';
+import { roundToRataosoitePrecision } from '../../../utils/locationCalculations';
 
 const separator = ';';
 
@@ -35,17 +36,21 @@ export const mapMittausRowsToCsvRow = (
   mittausRows: MittausDbResult[],
   raporttiRows: { id: number; inspection_date: Date | null }[],
   selectedColumns: string[],
+  mittausCombinationLogic: MittausCombinationLogic,
 ): CsvRow => {
   if (mittausRows.length === 0) {
     return [];
   }
-  const rata_kilometri = mittausRows[0].rata_kilometri;
-  const rata_metrit = mittausRows[0].rata_metrit;
+  const mainRataosoite =
+    mittausCombinationLogic === 'MEERI_RATAOSOITE'
+      ? getRataosoite(mittausRows[0])
+      : getGeoviiteRataosoiteRounded(mittausRows[0]);
   mittausRows.forEach(mittaus => {
     if (
-      mittaus.rata_kilometri !== rata_kilometri ||
-      mittaus.rata_metrit?.toString() !== rata_metrit?.toString()
+      mittausCombinationLogic === 'MEERI_RATAOSOITE' &&
+      getRataosoite(mittaus) !== mainRataosoite
     ) {
+      // TODO: verification for geoviite rataosoite?
       throw new Error('All mittaus rows should have same rataosoite');
     }
   });
@@ -54,12 +59,15 @@ export const mapMittausRowsToCsvRow = (
     compareAsc(a.inspection_date ?? 0, b.inspection_date ?? 0),
   );
 
-  const csvRow: CsvRow = [
-    {
-      header: 'rataosoite',
-      value: getRataosoite(mittausRows[0]),
-    },
-  ];
+  const initial = {
+    header:
+      mittausCombinationLogic === 'MEERI_RATAOSOITE'
+        ? 'Meeri rataosoite'
+        : 'Geoviite rataosoite pyöristetty',
+    value: mainRataosoite ?? '',
+  };
+
+  const csvRow: CsvRow = [initial];
 
   raporttiSorted.forEach(raportti => {
     const mittaus = mittausRows.find(r => r.raportti_id === raportti.id);
@@ -74,6 +82,26 @@ export const mapMittausRowsToCsvRow = (
         value: date,
       },
     ];
+    switch (mittausCombinationLogic) {
+      case 'GEOVIITE_RATAOSOITE_ROUNDED':
+        vals.push({
+          header: `Meeri rataosoite ${date}`,
+          value: mittaus ? getRataosoite(mittaus) ?? '' : '',
+        });
+        vals.push({
+          header: `Geoviite rataosoite ${date}`,
+          value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
+        });
+        break;
+      case 'MEERI_RATAOSOITE':
+        vals.push({
+          header: `Geoviite rataosoite ${date}`,
+          value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
+        });
+        break;
+      default:
+        break;
+    }
     selectedColumns.forEach(columnName => {
       const mittausAsObj: { [key: string]: any } = { ...mittaus };
 
@@ -121,17 +149,63 @@ export const getRataosoite = (mittaus: MittausDbResult) => {
       : ''
   }`;
 };
+export const getGeoviiteRataosoite = (mittaus: MittausDbResult) => {
+  if (
+    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
+    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
+    mittaus.geoviite_konvertoitu_rata_metrit === null ||
+    mittaus.geoviite_konvertoitu_rata_metrit === undefined
+  ) {
+    return null;
+  }
+  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
+  const rata_metrit = mittaus.geoviite_konvertoitu_rata_metrit;
+  return `${rata_kilometri ?? ''}+${
+    rata_metrit
+      ? Intl.NumberFormat('en', {
+          minimumIntegerDigits: 4,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        }).format(rata_metrit.toNumber())
+      : ''
+  }`;
+};
+export const getGeoviiteRataosoiteRounded = (mittaus: MittausDbResult) => {
+  if (
+    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
+    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
+    mittaus.geoviite_konvertoitu_rata_metrit === null ||
+    mittaus.geoviite_konvertoitu_rata_metrit === undefined
+  ) {
+    return null;
+  }
+  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
+  const rounded_metrit = mittaus.geoviite_konvertoitu_rata_metrit
+    ? roundToRataosoitePrecision(mittaus.geoviite_konvertoitu_rata_metrit)
+    : '';
+  return `${rata_kilometri ?? ''}+${
+    rounded_metrit
+      ? Intl.NumberFormat('en', {
+          minimumIntegerDigits: 4,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        }).format(rounded_metrit.toNumber())
+      : ''
+  }`;
+};
 
 /**
  * Write the given mittausRows to a writable stream, with mittaus entries from the same rataosoite combined on the same row. Adds every column in selectedColumns to the csv for each raportti entry.
  *
- * TODO: some other way to combine mittaus data in the same row?
  *
- * @param mittausRows This needs to be sorted by rata_kilometri and rata_metrit
+ * @param mittausRows This needs to be sorted by either meeri rataosoite or geoviite rataosoite
  * @param selectedColumns List of column names that should appear in the csv per mittaus. Some values added by default: rataosoite for each row, date for each mittaus
  * @param outputStream
  * @param writeHeader Should csv header be written in the first row?
  * @param raporttiInSystem List of raportti entries that are related to the mittausRows. For each entry in this list, the columns according to selectedColumns are added to the result.
+ * @param mittausCombinationLogic how to combine mittaus entries? Either by raw meeri rataosoite, or by geoviite rataosoite rounded to meeri precision
  */
 export const writeDbChunkToStream = (
   mittausRows: MittausDbResult[],
@@ -139,18 +213,25 @@ export const writeDbChunkToStream = (
   outputStream: Writable,
   writeHeader: boolean,
   raporttiInSystem: { id: number; inspection_date: Date | null }[],
+  mittausCombinationLogic: MittausCombinationLogic,
 ) => {
   let mittausRowIndex = 0;
   while (mittausRowIndex < mittausRows.length) {
     const mittaus = mittausRows[mittausRowIndex];
-    const rataosoite = getRataosoite(mittaus);
+    const rataosoite =
+      mittausCombinationLogic === 'MEERI_RATAOSOITE'
+        ? getRataosoite(mittaus)
+        : getGeoviiteRataosoiteRounded(mittaus);
     // array is sorted by rataosoite
     // get mittaus rows with same rataosoite from rowStart (inclusive) to rowEnd(exclusive)
     const rowStart = mittausRowIndex;
     let rowEnd = rowStart + 1;
     while (
       rowEnd < mittausRows.length &&
-      getRataosoite(mittausRows[rowEnd]) === rataosoite
+      ((mittausCombinationLogic === 'GEOVIITE_RATAOSOITE_ROUNDED' &&
+        getGeoviiteRataosoiteRounded(mittausRows[rowEnd]) === rataosoite) ||
+        (mittausCombinationLogic === 'MEERI_RATAOSOITE' &&
+          getRataosoite(mittausRows[rowEnd]) === rataosoite))
     ) {
       rowEnd++;
     }
@@ -176,6 +257,7 @@ export const writeDbChunkToStream = (
       nonDuplicates,
       raporttiInSystem,
       selectedColumns,
+      mittausCombinationLogic,
     );
     if (writeHeader && rowStart === 0) {
       outputStream.write(objectToCsvHeader(row), 'utf8');
@@ -187,6 +269,7 @@ export const writeDbChunkToStream = (
         [mittaus],
         raporttiInSystem,
         selectedColumns,
+        mittausCombinationLogic,
       );
       outputStream.write(objectToCsvBody([duplicateRow]), 'utf8');
     });

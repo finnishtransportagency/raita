@@ -28,7 +28,7 @@ export type MittausDbResult =
   | Partial<tg_mittaus>
   | Partial<tsight_mittaus>;
 
-export type AnyMittausTableWhereInput =
+export type AnyMittausTableFindManyArgs =
   | Prisma.ams_mittausFindManyArgs
   | Prisma.ohl_mittausFindManyArgs
   | Prisma.pi_mittausFindManyArgs
@@ -41,3 +41,7 @@ export type MultipartUploadResultWithPartNumber = {
   uploadPartCommandOutput: UploadPartCommandOutput;
   partNumber: number;
 };
+
+export type MittausCombinationLogic =
+  | 'MEERI_RATAOSOITE'
+  | 'GEOVIITE_RATAOSOITE_ROUNDED';

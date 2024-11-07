@@ -21,9 +21,9 @@ import {
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../../constants';
 import { PassThrough, Readable } from 'stream';
 import {
-  AnyMittausTableWhereInput,
+  AnyMittausTableFindManyArgs,
   CsvGenerationEvent,
-  CsvRow,
+  MittausCombinationLogic,
   MittausDbResult,
   MultipartUploadResultWithPartNumber,
 } from './types';
@@ -86,9 +86,12 @@ async function generateCsv(
   }
   const params = event.searchParameters; // TODO is validation needed?
 
-  const { raportti, raportti_keys, mittaus, columns } = params;
+  const { raportti, raportti_keys, mittaus, columns, settings } = params;
 
   const selectedColumns = columns;
+
+  const mittausCombinationLogic: MittausCombinationLogic =
+    settings.mittausCombinationLogic ?? 'MEERI_RATAOSOITE';
 
   const progressKey = event.progressKey;
   const csvKey = event.csvKey;
@@ -117,21 +120,21 @@ async function generateCsv(
     raporttiWhere,
     selectedColumns,
     mittaus,
+    mittausCombinationLogic,
   );
 
   const csvStream = csvReadResult.outputStream;
 
-  const uploadResult = await uploadReadableToS3(
-    csvStream,
-    targetBucket,
-    csvKey,
-    s3Client,
-  );
-  if (!uploadResult) {
-    throw new Error('S3 upload: uploadResult failed');
+  try {
+    await Promise.all([
+      uploadReadableToS3(csvStream, targetBucket, csvKey, s3Client),
+      csvReadResult.result,
+    ]);
+  } catch (error) {
+    log.error(error);
+    log.error('Error in upload or db read');
+    throw new Error('Error in upload or db read');
   }
-  // await csv read from db here, this should throw if promise failed
-  await csvReadResult;
 
   const downloadCommand = new GetObjectCommand({
     Bucket: targetBucket,
@@ -190,13 +193,31 @@ const getPartialMittausRows = async (
   pageSize: number,
   selectedColumns: string[],
   mittaus: MittausInput,
+  mittausCombinationLogic: MittausCombinationLogic,
 ): Promise<MittausDbResult[]> => {
   const systemSpecificColumnSelections = getColumnsSelectInputForSystem(
     system,
     selectedColumns,
   );
+  const orderBy: AnyMittausTableFindManyArgs['orderBy'] =
+    mittausCombinationLogic === 'MEERI_RATAOSOITE'
+      ? [
+          {
+            rata_kilometri: 'asc',
+          },
+          {
+            rata_metrit: 'asc',
+          },
+        ]
+      : mittausCombinationLogic === 'GEOVIITE_RATAOSOITE_ROUNDED'
+        ? [
+            // TODO: could rounding of rataosoite be done in db query?
+            { geoviite_konvertoitu_rata_kilometri: 'asc' },
+            { geoviite_konvertoitu_rata_metrit: 'asc' },
+          ]
+        : [];
   const selectAjonopeus = selectedColumns.includes('ajonopeus');
-  const params: AnyMittausTableWhereInput = {
+  const params: AnyMittausTableFindManyArgs = {
     where: {
       raportti_id: {
         in: raporttiIds,
@@ -204,23 +225,18 @@ const getPartialMittausRows = async (
       ...((mittaus.rata_kilometri?.start !== undefined ||
         mittaus.rata_kilometri?.end !== undefined) && {
         rata_kilometri: {
-          ...(mittaus.rata_kilometri?.start !== undefined && {
-            gte: mittaus.rata_kilometri.start,
-          }),
-          ...(mittaus.rata_kilometri?.end !== undefined && {
-            lte: mittaus.rata_kilometri.end,
-          }),
+          ...(mittaus.rata_kilometri?.start !== undefined &&
+            mittaus.rata_kilometri?.start !== null && {
+              gte: mittaus.rata_kilometri.start,
+            }),
+          ...(mittaus.rata_kilometri?.end !== undefined &&
+            mittaus.rata_kilometri?.end !== null && {
+              lte: mittaus.rata_kilometri.end,
+            }),
         },
       }),
     },
-    orderBy: [
-      {
-        rata_kilometri: 'asc',
-      },
-      {
-        rata_metrit: 'asc',
-      },
-    ],
+    orderBy,
     select: {
       ...systemSpecificColumnSelections,
       raportti_id: true,
@@ -229,8 +245,12 @@ const getPartialMittausRows = async (
       ajonopeus: selectAjonopeus,
       rata_kilometri: true,
       rata_metrit: true,
+      geoviite_konvertoitu_rata_kilometri: true,
+      geoviite_konvertoitu_rata_metrit: true,
       lat: true,
       long: true,
+      geoviite_konvertoitu_lat: true,
+      geoviite_konvertoitu_long: true,
       track: true,
     },
     // TODO: offset paging could be too slow?
@@ -280,6 +300,7 @@ const readDbToReadable = async (
   raporttiWhere: Prisma.raporttiWhereInput,
   selectedColumns: string[],
   mittaus: MittausInput,
+  mittausCombinationLogic: MittausCombinationLogic,
 ): Promise<{ outputStream: Readable; result: Promise<any> }> => {
   const client = await getPrismaClient();
   const raporttiCount = await client.raportti.count({
@@ -311,7 +332,13 @@ const readDbToReadable = async (
     .map(res => res.system!);
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
-  const defaultSelectedColumns = ['lat', 'long', 'track'];
+  const defaultSelectedColumns = [
+    'lat',
+    'long',
+    'track',
+    'geoviite_konvertoitu_lat',
+    'geoviite_konvertoitu_long',
+  ];
 
   const outputStream = new PassThrough();
   outputStream.pause();
@@ -356,6 +383,7 @@ const readDbToReadable = async (
             rowCountToRead,
             selectedColumns,
             mittaus,
+            mittausCombinationLogic,
           );
           writeDbChunkToStream(
             mittausRows,
@@ -363,6 +391,7 @@ const readDbToReadable = async (
             outputStream,
             systemIndex === 0 && partIndexInSystem === 0,
             raporttiInSystem,
+            mittausCombinationLogic,
           );
         }
       }
@@ -370,6 +399,7 @@ const readDbToReadable = async (
       resolve(true);
     } catch (err) {
       outputStream.end();
+      log.error('Error in readDbToReadable');
       log.error(err);
       reject(err);
     }
