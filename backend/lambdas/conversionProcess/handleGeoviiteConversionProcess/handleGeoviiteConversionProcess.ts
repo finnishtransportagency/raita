@@ -90,14 +90,13 @@ export function produceUpdateSql(
       ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
     ratanumOidPart +=
       ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
-    const virhe: string = row.virheet
+    const virhe: string | null = row.virheet
       ? row.virheet.toString().length > 200
         ? row.virheet?.toString().substring(0, 200)
         : row.virheet.toString()
-      : '';
-    if (virhe) {
-      virhePart += ' when id in (' + row.id + ') then ' + "'" + virhe + "'";
-    }
+      : null;
+    virhePart +=
+      ' when id in (' + row.id + ') then ' + (virhe ? "'" + virhe + "'" : 'null');
 
     wherePart += '' + row.id + ',';
   });
@@ -114,6 +113,7 @@ export function produceUpdateSql(
   sijRaideTyypPart += ' END,';
   sijRaideOidPart += ' END,';
   ratanumOidPart += ' END,';
+  virhePart += ' END,';
 
   const timestampPart: string =
     ' geoviite_updated_at =  ' + "'" + timestamp + "'";
@@ -133,6 +133,7 @@ export function produceUpdateSql(
     sijRaideTyypPart +
     sijRaideOidPart +
     ratanumOidPart +
+    virhePart +
     timestampPart +
     wherePart;
 
