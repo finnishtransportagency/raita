@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as R from 'rambda';
 import { i18n, useTranslation } from 'next-i18next';
 import { clsx } from 'clsx';
@@ -20,6 +20,8 @@ import { RaitaRole } from 'shared/user';
 import { useLazyQuery, useQuery } from '@apollo/client';
 import {
   DateTimeIntervalInput,
+  Generate_Mittaus_CsvMutationVariables,
+  MittausCombinationLogic,
   RaporttiInput,
   Search_Mittaus_CountQueryVariables,
 } from 'shared/graphql/__generated__/graphql';
@@ -44,6 +46,9 @@ const initialState: CsvState = {
     mittaus: {},
     columns: [],
     raportti_keys: [],
+  },
+  csvGenerationsSettings: {
+    mittausCombinationLogic: MittausCombinationLogic.GeoviiteRataosoiteRounded,
   },
   extraRaporttiQueryVariables: {},
   mittausCountIsFresh: false,
@@ -88,6 +93,13 @@ const getQueryVariables = (state: CsvState) => {
       rata_kilometri: state.queryVariables.mittaus.rata_kilometri ?? null,
     },
   };
+};
+
+const getCsvGenerationVariables: (
+  state: CsvState,
+) => Generate_Mittaus_CsvMutationVariables = (state: CsvState) => {
+  const queryVariables = getQueryVariables(state);
+  return { ...queryVariables, settings: state.csvGenerationsSettings };
 };
 
 const CsvIndex: RaitaNextPage = () => {
@@ -397,6 +409,55 @@ const CsvIndex: RaitaNextPage = () => {
                     resetFilterSelector={state.resetFilters}
                   />
                 </section>
+                <section>
+                  <header>
+                    {t('common:csv_mittaus_combination_logic_header')}
+                  </header>
+                  <label className="block">
+                    <input
+                      type="radio"
+                      value={MittausCombinationLogic.GeoviiteRataosoiteRounded}
+                      checked={
+                        state.csvGenerationsSettings.mittausCombinationLogic ===
+                        MittausCombinationLogic.GeoviiteRataosoiteRounded
+                      }
+                      onChange={() =>
+                        setState(
+                          R.assocPath(
+                            [
+                              'csvGenerationsSettings',
+                              'mittausCombinationLogic',
+                            ],
+                            MittausCombinationLogic.GeoviiteRataosoiteRounded,
+                          ),
+                        )
+                      }
+                    />
+                    {t('csv_combination_logic_geoviite_rataosoite_rounded')}
+                  </label>
+                  <label className="block">
+                    <input
+                      type="radio"
+                      value={MittausCombinationLogic.MeeriRataosoite}
+                      checked={
+                        state.csvGenerationsSettings.mittausCombinationLogic ===
+                        MittausCombinationLogic.MeeriRataosoite
+                      }
+                      onChange={() =>
+                        setState(
+                          R.assocPath(
+                            [
+                              'csvGenerationsSettings',
+                              'mittausCombinationLogic',
+                            ],
+                            MittausCombinationLogic.MeeriRataosoite,
+                          ),
+                        )
+                      }
+                    />
+                    {t('csv_combination_logic_meeri_rataosoite')}
+                  </label>
+                </section>
                 <section className={clsx(css.subSection)}>
                   <MultiChoice
                     label={t('common:choose_columns')}
@@ -483,7 +544,7 @@ const CsvIndex: RaitaNextPage = () => {
                     state.resetFilters ||
                     mittausCountQuery.loading
                   }
-                  queryVariables={getQueryVariables(state)}
+                  queryVariables={getCsvGenerationVariables(state)}
                 />
               </>
             )}
@@ -508,6 +569,7 @@ type CsvState = {
   resetFilters: boolean;
   debug?: boolean;
   queryVariables: Search_Mittaus_CountQueryVariables;
+  csvGenerationsSettings: Generate_Mittaus_CsvMutationVariables['settings'];
   /**
    * For "extra variables" that are chosen separately from the filter selectors.
    * Separate variable to simplify state management on deletions

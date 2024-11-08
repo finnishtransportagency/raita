@@ -3,9 +3,9 @@ import { getPrismaClient } from '../../utils/prismaClient';
 import { Resolvers } from '../__generated__/resolvers-types';
 import { RaitaLambdaError } from '../../lambdas/utils';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/handleCsvGeneration';
 import { getRaporttiWhereInput } from '../utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
+import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/types';
 
 /**
  * Return estimate of result file size in bytes

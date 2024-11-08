@@ -21,6 +21,11 @@ type Mittaus {
   # modified
 }
 
+enum MittausCombinationLogic {
+  MEERI_RATAOSOITE
+  GEOVIITE_RATAOSOITE_ROUNDED
+}
+
 type MittausCountResponse {
   status: String!
   row_count: Int!
@@ -40,6 +45,10 @@ input MittausInput {
   ## TODO: system specific fields
 }
 
+input CsvGenerationSettingsInput {
+  mittausCombinationLogic: MittausCombinationLogic!
+}
+
 type Query {
   ## either raportti or raportti_keys is mandatory
   ## if raportti or raportti_keys is null or empty object/array, it means "choose all", no filtering done
@@ -56,6 +65,7 @@ type Mutation {
     raportti: RaporttiInput
     raportti_keys: [String!]
     mittaus: MittausInput!
+    settings: CsvGenerationSettingsInput!
     columns: [String!]!
   ): MittausGenerateResponse!
 }
