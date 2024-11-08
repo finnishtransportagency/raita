@@ -234,6 +234,7 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       zipHandlerQueue,
+      prismaLambdaLayer,
     });
 
     zipHandlerQueue.grantSendMessages(handleReceptionFileEventFn);
@@ -444,6 +445,7 @@ export class DataProcessStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     zipHandlerQueue,
+    prismaLambdaLayer,
   }: {
     name: string;
     targetBucket: s3.Bucket;
@@ -452,6 +454,7 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     zipHandlerQueue: Queue;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -470,6 +473,8 @@ export class DataProcessStack extends NestedStack {
       },
       role: lambdaRole,
       vpc,
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
