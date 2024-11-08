@@ -29,6 +29,8 @@ import { AdminLogSource } from '../../containers/zipHandler/src/adminLog/postgre
       "ratakilometri": 270,
       "ratametri": 300,
       "ratametri_desimaalit": 0
+      "ratanumero_oid": "1.2.246.578.3.10001.188908",
+      "sijaintiraide_oid": "1.2.246.578.3.10002.194079",
       "virheet":[
           "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
         ]
