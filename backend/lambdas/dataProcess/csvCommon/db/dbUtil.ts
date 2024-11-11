@@ -832,7 +832,7 @@ export async function getMittausSubtable(system: string | null, prisma:any) {
       return prisma.tsight_mittaus;
       break;
     default: {
-      log.warn(
+      log.trace(
         `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
       );
       return prisma.mittaus;

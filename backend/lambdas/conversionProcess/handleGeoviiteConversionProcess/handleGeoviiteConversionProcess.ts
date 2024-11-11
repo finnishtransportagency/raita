@@ -57,7 +57,7 @@ export async function handleGeoviiteConversionProcess(
     key = message.key;
     const id = message.id;
     const system = message.system;
-    log.info({ message }, 'Start conversion');
+    log.trace({ message }, 'Start conversion');
 
     // how many to handle in this invocation
     const invocationTotalBatchSize = message.batchSize;
@@ -88,7 +88,7 @@ export async function handleGeoviiteConversionProcess(
     }
     // how many to handle in this invocation
     const mittausCount = Math.min(remainingMittausCount, message.batchSize);
-    log.info({ mittausCount, remainingMittausCount, totalMittausCount });
+    log.trace({ mittausCount, remainingMittausCount, totalMittausCount });
     // loop through array in batches: get results for batch and save to db
     for (
       let requestIndex = 0;
@@ -109,13 +109,13 @@ export async function handleGeoviiteConversionProcess(
         take: requestBatchSize,
         skip: startingSkip + requestIndex,
       });
-      log.info({ length: mittausRows.length }, 'Got from db');
+      log.trace({ length: mittausRows.length }, 'Got from db');
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
           mittausRows,
         );
-      log.info({ length: convertedRows.length }, 'converted');
+      log.trace({ length: convertedRows.length }, 'converted');
       if (convertedRows.length !== mittausRows.length) {
         /*
          Should not happen. Errors from geoviite api are returned.
@@ -161,9 +161,9 @@ export async function handleGeoviiteConversionProcess(
           system,
         );
         try {
-          log.info('start geoviite db update');
+          log.trace('start geoviite db update');
           await prismaClient.$executeRawUnsafe(updateSql);
-          log.info('done geoviite db update');
+          log.trace('done geoviite db update');
         } catch (err) {
           log.error(updateSql);
           throw err;
