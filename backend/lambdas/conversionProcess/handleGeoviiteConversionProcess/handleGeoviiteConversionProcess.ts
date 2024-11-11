@@ -71,7 +71,7 @@ export async function handleGeoviiteConversionProcess(
     }
 
     //Use subtable for performance
-    const mittausTable = await getMittausSubtable(system);
+    const mittausTable = await getMittausSubtable(system, prismaClient);
 
     // separate mittaus count query for optimization
 

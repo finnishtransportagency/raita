@@ -808,28 +808,27 @@ export function produceGeoviiteBatchUpdateSql(
     .replace(/''/g, 'null');
 }
 
-export async function getMittausSubtable(system: string | null) {
-  const prisma = await getPrismaClient();
+export async function getMittausSubtable(system: string | null, prisma:any) {
   switch (system) {
-    case TableEnum.AMS:
+    case 'AMS':
       return prisma.ams_mittaus;
       break;
-    case TableEnum.OHL:
+    case 'OHL':
       return prisma.ohl_mittaus;
       break;
-    case TableEnum.PI:
+    case 'PI':
       return prisma.pi_mittaus;
       break;
-    case TableEnum.RC:
+    case 'RC':
       return prisma.rc_mittaus;
       break;
-    case TableEnum.RP:
+    case 'RP':
       return prisma.rp_mittaus;
       break;
-    case TableEnum.TG:
+    case 'TG':
       return prisma.tg_mittaus;
       break;
-    case TableEnum.TSIGHT:
+    case 'TSIGHT':
       return prisma.tsight_mittaus;
       break;
     default: {
