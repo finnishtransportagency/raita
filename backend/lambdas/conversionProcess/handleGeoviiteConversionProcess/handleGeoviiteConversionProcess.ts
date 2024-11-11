@@ -10,7 +10,10 @@ import {
   GeoviiteClientResultItem,
 } from '../../geoviite/geoviiteClient';
 import { getEnvOrFail } from '../../../../utils';
-import { produceGeoviiteBatchUpdateSql } from '../../dataProcess/csvCommon/db/dbUtil';
+import {
+  getMittausSubtable,
+  produceGeoviiteBatchUpdateSql,
+} from '../../dataProcess/csvCommon/db/dbUtil';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 
 const init = () => {
@@ -67,8 +70,13 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('orderBy value other than id not implemented');
     }
 
+    //Use subtable for performance
+    const mittausTable = await getMittausSubtable(system);
+
     // separate mittaus count query for optimization
-    const totalMittausCount = await prismaClient.mittaus.count({
+
+    // @ts-ignore
+    const totalMittausCount = await mittausTable.count({
       where: {
         raportti_id: id,
       },
@@ -87,11 +95,10 @@ export async function handleGeoviiteConversionProcess(
       requestIndex < mittausCount;
       requestIndex += requestBatchSize
     ) {
-      const mittausRows = await prismaClient.mittaus.findMany({
+      // @ts-ignore
+      const mittausRows = await mittausTable.findMany({
         where: {
-          raportti: {
-            key,
-          },
+          raportti_id: id,
         },
         select: {
           lat: true,
@@ -110,22 +117,26 @@ export async function handleGeoviiteConversionProcess(
         );
       log.info({ length: convertedRows.length }, 'converted');
       if (convertedRows.length !== mittausRows.length) {
-        // TODO can this happen? or other errors from geoviite api?
-        // Empty lat and long is a normal case.
-        // Invalid lat and long also possibele. For example swapped lat and long (to be handled). Also in wrong projection possible (not found any yet).
-        // Invalid rows return from geoviite per row:
-        //{
-        //       "geometry": {
-        //         "type": "Point",
-        //         "coordinates": []
-        //       },
-        //       "properties": {
-        //         "virheet": [
-        //           "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
-        //         ]
-        //       },
-        //       "type": "Feature"
-        //     }
+        /*
+         Should not happen. Errors from geoviite api are returned.
+         Invalid rows return virheet from geoviite per row:
+        {
+               "geometry": {
+                 "type": "Point",
+                 "coordinates": []
+               },
+               "properties": {
+                 "virheet": [
+                   "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
+                 ]
+               },
+               "type": "Feature"
+             }
+
+         Known cases that return virheet:
+         Empty lat and long.
+         Invalid lat and long. For example swapped lat and long (to be handled). Also in wrong projection possible (not found any yet).*/
+
         log.error('Size mismatch');
       }
 
@@ -144,7 +155,11 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-        const updateSql: string = produceGeoviiteBatchUpdateSql(batch, timestamp, system);
+        const updateSql: string = produceGeoviiteBatchUpdateSql(
+          batch,
+          timestamp,
+          system,
+        );
         try {
           log.info('start geoviite db update');
           await prismaClient.$executeRawUnsafe(updateSql);
