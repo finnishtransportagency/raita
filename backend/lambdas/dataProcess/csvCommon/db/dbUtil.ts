@@ -668,8 +668,11 @@ enum TableEnum {
 export function produceGeoviiteBatchUpdateSql(
   batch: GeoviiteClientResultItem[],
   timestamp: string,
+  system: string | null,
 ): string {
-  let query: string = 'UPDATE mittaus SET';
+  // const creataTempTableSql= 'CREATE TEMP TABLE tempTable (id BIGINT NOT NULL, field(s) to be updated,    CONSTRAINT tempTable_pkey PRIMARY KEY (id));
+
+  let query: string = `UPDATE ${system}_mittaus SET`;
   let longPart: string = ' geoviite_konvertoitu_long = CASE';
   let latPart: string = ' geoviite_konvertoitu_lat = CASE';
   let osuusNumPart: string = ' geoviite_konvertoitu_rataosuus_numero = CASE';

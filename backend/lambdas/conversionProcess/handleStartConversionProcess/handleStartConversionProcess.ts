@@ -116,6 +116,7 @@ export async function handleStartConversionProcess(
         select: {
           key: true,
           id: true,
+          system: true,
         },
         take: pageCount,
       });
@@ -130,14 +131,13 @@ export async function handleStartConversionProcess(
           },
         });
 
-        let flippedLatLong:boolean = false;
+        let flippedLatLong: boolean = false;
         const a = await prismaClient.mittaus.findFirst({
           where: {
             raportti_id: raportti.id,
-            lat:{not:null}
+            lat: { not: null },
           },
         });
-
 
         const key = raportti.key;
         if (key === null) {
@@ -150,6 +150,7 @@ export async function handleStartConversionProcess(
           const body: ConversionMessage = {
             key,
             id: raportti.id,
+            system: raportti.system,
             batchSize: conversionBatchSize,
             batchIndex,
             orderBy: 'id',

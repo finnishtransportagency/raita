@@ -53,6 +53,7 @@ export async function handleGeoviiteConversionProcess(
     const message: ConversionMessage = JSON.parse(sqsRecord.body);
     key = message.key;
     const id = message.id;
+    const system = message.system;
     log.info({ message }, 'Start conversion');
 
     // how many to handle in this invocation
@@ -143,7 +144,7 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-        const updateSql: string = produceGeoviiteBatchUpdateSql(batch, timestamp);
+        const updateSql: string = produceGeoviiteBatchUpdateSql(batch, timestamp, system);
         try {
           log.info('start geoviite db update');
           await prismaClient.$executeRawUnsafe(updateSql);
@@ -158,10 +159,9 @@ export async function handleGeoviiteConversionProcess(
 
     const readyTimestamp = new Date().toISOString();
 
-    await prismaClient.raportti.updateMany({
-      // updateMany because key is not set as unique. TODO: should it be?
+    await prismaClient.raportti.update({
       where: {
-        key,
+        id,
       },
       data: {
         geoviite_status: ConversionStatus.SUCCESS,
