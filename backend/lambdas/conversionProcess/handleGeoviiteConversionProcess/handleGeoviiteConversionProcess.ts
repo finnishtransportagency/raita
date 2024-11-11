@@ -118,25 +118,8 @@ export async function handleGeoviiteConversionProcess(
       log.trace({ length: convertedRows.length }, 'converted');
       if (convertedRows.length !== mittausRows.length) {
         /*
-         Should not happen. Errors from geoviite api are returned.
-         Invalid rows return virheet from geoviite per row:
-        {
-               "geometry": {
-                 "type": "Point",
-                 "coordinates": []
-               },
-               "properties": {
-                 "virheet": [
-                   "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
-                 ]
-               },
-               "type": "Feature"
-             }
-
-         Known cases that return virheet:
-         Empty lat and long.
-         Invalid lat and long. For example swapped lat and long (to be handled). Also in wrong projection possible (not found any yet).*/
-
+         Should not happen. Errors from geoviite api are returned as rows with 'virheet' -value.
+         */
         log.error('Size mismatch');
       }
 
