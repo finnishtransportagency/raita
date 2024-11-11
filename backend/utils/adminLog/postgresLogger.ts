@@ -1,16 +1,16 @@
 import { log } from '../logger';
 import { AdminLogLevel, AdminLogSource, IAdminLogger } from './types';
 import {
-  PostgresDBConnection,
-  getPostgresDBConnection,
+  DBConnection,
+  getDBConnection,
 } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
 
 export class PostgresLogger implements IAdminLogger {
   private source: AdminLogSource;
   private invocationId: string;
-  private connection: Promise<PostgresDBConnection>;
+  private connection: Promise<DBConnection>;
 
-  constructor(dbConnection?: Promise<PostgresDBConnection>) {
+  constructor(dbConnection?: Promise<DBConnection>) {
     if (dbConnection) {
       this.connection = dbConnection;
     }
@@ -41,7 +41,7 @@ export class PostgresLogger implements IAdminLogger {
     }
     // other login info is read from pg env vars
     // TODO: show some error if they are not found?
-    this.connection = getPostgresDBConnection();
+    this.connection = getDBConnection();
     return this.connection;
   }
 
@@ -51,9 +51,8 @@ export class PostgresLogger implements IAdminLogger {
       return;
     }
     const connection = await this.getConnection();
-    const schema = connection.schema;
+    const { prisma, schema } = connection;
     const timestamp = new Date(Date.now()).toISOString();
-    const sql = connection.sql;
     const rows = messages.map(message => ({
       source: this.source,
       log_timestamp: timestamp,
@@ -61,8 +60,9 @@ export class PostgresLogger implements IAdminLogger {
       log_message: message,
       log_level: level,
     }));
-    return await sql`
-    INSERT INTO ${sql(schema)}.logging
-    ${sql(rows)}`;
+    return await prisma.logging.createMany({
+      data: rows,
+      skipDuplicates: true,
+    });
   }
 }
