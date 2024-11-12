@@ -802,10 +802,13 @@ export function produceGeoviiteBatchUpdateSql(
     timestampPart +
     wherePart;
 
+  // Replace different epmty vals as nulls. "At least one of the result expressions in a CASE specification must be an expression other than the NULL constant". Cast bypasses that. Numeric type good for all column types.
   return query
-    .replace(/'undefined'/g, 'null')
-    .replace(/undefined/g, 'null')
-    .replace(/''/g, 'null');
+    .replace(/'undefined'/g, 'cast(null as varchar)')
+    .replace(/undefined/g, 'cast(null as numeric)')
+    .replace(/''/g, 'cast(null as varchar)')
+
+
 }
 
 export async function getMittausSubtable(system: string | null, prisma:any) {
