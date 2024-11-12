@@ -728,7 +728,7 @@ export function produceGeoviiteBatchUpdateSql(
       ' when id in (' +
       row.id +
       ') then ' +
-      (rata_metrit ? rata_metrit : 'null');
+      (rata_metrit ? rata_metrit : 'cast(null as numeric)');
     osuusNimiPart += ' when id in (' + row.id + ') then ' + "''";
     raideNumPart += ' when id in (' + row.id + ') then ' + "''";
     valimatkaPart += ' when id in (' + row.id + ') then ' + row.valimatka;
@@ -804,9 +804,9 @@ export function produceGeoviiteBatchUpdateSql(
 
   // Replace different epmty vals as nulls. "At least one of the result expressions in a CASE specification must be an expression other than the NULL constant". Cast bypasses that. Numeric type good for all column types.
   return query
-    .replace(/'undefined'/g, 'cast(null as varchar)')
+    .replace(/'undefined'/g, 'null')
     .replace(/undefined/g, 'cast(null as numeric)')
-    .replace(/''/g, 'cast(null as varchar)')
+    .replace(/''/g, 'null')
 
 
 }
