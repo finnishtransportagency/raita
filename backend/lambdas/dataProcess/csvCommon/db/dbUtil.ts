@@ -670,31 +670,6 @@ export function produceGeoviiteBatchUpdateSql(
   timestamp: string,
   system: string | null,
 ): string {
-  /*  CREATE TEMP TABLE tempTable (id BIGINT NOT NULL,
-
- geoviite_konvertoitu_long             numeric,
-    geoviite_konvertoitu_rataosuus_numero varchar(40),
-    geoviite_konvertoitu_rataosuus_nimi   varchar(40),
-    geoviite_konvertoitu_raide_numero     varchar(40),
-    geoviite_konvertoitu_rata_kilometri   integer,
-    geoviite_konvertoitu_rata_metrit      numeric,
-    geoviite_konvertoitu_sijainti         geography(Point, 4326),
-    geoviite_valimatka                    numeric,
-    geoviite_sijaintiraide_kuvaus         varchar(200),
-    geoviite_sijaintiraide_tyyppi         varchar(40),
-    geoviite_updated_at                   timestamp,
-    geoviite_ratanumero_oid               varchar(40),
-    geoviite_sijaintiraide_oid            varchar(40),
-    geoviite_sijaintiraide                varchar(40) to be updated,
-    CONSTRAINT tempTable_pkey PRIMARY KEY (id));
-  Accumulate a bunch of updates in a buffer depending of available RAM When it's filled, or need to change of table/partition, or completed:
-
-  COPY tempTable FROM buffer;
-  UPDATE myTable a SET field(s)=value(s) FROM tempTable b WHERE a.id=b.id;
-  COMMIT;
-  TRUNCATE TABLE tempTable;
-  VACUUM FULL ANALYZE myTable;*/
-
   let query: string = `UPDATE ${system}_mittaus SET`;
   let longPart: string = ' geoviite_konvertoitu_long = CASE';
   let latPart: string = ' geoviite_konvertoitu_lat = CASE';
