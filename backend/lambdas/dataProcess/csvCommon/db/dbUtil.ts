@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import postgres, { Sql } from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
@@ -16,7 +16,7 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
-import { jarjestelma, PrismaClient } from '@prisma/client';
+import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
 
 let connection: postgres.Sql;
@@ -786,6 +786,44 @@ export function produceGeoviiteBatchUpdateSql(
 
 }
 
+
+
+export function produceGeoviiteBatchUpdateSql2(
+  batch: GeoviiteClientResultItem[],
+  timestamp: string,
+  system: string | null,
+) {
+  const updatePart = getSubtableUpdateQuery(system);
+  const queryArray=[];
+  const longQueryArray=[];
+  const longValsArray:any[]=[];
+  const idArray: number[] = [];
+  queryArray.push(updatePart);
+  const valsArray=[];
+  valsArray.push(null);
+  longQueryArray.push(`geoviite_konvertoitu_long = CASE`);
+  longValsArray.push(null);
+
+  batch.forEach((row: GeoviiteClientResultItem) => {
+    idArray.push(row.id);
+    longQueryArray.push(`when id in (`);
+    longQueryArray.push(`) then `);
+    longValsArray.push(row.id);
+    longValsArray.push(row.x);
+  });
+  longQueryArray.push(` END`);
+  longValsArray.push(null);
+  queryArray.push(...longQueryArray);
+  valsArray.push(...longValsArray);
+  queryArray.push(`WHERE id IN ${Prisma.join(idArray)}`);
+  console.log(queryArray);
+  console.log(valsArray);
+  return Prisma.sql(queryArray, ...valsArray);
+}
+
+
+
+
 export async function getMittausSubtable(system: string | null, prisma:any) {
   switch (system) {
     case 'AMS':
@@ -814,6 +852,38 @@ export async function getMittausSubtable(system: string | null, prisma:any) {
         `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
       );
       return prisma.mittaus;
+    }
+  }
+}
+
+export function getSubtableUpdateQuery(system: string | null) {
+  switch (system) {
+    case 'AMS':
+      return `UPDATE ams_mittaus SET`;
+      break;
+    case 'OHL':
+      return `UPDATE ohl_mittaus SET`;
+      break;
+    case 'PI':
+      return `UPDATE pi_mittaus SET`;
+      break;
+    case 'RC':
+      return `UPDATE rc_mittaus SET`;
+      break;
+    case 'RP':
+      return `UPDATE rp_mittaus SET`;
+      break;
+    case 'TG':
+      return `UPDATE tg_mittaus SET`;
+      break;
+    case 'TSIGHT':
+      return `UPDATE tsight_mittaus SET`;
+      break;
+    default: {
+      log.trace(
+        `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
+      );
+      return `UPDATE mittaus SET`;
     }
   }
 }

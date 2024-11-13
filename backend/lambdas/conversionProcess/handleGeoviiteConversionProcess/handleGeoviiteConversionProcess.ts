@@ -12,8 +12,9 @@ import {
 import { getEnvOrFail } from '../../../../utils';
 import {
   getMittausSubtable,
-  produceGeoviiteBatchUpdateSql,
+  produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateSql2,
 } from '../../dataProcess/csvCommon/db/dbUtil';
+import { Prisma } from '@prisma/client';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 
 const init = () => {
@@ -138,14 +139,14 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-        const updateSql: string = produceGeoviiteBatchUpdateSql(
+        const updateSql = produceGeoviiteBatchUpdateSql2(
           batch,
           timestamp,
           system,
         );
         try {
           log.trace('start geoviite db update');
-          await prismaClient.$executeRawUnsafe(updateSql);
+          await prismaClient.$executeRaw(updateSql);
           log.trace('done geoviite db update');
         } catch (err) {
           log.error(updateSql);
