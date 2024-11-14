@@ -2,6 +2,7 @@ import postgres from 'postgres';
 import { getSecretsManagerSecret } from '../secretsManager';
 import { getEnvOrFail } from '../../../utils';
 import {
+  AdminLogLevel,
   AdminLogSource,
   AdminLogSummary,
   RawLogRow,
@@ -9,7 +10,7 @@ import {
   StatsQueryDBResponseRow,
   SummaryDBResponse,
 } from './types';
-import { formatSummary } from './adminLogUtils';
+import { formatSummary, logCountsCombining } from './adminLogUtils';
 import { format } from 'date-fns';
 import { getPrismaClient } from '../prismaClient';
 import { getDBConnection } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
@@ -112,10 +113,12 @@ const getSummaryQuery = async (
     take: pageSize,
   });
 
-  const invocationIds = events.map(event => event.invocation_id);
+  const invocationIds = events
+    .map(event => event.invocation_id)
+    .filter((id): id is string => id !== null);
 
   const logCounts = await prisma.logging.groupBy({
-    by: ['invocation_id', 'log_timestamp', 'log_level', 'source'],
+    by: ['invocation_id', 'log_timestamp'],
     _count: {
       _all: true,
     },
@@ -138,7 +141,7 @@ const getSummaryQuery = async (
       .filter(
         count =>
           count.invocation_id === event.invocation_id &&
-          count.log_date === event.log_date,
+          count.log_timestamp === event.log_timestamp,
       )
       .map(count => ({
         log_level: count.log_level,
@@ -146,12 +149,23 @@ const getSummaryQuery = async (
         count: count._count._all,
       }));
 
+    if (counts.length === 0) {
+      console.warn(
+        `No matching log counts found for event: ${event.invocation_id}`,
+      );
+    }
     return {
-      log_date: event.log_timestamp,
-      log_level: event.log_level,
-      start_timestamp: event._min.log_timestamp,
-      invocation_id: event.invocation_id,
-      counts,
+      log_date: event.log_timestamp
+        ? event.log_timestamp.toISOString().split('T')[0] // Date only
+        : '',
+      log_level: event.log_level as AdminLogLevel,
+      start_timestamp: event._min.log_timestamp
+        ? event._min.log_timestamp.toISOString()
+        : '',
+      invocation_id: event.invocation_id || '',
+      count: counts[0]?.count?.toString() || '0', // count from first match or fallback
+      source:
+        (counts[0]?.source as AdminLogSource) || ('default' as AdminLogSource),
     };
   });
 
@@ -172,7 +186,7 @@ export async function getLogSummary(
   pageIndex: number,
 ): Promise<AdminLogSummary> {
   const password = await getSecretsManagerSecret('database_password');
-  const { sql, schema, prisma } = await getDBConnection();
+  const { prisma } = await getDBConnection();
 
   const stats = await getStatsQuery(
     sources,
@@ -223,8 +237,14 @@ export async function getStatsQuery(
       distinct: ['log_level', 'invocation_id', 'log_timestamp'],
     });
     type LogCountAccumulator = Record<string, number>;
+    type LogEntry = {
+      log_timestamp: Date | null;
+      invocation_id: string | null;
+      log_level: string | null;
+    };
     const logCounts = logs.reduce(
-      (count: LogCountAccumulator, { log_level }: { log_level: string }) => {
+      (count: LogCountAccumulator, { log_level }: LogEntry) => {
+        if (!log_level) return {};
         count[log_level] = (count[log_level] || 0) + 1;
         return count;
       },
