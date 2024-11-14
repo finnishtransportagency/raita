@@ -119,11 +119,10 @@ const getSummaryQuery = async (
     .filter((id): id is string => id !== null);
 
   const logCounts = await prisma.logging.groupBy({
-    by: ['invocation_id', 'log_timestamp'],
+    by: ['invocation_id', 'log_timestamp', 'source'],
     _count: {
       _all: true,
       log_level: true,
-      source: true,
     },
     where: {
       invocation_id: {
@@ -141,14 +140,10 @@ const getSummaryQuery = async (
 
   const results = events.map(event => {
     const counts = logCounts
-      .filter(
-        count =>
-          count.invocation_id === event.invocation_id &&
-          count.log_timestamp === event.log_timestamp,
-      )
+      .filter(count => count.invocation_id === event.invocation_id)
       .map(count => ({
         log_level: count._count.log_level,
-        source: count._count.source,
+        source: count.source,
         count: count._count._all,
       }));
 
@@ -168,7 +163,7 @@ const getSummaryQuery = async (
       invocation_id: event.invocation_id || '',
       count: counts[0]?.count?.toString() || '0', // count from first match or fallback
       source:
-        (counts[0]?.source as unknown as AdminLogSource) ||
+        (counts[0].source as unknown as AdminLogSource) ||
         ('default' as AdminLogSource),
     };
   });
