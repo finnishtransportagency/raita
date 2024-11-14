@@ -1,4 +1,4 @@
-import { GeoviiteClient } from '../geoviiteClient';
+ import { GeoviiteClient } from '../geoviiteClient';
 
 import { log } from '../../../utils/logger';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
@@ -6,6 +6,7 @@ import { jest } from '@jest/globals';
 
 import {produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateSql2} from '../../dataProcess/csvCommon/db/dbUtil';
 import { Prisma } from '@prisma/client';
+import {getPrismaClient} from "../../../utils/prismaClient";
 
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
@@ -241,7 +242,7 @@ describe('geoviite parse sql from repsonse', () => {
           ratametri_desimaalit: 0,
           ratanumero_oid: '1.2.246.578.3.10001.188908',
           sijaintiraide_oid: '1.2.246.578.3.10002.194079',
-          id: 27562774,
+          id: 3087679,
         },
         {
           x: 245348.20489785323,
@@ -256,23 +257,32 @@ describe('geoviite parse sql from repsonse', () => {
           ratametri_desimaalit: 123,
           ratanumero_oid: '1.2.246.578.3.10001.188901',
           sijaintiraide_oid: '1.2.246.578.3.10002.194071',
-          id: 27562775,
+          id: 3087680,
         },
       ],
       '2024-01-01T01:11:00.000Z',
       'AMS'
     );
-/*    expect(sql).toEqual(
+
+    const prisma = await getPrismaClient();
+    console.log(sql);
+    const a= await prisma.$executeRaw(sql);
+    console.log(a);
+
+    expect(sql).toEqual(
       "UPDATE AMS_mittaus SET geoviite_konvertoitu_long = CASE when id in (27562774) then 259348.20489785323 when id in (27562775) then 245348.20489785323 END, geoviite_konvertoitu_lat = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 END, geoviite_konvertoitu_rataosuus_numero = CASE when id in (27562774) then '002' when id in (27562775) then '001' END, geoviite_konvertoitu_rata_kilometri = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 END, geoviite_konvertoitu_rata_metrit = CASE when id in (27562774) then 300 when id in (27562775) then 200.123 END, geoviite_konvertoitu_rataosuus_nimi = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_konvertoitu_raide_numero = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_valimatka = CASE when id in (27562774) then 2.0372681319713593e-10 when id in (27562775) then 1.0372681319713593e-10 END, geoviite_sijaintiraide = CASE when id in (27562774) then '002' when id in (27562775) then '003' END, geoviite_sijaintiraide_kuvaus = CASE when id in (27562774) then 'Lielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562775) then 'Vielahti-Kokemäki-Pori-Mäntyluoto' END, geoviite_sijaintiraide_tyyppi = CASE when id in (27562774) then 'pääraide' when id in (27562775) then 'sivuraide' END, geoviite_sijaintiraide_oid = CASE when id in (27562774) then '1.2.246.578.3.10002.194079' when id in (27562775) then '1.2.246.578.3.10002.194071' END, geoviite_ratanumero_oid = CASE when id in (27562774) then '1.2.246.578.3.10001.188908' when id in (27562775) then '1.2.246.578.3.10001.188901' END, geoviite_virhe = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_updated_at =  '2024-01-01T01:11:00.000Z' WHERE id IN (27562774,27562775);",
-    );*/
+    );
   });
 });
 
 describe('geoviite parse sql from repsonse with virhe', () => {
   test('success: basic operation', async () => {
+
+    const prisma = await getPrismaClient();
+
     // Example is safe if the text query below is completely trusted content
-    const query1 = `SELECT id, name FROM "User" WHERE name = ` // The first parameter would be inserted after this string
-    const query2 = ` OR name = ` // The second parameter would be inserted after this string
+    const query1 = `SELECT id FROM "mittaus" WHERE track = ` // The first parameter would be inserted after this string
+    const query2 = ` OR track = ` // The second parameter would be inserted after this string
 
     const inputString1 = "Fred"
     const inputString2 = `'Sarah' UNION SELECT id, title FROM "Post"`
@@ -282,5 +292,62 @@ describe('geoviite parse sql from repsonse with virhe', () => {
     const query = Prisma.sql([query1, query2, ""], ...vals)
 
     console.log(query);
+    const a= await prisma.$executeRaw(query);
+    console.log(a);
+
   });
 });
+
+ describe('geoviite parse sql from repsofsnse with virhe', () => {
+   test('success: basicfd operation', async () => {
+
+     const prisma = await getPrismaClient();
+/*
+
+     UPDATE kalle.AMS_mittaus SET geoviite_konvertoitu_long = CASE
+     when id in (27562774) then 259348.20489785323
+     when id in (27562775) then 245348.20489785323 END,
+       geoviite_konvertoitu_lat = CASE
+     when id in (27562774) then 6804094.514968412
+     when id in (27562775) then 6704094.514968412 END,
+       geoviite_konvertoitu_rataosuus_numero = CASE
+     when id in (27562774) then '002'
+     when id in (27562775) then '001' END,
+       geoviite_konvertoitu_rata_kilometri = CASE*/
+     const querys = [
+       `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `,
+       ` then `,
+       ` when id = `,
+       ` then `,
+       ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
+       ` then `,
+       ` when id = `,
+       ` then `,
+       ` END WHERE id  = `,
+       ` OR id  = `,
+       ""
+     ];
+
+
+     const vals =
+       [
+         3087679,
+         159348.20489785323,
+         3087680,
+         259348.20489785323,
+         3087679,
+         'HELLO',
+         3087680,
+         'mello"',
+         3087679,
+         3087680,
+       ];
+     const query = Prisma.sql(querys, ...vals)
+     console.log(query);
+     const a= await prisma.$executeRaw(query);
+     console.log(a);
+
+   });
+ });
+
+

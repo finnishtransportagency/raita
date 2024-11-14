@@ -788,34 +788,105 @@ export function produceGeoviiteBatchUpdateSql(
 
 
 
+
+/*
+
+     const querys = [
+       `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `,
+       ` then `,
+       ` when id = `,
+       ` then `,
+       ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
+       ` then `,
+       ` when id = `,
+       ` then `,
+       ` END WHERE id  = `,
+       ` OR id  = `,
+       ""
+     ];
+
+
+     const vals =
+       [
+         3087679,
+         159348.20489785323,
+         3087680,
+         259348.20489785323,
+         3087679,
+         'HELLO',
+         3087680,
+         'mello"',
+         3087679,
+         3087680,
+       ];
+* */
 export function produceGeoviiteBatchUpdateSql2(
   batch: GeoviiteClientResultItem[],
   timestamp: string,
   system: string | null,
 ) {
-  const updatePart = getSubtableUpdateQuery(system);
+
   const queryArray=[];
-  const longQueryArray=[];
-  const longValsArray:any[]=[];
-  const idArray: number[] = [];
-  queryArray.push(updatePart);
   const valsArray=[];
-  valsArray.push(null);
-  longQueryArray.push(`geoviite_konvertoitu_long = CASE`);
-  longValsArray.push(null);
+
+  const longQueryArray: string[] = [];
+  const longValsArray:any[]=[];
+  const ratanumeroQueryArray: string[] = [];
+  const ratanumeroValsArray:any[]=[];
+
+  const idArray: number[] = [];
+
+  let firstRow = true;
 
   batch.forEach((row: GeoviiteClientResultItem) => {
     idArray.push(row.id);
-    longQueryArray.push(`when id in (`);
-    longQueryArray.push(`) then `);
+
+    //long
+    if(firstRow) {
+      longQueryArray.push(getSubtableUpdateQueryBeginning(system));
+    }else{
+      longQueryArray.push(` when id = `);
+    }
+    longQueryArray.push(` then `);
     longValsArray.push(row.id);
     longValsArray.push(row.x);
+
+    //rataosuus_numero
+    if(firstRow) {
+      ratanumeroQueryArray.push(` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `);
+
+    }else{
+      ratanumeroQueryArray.push(` when id = `);
+    }
+    ratanumeroQueryArray.push(` then `);
+    ratanumeroValsArray.push(row.id);
+    ratanumeroValsArray.push(row.ratanumero);
+
+    firstRow = false;
   });
-  longQueryArray.push(` END`);
-  longValsArray.push(null);
+
+
   queryArray.push(...longQueryArray);
   valsArray.push(...longValsArray);
-  queryArray.push(`WHERE id IN ${Prisma.join(idArray)}`);
+
+  queryArray.push(...ratanumeroQueryArray);
+  valsArray.push(...ratanumeroValsArray);
+
+  firstRow = true;
+  idArray.forEach(id=>{
+    if(firstRow){
+      queryArray.push(` END WHERE id  = `);
+    }
+    else{
+      queryArray.push(` OR id  = `);
+    }
+    firstRow = false;
+  })
+
+  valsArray.push(...idArray);
+
+  queryArray.push("");
+
   console.log(queryArray);
   console.log(valsArray);
   return Prisma.sql(queryArray, ...valsArray);
@@ -856,34 +927,35 @@ export async function getMittausSubtable(system: string | null, prisma:any) {
   }
 }
 
-export function getSubtableUpdateQuery(system: string | null) {
+export function getSubtableUpdateQueryBeginning(system: string | null) {
   switch (system) {
     case 'AMS':
-      return `UPDATE ams_mittaus SET`;
+      //UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id =
+      return `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'OHL':
-      return `UPDATE ohl_mittaus SET`;
+      return `UPDATE ohl_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'PI':
-      return `UPDATE pi_mittaus SET`;
+      return `UPDATE pi_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'RC':
-      return `UPDATE rc_mittaus SET`;
+      return `UPDATE rc_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'RP':
-      return `UPDATE rp_mittaus SET`;
+      return `UPDATE rp_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'TG':
-      return `UPDATE tg_mittaus SET`;
+      return `UPDATE tg_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'TSIGHT':
-      return `UPDATE tsight_mittaus SET`;
+      return `UPDATE tsight_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     default: {
       log.trace(
         `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
       );
-      return `UPDATE mittaus SET`;
+      return `UPDATE mittaus SET geoviite_konvertoitu_long = CASE when id = `;
     }
   }
 }
