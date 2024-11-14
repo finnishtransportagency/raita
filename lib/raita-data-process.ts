@@ -139,7 +139,7 @@ export class DataProcessStack extends NestedStack {
     const receptionBucketResources = [
       this.dataReceptionBucket.bucketArn,
       `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.MeeriHotfix2023}/*`, // TODO: remove when not needed
+      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri_FIX}/*`,
     ];
     const fullAccessBucketActions = [
       's3:GetObject',

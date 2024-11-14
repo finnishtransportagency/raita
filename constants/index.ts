@@ -31,7 +31,7 @@ export type RaitaSourceSystem =
   (typeof raitaSourceSystems)[keyof typeof raitaSourceSystems];
 
 export const raitaSourceSystems = {
-  MeeriHotfix2023: 'Meeri_FIX2023', // TODO: remove when not used anymore
+  Meeri_FIX: 'Meeri_FIX', // This is for accepting data that will not be handled by data process automatically
   Meeri: 'Meeri',
   Emma: 'Emma',
   Elli: 'Elli',
@@ -74,4 +74,3 @@ export const CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT = 1000; // TODO: this is just
 
 export const GEOVIITE_HOSTNAME_DEV = 'https://avoinapi.testivaylapilvi.fi/';
 export const GEOVIITE_HOSTNAME_PROD = 'https://avoinapi.vaylapilvi.fi/';
-
