@@ -275,7 +275,7 @@ describe('geoviite parse sql from repsonse', () => {
   });
 });
 
-describe('geoviite parse sql from repsonse with virhe', () => {
+describe('geoviite parse sql from response with virhe', () => {
   test('success: basic operation', async () => {
 
     const prisma = await getPrismaClient();
@@ -298,7 +298,7 @@ describe('geoviite parse sql from repsonse with virhe', () => {
   });
 });
 
- describe('geoviite parse sql from repsofsnse with virhe', () => {
+ describe('geoviite parse sql from reponsse with virhe', () => {
    test('success: basicfd operation', async () => {
 
      const prisma = await getPrismaClient();
@@ -338,7 +338,7 @@ describe('geoviite parse sql from repsonse with virhe', () => {
          3087679,
          'HELLO',
          3087680,
-         'mello"',
+         null,
          3087679,
          3087680,
        ];
@@ -347,6 +347,64 @@ describe('geoviite parse sql from repsonse with virhe', () => {
      const a= await prisma.$executeRaw(query);
      console.log(a);
 
+   });
+ });
+
+
+ describe('geoviite parse sql from repsonse with virhe', () => {
+   test('success: basic operation', async () => {
+     const sql = produceGeoviiteBatchUpdateSql2(
+       [
+         {
+           x: 259348.20489785323,
+           y: 6804094.514968412,
+           valimatka: 2.0372681319713593e-10,
+           ratanumero: '002',
+           sijaintiraide: '002',
+           sijaintiraide_kuvaus: 'Lielahti-Kokemäki-Pori-Mäntyluoto',
+           sijaintiraide_tyyppi: 'pääraide',
+           ratakilometri: 270,
+           ratametri: 300,
+           ratametri_desimaalit: 0,
+           ratanumero_oid: '1.2.246.578.3.10001.188901',
+           sijaintiraide_oid: '1.2.246.578.3.10002.194071',
+           id: 27562774,
+         },
+         {
+           x: 245348.20489785323,
+           y: 6704094.514968412,
+           valimatka: 1.0372681319713593e-10,
+           ratanumero: '001',
+           sijaintiraide: '003',
+           sijaintiraide_kuvaus: 'Vielahti-Kokemäki-Pori-Mäntyluoto',
+           sijaintiraide_tyyppi: 'sivuraide',
+           ratakilometri: 170,
+           ratametri: 200,
+           ratametri_desimaalit: 123,
+           ratanumero_oid: '1.2.246.578.3.10001.188902',
+           sijaintiraide_oid: '1.2.246.578.3.10002.194072',
+           id: 27562775,
+         },
+         {
+           virheet: [
+             'virhe1',
+             'virhe2',
+             'virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj',
+           ],
+           id: 27562776,
+         },
+       ],
+       '2024-01-01T01:11:00.000Z',
+       'AMS'
+     );
+     console.log(sql);
+     const prisma = await getPrismaClient();
+     const a= await prisma.$executeRaw(sql);
+     console.log(a);
+
+     expect(sql).toEqual(
+       "UPDATE AMS_mittaus SET geoviite_konvertoitu_long = CASE when id in (27562774) then 259348.20489785323 when id in (27562775) then 245348.20489785323 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_lat = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rataosuus_numero = CASE when id in (27562774) then '002' when id in (27562775) then '001' when id in (27562776) then null END, geoviite_konvertoitu_rata_kilometri = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rata_metrit = CASE when id in (27562774) then 300 when id in (27562775) then 200.123 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rataosuus_nimi = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then null END, geoviite_konvertoitu_raide_numero = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then null END, geoviite_valimatka = CASE when id in (27562774) then 2.0372681319713593e-10 when id in (27562775) then 1.0372681319713593e-10 when id in (27562776) then cast(null as numeric) END, geoviite_sijaintiraide = CASE when id in (27562774) then '002' when id in (27562775) then '003' when id in (27562776) then null END, geoviite_sijaintiraide_kuvaus = CASE when id in (27562774) then 'Lielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562775) then 'Vielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562776) then null END, geoviite_sijaintiraide_tyyppi = CASE when id in (27562774) then 'pääraide' when id in (27562775) then 'sivuraide' when id in (27562776) then null END, geoviite_sijaintiraide_oid = CASE when id in (27562774) then '1.2.246.578.3.10002.194071' when id in (27562775) then '1.2.246.578.3.10002.194072' when id in (27562776) then null END, geoviite_ratanumero_oid = CASE when id in (27562774) then '1.2.246.578.3.10001.188901' when id in (27562775) then '1.2.246.578.3.10001.188902' when id in (27562776) then null END, geoviite_virhe = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then 'virhe1,virhe2,virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj' END, geoviite_updated_at =  '2024-01-01T01:11:00.000Z' WHERE id IN (27562774,27562775,27562776);",
+     );
    });
  });
 
