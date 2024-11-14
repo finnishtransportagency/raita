@@ -6,7 +6,10 @@ import {
   getOriginalZipNameFromPath,
   isCsvSuffix,
 } from '../../utils';
-import { parseCSVFileStream } from './csvDataParser/csvDataParser';
+import {
+  parseAttributesFromChunkFileName,
+  parseCSVFileStream,
+} from './csvDataParser/csvDataParser';
 import { S3FileRepository } from '../../../adapters/s3FileRepository';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
@@ -14,6 +17,7 @@ import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -21,6 +25,7 @@ function getLambdaConfigOrFail() {
     configurationFile: getEnv('CONFIGURATION_FILE'),
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
+    readyForConversionQueueUrl: getEnv('READY_FOR_CONVERSION_QUEUE_URL'),
   };
 }
 
@@ -39,6 +44,7 @@ export async function handleCSVFileEvent(
     withRequest(event, context);
     log.debug('Start csv file handler');
     log.debug(event);
+    const config = getLambdaConfigOrFail();
     // Set preliminary value for logging invocation id or old zip file name would be used from previous invocation.
     // If exception happen before or during getting zip fiel name from metadata; loggings woul go under 'ZIP FILE ASSOCIATION FAILED' invocation id.
     let invocationId = 'ZIP FILE ASSOCIATION FAILED';
@@ -78,8 +84,10 @@ export async function handleCSVFileEvent(
           ); // fall back to old behaviour: guess zip file name
           invocationId = invocationIdWithOldBehavior;
           await adminLogger.init('data-csv', invocationId);
+          const s3MetaData = fileStreamResult.metaData;
+          const doGeoviiteConversion =
+            s3MetaData['skip-geoviite-conversion'] !== '1';
           try {
-            const s3MetaData = fileStreamResult.metaData;
             const invocationId = s3MetaData['invocation-id']
               ? decodeURIComponent(s3MetaData['invocation-id'])
               : invocationIdWithOldBehavior;
@@ -110,8 +118,7 @@ export async function handleCSVFileEvent(
               dbConnection,
               invocationId,
             );
-            if (result == 'success') {
-              const config = getLambdaConfigOrFail();
+            if (result === 'chunk-success' || result === 'full-file-success') {
               log.debug(
                 'Success reading file, deleting: ' + keyData.fileBaseName,
               );
@@ -120,11 +127,16 @@ export async function handleCSVFileEvent(
                 Key: keyData.keyWithoutSuffix + '.' + keyData.fileSuffix,
               });
               const s3Client = new S3Client({});
-              const a = await s3Client.send(command);
+              await s3Client.send(command);
             }
-
+            if (result === 'full-file-success' && doGeoviiteConversion) {
+              const { reportId } = parseAttributesFromChunkFileName(keyData);
+              await sendToConversionQueue(
+                reportId,
+                config.readyForConversionQueueUrl,
+              );
+            }
             return {
-              // key is sent to be stored in url decoded format to db
               key,
               file_name: keyData.fileName,
               bucket_arn: eventRecord.s3.bucket.arn,
@@ -169,4 +181,15 @@ export async function handleCSVFileEvent(
         err.message,
     );
   }
+}
+
+async function sendToConversionQueue(reportId: number, queueUrl: string) {
+  // TODO should we use key instead of database id?
+  const sqsClient = new SQSClient({});
+  await sqsClient.send(
+    new SendMessageCommand({
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify({ id: reportId }),
+    }),
+  );
 }

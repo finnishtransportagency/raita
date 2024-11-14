@@ -121,6 +121,9 @@ export async function handleInspectionFileEvent(
         const skipHashCheck =
           s3MetaData['skip-hash-check'] !== undefined &&
           Number(s3MetaData['skip-hash-check']) === 1;
+        const skipGeoviiteConversion =
+          s3MetaData['skip-geoviite-conversion'] !== undefined &&
+          Number(s3MetaData['skip-geoviite-conversion']) === 1;
         const invocationId = s3MetaData['invocation-id']
           ? decodeURIComponent(s3MetaData['invocation-id'])
           : getOriginalZipNameFromPath(keyData.path); // fall back to old behaviour: guess zip file name
@@ -211,6 +214,7 @@ export async function handleInspectionFileEvent(
           dbConnection,
           reportId,
           invocationId,
+          doGeoviiteConversion: !skipGeoviiteConversion,
         });
         if (parseResults.errors) {
           await adminLogger.error(

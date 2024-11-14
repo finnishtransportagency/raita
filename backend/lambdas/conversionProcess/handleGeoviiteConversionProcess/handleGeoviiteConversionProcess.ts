@@ -10,6 +10,7 @@ import {
   GeoviiteClientResultItem,
 } from '../../geoviite/geoviiteClient';
 import { getEnvOrFail } from '../../../../utils';
+import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 
 const init = () => {
   try {
@@ -184,7 +185,7 @@ export async function handleGeoviiteConversionProcess(
         key,
       },
       data: {
-        geoviite_status: 'SUCCESS',
+        geoviite_status: ConversionStatus.SUCCESS,
         geoviite_update_at: readyTimestamp,
       },
     });
@@ -199,7 +200,7 @@ export async function handleGeoviiteConversionProcess(
         key,
       },
       data: {
-        geoviite_status: 'ERROR',
+        geoviite_status: ConversionStatus.ERROR,
         geoviite_update_at: new Date().toISOString(),
       },
     });

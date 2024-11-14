@@ -109,6 +109,7 @@ export const parseFileContent = async (
   doCSVParsing: boolean,
   reportId: number,
   invocationId: string,
+  doGeoviiteConversion: boolean,
 ): Promise<{
   contentData: ParseValueResult;
 }> => {
@@ -130,6 +131,7 @@ export const parseFileContent = async (
           dbConnection,
           reportId,
           invocationId,
+          doGeoviiteConversion,
         );
         log.info('csv parsing result: ' + csvPromise);
       } else {
