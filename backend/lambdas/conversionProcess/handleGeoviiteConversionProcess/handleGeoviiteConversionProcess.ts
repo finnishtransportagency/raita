@@ -125,7 +125,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result all at once to save db call time cost
-      const saveBatchSize = 500;
+      const saveBatchSize = 100;
 
       // one timestamp for all
       const timestamp = new Date();
