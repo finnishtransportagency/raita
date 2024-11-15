@@ -65,7 +65,7 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
     // how many to handle in one request
-    const requestBatchSize = 1000;
+    const requestBatchSize = 10;
 
     if (message.orderBy !== 'id') {
       throw new Error('orderBy value other than id not implemented');

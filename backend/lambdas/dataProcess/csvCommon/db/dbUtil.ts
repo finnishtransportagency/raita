@@ -1090,8 +1090,6 @@ export function produceGeoviiteBatchUpdateSql2(
 
   queryArray.push("");
 
-  console.log(queryArray);
-  console.log(valsArray);
   return Prisma.sql(queryArray, ...valsArray);
 }
 
