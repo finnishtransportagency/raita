@@ -817,7 +817,7 @@ export function produceGeoviiteBatchUpdateSql(
 * */
 export function produceGeoviiteBatchUpdateSql2(
   batch: GeoviiteClientResultItem[],
-  timestamp: string,
+  timestamp: Date,
   system: string | null,
 ) {
   const queryArray = [];
@@ -837,6 +837,7 @@ export function produceGeoviiteBatchUpdateSql2(
   const sijRaideOidQueryArray: string[] = [];
   const ratanumeroOidQueryArray: string[] = [];
   const virheQueryArray: string[] = [];
+  const timestampQueryArray: string[] = [];
 
   const longValsArray: (number | undefined)[] = [];
   const latValsArray: (number | undefined)[] = [];
@@ -852,6 +853,7 @@ export function produceGeoviiteBatchUpdateSql2(
   const sijRaideOidValsArray: (string | number | undefined)[] = [];
   const ratanumeroOidValsArray: (string | number | undefined)[] = [];
   const virheValsArray: (string | number | null)[] = [];
+  const timestampValsArray: (number | Date)[] = [];
 
   const idArray: number[] = [];
 
@@ -1031,6 +1033,16 @@ export function produceGeoviiteBatchUpdateSql2(
       : null;
     virheValsArray.push(virhe);
 
+    //updated_at
+    if (firstRow) {
+      timestampQueryArray.push(` END, geoviite_updated_at = CASE when id = `);
+    } else {
+      timestampQueryArray.push(` when id = `);
+    }
+    timestampQueryArray.push(` then `);
+    timestampValsArray.push(row.id);
+    timestampValsArray.push(timestamp);
+
     firstRow = false;
   });
 
@@ -1076,6 +1088,11 @@ export function produceGeoviiteBatchUpdateSql2(
   queryArray.push(...virheQueryArray);
   valsArray.push(...virheValsArray);
 
+  queryArray.push(...timestampQueryArray);
+  valsArray.push(...timestampValsArray);
+
+
+  //WHERE part
   firstRow = true;
   idArray.forEach(id => {
     if (firstRow) {

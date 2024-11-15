@@ -65,7 +65,7 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
     // how many to handle in one request
-    const requestBatchSize = 10;
+    const requestBatchSize = 1000;
 
     if (message.orderBy !== 'id') {
       throw new Error('orderBy value other than id not implemented');
@@ -128,7 +128,7 @@ export async function handleGeoviiteConversionProcess(
       const saveBatchSize = 1000;
 
       // one timestamp for all
-      const timestamp = new Date().toISOString();
+      const timestamp = new Date();
       for (
         let saveBatchIndex = 0;
         saveBatchIndex < convertedRows.length;

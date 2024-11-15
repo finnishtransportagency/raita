@@ -4,15 +4,15 @@ import { getSecretsManagerSecret } from './secretsManager';
 import { logDatabaseOperation } from './logger';
 
 // disable query logging. TODO: some kind of flag to enable it, if needed
-const enableQueryLogging = false;
+const enableQueryLogging = true;
 
 export const getPrismaClient = async () => {
-  const user = getEnvOrFail('PGUSER');
-  const host = getEnvOrFail('PGHOST');
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const port = getEnvOrFail('PGPORT');
-  const database = getEnvOrFail('PGDATABASE');
-  const password = await getSecretsManagerSecret('database_password');
+  const user = "postgres";
+  const host = "localhost";
+  const schema = "raita";
+  const port = "5432";
+  const database = "postgres";
+  const password ="password";
 
   const client = new PrismaClient({
     datasources: {

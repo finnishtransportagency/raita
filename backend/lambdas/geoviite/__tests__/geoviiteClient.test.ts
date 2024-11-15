@@ -6,6 +6,7 @@ import { jest } from '@jest/globals';
 
 import {produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateSql2} from '../../dataProcess/csvCommon/db/dbUtil';
 
+
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
 beforeEach(() => {
@@ -258,11 +259,11 @@ describe('geoviite parse sql from repsonse', () => {
           id: 3087680,
         },
       ],
-      '2024-01-01T01:11:00.000Z',
+      new Date(2024,12,24),
       'AMS'
     );
 
-   /* const prisma = await getPrismaClient();
+  /*  const prisma = await getPrismaClient();
     console.log(sql);
     const a= await prisma.$executeRaw(sql);
     console.log(a);
@@ -392,7 +393,7 @@ describe('geoviite parse sql from response with virhe', () => {
            id: 27562776,
          },
        ],
-       '2024-01-01T01:11:00.000Z',
+       new Date(2024,12,24),
        'AMS'
      );
 /*     console.log(sql);
