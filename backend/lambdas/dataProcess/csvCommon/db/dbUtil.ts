@@ -665,157 +665,8 @@ enum TableEnum {
   TSIGHT = 'tsight_mittaus',
 }
 
+
 export function produceGeoviiteBatchUpdateSql(
-  batch: GeoviiteClientResultItem[],
-  timestamp: string,
-  system: string | null,
-): string {
-  let query: string = `UPDATE ${system}_mittaus SET`;
-  let longPart: string = ' geoviite_konvertoitu_long = CASE';
-  let latPart: string = ' geoviite_konvertoitu_lat = CASE';
-  let osuusNumPart: string = ' geoviite_konvertoitu_rataosuus_numero = CASE';
-  let kmPart: string = ' geoviite_konvertoitu_rata_kilometri = CASE';
-  let mPart: string = ' geoviite_konvertoitu_rata_metrit = CASE';
-  let osuusNimiPart: string = ' geoviite_konvertoitu_rataosuus_nimi = CASE';
-  let raideNumPart: string = ' geoviite_konvertoitu_raide_numero = CASE';
-  let valimatkaPart: string = ' geoviite_valimatka = CASE';
-  let sijRaidePart: string = ' geoviite_sijaintiraide = CASE';
-  let sijRaideKuvPart: string = ' geoviite_sijaintiraide_kuv = CASE';
-  let sijRaideTyypPart: string = ' geoviite_sijaintiraide_tyyppi = CASE';
-  let sijRaideOidPart: string = ' geoviite_sijaintiraide_oid = CASE';
-  let ratanumOidPart: string = ' geoviite_ratanumero_oid = CASE';
-  let virhePart: string = ' geoviite_virhe = CASE';
-  let wherePart: string = ' WHERE id IN (';
-  batch.forEach((row: GeoviiteClientResultItem) => {
-    longPart += ' when id in (' + row.id + ') then ' + row.x;
-    latPart += ' when id in (' + row.id + ') then ' + row.y;
-    osuusNumPart +=
-      ' when id in (' + row.id + ') then ' + "'" + row.ratanumero + "'";
-    kmPart += ' when id in (' + row.id + ') then ' + row.y;
-    let rata_metrit = '';
-    if (row.ratametri || row.ratametri == 0) {
-      rata_metrit = `${row.ratametri}`;
-    }
-    if (row.ratametri_desimaalit) {
-      rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
-    }
-    mPart +=
-      ' when id in (' +
-      row.id +
-      ') then ' +
-      (rata_metrit ? rata_metrit : 'cast(null as numeric)');
-    osuusNimiPart += ' when id in (' + row.id + ') then ' + "''";
-    raideNumPart += ' when id in (' + row.id + ') then ' + "''";
-    valimatkaPart += ' when id in (' + row.id + ') then ' + row.valimatka;
-    sijRaidePart +=
-      ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide + "'";
-    sijRaideKuvPart +=
-      ' when id in (' +
-      row.id +
-      ') then ' +
-      "'" +
-      row.sijaintiraide_kuvaus +
-      "'";
-    sijRaideTyypPart +=
-      ' when id in (' +
-      row.id +
-      ') then ' +
-      "'" +
-      row.sijaintiraide_tyyppi +
-      "'";
-    sijRaideOidPart +=
-      ' when id in (' + row.id + ') then ' + "'" + row.sijaintiraide_oid + "'";
-    ratanumOidPart +=
-      ' when id in (' + row.id + ') then ' + "'" + row.ratanumero_oid + "'";
-    const virhe: string | null = row.virheet
-      ? row.virheet.toString().length > 200
-        ? row.virheet?.toString().substring(0, 200)
-        : row.virheet.toString()
-      : null;
-    virhePart +=
-      ' when id in (' +
-      row.id +
-      ') then ' +
-      (virhe ? "'" + virhe + "'" : 'null');
-
-    wherePart += '' + row.id + ',';
-  });
-  longPart += ' END,';
-  latPart += ' END,';
-  osuusNumPart += ' END,';
-  kmPart += ' END,';
-  mPart += ' END,';
-  osuusNimiPart += ' END,';
-  raideNumPart += ' END,';
-  valimatkaPart += ' END,';
-  sijRaidePart += ' END,';
-  sijRaideKuvPart += ' END,';
-  sijRaideTyypPart += ' END,';
-  sijRaideOidPart += ' END,';
-  ratanumOidPart += ' END,';
-  virhePart += ' END,';
-
-  const timestampPart: string =
-    ' geoviite_updated_at =  ' + "'" + timestamp + "'";
-  wherePart = wherePart.substring(0, wherePart.length - 1);
-  wherePart += ');';
-  query +=
-    longPart +
-    latPart +
-    osuusNumPart +
-    kmPart +
-    mPart +
-    osuusNimiPart +
-    raideNumPart +
-    valimatkaPart +
-    sijRaidePart +
-    sijRaideKuvPart +
-    sijRaideTyypPart +
-    sijRaideOidPart +
-    ratanumOidPart +
-    virhePart +
-    timestampPart +
-    wherePart;
-
-  // Replace different epmty vals as nulls. "At least one of the result expressions in a CASE specification must be an expression other than the NULL constant". Cast bypasses that. Numeric type good for all column types.
-  return query
-    .replace(/'undefined'/g, 'null')
-    .replace(/undefined/g, 'cast(null as numeric)')
-    .replace(/''/g, 'null');
-}
-
-/*
-
-     const querys = [
-       `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `,
-       ` then `,
-       ` when id = `,
-       ` then `,
-       ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
-       ` then `,
-       ` when id = `,
-       ` then `,
-       ` END WHERE id  = `,
-       ` OR id  = `,
-       ""
-     ];
-
-
-     const vals =
-       [
-         3087679,
-         159348.20489785323,
-         3087680,
-         259348.20489785323,
-         3087679,
-         'HELLO',
-         3087680,
-         'mello"',
-         3087679,
-         3087680,
-       ];
-* */
-export function produceGeoviiteBatchUpdateSql2(
   batch: GeoviiteClientResultItem[],
   timestamp: Date,
   system: string | null,
@@ -1096,9 +947,9 @@ export function produceGeoviiteBatchUpdateSql2(
   firstRow = true;
   idArray.forEach(id => {
     if (firstRow) {
-      queryArray.push(` END WHERE id  = `);
+      queryArray.push(` END WHERE id = `);
     } else {
-      queryArray.push(` OR id  = `);
+      queryArray.push(` OR id = `);
     }
     firstRow = false;
   });

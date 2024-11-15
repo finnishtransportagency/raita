@@ -1,11 +1,10 @@
- import { GeoviiteClient } from '../geoviiteClient';
+import { GeoviiteClient } from '../geoviiteClient';
 
 import { log } from '../../../utils/logger';
 import { Decimal } from 'prisma/prisma-client/runtime/library';
 import { jest } from '@jest/globals';
 
-import {produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateSql2} from '../../dataProcess/csvCommon/db/dbUtil';
-
+import { produceGeoviiteBatchUpdateSql } from '../../dataProcess/csvCommon/db/dbUtil';
 
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
@@ -226,7 +225,7 @@ describe('geoviite multiple points with extra params', () => {
 
 describe('geoviite parse sql from repsonse', () => {
   test('success: basic operation', async () => {
-    const sql = produceGeoviiteBatchUpdateSql2(
+    const sql = produceGeoviiteBatchUpdateSql(
       [
         {
           x: 259348.20489785323,
@@ -259,152 +258,256 @@ describe('geoviite parse sql from repsonse', () => {
           id: 3087680,
         },
       ],
-      new Date(2024,12,24),
-      'AMS'
+      new Date(2024, 12, 24),
+      'AMS',
     );
 
-  /*  const prisma = await getPrismaClient();
-    console.log(sql);
-    const a= await prisma.$executeRaw(sql);
-    console.log(a);
 
-    expect(sql).toEqual(
-      "UPDATE AMS_mittaus SET geoviite_konvertoitu_long = CASE when id in (27562774) then 259348.20489785323 when id in (27562775) then 245348.20489785323 END, geoviite_konvertoitu_lat = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 END, geoviite_konvertoitu_rataosuus_numero = CASE when id in (27562774) then '002' when id in (27562775) then '001' END, geoviite_konvertoitu_rata_kilometri = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 END, geoviite_konvertoitu_rata_metrit = CASE when id in (27562774) then 300 when id in (27562775) then 200.123 END, geoviite_konvertoitu_rataosuus_nimi = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_konvertoitu_raide_numero = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_valimatka = CASE when id in (27562774) then 2.0372681319713593e-10 when id in (27562775) then 1.0372681319713593e-10 END, geoviite_sijaintiraide = CASE when id in (27562774) then '002' when id in (27562775) then '003' END, geoviite_sijaintiraide_kuvaus = CASE when id in (27562774) then 'Lielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562775) then 'Vielahti-Kokemäki-Pori-Mäntyluoto' END, geoviite_sijaintiraide_tyyppi = CASE when id in (27562774) then 'pääraide' when id in (27562775) then 'sivuraide' END, geoviite_sijaintiraide_oid = CASE when id in (27562774) then '1.2.246.578.3.10002.194079' when id in (27562775) then '1.2.246.578.3.10002.194071' END, geoviite_ratanumero_oid = CASE when id in (27562774) then '1.2.246.578.3.10001.188908' when id in (27562775) then '1.2.246.578.3.10001.188901' END, geoviite_virhe = CASE when id in (27562774) then null when id in (27562775) then null END, geoviite_updated_at =  '2024-01-01T01:11:00.000Z' WHERE id IN (27562774,27562775);",
+    expect(sql).toEqual({"strings": ["UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_lat = CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_rataosuus_numero = CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_rataosuus_nimi = CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_rata_kilometri = CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_rata_metrit= CASE when id = "," then "," when id = "," then "," END, geoviite_konvertoitu_raide_numero = CASE when id = "," then "," when id = "," then "," END, geoviite_valimatka= CASE when id = "," then "," when id = "," then "," END, geoviite_sijaintiraide= CASE when id = "," then "," when id = "," then "," END, geoviite_sijaintiraide_kuvaus = CASE when id = "," then "," when id = "," then "," END, geoviite_sijaintiraide_tyyppi = CASE when id = "," then "," when id = "," then "," END, geoviite_sijaintiraide_oid = CASE when id = "," then "," when id = "," then "," END, geoviite_ratanumero_oid = CASE when id = "," then "," when id = "," then "," END, geoviite_virhe = CASE when id = "," then "," when id = "," then "," END, geoviite_updated_at = CASE when id = "," then "," when id = "," then "," END WHERE id = "," OR id = ",""],"values": [3087679,259348.20489785323,3087680,245348.20489785323,3087679,6804094.514968412,3087680,6704094.514968412,3087679,"002",3087680,"001",3087679,null,3087680,null,3087679,270,3087680,170,3087679,300,3087680,200.123,3087679,null,3087680,null,3087679,2.0372681319713593e-10,3087680,1.0372681319713593e-10,3087679,"002",3087680,"003",3087679,"Lielahti-Kokemäki-Pori-Mäntyluoto",3087680,"Vielahti-Kokemäki-Pori-Mäntyluoto",3087679,"pääraide",3087680,"sivuraide",3087679,"1.2.246.578.3.10002.194079",3087680,"1.2.246.578.3.10002.194071",3087679,"1.2.246.578.3.10001.188908",3087680,"1.2.246.578.3.10001.188901",3087679,null,3087680,null,3087679,new Date(2024, 12, 24),3087680,new Date(2024, 12, 24),3087679,3087680]});
+  });
+});
+
+describe('geoviite parse sql from repsonse with virhe', () => {
+  test('success: basic operation', async () => {
+    const sql = produceGeoviiteBatchUpdateSql(
+      [
+        {
+          x: 259348.20489785323,
+          y: 6804094.514968412,
+          valimatka: 2.0372681319713593e-10,
+          ratanumero: '002',
+          sijaintiraide: '002',
+          sijaintiraide_kuvaus: 'Lielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'pääraide',
+          ratakilometri: 270,
+          ratametri: 300,
+          ratametri_desimaalit: 0,
+          ratanumero_oid: '1.2.246.578.3.10001.188901',
+          sijaintiraide_oid: '1.2.246.578.3.10002.194071',
+          id: 27562774,
+        },
+        {
+          x: 245348.20489785323,
+          y: 6704094.514968412,
+          valimatka: 1.0372681319713593e-10,
+          ratanumero: '001',
+          sijaintiraide: '003',
+          sijaintiraide_kuvaus: 'Vielahti-Kokemäki-Pori-Mäntyluoto',
+          sijaintiraide_tyyppi: 'sivuraide',
+          ratakilometri: 170,
+          ratametri: 200,
+          ratametri_desimaalit: 123,
+          ratanumero_oid: '1.2.246.578.3.10001.188902',
+          sijaintiraide_oid: '1.2.246.578.3.10002.194072',
+          id: 27562775,
+        },
+        {
+          virheet: [
+            'virhe1',
+            'virhe2',
+            'virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj',
+          ],
+          id: 27562776,
+        },
+      ],
+      new Date(2024, 12, 24),
+      'AMS',
+    );
+
+   /* expect(sql).toEqual(
+      {
+        "strings": [
+          "UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_lat = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_rataosuus_numero = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_rataosuus_nimi = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_rata_kilometri = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_rata_metrit= CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_konvertoitu_raide_numero = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_valimatka= CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_sijaintiraide= CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_sijaintiraide_kuvaus = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_sijaintiraide_tyyppi = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_sijaintiraide_oid = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_ratanumero_oid = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_virhe = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END, geoviite_updated_at = CASE when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " when id = ",
+          " then ",
+          " END WHERE id = ",
+          " OR id = ",
+          " OR id = ",
+          ""
+        ],
+        "values": [
+          27562774,
+          259348.20489785323,
+          27562775,
+          245348.20489785323,
+          27562776,
+          undefined,
+          27562774,
+          6804094.514968412,
+          27562775,
+          6704094.514968412,
+          27562776,
+          undefined,
+          27562774,
+          "002",
+          27562775,
+          "001",
+          27562776,
+          null,
+          27562774,
+          undefined,
+          27562775,
+          undefined,
+          27562776,
+          undefined,
+          27562774,
+          270,
+          27562775,
+          170,
+          27562776,
+          undefined,
+          27562774,
+          300,
+          27562775,
+          200.123,
+          27562776,
+          undefined,
+          27562774,
+          undefined,
+          27562775,
+          undefined,
+          27562776,
+          undefined,
+          27562774,
+          2.0372681319713593e-10,
+          27562775,
+          1.0372681319713593e-10,
+          27562776,
+          undefined,
+          27562774,
+          "002",
+          27562775,
+          "003",
+          27562776,
+          undefined,
+          27562774,
+          "Lielahti-Kokemäki-Pori-Mäntyluoto",
+          27562775,
+          "Vielahti-Kokemäki-Pori-Mäntyluoto",
+          27562776,
+          undefined,
+          27562774,
+          "pääraide",
+          27562775,
+          "sivuraide",
+          27562776,
+          undefined,
+          27562774,
+          "1.2.246.578.3.10002.194071",
+          27562775,
+          "1.2.246.578.3.10002.194072",
+          27562776,
+          undefined,
+          27562774,
+          "1.2.246.578.3.10001.188901",
+          27562775,
+          "1.2.246.578.3.10001.188902",
+          27562776,
+          undefined,
+          27562774,
+          undefined,
+          27562775,
+          undefined,
+          27562776,
+          "virhe1,virhe2,virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj",
+          27562774,
+          new Date(2024, 12, 24),
+          27562775,
+          new Date(2024, 12, 24),
+          27562776,
+          new Date(2024, 12, 24),
+          27562774,
+          27562775,
+          27562776
+        ]
+      },
     );*/
   });
 });
-
-describe('geoviite parse sql from response with virhe', () => {
-  test('success: basic operation', async () => {
-
-
-
-    // Example is safe if the text query below is completely trusted content
-    const query1 = `SELECT id FROM "mittaus" WHERE track = ` // The first parameter would be inserted after this string
-    const query2 = ` OR track = ` // The second parameter would be inserted after this string
-
-    const inputString1 = "Fred"
-    const inputString2 = `'Sarah' UNION SELECT id, title FROM "Post"`
-    const vals = [];
-    vals.push(inputString1);
-    vals.push(inputString2);
-/*    const query = Prisma.sql([query1, query2, ""], ...vals)
-
-    console.log(query);
-    const a= await prisma.$executeRaw(query);
-    console.log(a);*/
-
-  });
-});
-
- describe('geoviite parse sql from reponsse with virhe', () => {
-   test('success: basicfd operation', async () => {
-
-
-/*
-
-     UPDATE kalle.AMS_mittaus SET geoviite_konvertoitu_long = CASE
-     when id in (27562774) then 259348.20489785323
-     when id in (27562775) then 245348.20489785323 END,
-       geoviite_konvertoitu_lat = CASE
-     when id in (27562774) then 6804094.514968412
-     when id in (27562775) then 6704094.514968412 END,
-       geoviite_konvertoitu_rataosuus_numero = CASE
-     when id in (27562774) then '002'
-     when id in (27562775) then '001' END,
-       geoviite_konvertoitu_rata_kilometri = CASE*/
-     const querys = [
-       `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `,
-       ` then `,
-       ` when id = `,
-       ` then `,
-       ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
-       ` then `,
-       ` when id = `,
-       ` then `,
-       ` END WHERE id  = `,
-       ` OR id  = `,
-       ""
-     ];
-
-
-     const vals =
-       [
-         3087679,
-         159348.20489785323,
-         3087680,
-         259348.20489785323,
-         3087679,
-         'HELLO',
-         3087680,
-         null,
-         3087679,
-         3087680,
-       ];
-    /* const query = Prisma.sql(querys, ...vals)
-     console.log(query);
-     const a= await prisma.$executeRaw(query);
-     console.log(a);*/
-
-   });
- });
-
-
- describe('geoviite parse sql from repsonse with virhe', () => {
-   test('success: basic operation', async () => {
-     const sql = produceGeoviiteBatchUpdateSql2(
-       [
-         {
-           x: 259348.20489785323,
-           y: 6804094.514968412,
-           valimatka: 2.0372681319713593e-10,
-           ratanumero: '002',
-           sijaintiraide: '002',
-           sijaintiraide_kuvaus: 'Lielahti-Kokemäki-Pori-Mäntyluoto',
-           sijaintiraide_tyyppi: 'pääraide',
-           ratakilometri: 270,
-           ratametri: 300,
-           ratametri_desimaalit: 0,
-           ratanumero_oid: '1.2.246.578.3.10001.188901',
-           sijaintiraide_oid: '1.2.246.578.3.10002.194071',
-           id: 27562774,
-         },
-         {
-           x: 245348.20489785323,
-           y: 6704094.514968412,
-           valimatka: 1.0372681319713593e-10,
-           ratanumero: '001',
-           sijaintiraide: '003',
-           sijaintiraide_kuvaus: 'Vielahti-Kokemäki-Pori-Mäntyluoto',
-           sijaintiraide_tyyppi: 'sivuraide',
-           ratakilometri: 170,
-           ratametri: 200,
-           ratametri_desimaalit: 123,
-           ratanumero_oid: '1.2.246.578.3.10001.188902',
-           sijaintiraide_oid: '1.2.246.578.3.10002.194072',
-           id: 27562775,
-         },
-         {
-           virheet: [
-             'virhe1',
-             'virhe2',
-             'virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj',
-           ],
-           id: 27562776,
-         },
-       ],
-       new Date(2024,12,24),
-       'AMS'
-     );
-/*     console.log(sql);
-     const prisma = await getPrismaClient();
-     const a= await prisma.$executeRaw(sql);
-     console.log(a);
-
-     expect(sql).toEqual(
-       "UPDATE AMS_mittaus SET geoviite_konvertoitu_long = CASE when id in (27562774) then 259348.20489785323 when id in (27562775) then 245348.20489785323 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_lat = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rataosuus_numero = CASE when id in (27562774) then '002' when id in (27562775) then '001' when id in (27562776) then null END, geoviite_konvertoitu_rata_kilometri = CASE when id in (27562774) then 6804094.514968412 when id in (27562775) then 6704094.514968412 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rata_metrit = CASE when id in (27562774) then 300 when id in (27562775) then 200.123 when id in (27562776) then cast(null as numeric) END, geoviite_konvertoitu_rataosuus_nimi = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then null END, geoviite_konvertoitu_raide_numero = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then null END, geoviite_valimatka = CASE when id in (27562774) then 2.0372681319713593e-10 when id in (27562775) then 1.0372681319713593e-10 when id in (27562776) then cast(null as numeric) END, geoviite_sijaintiraide = CASE when id in (27562774) then '002' when id in (27562775) then '003' when id in (27562776) then null END, geoviite_sijaintiraide_kuvaus = CASE when id in (27562774) then 'Lielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562775) then 'Vielahti-Kokemäki-Pori-Mäntyluoto' when id in (27562776) then null END, geoviite_sijaintiraide_tyyppi = CASE when id in (27562774) then 'pääraide' when id in (27562775) then 'sivuraide' when id in (27562776) then null END, geoviite_sijaintiraide_oid = CASE when id in (27562774) then '1.2.246.578.3.10002.194071' when id in (27562775) then '1.2.246.578.3.10002.194072' when id in (27562776) then null END, geoviite_ratanumero_oid = CASE when id in (27562774) then '1.2.246.578.3.10001.188901' when id in (27562775) then '1.2.246.578.3.10001.188902' when id in (27562776) then null END, geoviite_virhe = CASE when id in (27562774) then null when id in (27562775) then null when id in (27562776) then 'virhe1,virhe2,virhe45678901294876gb,2390483487584u39htgrln 34984utjgm03498trj34098n384993849y43890uj' END, geoviite_updated_at =  '2024-01-01T01:11:00.000Z' WHERE id IN (27562774,27562775,27562776);",
-     );*/
-   });
- });
-
-

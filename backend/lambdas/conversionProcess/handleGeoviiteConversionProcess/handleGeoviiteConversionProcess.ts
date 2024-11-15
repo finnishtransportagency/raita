@@ -12,7 +12,7 @@ import {
 import { getEnvOrFail } from '../../../../utils';
 import {
   getMittausSubtable,
-  produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateSql2,
+  produceGeoviiteBatchUpdateSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 import { Prisma } from '@prisma/client';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
@@ -125,7 +125,7 @@ export async function handleGeoviiteConversionProcess(
       }
 
       // save result all at once to save db call time cost
-      const saveBatchSize = 10;
+      const saveBatchSize = 500;
 
       // one timestamp for all
       const timestamp = new Date();
@@ -139,7 +139,7 @@ export async function handleGeoviiteConversionProcess(
           saveBatchIndex + saveBatchSize,
         );
 
-        const updateSql = produceGeoviiteBatchUpdateSql2(
+        const updateSql = produceGeoviiteBatchUpdateSql(
           batch,
           timestamp,
           system,
