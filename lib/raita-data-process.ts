@@ -67,6 +67,7 @@ export class DataProcessStack extends NestedStack {
   public readonly handleCSVFileMassImportEventFn: NodejsFunction;
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
+  public readonly readyForGeoviiteConversionQueue: Queue;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -335,6 +336,13 @@ export class DataProcessStack extends NestedStack {
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
 
+    this.readyForGeoviiteConversionQueue = new Queue(
+      this,
+      'ready-for-geoviite-conversion-queue',
+      {
+        visibilityTimeout: Duration.minutes(15),
+      },
+    );
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
       name: 'dp-handler-csv-file',
@@ -345,7 +353,12 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
+      readyForGeoviiteConversionQueue: this.readyForGeoviiteConversionQueue,
     });
+
+    this.readyForGeoviiteConversionQueue.grantSendMessages(
+      this.handleCSVFileEventFn,
+    );
 
     const csvAlarms = this.createCSVHandlerAlarms(
       this.handleCSVFileEventFn.logGroup,
@@ -794,6 +807,7 @@ export class DataProcessStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    readyForGeoviiteConversionQueue,
   }: {
     name: string;
     csvBucketName: string;
@@ -803,6 +817,7 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    readyForGeoviiteConversionQueue: Queue;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -818,6 +833,8 @@ export class DataProcessStack extends NestedStack {
         CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
         REGION: this.region,
+        READY_FOR_CONVERSION_QUEUE_URL:
+          readyForGeoviiteConversionQueue.queueUrl,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,

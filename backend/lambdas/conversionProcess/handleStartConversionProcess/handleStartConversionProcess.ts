@@ -1,4 +1,4 @@
-import { Context } from 'aws-lambda';
+import { Context, SQSEvent } from 'aws-lambda';
 import { LambdaEvent, lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
@@ -8,6 +8,8 @@ import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
 import { asyncWait } from '../../../utils/common';
 import { ConversionMessage } from '../util';
+import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
+import { Prisma } from '@prisma/client';
 
 const init = () => {
   try {
@@ -37,45 +39,64 @@ const pageCount = 1000;
 
 const conversionBatchSize = 50000;
 
-// TODO: how are possible status values defined?
-const waitingForConversionStatus = 'WAITING';
-const inProgressStatus = 'IN_PROGRESS';
-
-// for manual testing
-type TestEvent = {
-  key: string;
+// for manually triggering conversion process
+type ManualTriggerEvent = {
+  type: 'ManualTrigger';
 } & LambdaEvent;
+
+type ConversionEvent = ManualTriggerEvent | SQSEvent;
+
+type ConversionStartMessage = { id: number };
 
 /**
  * Handle conversion process:
- * Fetch list of raporttis to convert and add them to SQS
+ * There are two ways to trigger this:
+ *  - From SQS queue with a message containing raportti id
+ *  - From Manual trigger event. In this case all raportti from db with geoviite_status=READY_FOR_CONVERSION are handled
  */
 export async function handleStartConversionProcess(
-  event: TestEvent, // TODO what event will be the trigger?
+  event: ConversionEvent,
   context: Context,
 ): Promise<void> {
   try {
     withRequest(event, context);
-    log.info({ event });
+
     log.info('Start conversion process');
     const prismaClient = await prisma;
-    // TODO: extract some input from event, like prefix path?
 
-    // if no key is given, fetch all with status WAITING
-    const whereInput = event.key
-      ? {
-          key: {
-            equals: event.key,
-          },
+    const queueTrigger = event.Records && event.Records.length;
+    let whereInput: Prisma.raporttiWhereInput;
+    if (queueTrigger) {
+      log.info('Trigger from queue');
+      const typedEvent = event as SQSEvent;
+      const raporttiIds = typedEvent.Records.map(record => {
+        const body: ConversionStartMessage = JSON.parse(record.body);
+        if (!body.id) {
+          throw new Error('No key in sqs message');
         }
-      : {
-          geoviite_status: {
-            equals: waitingForConversionStatus,
-          },
-          file_type: {
-            equals: 'csv',
-          },
-        };
+        return body.id;
+      });
+      whereInput = {
+        id: {
+          in: raporttiIds,
+        },
+      };
+    } else {
+      const typedEvent = event as ManualTriggerEvent;
+      if (typedEvent.type !== 'ManualTrigger') {
+        throw new Error('From trigger event format');
+      }
+      log.info('Trigger from manual event');
+      whereInput = {
+        geoviite_status: {
+          equals: ConversionStatus.READY_FOR_CONVERSION,
+        },
+        file_type: {
+          equals: 'csv',
+        },
+      };
+    }
+
     const totalCount = await prismaClient.raportti.count({
       where: whereInput,
     });
@@ -139,7 +160,7 @@ export async function handleStartConversionProcess(
       }
       await prismaClient.raportti.updateMany({
         data: {
-          geoviite_status: inProgressStatus,
+          geoviite_status: ConversionStatus.IN_PROGRESS,
         },
         where: {
           key: {

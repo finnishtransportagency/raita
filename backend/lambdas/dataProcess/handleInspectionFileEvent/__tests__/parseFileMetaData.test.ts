@@ -135,6 +135,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -172,6 +173,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -205,6 +207,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -242,6 +245,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
     const result = await parseFileMetadata(params);
     expect(result).toEqual({
@@ -276,6 +280,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
 
     const result = await parseFileMetadata(params);
@@ -312,6 +317,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
 
     const result = await parseFileMetadata(params);
@@ -348,6 +354,7 @@ describe('parseFileMetadata', () => {
       dbConnection: undefined,
       reportId: -1,
       invocationId: 'TEST_invocationId',
+      doGeoviiteConversion: false,
     };
 
     const result = await parseFileMetadata(params);

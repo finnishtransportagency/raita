@@ -25,6 +25,7 @@ export type S3CustomMetadataFields = {
   'skip-hash-check'?: '1' | '0';
   'require-newer-parser-version'?: '1' | '0';
   'invocation-id'?: string;
+  'skip-geoviite-conversion'?: '1' | '0'; // only matters for csv files
 };
 export interface IFileResult {
   fileBody: string | undefined;

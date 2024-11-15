@@ -101,6 +101,8 @@ export class ApplicationStack extends NestedStack {
         vpc,
         prismaLambdaLayer,
         geoviiteHostname,
+        readyForGeoviiteConversionQueue:
+          dataProcessStack.readyForGeoviiteConversionQueue,
       },
     );
 

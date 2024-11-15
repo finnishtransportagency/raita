@@ -244,6 +244,7 @@ describe.skip('handle ams file success', () => {
       dbConnection,
       891,
       'TEST_invocationId',
+      false,
     );
     log.debug('report inserted: ' + result);
   }, 900000);

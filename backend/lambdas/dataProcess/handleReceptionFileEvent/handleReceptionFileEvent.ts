@@ -108,6 +108,10 @@ export async function handleReceptionFileEvent(
           newMetadata['require-newer-parser-version'] =
             existingMetadata['require-newer-parser-version'];
         }
+        if (existingMetadata['skip-geoviite-conversion']) {
+          newMetadata['skip-geoviite-conversion'] =
+            existingMetadata['skip-geoviite-conversion'];
+        }
         const command = new CopyObjectCommand({
           Key: key,
           Bucket: config.targetBucketName,
