@@ -124,7 +124,8 @@ export async function handleGeoviiteConversionProcess(
         log.error('Size mismatch');
       }
 
-      // save result all at once to save db call time cost
+      // Save result in smaller batches.
+      // We use the largest value that works with prepared statement to reduce db call count.
       const saveBatchSize = 250;
 
       // one timestamp for all

@@ -996,7 +996,6 @@ export async function getMittausSubtable(system: string | null, prisma: any) {
 export function getSubtableUpdateQueryBeginning(system: string | null) {
   switch (system) {
     case 'AMS':
-      //UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id =
       return `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
       break;
     case 'OHL':
