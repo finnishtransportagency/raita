@@ -29,6 +29,11 @@ import { AdminLogSource } from '../../containers/zipHandler/src/adminLog/postgre
       "ratakilometri": 270,
       "ratametri": 300,
       "ratametri_desimaalit": 0
+      "ratanumero_oid": "1.2.246.578.3.10001.188908",
+      "sijaintiraide_oid": "1.2.246.578.3.10002.194079",
+      "virheet":[
+          "Annetun (alku)pisteen parametreilla ei löytynyt tietoja."
+        ]
     },
     "type": "Feature"
   }
@@ -63,18 +68,19 @@ type Geometry = {
 };
 
 type Properties = {
-  x: number;
-  y: number;
-  valimatka: number;
-  ratanumero: string;
-  sijaintiraide: string;
-  sijaintiraide_kuvaus: string;
-  sijaintiraide_tyyppi: string;
-  ratakilometri: number;
-  ratametri: number;
-  ratametri_desimaalit: number;
-  sijaintiraide_oid: string;
-  ratanumero_oid: string;
+  x?: number;
+  y?: number;
+  valimatka?: number;
+  ratanumero?: string;
+  sijaintiraide?: string;
+  sijaintiraide_kuvaus?: string;
+  sijaintiraide_tyyppi?: string;
+  ratakilometri?: number;
+  ratametri?: number;
+  ratametri_desimaalit?: number;
+  sijaintiraide_oid?: string;
+  ratanumero_oid?: string;
+  virheet?: string[];
 };
 
 //params that go to rest as url path params
@@ -124,19 +130,20 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
 };
 
 export type GeoviiteClientResultItem = {
-  ratametri: number;
-  sijaintiraide_kuvaus: string;
-  sijaintiraide_tyyppi: string;
-  ratametri_desimaalit: number;
-  sijaintiraide_oid: string;
-  ratanumero_oid: string;
-  sijaintiraide: string;
-  valimatka: number;
-  x: number;
-  ratanumero: string;
-  y: number;
+  ratametri?: number;
+  sijaintiraide_kuvaus?: string;
+  sijaintiraide_tyyppi?: string;
+  ratametri_desimaalit?: number;
+  sijaintiraide_oid?: string;
+  ratanumero_oid?: string;
+  sijaintiraide?: string;
+  valimatka?: number;
+  x?: number;
+  ratanumero?: string;
+  y?: number;
   id: number;
-  ratakilometri: number;
+  ratakilometri?: number;
+  virheet?: string[];
 };
 
 export class GeoviiteClient {

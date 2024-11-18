@@ -116,6 +116,7 @@ export async function handleStartConversionProcess(
         select: {
           key: true,
           id: true,
+          system: true,
         },
         take: pageCount,
       });
@@ -140,6 +141,8 @@ export async function handleStartConversionProcess(
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const body: ConversionMessage = {
             key,
+            id: raportti.id,
+            system: raportti.system,
             batchSize: conversionBatchSize,
             batchIndex,
             orderBy: 'id',
