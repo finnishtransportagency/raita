@@ -1,4 +1,3 @@
-import postgres, { Sql } from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
@@ -19,32 +18,23 @@ import {
 import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
 
-let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getPostgresDBConnection(): Promise<PostgresDBConnection> {
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const sql = await getConnection();
-  return { schema, sql };
-}
-
 export async function getDBConnection(): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const sql = await getConnection();
   const prisma = await getPrismaClient();
 
-  return { schema, sql, prisma };
+  return { schema, prisma };
 }
 
 export type DBConnection = {
   schema: string;
-  sql: postgres.Sql<{}>;
+
   prisma: PrismaClient;
 };
 export type PostgresDBConnection = {
   schema: string;
-  sql: postgres.Sql<{}>;
 };
 
 export async function writeRowsToDB(
@@ -52,7 +42,7 @@ export async function writeRowsToDB(
   table: string,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     let count;
     switch (table) {
@@ -85,21 +75,6 @@ export async function writeRowsToDB(
     log.error('Error inserting measurement data: ' + table + ' ' + e);
     throw e;
   }
-}
-
-async function getConnection() {
-  if (connection) {
-    connReuseCount++;
-    return connection;
-  }
-  const password = await getSecretsManagerSecret('database_password');
-  connection = postgres({
-    password,
-    transform: { undefined: null },
-    max: 1,
-  });
-  connCount++;
-  return connection;
 }
 
 function constructRataosoite(track: string, location: string): Rataosoite {
@@ -296,7 +271,7 @@ export async function emptyRaporttiMittausRows(
   reportId: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const result = await prisma.mittaus.deleteMany({
       where: {
@@ -317,7 +292,7 @@ export async function updateRaporttiStatus(
   error: null | string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -345,7 +320,7 @@ export async function updateRaporttiMetadataStatus(
   status: string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const a = await prisma.raportti.update({
       where: { id: id },
@@ -390,7 +365,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -437,7 +412,7 @@ export async function updateRaporttiChunks(
   chunks: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -456,7 +431,7 @@ export async function substractRaporttiChunk(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -482,7 +457,7 @@ export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   try {
     const chunks = await prisma.raportti.findUnique({
@@ -514,7 +489,7 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const raportti = await prisma.raportti.create({
       data: {
@@ -539,7 +514,7 @@ export async function writeMissingColumnsToDb(
   columnNames: string[],
   dbConnection: DBConnection,
 ): Promise<void> {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   const values = columnNames.map(name => ({
     raportti_id: reportId,
@@ -665,7 +640,6 @@ enum TableEnum {
   TSIGHT = 'tsight_mittaus',
 }
 
-
 export function produceGeoviiteBatchUpdateSql(
   batch: GeoviiteClientResultItem[],
   timestamp: Date,
@@ -694,7 +668,7 @@ export function produceGeoviiteBatchUpdateSql(
   const latValsArray: (number | undefined)[] = [];
   const rataosuusNumeroValsArray: any[] = [];
   const kmValsArray: (number | undefined)[] = [];
-  const mValsArray: ( number | null)[] = [];
+  const mValsArray: (number | null)[] = [];
   const rataosuusNimiValsArray: (number | null)[] = [];
   const raideNumeroValsArray: (number | null)[] = [];
   const valimatkaValsArray: (number | undefined)[] = [];
@@ -942,7 +916,6 @@ export function produceGeoviiteBatchUpdateSql(
   queryArray.push(...timestampQueryArray);
   valsArray.push(...timestampValsArray);
 
-
   //WHERE part
   firstRow = true;
   idArray.forEach(id => {
@@ -956,7 +929,7 @@ export function produceGeoviiteBatchUpdateSql(
 
   valsArray.push(...idArray);
 
-  queryArray.push("");
+  queryArray.push('');
 
   return Prisma.sql(queryArray, ...valsArray);
 }
