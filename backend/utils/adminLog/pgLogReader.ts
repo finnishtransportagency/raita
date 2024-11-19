@@ -1,7 +1,5 @@
-import postgres from 'postgres';
-import { getSecretsManagerSecret } from '../secretsManager';
-import { getEnvOrFail } from '../../../utils';
 import {
+  AdminLogLevel,
   AdminLogSource,
   AdminLogSummary,
   RawLogRow,
@@ -13,7 +11,7 @@ import { formatSummary } from './adminLogUtils';
 import { format } from 'date-fns';
 import { getPrismaClient } from '../prismaClient';
 import { getDBConnection } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 /**
  * Get logs for a single event, defined by date and invocationId
@@ -89,73 +87,45 @@ const getSummaryQuery = async (
   prisma: PrismaClient,
 ): Promise<SummaryDBResponse[]> => {
   const pageOffset = pageIndex * pageSize;
-  const events = await prisma.logging.groupBy({
-    by: ['invocation_id', 'log_timestamp'],
-    _min: {
-      log_timestamp: true,
-    },
-    where: {
-      source: {
-        in: sources,
-      },
-      log_timestamp: {
-        gte: startTimestamp,
-        lte: endTimestamp,
-      },
-    },
-    orderBy: {
-      _min: {
-        log_timestamp: 'desc',
-      },
-    },
-    skip: pageOffset,
-    take: pageSize,
-  });
-
-  const invocationIds = events.map(event => event.invocation_id);
-
-  const logCounts = await prisma.logging.groupBy({
-    by: ['invocation_id', 'log_timestamp', 'log_level', 'source'],
-    _count: {
-      _all: true,
-    },
-    where: {
-      invocation_id: {
-        in: invocationIds,
-      },
-      source: {
-        in: sources,
-      },
-      log_timestamp: {
-        gte: startTimestamp,
-        lte: endTimestamp,
-      },
-    },
-  });
-
-  const results = events.map(event => {
-    const counts = logCounts
-      .filter(
-        count =>
-          count.invocation_id === event.invocation_id &&
-          count.log_date === event.log_date,
-      )
-      .map(count => ({
-        log_level: count.log_level,
-        source: count.source,
-        count: count._count._all,
-      }));
-
-    return {
-      log_date: event.log_timestamp,
-      log_level: event.log_level,
-      start_timestamp: event._min.log_timestamp,
-      invocation_id: event.invocation_id,
-      counts,
-    };
-  });
-
-  return results;
+  return prisma.$queryRaw`
+SELECT events.log_date, events.start_timestamp, events.invocation_id,  counts.log_level, counts.source, counts.count
+FROM (
+-- subquery: select list of all "events" with paging
+  SELECT
+    date_trunc('day', log_timestamp) as log_date,
+    MIN(log_timestamp) as start_timestamp,
+    invocation_id
+  FROM logging
+  WHERE
+    source IN (${Prisma.join(sources)})
+    AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+      endTimestamp,
+    )}
+  GROUP BY log_date, invocation_id
+  ORDER BY start_timestamp DESC
+  LIMIT ${pageSize} OFFSET ${pageOffset}
+) AS events
+LEFT JOIN (
+-- subquery: get counts by log_level and source for each "event"
+  SELECT
+    date_trunc('day', log_timestamp) as log_date,
+    invocation_id,
+    log_level,
+    source,
+    COUNT(*) as count
+  FROM logging
+  WHERE
+    source IN (${Prisma.join(sources)})
+    AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+      endTimestamp,
+    )}
+  GROUP BY log_date, invocation_id, source, log_level
+) AS counts
+ON
+  events.invocation_id = counts.invocation_id
+  AND events.log_date = counts.log_date
+ORDER BY events.start_timestamp DESC;
+  `;
 };
 
 /**
@@ -171,9 +141,7 @@ export async function getLogSummary(
   pageSize: number,
   pageIndex: number,
 ): Promise<AdminLogSummary> {
-  const password = await getSecretsManagerSecret('database_password');
-  const { sql, schema, prisma } = await getDBConnection();
-
+  const { prisma } = await getDBConnection();
   const stats = await getStatsQuery(
     sources,
     startTimestamp,
@@ -206,40 +174,21 @@ export async function getStatsQuery(
   endTimestamp: string,
   prisma: PrismaClient,
 ): Promise<StatsQueryDBResponseRow[]> {
-  try {
-    const logs = await prisma.logging.findMany({
-      where: {
-        source: { in: sources },
-        log_timestamp: {
-          gte: startTimestamp,
-          lte: endTimestamp,
-        },
-      },
-      select: {
-        log_level: true,
-        invocation_id: true,
-        log_timestamp: true,
-      },
-      distinct: ['log_level', 'invocation_id', 'log_timestamp'],
-    });
-    type LogCountAccumulator = Record<string, number>;
-    const logCounts = logs.reduce(
-      (count: LogCountAccumulator, { log_level }: { log_level: string }) => {
-        count[log_level] = (count[log_level] || 0) + 1;
-        return count;
-      },
-      {} as LogCountAccumulator,
-    );
-
-    // Transform the result into an array format similar to SQL output
-    const result: StatsQueryDBResponseRow[] = (
-      Object.entries(logCounts) as [string, number][]
-    ).map(([log_level, event_count]) => ({
-      log_level,
-      event_count: event_count.toString(),
-    }));
-    return result;
-  } catch (error) {
-    throw new Error('Error in getStatsQuery');
-  }
+  const res: { log_level: string; event_count: any }[] = await prisma.$queryRaw`
+SELECT COUNT(*) as event_count, log_level FROM (
+  SELECT DISTINCT
+    date_trunc('day', log_timestamp) as log_date,
+    invocation_id,
+    log_level
+  FROM logging
+  WHERE source IN (${Prisma.join(sources)})
+  AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+    endTimestamp,
+  )}
+) AS tmp
+GROUP BY log_level;`;
+  return res.map(row => ({
+    log_level: row.log_level,
+    event_count: Number(row.event_count),
+  }));
 }

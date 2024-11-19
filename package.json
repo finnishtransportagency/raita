@@ -80,7 +80,6 @@
     "lodash": "^4.17.21",
     "pino": "^8.16.2",
     "pino-lambda": "^4.4.0",
-    "postgres": "^3.4.3",
     "unzipper": "^0.10.14",
     "zod": "^3.22.4",
     "zod-csv": "file:./external/zod-csv"
