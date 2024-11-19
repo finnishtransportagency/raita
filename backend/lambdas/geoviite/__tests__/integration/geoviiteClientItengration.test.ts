@@ -42,3 +42,24 @@ describe('geoviite multiple points with Prisma coords with geoviiteclient', () =
     expect(true).toBeTruthy();
   });
 });
+
+describe('geoviite multiple points with Prisma coords with geoviiteclient, lat long flipped', () => {
+  test('success: basic operation', async () => {
+    const client = new GeoviiteClient('https://avoinapi.testivaylapilvi.fi/');
+    const points: Array<{ lat: Decimal; long: Decimal; id: number }> = [
+      { lat: new Decimal(60.42316751), long: new Decimal(25.1106662), id: 123 },
+      {
+        lat: new Decimal(60.42316976),
+        long: new Decimal(25.11066558),
+        id: 124,
+      },
+      { lat: new Decimal(60.423172), long: new Decimal(25.11066497), id: 125 },
+    ];
+
+    const converted = await client.getConvertedTrackAddressesWithPrismaCoords(points);
+    log.info(converted, 'converted');
+
+    expect(true).toBeTruthy();
+  });
+});
+
