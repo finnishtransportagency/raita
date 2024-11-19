@@ -24,6 +24,7 @@ import {
 } from './raitaResourceCreators';
 import {
   getDatabaseEnvironmentVariables,
+  isProductionStack,
   prismaBundlingOptions,
 } from './utils';
 import {
@@ -354,6 +355,7 @@ export class DataProcessStack extends NestedStack {
       databaseEnvironmentVariables,
       prismaLambdaLayer,
       readyForGeoviiteConversionQueue: this.readyForGeoviiteConversionQueue,
+      raitaEnv,
     });
 
     this.readyForGeoviiteConversionQueue.grantSendMessages(
@@ -808,6 +810,7 @@ export class DataProcessStack extends NestedStack {
     databaseEnvironmentVariables,
     prismaLambdaLayer,
     readyForGeoviiteConversionQueue,
+    raitaEnv,
   }: {
     name: string;
     csvBucketName: string;
@@ -818,6 +821,7 @@ export class DataProcessStack extends NestedStack {
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
     readyForGeoviiteConversionQueue: Queue;
+    raitaEnv: RaitaEnvironment;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -835,6 +839,10 @@ export class DataProcessStack extends NestedStack {
         REGION: this.region,
         READY_FOR_CONVERSION_QUEUE_URL:
           readyForGeoviiteConversionQueue.queueUrl,
+        // flag to disable conversion in prod. TODO: remove
+        DISABLE_CONVERSION: isProductionStack(this.stackId, raitaEnv)
+          ? '1'
+          : '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,

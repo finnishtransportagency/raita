@@ -26,6 +26,7 @@ function getLambdaConfigOrFail() {
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
     readyForConversionQueueUrl: getEnv('READY_FOR_CONVERSION_QUEUE_URL'),
+    disableConversion: getEnv('DISABLE_CONVERSION') === '1', // flag to disable conversion in prod. TODO: remove
   };
 }
 
@@ -129,7 +130,11 @@ export async function handleCSVFileEvent(
               const s3Client = new S3Client({});
               await s3Client.send(command);
             }
-            if (result === 'full-file-success' && doGeoviiteConversion) {
+            if (
+              result === 'full-file-success' &&
+              doGeoviiteConversion &&
+              !config.disableConversion
+            ) {
               const { reportId } = parseAttributesFromChunkFileName(keyData);
               await sendToConversionQueue(
                 reportId,
