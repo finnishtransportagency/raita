@@ -43,6 +43,13 @@ const init = () => {
 const { withRequest, dbConnection, adminLogger } = init();
 
 /**
+ * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
+ */
+async function isLatLongFlipped(mittausRows: any[]): Promise<boolean> {
+  return !!mittausRows.find(mittaus => mittaus.lat || mittaus.lat < 40);
+}
+
+/**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
  */
 export async function handleGeoviiteConversionProcess(
@@ -156,6 +163,15 @@ export async function handleGeoviiteConversionProcess(
       });
       log.trace({ length: mittausRows.length }, 'Got from db');
 
+      const latLongFlipped = await isLatLongFlipped(mittausRows);
+      if(latLongFlipped){
+        mittausRows.forEach((row: { lat: any; long: any }) => {
+          const oldLat = row.lat;
+          row.lat = row.long;
+          row.long = oldLat;
+        });
+      }
+
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
           mittausRows,
@@ -186,6 +202,7 @@ export async function handleGeoviiteConversionProcess(
           batch,
           timestamp,
           system,
+          latLongFlipped,
         );
         try {
           await prismaClient.$executeRaw(updateSql);
