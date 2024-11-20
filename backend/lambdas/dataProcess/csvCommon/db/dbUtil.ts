@@ -666,8 +666,8 @@ export function produceGeoviiteBatchUpdateSql(
   const rataosuusNumeroValsArray: any[] = [];
   const kmValsArray: (number | undefined)[] = [];
   const mValsArray: (number | null)[] = [];
-  const rataosuusNimiValsArray: (number | null)[] = [];
-  const raideNumeroValsArray: (number | null)[] = [];
+  const rataosuusNimiValsArray: (number | string | null)[] = [];
+  const raideNumeroValsArray: (string | number | null)[] = [];
   const valimatkaValsArray: (number | undefined)[] = [];
   const sijRaideValsArray: (string | number | undefined)[] = [];
   const sijRaideKuvValsArray: (string | number | undefined)[] = [];
@@ -701,7 +701,7 @@ export function produceGeoviiteBatchUpdateSql(
   );
   rataosuusNimiQueryArray.push(` then `);
   rataosuusNimiValsArray.push(-1);
-  rataosuusNimiValsArray.push(-1);
+  rataosuusNimiValsArray.push('');
 
   kmQueryArray.push(
     ` END, geoviite_konvertoitu_rata_kilometri = CASE when id = `,
@@ -720,7 +720,7 @@ export function produceGeoviiteBatchUpdateSql(
   );
   raideNumeroQueryArray.push(` then `);
   raideNumeroValsArray.push(-1);
-  raideNumeroValsArray.push(-1);
+  raideNumeroValsArray.push('');
 
   valimatkaQueryArray.push(` END, geoviite_valimatka= CASE when id = `);
   valimatkaQueryArray.push(` then `);
@@ -730,12 +730,7 @@ export function produceGeoviiteBatchUpdateSql(
   sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
   sijRaideQueryArray.push(` then `);
   sijRaideValsArray.push(-1);
-  sijRaideValsArray.push(-1);
-
-  sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
-  sijRaideQueryArray.push(` then `);
-  sijRaideValsArray.push(-1);
-  sijRaideValsArray.push(-1);
+  sijRaideValsArray.push('');
 
   sijRaideKuvQueryArray.push(
     ` END, geoviite_sijaintiraide_kuvaus = CASE when id = `,
