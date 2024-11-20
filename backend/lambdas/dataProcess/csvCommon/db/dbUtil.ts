@@ -1,10 +1,9 @@
-import postgres from 'postgres';
 import { getEnvOrFail } from '../../../../../utils';
 import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
 import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
-import { FileMetadataEntry, ParseValueResult } from '../../../../types';
+import { FileMetadataEntry } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
 import {
@@ -16,34 +15,26 @@ import {
   convertDataToTgMittausArray,
   convertDataToTsightMittausArray,
 } from './converters/dataConverters';
-import { jarjestelma, PrismaClient } from '@prisma/client';
+import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
+import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
 
-let connection: postgres.Sql;
 let connCount = 0;
 let connReuseCount = 0;
 
-export async function getPostgresDBConnection(): Promise<PostgresDBConnection> {
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const sql = await getConnection();
-  return { schema, sql };
-}
-
 export async function getDBConnection(): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const sql = await getConnection();
   const prisma = await getPrismaClient();
 
-  return { schema, sql, prisma };
+  return { schema, prisma };
 }
 
 export type DBConnection = {
   schema: string;
-  sql: postgres.Sql<{}>;
+
   prisma: PrismaClient;
 };
 export type PostgresDBConnection = {
   schema: string;
-  sql: postgres.Sql<{}>;
 };
 
 export async function writeRowsToDB(
@@ -51,7 +42,7 @@ export async function writeRowsToDB(
   table: string,
   dbConnection: DBConnection,
 ): Promise<number> {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     let count;
     switch (table) {
@@ -84,21 +75,6 @@ export async function writeRowsToDB(
     log.error('Error inserting measurement data: ' + table + ' ' + e);
     throw e;
   }
-}
-
-async function getConnection() {
-  if (connection) {
-    connReuseCount++;
-    return connection;
-  }
-  const password = await getSecretsManagerSecret('database_password');
-  connection = postgres({
-    password,
-    transform: { undefined: null },
-    max: 1,
-  });
-  connCount++;
-  return connection;
 }
 
 function constructRataosoite(track: string, location: string): Rataosoite {
@@ -295,7 +271,7 @@ export async function emptyRaporttiMittausRows(
   reportId: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const result = await prisma.mittaus.deleteMany({
       where: {
@@ -316,7 +292,7 @@ export async function updateRaporttiStatus(
   error: null | string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   let errorSubstring = error;
   if (error) {
     errorSubstring = error.substring(0, 1000);
@@ -344,7 +320,7 @@ export async function updateRaporttiMetadataStatus(
   status: string,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const a = await prisma.raportti.update({
       where: { id: id },
@@ -389,7 +365,7 @@ export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   for (const metaDataEntry of data) {
     const parsingErrors = metaDataEntry.errors;
     const raporttiData = {
@@ -436,7 +412,7 @@ export async function updateRaporttiChunks(
   chunks: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -455,7 +431,7 @@ export async function substractRaporttiChunk(
   id: number,
   dbConnection: DBConnection,
 ) {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   try {
     const a = await prisma.raportti.update({
@@ -474,11 +450,14 @@ export async function substractRaporttiChunk(
   }
 }
 
+/**
+ *  @return amount of chunks left to process
+ */
 export async function raporttiChunksToProcess(
   id: number,
   dbConnection: DBConnection,
-) {
-  const { schema, sql, prisma } = dbConnection;
+): Promise<number> {
+  const { schema, prisma } = dbConnection;
 
   try {
     const chunks = await prisma.raportti.findUnique({
@@ -487,7 +466,7 @@ export async function raporttiChunksToProcess(
         chunks_to_process: true,
       },
     });
-    return Number(chunks);
+    return Number(chunks?.chunks_to_process);
   } catch (e) {
     log.error('Error SELECT chunks_to_process ');
     log.error(e);
@@ -510,7 +489,7 @@ export async function insertRaporttiData(
     events: null,
   };
 
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
   try {
     const raportti = await prisma.raportti.create({
       data: {
@@ -535,7 +514,7 @@ export async function writeMissingColumnsToDb(
   columnNames: string[],
   dbConnection: DBConnection,
 ): Promise<void> {
-  const { schema, sql, prisma } = dbConnection;
+  const { schema, prisma } = dbConnection;
 
   const values = columnNames.map(name => ({
     raportti_id: reportId,
@@ -659,4 +638,362 @@ enum TableEnum {
   RP = 'rp_mittaus',
   TG = 'tg_mittaus',
   TSIGHT = 'tsight_mittaus',
+}
+
+export function produceGeoviiteBatchUpdateSql(
+  batch: GeoviiteClientResultItem[],
+  timestamp: Date,
+  system: string | null,
+) {
+  const queryArray = [];
+  const valsArray = [];
+
+  const longQueryArray: string[] = [];
+  const latQueryArray: string[] = [];
+  const rataosuusNumeroQueryArray: string[] = [];
+  const kmQueryArray: string[] = [];
+  const mQueryArray: string[] = [];
+  const rataosuusNimiQueryArray: string[] = [];
+  const raideNumeroQueryArray: string[] = [];
+  const valimatkaQueryArray: string[] = [];
+  const sijRaideQueryArray: string[] = [];
+  const sijRaideKuvQueryArray: string[] = [];
+  const sijRaideTyyppiQueryArray: string[] = [];
+  const sijRaideOidQueryArray: string[] = [];
+  const ratanumeroOidQueryArray: string[] = [];
+  const virheQueryArray: string[] = [];
+  const timestampQueryArray: string[] = [];
+
+  const longValsArray: (number | undefined)[] = [];
+  const latValsArray: (number | undefined)[] = [];
+  const rataosuusNumeroValsArray: any[] = [];
+  const kmValsArray: (number | undefined)[] = [];
+  const mValsArray: (number | null)[] = [];
+  const rataosuusNimiValsArray: (number | null)[] = [];
+  const raideNumeroValsArray: (number | null)[] = [];
+  const valimatkaValsArray: (number | undefined)[] = [];
+  const sijRaideValsArray: (string | number | undefined)[] = [];
+  const sijRaideKuvValsArray: (string | number | undefined)[] = [];
+  const sijRaideTyyppiValsArray: (string | number | undefined)[] = [];
+  const sijRaideOidValsArray: (string | number | undefined)[] = [];
+  const ratanumeroOidValsArray: (string | number | undefined)[] = [];
+  const virheValsArray: (string | number | null)[] = [];
+  const timestampValsArray: (number | Date)[] = [];
+
+  const idArray: number[] = [];
+
+  let firstRow = true;
+
+  batch.forEach((row: GeoviiteClientResultItem) => {
+    idArray.push(row.id);
+
+    //long
+    if (firstRow) {
+      longQueryArray.push(getSubtableUpdateQueryBeginning(system));
+    } else {
+      longQueryArray.push(` when id = `);
+    }
+    longQueryArray.push(` then `);
+    longValsArray.push(row.id);
+    longValsArray.push(row.x);
+
+    //lat
+    if (firstRow) {
+      latQueryArray.push(` END, geoviite_konvertoitu_lat = CASE when id = `);
+    } else {
+      latQueryArray.push(` when id = `);
+    }
+    latQueryArray.push(` then `);
+    latValsArray.push(row.id);
+    latValsArray.push(row.y);
+
+    //rataosuus_numero
+    if (firstRow) {
+      rataosuusNumeroQueryArray.push(
+        ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
+      );
+    } else {
+      rataosuusNumeroQueryArray.push(` when id = `);
+    }
+    rataosuusNumeroQueryArray.push(` then `);
+    rataosuusNumeroValsArray.push(row.id);
+    rataosuusNumeroValsArray.push(row.ratanumero);
+
+    //rataosuus_nimi
+    if (firstRow) {
+      rataosuusNimiQueryArray.push(
+        ` END, geoviite_konvertoitu_rataosuus_nimi = CASE when id = `,
+      );
+    } else {
+      rataosuusNimiQueryArray.push(` when id = `);
+    }
+    rataosuusNimiQueryArray.push(` then `);
+    rataosuusNimiValsArray.push(row.id);
+    rataosuusNimiValsArray.push(null);
+
+    //rata_kilometri
+    if (firstRow) {
+      kmQueryArray.push(
+        ` END, geoviite_konvertoitu_rata_kilometri = CASE when id = `,
+      );
+    } else {
+      kmQueryArray.push(` when id = `);
+    }
+    kmQueryArray.push(` then `);
+    kmValsArray.push(row.id);
+    kmValsArray.push(row.ratakilometri);
+
+    //rata_metrit
+    if (firstRow) {
+      mQueryArray.push(
+        ` END, geoviite_konvertoitu_rata_metrit= CASE when id = `,
+      );
+    } else {
+      mQueryArray.push(` when id = `);
+    }
+    mQueryArray.push(` then `);
+    mValsArray.push(row.id);
+    let rata_metrit = '';
+    if (row.ratametri || row.ratametri == 0) {
+      rata_metrit = `${row.ratametri}`;
+    }
+    if (row.ratametri_desimaalit) {
+      rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
+    }
+    const mPart: number | null = rata_metrit ? Number(rata_metrit) : null;
+    mValsArray.push(mPart);
+
+    //raide_numero
+    if (firstRow) {
+      raideNumeroQueryArray.push(
+        ` END, geoviite_konvertoitu_raide_numero = CASE when id = `,
+      );
+    } else {
+      raideNumeroQueryArray.push(` when id = `);
+    }
+    raideNumeroQueryArray.push(` then `);
+    raideNumeroValsArray.push(row.id);
+    raideNumeroValsArray.push(null);
+
+    //valimatka
+    if (firstRow) {
+      valimatkaQueryArray.push(` END, geoviite_valimatka= CASE when id = `);
+    } else {
+      valimatkaQueryArray.push(` when id = `);
+    }
+    valimatkaQueryArray.push(` then `);
+    valimatkaValsArray.push(row.id);
+    valimatkaValsArray.push(row.valimatka);
+
+    //sijaintiraide
+    if (firstRow) {
+      sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
+    } else {
+      sijRaideQueryArray.push(` when id = `);
+    }
+    sijRaideQueryArray.push(` then `);
+    sijRaideValsArray.push(row.id);
+    sijRaideValsArray.push(row.sijaintiraide);
+
+    //sijaintiraide_kuvaus
+    if (firstRow) {
+      sijRaideKuvQueryArray.push(
+        ` END, geoviite_sijaintiraide_kuvaus = CASE when id = `,
+      );
+    } else {
+      sijRaideKuvQueryArray.push(` when id = `);
+    }
+    sijRaideKuvQueryArray.push(` then `);
+    sijRaideKuvValsArray.push(row.id);
+    sijRaideKuvValsArray.push(row.sijaintiraide_kuvaus);
+
+    //sijaintiraide_tyyppi
+    if (firstRow) {
+      sijRaideTyyppiQueryArray.push(
+        ` END, geoviite_sijaintiraide_tyyppi = CASE when id = `,
+      );
+    } else {
+      sijRaideTyyppiQueryArray.push(` when id = `);
+    }
+    sijRaideTyyppiQueryArray.push(` then `);
+    sijRaideTyyppiValsArray.push(row.id);
+    sijRaideTyyppiValsArray.push(row.sijaintiraide_tyyppi);
+
+    //sijaintiraide_oid
+    if (firstRow) {
+      sijRaideOidQueryArray.push(
+        ` END, geoviite_sijaintiraide_oid = CASE when id = `,
+      );
+    } else {
+      sijRaideOidQueryArray.push(` when id = `);
+    }
+    sijRaideOidQueryArray.push(` then `);
+    sijRaideOidValsArray.push(row.id);
+    sijRaideOidValsArray.push(row.sijaintiraide_oid);
+
+    //ratanumero_oid
+    if (firstRow) {
+      ratanumeroOidQueryArray.push(
+        ` END, geoviite_ratanumero_oid = CASE when id = `,
+      );
+    } else {
+      ratanumeroOidQueryArray.push(` when id = `);
+    }
+    ratanumeroOidQueryArray.push(` then `);
+    ratanumeroOidValsArray.push(row.id);
+    ratanumeroOidValsArray.push(row.ratanumero_oid);
+
+    //virhe
+    if (firstRow) {
+      virheQueryArray.push(` END, geoviite_virhe = CASE when id = `);
+    } else {
+      virheQueryArray.push(` when id = `);
+    }
+    virheQueryArray.push(` then `);
+    virheValsArray.push(row.id);
+    const virhe: string | null = row.virheet
+      ? row.virheet.toString().length > 200
+        ? row.virheet?.toString().substring(0, 200)
+        : row.virheet.toString()
+      : null;
+    virheValsArray.push(virhe);
+
+    //updated_at
+    if (firstRow) {
+      timestampQueryArray.push(` END, geoviite_updated_at = CASE when id = `);
+    } else {
+      timestampQueryArray.push(` when id = `);
+    }
+    timestampQueryArray.push(` then `);
+    timestampValsArray.push(row.id);
+    timestampValsArray.push(timestamp);
+
+    firstRow = false;
+  });
+
+  queryArray.push(...longQueryArray);
+  valsArray.push(...longValsArray);
+
+  queryArray.push(...latQueryArray);
+  valsArray.push(...latValsArray);
+
+  queryArray.push(...rataosuusNumeroQueryArray);
+  valsArray.push(...rataosuusNumeroValsArray);
+
+  queryArray.push(...rataosuusNimiQueryArray);
+  valsArray.push(...rataosuusNimiValsArray);
+
+  queryArray.push(...kmQueryArray);
+  valsArray.push(...kmValsArray);
+
+  queryArray.push(...mQueryArray);
+  valsArray.push(...mValsArray);
+
+  queryArray.push(...raideNumeroQueryArray);
+  valsArray.push(...raideNumeroValsArray);
+
+  queryArray.push(...valimatkaQueryArray);
+  valsArray.push(...valimatkaValsArray);
+
+  queryArray.push(...sijRaideQueryArray);
+  valsArray.push(...sijRaideValsArray);
+
+  queryArray.push(...sijRaideKuvQueryArray);
+  valsArray.push(...sijRaideKuvValsArray);
+
+  queryArray.push(...sijRaideTyyppiQueryArray);
+  valsArray.push(...sijRaideTyyppiValsArray);
+
+  queryArray.push(...sijRaideOidQueryArray);
+  valsArray.push(...sijRaideOidValsArray);
+
+  queryArray.push(...ratanumeroOidQueryArray);
+  valsArray.push(...ratanumeroOidValsArray);
+
+  queryArray.push(...virheQueryArray);
+  valsArray.push(...virheValsArray);
+
+  queryArray.push(...timestampQueryArray);
+  valsArray.push(...timestampValsArray);
+
+  //WHERE part
+  firstRow = true;
+  idArray.forEach(id => {
+    if (firstRow) {
+      queryArray.push(` END WHERE id = `);
+    } else {
+      queryArray.push(` OR id = `);
+    }
+    firstRow = false;
+  });
+
+  valsArray.push(...idArray);
+
+  queryArray.push('');
+
+  return Prisma.sql(queryArray, ...valsArray);
+}
+
+export async function getMittausSubtable(system: string | null, prisma: any) {
+  switch (system) {
+    case 'AMS':
+      return prisma.ams_mittaus;
+      break;
+    case 'OHL':
+      return prisma.ohl_mittaus;
+      break;
+    case 'PI':
+      return prisma.pi_mittaus;
+      break;
+    case 'RC':
+      return prisma.rc_mittaus;
+      break;
+    case 'RP':
+      return prisma.rp_mittaus;
+      break;
+    case 'TG':
+      return prisma.tg_mittaus;
+      break;
+    case 'TSIGHT':
+      return prisma.tsight_mittaus;
+      break;
+    default: {
+      log.trace(
+        `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
+      );
+      return prisma.mittaus;
+    }
+  }
+}
+
+export function getSubtableUpdateQueryBeginning(system: string | null) {
+  switch (system) {
+    case 'AMS':
+      return `UPDATE ams_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'OHL':
+      return `UPDATE ohl_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'PI':
+      return `UPDATE pi_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'RC':
+      return `UPDATE rc_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'RP':
+      return `UPDATE rp_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'TG':
+      return `UPDATE tg_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    case 'TSIGHT':
+      return `UPDATE tsight_mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+      break;
+    default: {
+      log.trace(
+        `Tried getting unknonwn subtable ${system}. Returning parent table 'mittaus'`,
+      );
+      return `UPDATE mittaus SET geoviite_konvertoitu_long = CASE when id = `;
+    }
+  }
 }

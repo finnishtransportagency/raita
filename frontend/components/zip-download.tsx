@@ -4,7 +4,7 @@ import * as R from 'rambda';
 import * as cfg from 'shared/config';
 
 import { triggerZipLambda } from 'shared/rest';
-import { initialState } from 'shared/zipContext';
+import { initialState } from 'shared/fileDownloadContext';
 import { sizeformatter } from 'shared/util';
 import Button from './button';
 import { Spinner } from './spinner';
@@ -12,11 +12,11 @@ import { Spinner } from './spinner';
 import { Search_RaporttiQueryVariables } from 'shared/graphql/__generated__/graphql';
 import { useLazyQuery } from '@apollo/client';
 import { SEARCH_RAPORTTI_KEYS_ONLY } from 'shared/graphql/queries/reports';
-import { zipContext } from 'shared/zipContext';
+import { fileDownloadContext } from 'shared/fileDownloadContext';
 
 export function ZipDownload(props: Props) {
   const { usedQueryVariables, resultTotalSize, aggregationSize } = props;
-  const { state, setState } = useContext(zipContext);
+  const { state, setState } = useContext(fileDownloadContext);
   const { error, isLoading } = state;
 
   const { t } = useTranslation(['common']);
@@ -68,7 +68,7 @@ export function ZipDownload(props: Props) {
   };
 
   useEffect(() => {
-    if (state.zipUrl == undefined) triggerKeyQuery();
+    if (state.fileUrl == undefined) triggerKeyQuery();
   }, [state]);
 
   return (

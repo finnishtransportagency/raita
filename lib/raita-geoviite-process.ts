@@ -22,6 +22,8 @@ interface ConversionProcessStackProps extends NestedStackProps {
   readonly stackId: string;
   readonly vpc: IVpc;
   readonly prismaLambdaLayer: lambda.LayerVersion;
+  readonly geoviiteHostname: string;
+  readonly readyForGeoviiteConversionQueue: Queue;
 }
 
 export class ConversionProcessStack extends NestedStack {
@@ -33,8 +35,15 @@ export class ConversionProcessStack extends NestedStack {
     props: ConversionProcessStackProps,
   ) {
     super(scope, id, props);
-    const { raitaStackIdentifier, raitaEnv, stackId, vpc, prismaLambdaLayer } =
-      props;
+    const {
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      vpc,
+      prismaLambdaLayer,
+      geoviiteHostname,
+      readyForGeoviiteConversionQueue,
+    } = props;
 
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
       stackId,
@@ -74,6 +83,14 @@ export class ConversionProcessStack extends NestedStack {
         prismaLambdaLayer,
         conversionQueue,
       });
+
+    startConversionProcessHandler.addEventSource(
+      new SqsEventSource(readyForGeoviiteConversionQueue, {
+        batchSize: 1,
+        maxConcurrency: 2,
+      }),
+    );
+
     const doConversionProcessHandler = this.createDoGeoviiteConversionFunction({
       name: 'geoviite-conversion-process-handler',
       lambdaRole: this.conversionProcessLambdaRole,
@@ -83,6 +100,7 @@ export class ConversionProcessStack extends NestedStack {
       databaseEnvironmentVariables,
       prismaLambdaLayer,
       conversionQueue,
+      geoviiteHostname,
     });
 
     const coversionQueueSource = new SqsEventSource(conversionQueue, {
@@ -132,11 +150,12 @@ export class ConversionProcessStack extends NestedStack {
         __dirname,
         `../backend/lambdas/conversionProcess/handleStartConversionProcess/handleStartConversionProcess.ts`,
       ),
-      reservedConcurrentExecutions: 1, // only one process can be running at once to avoid processing files multiple times
+      reservedConcurrentExecutions: 2, // TODO: this needs to be minimum 2 when processing queue. Need to ensure files are not handled twice if triggered manually?
       environment: {
         CONVERSION_QUEUE_URL: conversionQueue.queueUrl,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
+
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -159,6 +178,7 @@ export class ConversionProcessStack extends NestedStack {
     databaseEnvironmentVariables,
     prismaLambdaLayer,
     conversionQueue,
+    geoviiteHostname,
   }: {
     name: string;
     lambdaRole: iam.Role;
@@ -168,6 +188,7 @@ export class ConversionProcessStack extends NestedStack {
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
     conversionQueue: Queue;
+    geoviiteHostname: string;
   }) {
     const deadLetterQueue = new Queue(this, 'do-conversion-process-deadletter');
     return new NodejsFunction(this, name, {
@@ -182,6 +203,7 @@ export class ConversionProcessStack extends NestedStack {
       ),
       reservedConcurrentExecutions: 2, // TODO: how many parallel invocations to use?
       environment: {
+        GEOVIITE_HOSTNAME: geoviiteHostname,
         CONVERSION_QUEUE_URL: conversionQueue.queueUrl,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,

@@ -21,6 +21,11 @@ type Mittaus {
   # modified
 }
 
+enum MittausCombinationLogic {
+  MEERI_RATAOSOITE
+  GEOVIITE_RATAOSOITE_ROUNDED
+}
+
 type MittausCountResponse {
   status: String!
   row_count: Int!
@@ -35,9 +40,13 @@ type MittausGenerateResponse {
 input MittausInput {
   ## Mittaus common fields
   # track: String
-  rata_kilometri: Int ## TODO: is it useful to search with these at all? they are not consistent between files
+  rata_kilometri: IntIntervalInput ## TODO: is it useful to search with these at all? they are not consistent between files
   rata_metrit: Float
   ## TODO: system specific fields
+}
+
+input CsvGenerationSettingsInput {
+  mittausCombinationLogic: MittausCombinationLogic!
 }
 
 type Query {
@@ -56,6 +65,7 @@ type Mutation {
     raportti: RaporttiInput
     raportti_keys: [String!]
     mittaus: MittausInput!
+    settings: CsvGenerationSettingsInput!
     columns: [String!]!
   ): MittausGenerateResponse!
 }

@@ -1,7 +1,5 @@
-import postgres from 'postgres';
-import { getSecretsManagerSecret } from '../secretsManager';
-import { getEnvOrFail } from '../../../utils';
 import {
+  AdminLogLevel,
   AdminLogSource,
   AdminLogSummary,
   RawLogRow,
@@ -12,6 +10,8 @@ import {
 import { formatSummary } from './adminLogUtils';
 import { format } from 'date-fns';
 import { getPrismaClient } from '../prismaClient';
+import { getDBConnection } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 /**
  * Get logs for a single event, defined by date and invocationId
@@ -78,17 +78,16 @@ export async function getSingleEventLogs(
  * Get summary for each log "event"
  * An event is defined by invocation_id (filename) and date part of timestamp
  */
-function getSummaryQuery(
-  sql: postgres.Sql,
-  schema: string,
+const getSummaryQuery = async (
   sources: AdminLogSource[],
   startTimestamp: string,
   endTimestamp: string,
   pageSize: number,
   pageIndex: number,
-): Promise<SummaryDBResponse[]> {
+  prisma: PrismaClient,
+): Promise<SummaryDBResponse[]> => {
   const pageOffset = pageIndex * pageSize;
-  return sql`
+  return prisma.$queryRaw`
 SELECT events.log_date, events.start_timestamp, events.invocation_id,  counts.log_level, counts.source, counts.count
 FROM (
 -- subquery: select list of all "events" with paging
@@ -96,10 +95,12 @@ FROM (
     date_trunc('day', log_timestamp) as log_date,
     MIN(log_timestamp) as start_timestamp,
     invocation_id
-  FROM ${sql(schema)}.logging
+  FROM logging
   WHERE
-    source IN ${sql(sources)}
-    AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
+    source IN (${Prisma.join(sources)})
+    AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+      endTimestamp,
+    )}
   GROUP BY log_date, invocation_id
   ORDER BY start_timestamp DESC
   LIMIT ${pageSize} OFFSET ${pageOffset}
@@ -112,10 +113,12 @@ LEFT JOIN (
     log_level,
     source,
     COUNT(*) as count
-  FROM ${sql(schema)}.logging
+  FROM logging
   WHERE
-    source IN ${sql(sources)}
-    AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
+    source IN (${Prisma.join(sources)})
+    AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+      endTimestamp,
+    )}
   GROUP BY log_date, invocation_id, source, log_level
 ) AS counts
 ON
@@ -123,7 +126,7 @@ ON
   AND events.log_date = counts.log_date
 ORDER BY events.start_timestamp DESC;
   `;
-}
+};
 
 /**
  * Get admin log summary
@@ -138,25 +141,20 @@ export async function getLogSummary(
   pageSize: number,
   pageIndex: number,
 ): Promise<AdminLogSummary> {
-  const password = await getSecretsManagerSecret('database_password');
-  const sql = await postgres({ password });
-  const schema = getEnvOrFail('RAITA_PGSCHEMA');
-
+  const { prisma } = await getDBConnection();
   const stats = await getStatsQuery(
-    sql,
-    schema,
     sources,
     startTimestamp,
     endTimestamp,
+    prisma,
   );
   const summaryResponse = await getSummaryQuery(
-    sql,
-    schema,
     sources,
     startTimestamp,
     endTimestamp,
     pageSize,
     pageIndex,
+    prisma,
   );
   const formattedSummary = formatSummary(summaryResponse);
   const totalSize =
@@ -171,21 +169,26 @@ export async function getLogSummary(
 }
 
 export async function getStatsQuery(
-  sql: postgres.Sql,
-  schema: string,
   sources: AdminLogSource[],
   startTimestamp: string,
   endTimestamp: string,
+  prisma: PrismaClient,
 ): Promise<StatsQueryDBResponseRow[]> {
-  return sql`
+  const res: { log_level: string; event_count: any }[] = await prisma.$queryRaw`
 SELECT COUNT(*) as event_count, log_level FROM (
   SELECT DISTINCT
     date_trunc('day', log_timestamp) as log_date,
     invocation_id,
     log_level
-  FROM ${sql(schema)}.logging
-  WHERE source IN ${sql(sources)}
-  AND log_timestamp BETWEEN ${startTimestamp} AND ${endTimestamp}
+  FROM logging
+  WHERE source IN (${Prisma.join(sources)})
+  AND log_timestamp BETWEEN ${new Date(startTimestamp)} AND ${new Date(
+    endTimestamp,
+  )}
 ) AS tmp
 GROUP BY log_level;`;
+  return res.map(row => ({
+    log_level: row.log_level,
+    event_count: Number(row.event_count),
+  }));
 }

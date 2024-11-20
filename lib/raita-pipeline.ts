@@ -1,4 +1,5 @@
 import {
+  BundlingOutput,
   RemovalPolicy,
   SecretValue,
   Stack,
@@ -39,6 +40,8 @@ import {
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { RaitaPipelineLockStack } from './raita-pipeline-lock';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
+import path from 'path';
 
 /**
  * The stack that defines the application pipeline
@@ -49,6 +52,17 @@ export class RaitaPipelineStack extends Stack {
     super(scope, `stack-pipeline-raita-${config.stackId}`, {
       ...props,
       tags: config.tags,
+    });
+
+    const prismaLambdaLayer = new LayerVersion(this, 'prisma-layer-version', {
+      code: Code.fromAsset(path.join(__dirname, '../'), {
+        bundling: {
+          image: Runtime.NODEJS_20_X.bundlingImage,
+          command: ['bash', './create-prisma-lambda-layer.sh'],
+          outputType: BundlingOutput.NOT_ARCHIVED,
+          workingDirectory: '/asset-input',
+        },
+      }),
     });
 
     //temporary flag to show csv page. TODO: remove later
@@ -131,6 +145,7 @@ export class RaitaPipelineStack extends Stack {
     const pipelineLockStack: RaitaPipelineLockStack | null = doPermanentSteps
       ? new RaitaPipelineLockStack(this, 'PipelineLockStack', {
           vpc: raitaVPC,
+          prismaLambdaLayer,
         })
       : null;
 

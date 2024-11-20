@@ -15,6 +15,7 @@ export async function parseFileMetadata({
   dbConnection,
   reportId,
   invocationId,
+  doGeoviiteConversion,
 }: {
   keyData: KeyData;
   fileStream: Readable | undefined;
@@ -23,6 +24,7 @@ export async function parseFileMetadata({
   dbConnection: DBConnection | undefined;
   reportId: number;
   invocationId: string;
+  doGeoviiteConversion: boolean;
 }): Promise<{
   metadata: any;
   errors: boolean;
@@ -67,6 +69,7 @@ export async function parseFileMetadata({
         doCSVParsing,
         reportId,
         invocationId,
+        doGeoviiteConversion,
       );
       fileContentData = contentResult.contentData;
     } else {

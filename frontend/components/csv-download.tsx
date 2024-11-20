@@ -1,31 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
 import saveAs from 'file-saver';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
-
-import { getPollingProgress } from 'shared/rest';
+import { useContext, useEffect, useState } from 'react';
 import Button from './button';
-import { ProgressStatus } from 'shared/types';
 import { Generate_Mittaus_CsvMutationVariables } from 'shared/graphql/__generated__/graphql';
 import { useMutation } from '@apollo/client';
 import { GENERATE_MITTAUS_CSV } from 'shared/graphql/queries/csv';
+import { initialState, fileDownloadContext } from 'shared/fileDownloadContext';
+import * as R from 'rambda';
+import { Spinner } from './spinner';
 
 export function CsvDownload(props: Props) {
   const { t } = useTranslation(['common', 'metadata']);
 
-  const [pollingKey, setPollingKey] = useState<string | null>(null);
   const [shouldPoll, setShouldPoll] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null); // TODO show somehow
+  const { state, setState } = useContext(fileDownloadContext);
 
   const [mutateGenerateCsv, generateCsvStatus] =
     useMutation(GENERATE_MITTAUS_CSV);
 
   const resetState = () => {
     setShouldPoll(false);
-    setPollingKey(null);
     setDownloadUrl(null);
     setError(null);
+    setState(initialState);
   };
 
   useEffect(() => {
@@ -44,60 +43,22 @@ export function CsvDownload(props: Props) {
       return;
     }
     const key = generateCsvStatus.data.generate_mittaus_csv.polling_key;
-    console.log(key);
-    setPollingKey(key);
-    setShouldPoll(true);
+    localStorage.setItem('pollingFileKey', key);
+    setState(R.assoc('pollingFileKey', key));
+    setState(R.assoc('isLoading', true));
+    setState(R.assoc('shouldPoll', true));
   }, [generateCsvStatus.data]);
-
-  useQuery(
-    ['csv', pollingKey],
-    () => {
-      if (!pollingKey) return;
-      return getPollingProgress(pollingKey);
-    },
-    {
-      enabled: shouldPoll,
-      refetchInterval: 3000,
-      retry: 3,
-      retryDelay: 3000,
-      onSuccess: data => {
-        if (
-          data?.progressData?.status === ProgressStatus.SUCCESS &&
-          data?.progressData?.url
-        ) {
-          resetState();
-          setDownloadUrl(data.progressData.url);
-        } else if (data?.progressData?.status === ProgressStatus.FAILED) {
-          resetState();
-          setError('TODO');
-        }
-      },
-    },
-  );
-
-  const handleDownload = () => {
-    if (downloadUrl) {
-      saveAs(downloadUrl);
-    }
-  };
 
   return (
     <div>
       <div>
-        <Button
-          label={t('common:generate_csv')}
-          onClick={triggerCsvGeneration}
-        />
-      </div>
-      <div>
-        {generateCsvStatus.data && (
-          <>
-            {downloadUrl ? (
-              <Button label={t('common:download')} onClick={handleDownload} />
-            ) : (
-              <Button label={t('common:loading')} disabled onClick={() => {}} />
-            )}
-          </>
+        {state.isLoading ? (
+          <Spinner size={4} bottomMargin={0} />
+        ) : (
+          <Button
+            label={t('common:generate_csv')}
+            onClick={triggerCsvGeneration}
+          />
         )}
       </div>
     </div>

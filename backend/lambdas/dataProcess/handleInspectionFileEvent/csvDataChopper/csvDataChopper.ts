@@ -22,6 +22,7 @@ async function writeFileChunkToQueueS3(
   key: KeyData,
   chunkNumber: number,
   invocationId: string,
+  doGeoviiteConversion: boolean,
 ) {
   try {
     await adminLogger.init('data-inspection', invocationId);
@@ -43,6 +44,9 @@ async function writeFileChunkToQueueS3(
 
     const newFileMetadata: { [key: string]: string } = {};
     newFileMetadata['invocation-id'] = encodeURIComponent(invocationId); // pass same invocationId to extracted files for logging
+    newFileMetadata['skip-geoviite-conversion'] = doGeoviiteConversion
+      ? '0'
+      : '1';
 
     const command = new PutObjectCommand({
       Bucket: config.csvBucket,
@@ -83,6 +87,7 @@ export async function chopCSVFileStream(
   dbConnection: DBConnection,
   reportId: number,
   invocationId: string,
+  doGeoviiteConversion: boolean,
 ) {
   // Empty relevant mittaus rows, prevents duplication when file has been parsed before
   // note: if another parsing process of the same file is happening at the same time for some reason, result can be messy
@@ -153,6 +158,7 @@ export async function chopCSVFileStream(
               originalKeyData,
               chunkCounter,
               invocationId,
+              doGeoviiteConversion,
             );
             //  log.debug("handled bufferd: " + handleCounter);
           }
@@ -187,6 +193,7 @@ export async function chopCSVFileStream(
         originalKeyData,
         chunkCounter,
         invocationId,
+        doGeoviiteConversion,
       );
     }
 

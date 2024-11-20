@@ -91,6 +91,14 @@ function rowIsEmpty(row: AdminLogSummaryRow, type: 'delete' | 'data-process') {
     return type === 'data-process' && !!row.counts['data-inspection'];
   }
 }
+function rowIsFolder(row: AdminLogSummaryRow) {
+  const filePattern = /.+\.[a-zA-Z0-9]+$/;
+
+  return (
+    row.invocation_id.split('/').length <= 5 &&
+    !filePattern.test(row.invocation_id)
+  );
+}
 
 /**
  * Fetch and show log rows for one event in an accordion item
@@ -281,6 +289,8 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                 );
                 const containsErrors = rowContainsErrors(logSummary, type);
                 const containsWarnings = rowContainsWarnings(logSummary, type);
+                const isFolder = rowIsFolder(logSummary);
+
                 const titleKey =
                   type === 'delete'
                     ? 'admin:log_header_delete_process'
@@ -313,12 +323,12 @@ const LogAccordion = ({ type, dateRange, forceFetch }: Props) => {
                             {t('admin:log_contains_errors')}
                           </span>
                         )}
-                        {containsWarnings && (
+                        {containsWarnings && !isFolder && (
                           <span className="px-1 py-1 m-1 rounded-xl bg-warn font-bold">
                             {t('admin:log_contains_warnings')}
                           </span>
                         )}
-                        {noFilesHandled && (
+                        {noFilesHandled && !isFolder && (
                           <span className="px-1 py-1 m-1 rounded-xl bg-error font-bold">
                             {t('admin:log_no_files_handled')}
                           </span>

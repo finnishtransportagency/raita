@@ -7,10 +7,10 @@ import {
 import { CodePipeline } from 'aws-sdk';
 import { logPipeline } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
-import { getPostgresDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
+import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 
 const withRequest = lambdaRequestTracker();
-const dbConnection = getPostgresDBConnection();
+const dbConnection = getDBConnection();
 
 export async function handleAcquirePipelineLock(
   event: CodePipelineEvent,

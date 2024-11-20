@@ -5,6 +5,17 @@ import { log, logLambdaInitializationError } from '../../../utils/logger';
 
 import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
+import {
+  GeoviiteClient,
+  GeoviiteClientResultItem,
+} from '../../geoviite/geoviiteClient';
+import { getEnvOrFail } from '../../../../utils';
+import {
+  getMittausSubtable,
+  produceGeoviiteBatchUpdateSql,
+} from '../../dataProcess/csvCommon/db/dbUtil';
+import { Prisma } from '@prisma/client';
+import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 
 const init = () => {
   try {
@@ -35,6 +46,8 @@ export async function handleGeoviiteConversionProcess(
   context: Context,
 ): Promise<void> {
   let key = '';
+  const geoviiteHostname = getEnvOrFail('GEOVIITE_HOSTNAME');
+  const geoviiteClient = new GeoviiteClient(geoviiteHostname);
   const prismaClient = await prisma;
   try {
     withRequest(event, context);
@@ -43,67 +56,121 @@ export async function handleGeoviiteConversionProcess(
 
     const message: ConversionMessage = JSON.parse(sqsRecord.body);
     key = message.key;
-    log.info({ key }, 'Start conversion');
+    const id = message.id;
+    const system = message.system;
+    log.trace({ message }, 'Start conversion');
 
-    // TODO: can row count be too large to fetch in one query?
-    const mittausRows = await prismaClient.mittaus.findMany({
+    // how many to handle in this invocation
+    const invocationTotalBatchSize = message.batchSize;
+    const invocationTotalBatchIndex = message.batchIndex;
+    const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
+    // how many to handle in one request
+    const requestBatchSize = 1000;
+
+    if (message.orderBy !== 'id') {
+      throw new Error('orderBy value other than id not implemented');
+    }
+
+    //Use subtable for performance
+    const mittausTable = await getMittausSubtable(system, prismaClient);
+
+    // separate mittaus count query for optimization
+
+    // @ts-ignore
+    const totalMittausCount = await mittausTable.count({
       where: {
-        raportti: {
-          key,
-        },
-      },
-      select: {
-        lat: true,
-        long: true,
-        id: true,
+        raportti_id: id,
       },
     });
+    // this will be smaller on last batch
+    const remainingMittausCount = totalMittausCount - startingSkip;
+    if (totalMittausCount === 0) {
+      throw new Error('Mittaus count 0');
+    }
+    // how many to handle in this invocation
+    const mittausCount = Math.min(remainingMittausCount, message.batchSize);
+    log.trace({ mittausCount, remainingMittausCount, totalMittausCount });
+    // loop through array in batches: get results for batch and save to db
+    for (
+      let requestIndex = 0;
+      requestIndex < mittausCount;
+      requestIndex += requestBatchSize
+    ) {
+      // @ts-ignore
+      const mittausRows = await mittausTable.findMany({
+        where: {
+          raportti_id: id,
+        },
+        select: {
+          lat: true,
+          long: true,
+          id: true,
+        },
+        orderBy: { id: 'asc' },
+        take: requestBatchSize,
+        skip: startingSkip + requestIndex,
+      });
+      log.trace({ length: mittausRows.length }, 'Got from db');
 
-    // TODO: process mittausRows through geoviite api
-    // const convertedRows = ???
-    const convertedRows = mittausRows;
-    // TODO: fetch all results first, or save after fetching one batch?
+      const convertedRows: GeoviiteClientResultItem[] =
+        await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
+          mittausRows,
+        );
+      log.trace({ length: convertedRows.length }, 'converted');
+      if (convertedRows.length !== mittausRows.length) {
+        /*
+         Should not happen. Errors from geoviite api are returned as rows with 'virheet' -value.
+         */
+        log.error('Size mismatch');
+      }
 
-    // save result in batches
-    const batchSize = 100;
-    const batches: (typeof convertedRows)[] = [];
-    for (let i = 0; i < convertedRows.length; i += batchSize) {
-      batches.push(convertedRows.slice(i, i + batchSize));
+      // Save result in smaller batches.
+      // We use the largest value that works with prepared statement to reduce db call count.
+      const saveBatchSize = 250;
+
+      // one timestamp for all
+      const timestamp = new Date();
+      for (
+        let saveBatchIndex = 0;
+        saveBatchIndex < convertedRows.length;
+        saveBatchIndex += saveBatchSize
+      ) {
+        const batch = convertedRows.slice(
+          saveBatchIndex,
+          saveBatchIndex + saveBatchSize,
+        );
+
+        const updateSql = produceGeoviiteBatchUpdateSql(
+          batch,
+          timestamp,
+          system,
+        );
+        try {
+          log.trace('start geoviite db update');
+          await prismaClient.$executeRaw(updateSql);
+          log.trace('done geoviite db update');
+        } catch (err) {
+          log.error(updateSql);
+          throw err;
+        }
+        // TODO: check errors?
+      }
     }
 
-    // one timestamp for all
-    const timestamp = new Date().toISOString();
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
-      await prismaClient.$transaction(
-        // transaction to group multiple updates in one connection
-        batch.map(result =>
-          prismaClient.mittaus.update({
-            where: {
-              id: result.id,
-            },
-            data: {
-              // TODO: actual values here
-              geoviite_updated_at: timestamp,
-            },
-          }),
-        ),
-      );
-      // TODO: check errors?
-    }
-    await prismaClient.raportti.updateMany({
-      // updateMany because key is not set as unique. TODO: should it be?
+    const readyTimestamp = new Date().toISOString();
+
+    await prismaClient.raportti.update({
       where: {
-        key,
+        id,
       },
       data: {
-        geoviite_status: 'SUCCESS',
-        geoviite_update_at: timestamp,
+        geoviite_status: ConversionStatus.SUCCESS,
+        geoviite_update_at: readyTimestamp,
       },
     });
   } catch (err) {
+    log.error(err);
     log.error({
-      error: err,
       message: 'Error in conversion process',
       key,
     });
@@ -112,7 +179,7 @@ export async function handleGeoviiteConversionProcess(
         key,
       },
       data: {
-        geoviite_status: 'ERROR',
+        geoviite_status: ConversionStatus.ERROR,
         geoviite_update_at: new Date().toISOString(),
       },
     });

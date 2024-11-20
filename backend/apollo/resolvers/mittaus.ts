@@ -3,9 +3,9 @@ import { getPrismaClient } from '../../utils/prismaClient';
 import { Resolvers } from '../__generated__/resolvers-types';
 import { RaitaLambdaError } from '../../lambdas/utils';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/handleCsvGeneration';
 import { getRaporttiWhereInput } from '../utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
+import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/types';
 
 /**
  * Return estimate of result file size in bytes
@@ -61,6 +61,18 @@ export const mittausResolvers: Resolvers = {
             // TODO: search with mittaus specific fields
             in: raporttiRows.map(raportti => raportti.id),
           },
+
+          ...((mittaus.rata_kilometri?.start !== undefined ||
+            mittaus.rata_kilometri?.end !== undefined) && {
+            rata_kilometri: {
+              ...(mittaus.rata_kilometri?.start !== undefined && {
+                gte: mittaus.rata_kilometri.start,
+              }),
+              ...(mittaus.rata_kilometri?.end !== undefined && {
+                lte: mittaus.rata_kilometri.end,
+              }),
+            },
+          }),
         },
       });
       return {

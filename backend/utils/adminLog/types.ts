@@ -54,7 +54,7 @@ export type SummaryRow = {
 
 export type StatsQueryDBResponseRow = {
   log_level: string;
-  event_count: string;
+  event_count: number;
 };
 
 export type AdminLogSummary = {

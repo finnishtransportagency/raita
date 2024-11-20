@@ -334,22 +334,31 @@ export function validateHeaders(
   };
 }
 
-export async function parseCSVFileStream(
-  keyData: KeyData,
-  fileStream: Readable,
-  dbConnection: DBConnection,
-  invocationId: string = 'DEFAULT_ID_FOR_TESTS',
-) {
-  log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
-  await adminLogger.init('data-csv', invocationId);
+export const parseAttributesFromChunkFileName = (keyData: KeyData) => {
   const fileBaseName = keyData.fileBaseName;
   const fileNameParts = fileBaseName.split('_');
   let fileNamePrefix = fileNameParts[3];
   if (fileNamePrefix === 'VR') {
     fileNamePrefix = fileNameParts[4];
   }
-
   const reportId: number = Number(fileNameParts[1]);
+  return {
+    reportId,
+    fileNamePrefix,
+  };
+};
+
+export async function parseCSVFileStream(
+  keyData: KeyData,
+  fileStream: Readable,
+  dbConnection: DBConnection,
+  invocationId: string = 'DEFAULT_ID_FOR_TESTS',
+): Promise<'error' | 'full-file-success' | 'chunk-success'> {
+  log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
+  await adminLogger.init('data-csv', invocationId);
+  const fileBaseName = keyData.fileBaseName;
+  const { reportId, fileNamePrefix } =
+    parseAttributesFromChunkFileName(keyData);
 
   let fileSchema: ZodObject<any> | undefined = undefined;
   let missingOptionalColumns: string[] | undefined = undefined;
@@ -559,6 +568,9 @@ export async function parseCSVFileStream(
       const chunksLeft = await raporttiChunksToProcess(reportId, dbConnection);
       if (chunksLeft == 0) {
         await updateRaporttiStatus(reportId, 'SUCCESS', null, dbConnection);
+        return 'full-file-success';
+      } else {
+        return 'chunk-success';
       }
     } catch (error) {
       logCSVDBException.error(
@@ -572,8 +584,6 @@ export async function parseCSVFileStream(
 
       throw error;
     }
-
-    return 'success';
   } catch (error) {
     logCSVParsingException.warn(
       { errorType: error.errorType, fileName: fileBaseName },

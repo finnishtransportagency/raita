@@ -24,6 +24,7 @@ import {
 } from './raitaResourceCreators';
 import {
   getDatabaseEnvironmentVariables,
+  isProductionStack,
   prismaBundlingOptions,
 } from './utils';
 import {
@@ -67,6 +68,7 @@ export class DataProcessStack extends NestedStack {
   public readonly handleCSVFileMassImportEventFn: NodejsFunction;
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
+  public readonly readyForGeoviiteConversionQueue: Queue;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -139,7 +141,7 @@ export class DataProcessStack extends NestedStack {
     const receptionBucketResources = [
       this.dataReceptionBucket.bucketArn,
       `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri}/*`,
-      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.MeeriHotfix2023}/*`, // TODO: remove when not needed
+      `${this.dataReceptionBucket.bucketArn}/${raitaSourceSystems.Meeri_FIX}/*`,
     ];
     const fullAccessBucketActions = [
       's3:GetObject',
@@ -234,6 +236,7 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       zipHandlerQueue,
+      prismaLambdaLayer,
     });
 
     zipHandlerQueue.grantSendMessages(handleReceptionFileEventFn);
@@ -334,6 +337,13 @@ export class DataProcessStack extends NestedStack {
     });
     this.handleInspectionFileEventFn.addEventSource(inspectionQueueSource);
 
+    this.readyForGeoviiteConversionQueue = new Queue(
+      this,
+      'ready-for-geoviite-conversion-queue',
+      {
+        visibilityTimeout: Duration.minutes(15),
+      },
+    );
     // Create csv data parser lambda, grant permissions and create event sources
     this.handleCSVFileEventFn = this.createCsvFileEventHandler({
       name: 'dp-handler-csv-file',
@@ -344,7 +354,13 @@ export class DataProcessStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
+      readyForGeoviiteConversionQueue: this.readyForGeoviiteConversionQueue,
+      raitaEnv,
     });
+
+    this.readyForGeoviiteConversionQueue.grantSendMessages(
+      this.handleCSVFileEventFn,
+    );
 
     const csvAlarms = this.createCSVHandlerAlarms(
       this.handleCSVFileEventFn.logGroup,
@@ -444,6 +460,7 @@ export class DataProcessStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     zipHandlerQueue,
+    prismaLambdaLayer,
   }: {
     name: string;
     targetBucket: s3.Bucket;
@@ -452,6 +469,7 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     zipHandlerQueue: Queue;
+    prismaLambdaLayer: lambda.LayerVersion;
   }) {
     const receptionHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -470,6 +488,8 @@ export class DataProcessStack extends NestedStack {
       },
       role: lambdaRole,
       vpc,
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
       vpcSubnets: {
         subnets: vpc.privateSubnets,
       },
@@ -789,6 +809,8 @@ export class DataProcessStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    readyForGeoviiteConversionQueue,
+    raitaEnv,
   }: {
     name: string;
     csvBucketName: string;
@@ -798,6 +820,8 @@ export class DataProcessStack extends NestedStack {
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    readyForGeoviiteConversionQueue: Queue;
+    raitaEnv: RaitaEnvironment;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -813,6 +837,12 @@ export class DataProcessStack extends NestedStack {
         CSV_BUCKET: csvBucketName,
         CONFIGURATION_FILE: configurationFile,
         REGION: this.region,
+        READY_FOR_CONVERSION_QUEUE_URL:
+          readyForGeoviiteConversionQueue.queueUrl,
+        // flag to disable conversion in prod. TODO: remove
+        DISABLE_CONVERSION: isProductionStack(this.stackId, raitaEnv)
+          ? '1'
+          : '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,

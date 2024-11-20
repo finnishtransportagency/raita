@@ -31,6 +31,7 @@
   "label_extra_information": "Lisätietoja",
   "label_metadata_changed_at_datetime": "Metatietojen päivitysaika",
   "label_is_empty": "Tyhjä",
+  "label_rata_kilometri": "Ratakilometri",
   "AMS": "Kulkudynamiikan mittaus",
   "TG": "Raiteiden ja vaihteiden geometrian mittaus",
   "TGMS": "Raiteiden ja vaihteiden geometrian mittaus",

@@ -23,7 +23,7 @@ import {
 } from '../../../utils/dataProcessLock';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { SQSClient } from '@aws-sdk/client-sqs';
-import { DBConnection, getPostgresDBConnection } from '../csvCommon/db/dbUtil';
+import { DBConnection, getDBConnection } from '../csvCommon/db/dbUtil';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('Metadata parser lambda');
@@ -37,7 +37,7 @@ const withRequest = lambdaRequestTracker();
 
 const config = getLambdaConfigOrFail();
 const sqsClient = new SQSClient({});
-const dbConnection = getPostgresDBConnection();
+const dbConnection = getDBConnection();
 const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
 export async function handleReceptionFileEvent(
@@ -107,6 +107,10 @@ export async function handleReceptionFileEvent(
         if (existingMetadata['require-newer-parser-version']) {
           newMetadata['require-newer-parser-version'] =
             existingMetadata['require-newer-parser-version'];
+        }
+        if (existingMetadata['skip-geoviite-conversion']) {
+          newMetadata['skip-geoviite-conversion'] =
+            existingMetadata['skip-geoviite-conversion'];
         }
         const command = new CopyObjectCommand({
           Key: key,
