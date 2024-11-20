@@ -677,77 +677,140 @@ export function produceGeoviiteBatchUpdateSql(
   const virheValsArray: (string | number | null)[] = [];
   const timestampValsArray: (number | Date)[] = [];
 
+  //Add first row with fake vals with -1 id so nothing is ever updated. This is needed because "At least one of the result expressions in a CASE specification must be an expression other than the NULL constant".
+  //Othervise we occasitionally get type error if alla vals for some column are alla null.
+  longQueryArray.push(getSubtableUpdateQueryBeginning(system));
+  longQueryArray.push(` then `);
+  longValsArray.push(-1);
+  longValsArray.push(-1);
+
+  latQueryArray.push(` END, geoviite_konvertoitu_lat = CASE when id = `);
+  latQueryArray.push(` then `);
+  latValsArray.push(-1);
+  latValsArray.push(-1);
+
+  rataosuusNumeroQueryArray.push(
+    ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
+  );
+  rataosuusNumeroQueryArray.push(` then `);
+  rataosuusNumeroValsArray.push(-1);
+  rataosuusNumeroValsArray.push('');
+
+  rataosuusNimiQueryArray.push(
+    ` END, geoviite_konvertoitu_rataosuus_nimi = CASE when id = `,
+  );
+  rataosuusNimiQueryArray.push(` then `);
+  rataosuusNimiValsArray.push(-1);
+  rataosuusNimiValsArray.push(-1);
+
+  kmQueryArray.push(
+    ` END, geoviite_konvertoitu_rata_kilometri = CASE when id = `,
+  );
+  kmQueryArray.push(` then `);
+  kmValsArray.push(-1);
+  kmValsArray.push(-1);
+
+  mQueryArray.push(` END, geoviite_konvertoitu_rata_metrit= CASE when id = `);
+  mQueryArray.push(` then `);
+  mValsArray.push(-1);
+  mValsArray.push(-1);
+
+  raideNumeroQueryArray.push(
+    ` END, geoviite_konvertoitu_raide_numero = CASE when id = `,
+  );
+  raideNumeroQueryArray.push(` then `);
+  raideNumeroValsArray.push(-1);
+  raideNumeroValsArray.push(-1);
+
+  valimatkaQueryArray.push(` END, geoviite_valimatka= CASE when id = `);
+  valimatkaQueryArray.push(` then `);
+  valimatkaValsArray.push(-1);
+  valimatkaValsArray.push(-1);
+
+  sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
+  sijRaideQueryArray.push(` then `);
+  sijRaideValsArray.push(-1);
+  sijRaideValsArray.push(-1);
+
+  sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
+  sijRaideQueryArray.push(` then `);
+  sijRaideValsArray.push(-1);
+  sijRaideValsArray.push(-1);
+
+  sijRaideKuvQueryArray.push(
+    ` END, geoviite_sijaintiraide_kuvaus = CASE when id = `,
+  );
+  sijRaideKuvQueryArray.push(` then `);
+  sijRaideKuvValsArray.push(-1);
+  sijRaideKuvValsArray.push('');
+
+  sijRaideTyyppiQueryArray.push(
+    ` END, geoviite_sijaintiraide_tyyppi = CASE when id = `,
+  );
+  sijRaideTyyppiQueryArray.push(` then `);
+  sijRaideTyyppiValsArray.push(-1);
+  sijRaideTyyppiValsArray.push('');
+
+  sijRaideOidQueryArray.push(
+    ` END, geoviite_sijaintiraide_oid = CASE when id = `,
+  );
+  sijRaideOidQueryArray.push(` then `);
+  sijRaideOidValsArray.push(-1);
+  sijRaideOidValsArray.push('');
+
+  ratanumeroOidQueryArray.push(
+    ` END, geoviite_ratanumero_oid = CASE when id = `,
+  );
+  ratanumeroOidQueryArray.push(` then `);
+  ratanumeroOidValsArray.push(-1);
+  ratanumeroOidValsArray.push('');
+
+  virheQueryArray.push(` END, geoviite_virhe = CASE when id = `);
+  virheQueryArray.push(` then `);
+  virheValsArray.push(-1);
+  virheValsArray.push('');
+
+  timestampQueryArray.push(` END, geoviite_updated_at = CASE when id = `);
+  timestampQueryArray.push(` then `);
+  timestampValsArray.push(-1);
+  timestampValsArray.push(timestamp);
+
   const idArray: number[] = [];
-
-  let firstRow = true;
-
   batch.forEach((row: GeoviiteClientResultItem) => {
     idArray.push(row.id);
 
     //long
-    if (firstRow) {
-      longQueryArray.push(getSubtableUpdateQueryBeginning(system));
-    } else {
-      longQueryArray.push(` when id = `);
-    }
+    longQueryArray.push(` when id = `);
     longQueryArray.push(` then `);
     longValsArray.push(row.id);
     longValsArray.push(row.x);
 
     //lat
-    if (firstRow) {
-      latQueryArray.push(` END, geoviite_konvertoitu_lat = CASE when id = `);
-    } else {
-      latQueryArray.push(` when id = `);
-    }
+    latQueryArray.push(` when id = `);
     latQueryArray.push(` then `);
     latValsArray.push(row.id);
     latValsArray.push(row.y);
 
     //rataosuus_numero
-    if (firstRow) {
-      rataosuusNumeroQueryArray.push(
-        ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
-      );
-    } else {
-      rataosuusNumeroQueryArray.push(` when id = `);
-    }
+    rataosuusNumeroQueryArray.push(` when id = `);
     rataosuusNumeroQueryArray.push(` then `);
     rataosuusNumeroValsArray.push(row.id);
     rataosuusNumeroValsArray.push(row.ratanumero);
 
     //rataosuus_nimi
-    if (firstRow) {
-      rataosuusNimiQueryArray.push(
-        ` END, geoviite_konvertoitu_rataosuus_nimi = CASE when id = `,
-      );
-    } else {
-      rataosuusNimiQueryArray.push(` when id = `);
-    }
+    rataosuusNimiQueryArray.push(` when id = `);
     rataosuusNimiQueryArray.push(` then `);
     rataosuusNimiValsArray.push(row.id);
     rataosuusNimiValsArray.push(null);
 
     //rata_kilometri
-    if (firstRow) {
-      kmQueryArray.push(
-        ` END, geoviite_konvertoitu_rata_kilometri = CASE when id = `,
-      );
-    } else {
-      kmQueryArray.push(` when id = `);
-    }
+    kmQueryArray.push(` when id = `);
     kmQueryArray.push(` then `);
     kmValsArray.push(row.id);
     kmValsArray.push(row.ratakilometri);
 
     //rata_metrit
-    if (firstRow) {
-      mQueryArray.push(
-        ` END, geoviite_konvertoitu_rata_metrit= CASE when id = `,
-      );
-    } else {
-      mQueryArray.push(` when id = `);
-    }
+    mQueryArray.push(` when id = `);
     mQueryArray.push(` then `);
     mValsArray.push(row.id);
     let rata_metrit = '';
@@ -761,91 +824,49 @@ export function produceGeoviiteBatchUpdateSql(
     mValsArray.push(mPart);
 
     //raide_numero
-    if (firstRow) {
-      raideNumeroQueryArray.push(
-        ` END, geoviite_konvertoitu_raide_numero = CASE when id = `,
-      );
-    } else {
-      raideNumeroQueryArray.push(` when id = `);
-    }
+    raideNumeroQueryArray.push(` when id = `);
     raideNumeroQueryArray.push(` then `);
     raideNumeroValsArray.push(row.id);
     raideNumeroValsArray.push(null);
 
     //valimatka
-    if (firstRow) {
-      valimatkaQueryArray.push(` END, geoviite_valimatka= CASE when id = `);
-    } else {
-      valimatkaQueryArray.push(` when id = `);
-    }
+    valimatkaQueryArray.push(` when id = `);
     valimatkaQueryArray.push(` then `);
     valimatkaValsArray.push(row.id);
     valimatkaValsArray.push(row.valimatka);
 
     //sijaintiraide
-    if (firstRow) {
-      sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
-    } else {
-      sijRaideQueryArray.push(` when id = `);
-    }
+    sijRaideQueryArray.push(` when id = `);
     sijRaideQueryArray.push(` then `);
     sijRaideValsArray.push(row.id);
     sijRaideValsArray.push(row.sijaintiraide);
 
     //sijaintiraide_kuvaus
-    if (firstRow) {
-      sijRaideKuvQueryArray.push(
-        ` END, geoviite_sijaintiraide_kuvaus = CASE when id = `,
-      );
-    } else {
-      sijRaideKuvQueryArray.push(` when id = `);
-    }
+    sijRaideKuvQueryArray.push(` when id = `);
     sijRaideKuvQueryArray.push(` then `);
     sijRaideKuvValsArray.push(row.id);
     sijRaideKuvValsArray.push(row.sijaintiraide_kuvaus);
 
     //sijaintiraide_tyyppi
-    if (firstRow) {
-      sijRaideTyyppiQueryArray.push(
-        ` END, geoviite_sijaintiraide_tyyppi = CASE when id = `,
-      );
-    } else {
-      sijRaideTyyppiQueryArray.push(` when id = `);
-    }
+    sijRaideTyyppiQueryArray.push(` when id = `);
     sijRaideTyyppiQueryArray.push(` then `);
     sijRaideTyyppiValsArray.push(row.id);
     sijRaideTyyppiValsArray.push(row.sijaintiraide_tyyppi);
 
     //sijaintiraide_oid
-    if (firstRow) {
-      sijRaideOidQueryArray.push(
-        ` END, geoviite_sijaintiraide_oid = CASE when id = `,
-      );
-    } else {
-      sijRaideOidQueryArray.push(` when id = `);
-    }
+    sijRaideOidQueryArray.push(` when id = `);
     sijRaideOidQueryArray.push(` then `);
     sijRaideOidValsArray.push(row.id);
     sijRaideOidValsArray.push(row.sijaintiraide_oid);
 
     //ratanumero_oid
-    if (firstRow) {
-      ratanumeroOidQueryArray.push(
-        ` END, geoviite_ratanumero_oid = CASE when id = `,
-      );
-    } else {
-      ratanumeroOidQueryArray.push(` when id = `);
-    }
+    ratanumeroOidQueryArray.push(` when id = `);
     ratanumeroOidQueryArray.push(` then `);
     ratanumeroOidValsArray.push(row.id);
     ratanumeroOidValsArray.push(row.ratanumero_oid);
 
     //virhe
-    if (firstRow) {
-      virheQueryArray.push(` END, geoviite_virhe = CASE when id = `);
-    } else {
-      virheQueryArray.push(` when id = `);
-    }
+    virheQueryArray.push(` when id = `);
     virheQueryArray.push(` then `);
     virheValsArray.push(row.id);
     const virhe: string | null = row.virheet
@@ -856,16 +877,10 @@ export function produceGeoviiteBatchUpdateSql(
     virheValsArray.push(virhe);
 
     //updated_at
-    if (firstRow) {
-      timestampQueryArray.push(` END, geoviite_updated_at = CASE when id = `);
-    } else {
-      timestampQueryArray.push(` when id = `);
-    }
+    timestampQueryArray.push(` when id = `);
     timestampQueryArray.push(` then `);
     timestampValsArray.push(row.id);
     timestampValsArray.push(timestamp);
-
-    firstRow = false;
   });
 
   queryArray.push(...longQueryArray);
@@ -914,7 +929,7 @@ export function produceGeoviiteBatchUpdateSql(
   valsArray.push(...timestampValsArray);
 
   //WHERE part
-  firstRow = true;
+  let firstRow = true;
   idArray.forEach(id => {
     if (firstRow) {
       queryArray.push(` END WHERE id = `);
