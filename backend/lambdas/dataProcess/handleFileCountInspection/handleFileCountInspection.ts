@@ -1,4 +1,4 @@
-import { Context, S3Event, SQSEvent } from 'aws-lambda';
+import { Context, SQSEvent } from 'aws-lambda';
 import { log } from '../../../utils/logger';
 import { getEnvOrFail } from '../../../../utils';
 
@@ -15,6 +15,7 @@ function getLambdaConfigOrFail() {
   return {
     targetBucketName: getEnvOrFail('TARGET_BUCKET_NAME'),
     region: getEnvOrFail('REGION'),
+    raitaStackIdentifier: getEnvOrFail('RAITA_STACK_ID'),
   };
 }
 
@@ -46,18 +47,19 @@ export async function handleFileCountInspection(
       const resWithoutPNG = response.Contents?.filter(
         content => content.Key && !content.Key.endsWith('.png'),
       );
-      log.info(`FILES WITHOUT .PNG ${resWithoutPNG}`);
+
       s3BucketFileCount += resWithoutPNG?.length || 0;
       continuationToken = response.NextContinuationToken;
     } while (continuationToken);
 
+    const differenceInCounts = Math.abs(dbFileCount - s3BucketFileCount);
     log.info(
-      `DATABASE FILECOUNT: ${dbFileCount}, S3_BUCKET_FILECOUNT: ${s3BucketFileCount}`,
+      `DATABASE FILECOUNT: ${dbFileCount}, S3_BUCKET_FILECOUNT: ${s3BucketFileCount}, Difference: ${differenceInCounts}`,
     );
-    // if database and s3 filecount matches. DO NOTHING
-    if (dbFileCount === s3BucketFileCount) {
-      log.info('FILECOUNTS MATCHES');
-      return;
+
+    //this warning triggers alarm
+    if (differenceInCounts != 0) {
+      log.warn(`Filecounts mismatch!`);
     }
   } catch (err) {
     log.error(`An error occured while processing filecounts: ${err}`);
