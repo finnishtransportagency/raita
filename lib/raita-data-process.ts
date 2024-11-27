@@ -226,6 +226,19 @@ export class DataProcessStack extends NestedStack {
         resources: ['*'], // TODO: specify keys?
       }),
     );
+    // Create filecount inspector lambda and grant permissions
+    const handleFileCountEventFn = this.createFileCountEventHandler({
+      name: 'dp-handler-file-count-inspector',
+      targetBucket: this.inspectionDataBucket,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
+      raitaStackIdentifier,
+      vpc,
+      databaseEnvironmentVariables,
+      zipHandlerQueue,
+      prismaLambdaLayer,
+    });
+
+    this.inspectionDataBucket.grantRead(handleFileCountEventFn);
 
     // Create zip handler lambda and grant permissions
     const handleReceptionFileEventFn = this.createReceptionFileEventHandler({
@@ -1289,5 +1302,49 @@ export class DataProcessStack extends NestedStack {
       zipHandlerService,
       zipHandlerQueue,
     };
+  }
+  private createFileCountEventHandler({
+    name,
+    targetBucket,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    databaseEnvironmentVariables,
+    prismaLambdaLayer,
+  }: {
+    name: string;
+    targetBucket: s3.Bucket;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    zipHandlerQueue: Queue;
+    prismaLambdaLayer: lambda.LayerVersion;
+  }) {
+    const fileCountHandler = new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1500,
+      timeout: Duration.seconds(180),
+      runtime: Runtime.NODEJS_20_X,
+      handler: 'handleFileCountInspection',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleFileCountInspection/handleFileCountInspection.ts`,
+      ),
+      environment: {
+        TARGET_BUCKET_NAME: targetBucket.bucketName,
+        REGION: this.region,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+
+    return fileCountHandler;
   }
 }
