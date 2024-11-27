@@ -3,6 +3,8 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
@@ -1399,7 +1401,17 @@ export class DataProcessStack extends NestedStack {
         subnets: vpc.privateSubnets,
       },
     });
+    // Create an EventBridge rule to trigger the Lambda weekly
+    const weeklyRule = new events.Rule(this, `${name}WeeklyScheduleRule`, {
+      schedule: events.Schedule.cron({
+        minute: '0', // At the 0th minute
+        hour: '8', // At 8:00 AM
+        weekDay: '1', // On Monday (1 represents Monday)
+      }),
+    });
 
+    // Add the Lambda as the target of the rule
+    weeklyRule.addTarget(new targets.LambdaFunction(fileCountHandler));
     return fileCountHandler;
   }
 }
