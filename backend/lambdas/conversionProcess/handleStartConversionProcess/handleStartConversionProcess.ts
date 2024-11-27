@@ -4,26 +4,33 @@ import { LambdaEvent, lambdaRequestTracker } from 'pino-lambda';
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 
-import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
 import { asyncWait } from '../../../utils/common';
 import { ConversionMessage } from '../util';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { Prisma } from '@prisma/client';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import {
+  DBConnection,
+  getDBConnection,
+} from '../../dataProcess/csvCommon/db/dbUtil';
 
 const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
 
-    const prisma = getPrismaClient();
+    const dbConnection: Promise<DBConnection> = getDBConnection();
+
     const config = getLambdaConfigOrFail();
     const sqsClient = new SQSClient({});
-
+    const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
     return {
       withRequest,
-      prisma,
+      dbConnection,
       config,
       sqsClient,
+      adminLogger,
     };
   } catch (error) {
     logLambdaInitializationError.error(
@@ -34,7 +41,7 @@ const init = () => {
   }
 };
 
-const { withRequest, prisma, config, sqsClient } = init();
+const { withRequest, dbConnection, config, sqsClient, adminLogger } = init();
 const pageCount = 1000;
 
 const conversionBatchSize = 50000;
@@ -46,7 +53,7 @@ type ManualTriggerEvent = {
 
 type ConversionEvent = ManualTriggerEvent | SQSEvent;
 
-type ConversionStartMessage = { id: number };
+type ConversionStartMessage = { reportId: number; invocationId: string };
 
 /**
  * Handle conversion process:
@@ -60,22 +67,29 @@ export async function handleStartConversionProcess(
 ): Promise<void> {
   try {
     withRequest(event, context);
-
-    log.info('Start conversion process');
-    const prismaClient = await prisma;
-
     const queueTrigger = event.Records && event.Records.length;
+
+    // init logger first with placeholder invocationId
+    let invocationId = 'INVOCATION_ID_NOT_FOUND_YET';
+    await adminLogger.init('conversion-process', invocationId);
+
+    const prismaClient = (await dbConnection).prisma;
+
     let whereInput: Prisma.raporttiWhereInput;
     if (queueTrigger) {
-      log.info('Trigger from queue');
       const typedEvent = event as SQSEvent;
-      const raporttiIds = typedEvent.Records.map(record => {
+      // there should be only one event at a time
+      // adminLogging can go to wrong invocationId if there are multiple
+      let raporttiIds: number[] = [];
+      for (let i = 0; i < typedEvent.Records.length; i++) {
+        const record = typedEvent.Records[i];
         const body: ConversionStartMessage = JSON.parse(record.body);
-        if (!body.id) {
+        if (!body.reportId) {
           throw new Error('No key in sqs message');
         }
-        return body.id;
-      });
+        raporttiIds.push(body.reportId);
+        invocationId = body.invocationId;
+      }
       whereInput = {
         id: {
           in: raporttiIds,
@@ -83,10 +97,10 @@ export async function handleStartConversionProcess(
       };
     } else {
       const typedEvent = event as ManualTriggerEvent;
+      invocationId = 'Manual Trigger';
       if (typedEvent.type !== 'ManualTrigger') {
         throw new Error('From trigger event format');
       }
-      log.info('Trigger from manual event');
       whereInput = {
         geoviite_status: {
           equals: ConversionStatus.READY_FOR_CONVERSION,
@@ -96,12 +110,12 @@ export async function handleStartConversionProcess(
         },
       };
     }
+    // init logger again with correct invocationId
+    await adminLogger.init('conversion-process', invocationId);
 
     const totalCount = await prismaClient.raportti.count({
       where: whereInput,
     });
-
-    log.info({ totalCount }, 'Adding keys to queue');
 
     for (
       let currentIndex = 0;
@@ -146,6 +160,7 @@ export async function handleStartConversionProcess(
             batchSize: conversionBatchSize,
             batchIndex,
             orderBy: 'id',
+            invocationId,
           };
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
@@ -171,15 +186,18 @@ export async function handleStartConversionProcess(
           },
         },
       });
-      log.info({ count: successfulKeys.length }, 'Updated status');
       if (failedKeys.length) {
-        log.error({ failedKeys }); // TODO: do something else to these?
+        log.error({ failedKeys });
       }
     }
   } catch (err) {
     log.error(err);
-    log.error({
-      message: 'An error occured while processing events',
-    });
+    log.error(
+      {
+        event,
+      },
+      'Error starting conversion',
+    );
+    await adminLogger.error('Virhe viitekehysmuunosprosessin käynnistämisessä');
   }
 }

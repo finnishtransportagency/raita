@@ -3,7 +3,8 @@ export type AdminLogSource =
   | 'data-inspection'
   | 'data-reception'
   | 'data-csv'
-  | 'data-csv-mass-import';
+  | 'data-csv-mass-import'
+  | 'conversion-process';
 
 export type AdminLogLevel = 'info' | 'warn' | 'error';
 

@@ -15,17 +15,18 @@ import {
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { lambdaRequestTracker } from 'pino-lambda';
-import { getPrismaClient } from '../../../utils/prismaClient';
+import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 
 function getLambdaConfigOrFail() {
   return {
     receptionBucket: getEnvOrFail('RECEPTION_BUCKET', 'handleDeleteRequest'),
     inspectionBucket: getEnvOrFail('INSPECTION_BUCKET', 'handleDeleteRequest'),
-    region: getEnvOrFail('REGION', 'handleDeleteRequest'),
   };
 }
 
-const adminLogger: IAdminLogger = new PostgresLogger();
+const dbConnection = getDBConnection();
+
+const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
 const setTimeoutPromise = (delay: number) =>
   new Promise((resolve, reject) => {
@@ -33,7 +34,6 @@ const setTimeoutPromise = (delay: number) =>
   });
 
 const withRequest = lambdaRequestTracker();
-const prisma = getPrismaClient();
 
 /**
  * Handle an incoming delete request
@@ -47,8 +47,7 @@ export async function handleDeleteRequest(
   try {
     const { body } = event;
     const s3 = new S3();
-    const { receptionBucket, inspectionBucket, metadataIndex, region } =
-      getLambdaConfigOrFail();
+    const { receptionBucket, inspectionBucket } = getLambdaConfigOrFail();
     const user = await getUser(event);
     await validateAdminUser(user);
     const requestBody = body && JSON.parse(body);
@@ -232,8 +231,8 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
 async function deleteFromPostgres(prefix: string) {
   try {
     const response = await (
-      await prisma
-    ).raportti.deleteMany({
+      await dbConnection
+    ).prisma.raportti.deleteMany({
       where: { key: { startsWith: prefix } },
     });
     return response.count;

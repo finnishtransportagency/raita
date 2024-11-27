@@ -139,6 +139,7 @@ export async function handleCSVFileEvent(
               await sendToConversionQueue(
                 reportId,
                 config.readyForConversionQueueUrl,
+                invocationId,
               );
             }
             return {
@@ -188,13 +189,16 @@ export async function handleCSVFileEvent(
   }
 }
 
-async function sendToConversionQueue(reportId: number, queueUrl: string) {
-  // TODO should we use key instead of database id?
+async function sendToConversionQueue(
+  reportId: number,
+  queueUrl: string,
+  invocationId: string,
+) {
   const sqsClient = new SQSClient({});
   await sqsClient.send(
     new SendMessageCommand({
       QueueUrl: queueUrl,
-      MessageBody: JSON.stringify({ id: reportId }),
+      MessageBody: JSON.stringify({ reportId, invocationId }),
     }),
   );
 }
