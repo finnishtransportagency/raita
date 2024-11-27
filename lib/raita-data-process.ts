@@ -9,7 +9,12 @@ import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import {
+  FilterPattern,
+  ILogGroup,
+  LogGroup,
+  RetentionDays,
+} from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
@@ -33,6 +38,7 @@ import {
   ComparisonOperator,
   CompositeAlarm,
   MathExpression,
+  Metric,
   Stats,
   TreatMissingData,
 } from 'aws-cdk-lib/aws-cloudwatch';
@@ -69,6 +75,7 @@ export class DataProcessStack extends NestedStack {
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
   public readonly readyForGeoviiteConversionQueue: Queue;
+  public readonly handleFileCountEventFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -239,6 +246,11 @@ export class DataProcessStack extends NestedStack {
     });
 
     this.inspectionDataBucket.grantRead(handleFileCountEventFn);
+
+    const fileCountMismatchAlarms = this.createFileCountInspectionAlarms(
+      handleFileCountEventFn.logGroup,
+      raitaStackIdentifier,
+    );
 
     // Create zip handler lambda and grant permissions
     const handleReceptionFileEventFn = this.createReceptionFileEventHandler({
@@ -1142,6 +1154,48 @@ export class DataProcessStack extends NestedStack {
     ];
   }
 
+  /* FileCount Mismatch Alarm */
+  private createFileCountInspectionAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const fileCountMisMatchErrorFilter = logGroup.addMetricFilter(
+      'filecount-mismatch-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.any(
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          ),
+          FilterPattern.stringValue('$.level', '=', 'warn'),
+          FilterPattern.stringValue('$.msg', '=', 'Filecounts mismatch!'),
+        ),
+        metricName: `filecount-mismatch-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const fileCountInspectorAlarm = new Alarm(
+      this,
+      'filecount-inspector-mismatch-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `filecount-inspector-mismatch-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm for mismatched filecount between database and s3 buckets',
+        metric: fileCountMisMatchErrorFilter.metric({
+          label: `Inspection any errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    return fileCountInspectorAlarm;
+  }
+
   /**
    * Helper to create bucket policies
    */
@@ -1334,6 +1388,7 @@ export class DataProcessStack extends NestedStack {
       environment: {
         TARGET_BUCKET_NAME: targetBucket.bucketName,
         REGION: this.region,
+        RAITA_STACK_ID: raitaStackIdentifier,
         ...databaseEnvironmentVariables,
       },
       role: lambdaRole,
