@@ -243,7 +243,6 @@ export class DataProcessStack extends NestedStack {
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
-      zipHandlerQueue,
       prismaLambdaLayer,
     });
 
@@ -1374,7 +1373,6 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier: string;
     vpc: IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
-    zipHandlerQueue: Queue;
     prismaLambdaLayer: lambda.LayerVersion;
   }) {
     const fileCountHandler = new NodejsFunction(this, name, {
