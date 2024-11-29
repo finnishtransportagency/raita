@@ -24,6 +24,7 @@ import {
 } from './raitaResourceCreators';
 import {
   getDatabaseEnvironmentVariables,
+  isDevelopmentMainStack,
   isProductionStack,
   prismaBundlingOptions,
 } from './utils';
@@ -160,43 +161,49 @@ export class DataProcessStack extends NestedStack {
       's3:GetObjectVersion',
       's3:GetObjectAcl',
     ];
-    // Grant sftpUser full access to data reception bucket
-    const sftpReceivePolicy = this.createBucketPolicy({
-      policyAccountId: sftpPolicyAccountId,
-      policyUserId: sftpPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+    // Grant access to sftp users from SOA offices AWS account. In prod and main only
+    if (
+      isDevelopmentMainStack(this.stackId, raitaEnv) ||
+      isProductionStack(this.stackId, raitaEnv)
+    ) {
+      // Grant sftpUser full access to data reception bucket
+      const sftpReceivePolicy = this.createBucketPolicy({
+        policyAccountId: sftpPolicyAccountId,
+        policyUserId: sftpPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
-    // Grant RAITA developer SFTP user full access to the bucket
-    const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
-      policyAccountId: sftpPolicyAccountId,
-      policyUserId: sftpRaitaDeveloperPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(
-      sftpRaitaDeveloperUserBucketPolicy,
-    );
+      // Grant RAITA developer SFTP user full access to the bucket
+      const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
+        policyAccountId: sftpPolicyAccountId,
+        policyUserId: sftpRaitaDeveloperPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(
+        sftpRaitaDeveloperUserBucketPolicy,
+      );
 
-    // Grant SOA-offices väylä role full access to data reception bucket
-    const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
-      policyAccountId: soaPolicyAccountId,
-      policyUserId: vaylaPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
+      // Grant SOA-offices väylä role full access to data reception bucket
+      const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
+        policyAccountId: soaPolicyAccountId,
+        policyUserId: vaylaPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
-    // Grant SOA-offices loram role read access to data reception bucket
-    const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
-      policyAccountId: soaPolicyAccountId,
-      policyUserId: loramPolicyUserId,
-      resources: receptionBucketResources,
-      actions: readAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+      // Grant SOA-offices loram role read access to data reception bucket
+      const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
+        policyAccountId: soaPolicyAccountId,
+        policyUserId: loramPolicyUserId,
+        resources: receptionBucketResources,
+        actions: readAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+    }
 
     // Create ECS cluster resources for zip extraction task
     const {
@@ -1242,6 +1249,7 @@ export class DataProcessStack extends NestedStack {
           S3_TARGET_BUCKET: targetBucket.bucketName,
           ...databaseEnvironmentVariables,
         },
+        readonlyRootFilesystem: true,
       },
     );
 
