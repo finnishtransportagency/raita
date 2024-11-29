@@ -13,7 +13,7 @@ import {
   DBConnection,
   getDBConnection,
   getMittausSubtable,
-  produceGeoviiteBatchUpdateSql,
+  produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateStatementInitSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -98,6 +98,32 @@ export async function handleGeoviiteConversionProcess(
     // how many to handle in this invocation
     const mittausCount = Math.min(remainingMittausCount, message.batchSize);
     log.trace({ mittausCount, remainingMittausCount, totalMittausCount });
+
+    // Save result in smaller batches.
+    // We use the largest value that works with prepared statement to reduce db call count.
+    const saveBatchSize = 1000;
+
+    const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
+      saveBatchSize,
+      system,
+    );
+
+    try {
+      log.info({updateSql},'start geoviite StatementInit update');
+      await prismaClient.$executeRaw(updateSql);
+      log.info('done geoviite StatementInit update');
+    } catch (err) {
+      log.error(
+        { updateSql, err },
+        'update error at produceGeoviiteBatchUpdateStatementInitSql '
+      );
+      throw err;
+    }
+
+
+
+
+
     // loop through array in batches: get results for batch and save to db
     for (
       let requestIndex = 0;
@@ -132,9 +158,7 @@ export async function handleGeoviiteConversionProcess(
         log.error('Size mismatch');
       }
 
-      // Save result in smaller batches.
-      // We use the largest value that works with prepared statement to reduce db call count.
-      const saveBatchSize = 250;
+
 
       // one timestamp for all
       const timestamp = new Date();

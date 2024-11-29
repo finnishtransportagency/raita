@@ -810,10 +810,12 @@ export function produceGeoviiteBatchUpdateSql(
     mValsArray.push(row.id);
     let rata_metrit = '';
     if (row.ratametri || row.ratametri == 0) {
-      rata_metrit = `${row.ratametri}`;
-    }
-    if (row.ratametri_desimaalit) {
-      rata_metrit = `${rata_metrit}.${row.ratametri_desimaalit}`;
+      rata_metrit = `${row.ratametri}.`;
+      if (row.ratametri_desimaalit  || row.ratametri_desimaalit == 0) {
+        rata_metrit = `${row.ratametri}.${row.ratametri_desimaalit}`;
+      }
+    } else if (row.ratametri_desimaalit) {
+      rata_metrit = `0.${row.ratametri_desimaalit}`;
     }
     const mPart: number | null = rata_metrit ? Number(rata_metrit) : null;
     mValsArray.push(mPart);
@@ -940,6 +942,29 @@ export function produceGeoviiteBatchUpdateSql(
 
   return Prisma.sql(queryArray, ...valsArray);
 }
+
+
+export function produceGeoviiteBatchUpdateStatementInitSql(
+  saveBatchSize: number,
+  system: string | null,
+) {
+
+  const batch: GeoviiteClientResultItem[] = [];
+  for(let index = 0; index < saveBatchSize; index++){
+    const item:GeoviiteClientResultItem ={
+      id: -1,
+      ratametri: 123,
+      ratametri_desimaalit: 231,
+      valimatka: 124.124,
+      x: 999.999,
+      y: 999.999,
+    } ;
+    batch.push(item);
+  }
+  const sql = produceGeoviiteBatchUpdateSql(batch, new Date(2024, 12, 24),system);
+  return sql;
+}
+
 
 export async function getMittausSubtable(system: string | null, prisma: any) {
   switch (system) {
