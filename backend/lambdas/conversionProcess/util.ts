@@ -14,4 +14,8 @@ export type ConversionMessage = {
    * Sort by which key to determine index
    */
   orderBy: 'id';
+  /**
+   * For admin logging
+   */
+  invocationId: string;
 };

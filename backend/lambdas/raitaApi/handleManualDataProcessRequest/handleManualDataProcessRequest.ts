@@ -25,6 +25,7 @@ import {
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 
 function getLambdaConfigOrFail() {
   return {
@@ -39,7 +40,8 @@ function getLambdaConfigOrFail() {
   };
 }
 
-const adminLogger: IAdminLogger = new PostgresLogger();
+const dbConnection = getDBConnection();
+const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
 const setTimeoutPromise = (delay: number) =>
   new Promise((resolve, reject) => {

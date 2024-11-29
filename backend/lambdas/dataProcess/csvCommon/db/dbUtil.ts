@@ -33,9 +33,6 @@ export type DBConnection = {
 
   prisma: PrismaClient;
 };
-export type PostgresDBConnection = {
-  schema: string;
-};
 
 export async function writeRowsToDB(
   parsedCSVRows: any[],

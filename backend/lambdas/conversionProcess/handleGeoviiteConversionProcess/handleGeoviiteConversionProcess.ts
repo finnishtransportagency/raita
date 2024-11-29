@@ -3,7 +3,6 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 
-import { getPrismaClient } from '../../../utils/prismaClient';
 import { ConversionMessage } from '../util';
 import {
   GeoviiteClient,
@@ -11,21 +10,26 @@ import {
 } from '../../geoviite/geoviiteClient';
 import { getEnvOrFail } from '../../../../utils';
 import {
+  DBConnection,
+  getDBConnection,
   getMittausSubtable,
   produceGeoviiteBatchUpdateSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
-import { Prisma } from '@prisma/client';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
+import { IAdminLogger } from '../../../utils/adminLog/types';
+import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
 
 const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
 
-    const prisma = getPrismaClient();
+    const dbConnection: Promise<DBConnection> = getDBConnection();
+    const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
     return {
       withRequest,
-      prisma,
+      adminLogger,
+      dbConnection,
     };
   } catch (error) {
     logLambdaInitializationError.error(
@@ -36,7 +40,7 @@ const init = () => {
   }
 };
 
-const { withRequest, prisma } = init();
+const { withRequest, dbConnection, adminLogger } = init();
 
 /**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
@@ -45,20 +49,24 @@ export async function handleGeoviiteConversionProcess(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
-  let key = '';
+  let message: ConversionMessage | null = null;
   const geoviiteHostname = getEnvOrFail('GEOVIITE_HOSTNAME');
   const geoviiteClient = new GeoviiteClient(geoviiteHostname);
-  const prismaClient = await prisma;
+  const prismaClient = (await dbConnection).prisma;
   try {
     withRequest(event, context);
     const sqsRecords = event.Records;
     const sqsRecord = sqsRecords[0]; // assume only one event at a time
 
-    const message: ConversionMessage = JSON.parse(sqsRecord.body);
-    key = message.key;
+    message = JSON.parse(sqsRecord.body);
+    if (!message) {
+      throw new Error('Error parsing JSON');
+    }
     const id = message.id;
     const system = message.system;
-    log.trace({ message }, 'Start conversion');
+
+    const invocationId = message.invocationId;
+    await adminLogger.init('conversion-process', invocationId);
 
     // how many to handle in this invocation
     const invocationTotalBatchSize = message.batchSize;
@@ -146,14 +154,11 @@ export async function handleGeoviiteConversionProcess(
           system,
         );
         try {
-          log.trace('start geoviite db update');
           await prismaClient.$executeRaw(updateSql);
-          log.trace('done geoviite db update');
         } catch (err) {
           log.error(updateSql);
           throw err;
         }
-        // TODO: check errors?
       }
     }
 
@@ -170,18 +175,29 @@ export async function handleGeoviiteConversionProcess(
     });
   } catch (err) {
     log.error(err);
-    log.error({
-      message: 'Error in conversion process',
-      key,
-    });
-    await prismaClient.raportti.updateMany({
-      where: {
-        key,
+    log.error(
+      {
+        message: message,
       },
-      data: {
-        geoviite_status: ConversionStatus.ERROR,
-        geoviite_update_at: new Date().toISOString(),
-      },
-    });
+      'Error in conversion process',
+    );
+    if (message?.key) {
+      await prismaClient.raportti.updateMany({
+        where: {
+          key: message.key,
+        },
+        data: {
+          geoviite_status: ConversionStatus.ERROR,
+          geoviite_update_at: new Date().toISOString(),
+        },
+      });
+      await adminLogger.error(
+        `Virhe viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+      );
+    } else {
+      await adminLogger.error(
+        `Virhe viitekehysmuuntimen prosessissa tiedostolla: tuntematon tiedosto`,
+      );
+    }
   }
 }

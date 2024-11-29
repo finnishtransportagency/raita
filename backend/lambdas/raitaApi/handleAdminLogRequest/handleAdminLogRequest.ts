@@ -56,9 +56,13 @@ export async function handleAdminLogsRequest(
     let parsedSources: AdminLogSource[];
     if (
       splitSources.filter(source =>
-        ['delete-process', 'data-inspection', 'data-reception','data-csv'].includes(
-          source,
-        ),
+        [
+          'delete-process',
+          'data-inspection',
+          'data-reception',
+          'data-csv',
+          'conversion-process',
+        ].includes(source),
       ).length === splitSources.length
     ) {
       parsedSources = splitSources as AdminLogSource[];

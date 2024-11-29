@@ -1,4 +1,3 @@
-import { ParseValueResult } from '../../../../types';
 import {
   log,
   logCSVDBException,
@@ -32,10 +31,7 @@ import { parseCSVContent } from 'zod-csv';
 import { Readable } from 'stream';
 import * as readline from 'readline';
 import { KeyData } from '../../../utils';
-import { IAdminLogger } from '../../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
-
-const adminLogger: IAdminLogger = new PostgresLogger();
 
 function until(conditionFunction: () => any) {
   const poll = (resolve: () => void) => {
@@ -355,6 +351,9 @@ export async function parseCSVFileStream(
   invocationId: string = 'DEFAULT_ID_FOR_TESTS',
 ): Promise<'error' | 'full-file-success' | 'chunk-success'> {
   log.debug('parseCSVFileStream: ' + keyData.fileBaseName);
+  // init new adminLogger using the same dbConnection
+  // TODO: could this be done in a cleaner way?
+  const adminLogger = new PostgresLogger(Promise.resolve(dbConnection));
   await adminLogger.init('data-csv', invocationId);
   const fileBaseName = keyData.fileBaseName;
   const { reportId, fileNamePrefix } =
