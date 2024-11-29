@@ -332,13 +332,14 @@ const readDbToReadable = async (
     .map(res => res.system!);
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
-  const defaultSelectedColumns = [
-    'lat',
-    'long',
-    'track',
-    'geoviite_konvertoitu_lat',
-    'geoviite_konvertoitu_long',
-  ];
+  const defaultSelectedColumns = ['lat', 'long', 'track'];
+
+  if (mittausCombinationLogic === 'GEOVIITE_RATAOSOITE_ROUNDED') {
+    defaultSelectedColumns.push(
+      'geoviite_konvertoitu_lat',
+      'geoviite_konvertoitu_long',
+    );
+  }
 
   const outputStream = new PassThrough();
   outputStream.pause();
