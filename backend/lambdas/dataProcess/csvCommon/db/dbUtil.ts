@@ -771,7 +771,9 @@ export function produceGeoviiteBatchUpdateSql(
   timestampValsArray.push(timestamp);
 
   const idArray: number[] = [];
+  let i = 0;
   batch.forEach((row: GeoviiteClientResultItem) => {
+    i++;
     idArray.push(row.id);
 
     //long
@@ -813,7 +815,11 @@ export function produceGeoviiteBatchUpdateSql(
       rata_metrit = `${row.ratametri}.`;
       if (row.ratametri_desimaalit  || row.ratametri_desimaalit == 0) {
         rata_metrit = `${row.ratametri}.${row.ratametri_desimaalit}`;
+        if(row.ratametri_desimaalit == 0){
+          log.warn("no decimals metres: "  + i);
+        }
       }
+
     } else if (row.ratametri_desimaalit) {
       rata_metrit = `0.${row.ratametri_desimaalit}`;
     }
