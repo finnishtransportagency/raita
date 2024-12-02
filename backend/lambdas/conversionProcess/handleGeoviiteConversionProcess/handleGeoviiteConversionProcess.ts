@@ -101,7 +101,7 @@ export async function handleGeoviiteConversionProcess(
 
     // Save result in smaller batches.
     // We use the largest value that works with prepared statement to reduce db call count.
-    const saveBatchSize = 1000;
+    const saveBatchSize = 20;
 
     const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
       saveBatchSize,
@@ -109,16 +109,24 @@ export async function handleGeoviiteConversionProcess(
     );
 
     try {
-      log.info({updateSql},'start geoviite StatementInit update');
+      log.trace('start geoviite StatementInit update');
       await prismaClient.$executeRaw(updateSql);
-      log.info('done geoviite StatementInit update');
+      log.trace('done geoviite StatementInit update');
     } catch (err) {
       log.error(
-        { updateSql, err },
-        'update error at produceGeoviiteBatchUpdateStatementInitSql '
+        { err },
+        'StatementInit error at invocationBatchIndex: ' +
+        invocationTotalBatchIndex
       );
+      log.error(
+        { updateSql });
       throw err;
     }
+
+    log.info(
+      'StatementInit success at invocationBatchIndex: ' +
+      invocationTotalBatchIndex
+    );
 
 
 
@@ -180,9 +188,29 @@ export async function handleGeoviiteConversionProcess(
         try {
           await prismaClient.$executeRaw(updateSql);
         } catch (err) {
-          log.error(updateSql);
+          log.error(
+            { err },
+            'update error at invocationBatchIndex: ' +
+            invocationTotalBatchIndex +
+            ' requestIndex:' +
+            requestIndex +
+            ' saveBatchIndex:' +
+            saveBatchIndex,
+          );
+          log.error(
+            { updateSql });
           throw err;
         }
+
+        log.info(
+          ' success at invocationBatchIndex: ' +
+          invocationTotalBatchIndex +
+          ' requestIndex:' +
+          requestIndex +
+          ' saveBatchIndex:' +
+          saveBatchIndex,
+        );
+        // TODO: check errors?
       }
     }
 
