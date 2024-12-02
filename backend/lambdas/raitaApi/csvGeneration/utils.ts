@@ -64,7 +64,7 @@ export const mapMittausRowsToCsvRow = (
     header:
       mittausCombinationLogic === 'MEERI_RATAOSOITE'
         ? 'Meeri rataosoite'
-        : 'Geoviite rataosoite pyöristetty',
+        : 'Viitekehysmuunnin korjattu rataosoite pyöristetty',
     value: mainRataosoite ?? '',
   };
 
@@ -90,13 +90,13 @@ export const mapMittausRowsToCsvRow = (
           value: mittaus ? getRataosoite(mittaus) ?? '' : '',
         });
         vals.push({
-          header: `Geoviite rataosoite ${date}`,
+          header: `Viitekehysmuunnin korjattu rataosoite ${date}`,
           value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
         });
         break;
       case 'MEERI_RATAOSOITE':
         vals.push({
-          header: `Geoviite rataosoite ${date}`,
+          header: `Viitekehysmuunnin korjattu rataosoite ${date}`,
           value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
         });
         break;
@@ -107,7 +107,14 @@ export const mapMittausRowsToCsvRow = (
       const mittausAsObj: { [key: string]: any } = { ...mittaus };
 
       vals.push({
-        header: `${columnName} ${date}`,
+        header: `${
+          columnName.startsWith('geoviite_konvertoitu')
+            ? columnName.replace(
+                'geoviite_konvertoitu',
+                'viitekehysmuunnin korjattu',
+              )
+            : columnName
+        } ${date}`,
         value: convertPrismaValueToCsvValue(
           columnName,
           mittausAsObj[columnName],

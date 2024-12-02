@@ -213,7 +213,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '01.01.2023',
       },
       {
-        header: 'Geoviite rataosoite 01.01.2023',
+        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2023',
         value: '1+0001.01',
       },
       {
@@ -229,7 +229,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '17.10.2024',
       },
       {
-        header: 'Geoviite rataosoite 17.10.2024',
+        header: 'Viitekehysmuunnin korjattu rataosoite 17.10.2024',
         value: '1+0001.01',
       },
       {
@@ -276,7 +276,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '01.01.2022',
       },
       {
-        header: 'Geoviite rataosoite 01.01.2022',
+        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2022',
         value: '',
       },
       {
@@ -292,7 +292,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '01.01.2023',
       },
       {
-        header: 'Geoviite rataosoite 01.01.2023',
+        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2023',
         value: '1+0001.01',
       },
       {
@@ -308,7 +308,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '17.10.2024',
       },
       {
-        header: 'Geoviite rataosoite 17.10.2024',
+        header: 'Viitekehysmuunnin korjattu rataosoite 17.10.2024',
         value: '1+0001.01',
       },
       {
@@ -377,7 +377,7 @@ describe('mapMittausRowsToCsvRows', () => {
     );
     expect(res).toEqual([
       {
-        header: 'Geoviite rataosoite pyöristetty',
+        header: 'Viitekehysmuunnin korjattu rataosoite pyöristetty',
         value: '1+0001.00',
       },
       {
@@ -389,7 +389,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '1+0001.00',
       },
       {
-        header: 'Geoviite rataosoite 01.01.2023',
+        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2023',
         value: '1+0001.12',
       },
       {
@@ -409,7 +409,7 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '1+0001.00',
       },
       {
-        header: 'Geoviite rataosoite 17.10.2024',
+        header: 'Viitekehysmuunnin korjattu rataosoite 17.10.2024',
         value: '1+0000.88',
       },
       {
@@ -470,7 +470,7 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
@@ -503,7 +503,7 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024;date;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
@@ -535,7 +535,7 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
@@ -570,7 +570,7 @@ describe('writeDbChunkToStream with GEOVIITE_RATAOSOITE_ROUNDED', () => {
       'GEOVIITE_RATAOSOITE_ROUNDED',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Geoviite rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Viitekehysmuunnin korjattu rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
@@ -601,7 +601,7 @@ describe('writeDbChunkToStream with GEOVIITE_RATAOSOITE_ROUNDED', () => {
       'GEOVIITE_RATAOSOITE_ROUNDED',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Geoviite rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Geoviite rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Geoviite rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Viitekehysmuunnin korjattu rataosoite pyöristetty;date;Meeri rataosoite 01.01.2024;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Meeri rataosoite 02.01.2024;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
