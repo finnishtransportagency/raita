@@ -101,7 +101,7 @@ export async function handleGeoviiteConversionProcess(
 
     // Save result in smaller batches.
     // We use the largest value that works with prepared statement to reduce db call count.
-    const saveBatchSize = 1000;
+    const saveBatchSize = 500;
 
     const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
       saveBatchSize,
