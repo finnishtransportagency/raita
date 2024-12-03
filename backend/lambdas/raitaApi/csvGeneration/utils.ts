@@ -94,12 +94,6 @@ export const mapMittausRowsToCsvRow = (
           value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
         });
         break;
-      case 'MEERI_RATAOSOITE':
-        vals.push({
-          header: `Viitekehysmuunnin korjattu rataosoite ${date}`,
-          value: mittaus ? getGeoviiteRataosoite(mittaus) ?? '' : '',
-        });
-        break;
       default:
         break;
     }
@@ -111,7 +105,7 @@ export const mapMittausRowsToCsvRow = (
           columnName.startsWith('geoviite_konvertoitu')
             ? columnName.replace(
                 'geoviite_konvertoitu',
-                'viitekehysmuunnin korjattu',
+                'viitekehysmuunnin_korjattu',
               )
             : columnName
         } ${date}`,

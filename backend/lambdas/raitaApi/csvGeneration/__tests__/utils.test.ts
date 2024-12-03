@@ -213,10 +213,6 @@ describe('mapMittausRowsToCsvRows', () => {
         value: '01.01.2023',
       },
       {
-        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2023',
-        value: '1+0001.01',
-      },
-      {
         header: 'siksak_1 01.01.2023',
         value: '2',
       },
@@ -228,10 +224,7 @@ describe('mapMittausRowsToCsvRows', () => {
         header: 'date',
         value: '17.10.2024',
       },
-      {
-        header: 'Viitekehysmuunnin korjattu rataosoite 17.10.2024',
-        value: '1+0001.01',
-      },
+
       {
         header: 'siksak_1 17.10.2024',
         value: '1',
@@ -275,10 +268,7 @@ describe('mapMittausRowsToCsvRows', () => {
         header: 'date',
         value: '01.01.2022',
       },
-      {
-        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2022',
-        value: '',
-      },
+
       {
         header: 'siksak_1 01.01.2022',
         value: '',
@@ -291,10 +281,7 @@ describe('mapMittausRowsToCsvRows', () => {
         header: 'date',
         value: '01.01.2023',
       },
-      {
-        header: 'Viitekehysmuunnin korjattu rataosoite 01.01.2023',
-        value: '1+0001.01',
-      },
+
       {
         header: 'siksak_1 01.01.2023',
         value: '2',
@@ -307,10 +294,7 @@ describe('mapMittausRowsToCsvRows', () => {
         header: 'date',
         value: '17.10.2024',
       },
-      {
-        header: 'Viitekehysmuunnin korjattu rataosoite 17.10.2024',
-        value: '1+0001.01',
-      },
+
       {
         header: 'siksak_1 17.10.2024',
         value: '1',
@@ -470,11 +454,11 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      '1+0001.00;01.01.2024;1+0001.01;1;12;02.01.2024;1+0001.01;2;123\r\n',
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledTimes(2);
@@ -503,15 +487,15 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      '1+0001.00;01.01.2024;1+0001.01;1;12;02.01.2024;1+0001.01;2;123;02.01.2024;;;\r\n',
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123;02.01.2024;;\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      '123+0001.00;01.01.2024;;;;02.01.2024;;;;02.01.2024;123+0001.00;2;123\r\n',
+      '123+0001.00;01.01.2024;;;02.01.2024;;;02.01.2024;2;123\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledTimes(3);
@@ -535,15 +519,15 @@ describe('writeDbChunkToStream with MEERI_RATAOSOITE', () => {
       'MEERI_RATAOSOITE',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      'Meeri rataosoite;date;Viitekehysmuunnin korjattu rataosoite 01.01.2024;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;Viitekehysmuunnin korjattu rataosoite 02.01.2024;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
+      'Meeri rataosoite;date;siksak_1 01.01.2024;korkeus_1 01.01.2024;date;siksak_1 02.01.2024;korkeus_1 02.01.2024\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      '1+0001.00;01.01.2024;1+0001.01;1;12;02.01.2024;1+0001.01;2;123\r\n',
+      '1+0001.00;01.01.2024;1;12;02.01.2024;2;123\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledWith(
-      '1+0001.00;01.01.2024;1+0001.01;1;12;02.01.2024;;;\r\n',
+      '1+0001.00;01.01.2024;1;12;02.01.2024;;\r\n',
       'utf8',
     );
     expect(mockStream.write).toHaveBeenCalledTimes(3);
