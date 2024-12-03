@@ -85,7 +85,7 @@ export async function handleStartConversionProcess(
         const record = typedEvent.Records[i];
         const body: ConversionStartMessage = JSON.parse(record.body);
         if (!body.reportId) {
-          throw new Error('No key in sqs message');
+          throw new Error('No reportId in sqs message');
         }
         raporttiIds.push(body.reportId);
         invocationId = body.invocationId;
