@@ -213,7 +213,7 @@ const CsvIndex: RaitaNextPage = () => {
       ? new Date(state.queryVariables.raportti.inspection_datetime.end)
       : undefined,
   };
-  console.log(state.queryVariables);
+
   const extraFields: FieldDict = {};
   meta.data?.meta.input_fields?.forEach(fieldInfo => {
     if (!fieldInfo.name) {
@@ -240,7 +240,7 @@ const CsvIndex: RaitaNextPage = () => {
       })),
     )
     .concat([{ key: 'ajonopeus', value: 'ajonopeus' }]);
-  console.log('MITTAUSSYSTEMS: ', mittausSystems);
+
   return (
     <div className={clsx(css.root, isLoading && css.isLoading)}>
       <InfoBanner
