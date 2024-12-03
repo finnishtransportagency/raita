@@ -947,8 +947,8 @@ export function produceGeoviiteBatchUpdateSql(
 
 
 
-// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause posrtgres deduces datatypes from first
-// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind paramete
+// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
+// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
 export function produceGeoviiteBatchUpdateStatementInitSql(
   saveBatchSize: number,
   system: string | null,

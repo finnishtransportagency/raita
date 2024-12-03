@@ -103,6 +103,8 @@ export async function handleGeoviiteConversionProcess(
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
+    // First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
+    // call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
     const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
       saveBatchSize,
       system,
