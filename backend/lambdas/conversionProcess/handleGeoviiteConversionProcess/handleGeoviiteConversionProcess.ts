@@ -123,7 +123,7 @@ export async function handleGeoviiteConversionProcess(
       throw err;
     }
 
-    log.info(
+    log.trace(
       'StatementInit success at invocationBatchIndex: ' +
       invocationTotalBatchIndex
     );
@@ -202,7 +202,7 @@ export async function handleGeoviiteConversionProcess(
           throw err;
         }
 
-        log.info(
+        log.trace(
           ' success at invocationBatchIndex: ' +
           invocationTotalBatchIndex +
           ' requestIndex:' +
@@ -210,7 +210,6 @@ export async function handleGeoviiteConversionProcess(
           ' saveBatchIndex:' +
           saveBatchIndex,
         );
-        // TODO: check errors?
       }
     }
 
