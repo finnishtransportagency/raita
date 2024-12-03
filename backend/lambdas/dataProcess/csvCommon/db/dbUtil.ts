@@ -678,7 +678,7 @@ export function produceGeoviiteBatchUpdateSql(
   const timestampValsArray: (number | Date)[] = [];
 
   //Add first row with fake vals with -1 id so nothing is ever updated. This is needed because "At least one of the result expressions in a CASE specification must be an expression other than the NULL constant".
-  //Othervise we occasitionally get type error if alla vals for some column are alla null.
+  //Othervise we occasiationally get type error if all vals for some column are all null.
   longQueryArray.push(getSubtableUpdateQueryBeginning(system));
   longQueryArray.push(` then `);
   longValsArray.push(-1);
@@ -771,9 +771,9 @@ export function produceGeoviiteBatchUpdateSql(
   timestampValsArray.push(timestamp);
 
   const idArray: number[] = [];
-  let i = 0;
+
   batch.forEach((row: GeoviiteClientResultItem) => {
-    i++;
+
     idArray.push(row.id);
 
     //long
@@ -815,11 +815,7 @@ export function produceGeoviiteBatchUpdateSql(
       rata_metrit = `${row.ratametri}.`;
       if (row.ratametri_desimaalit  || row.ratametri_desimaalit == 0) {
         rata_metrit = `${row.ratametri}.${row.ratametri_desimaalit}`;
-        if(row.ratametri_desimaalit == 0){
-          log.warn("no decimals metres: "  + i);
-        }
       }
-
     } else if (row.ratametri_desimaalit) {
       rata_metrit = `0.${row.ratametri_desimaalit}`;
     }
@@ -950,6 +946,9 @@ export function produceGeoviiteBatchUpdateSql(
 }
 
 
+
+// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause posrtgres deduces datatypes from first
+// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind paramete
 export function produceGeoviiteBatchUpdateStatementInitSql(
   saveBatchSize: number,
   system: string | null,
