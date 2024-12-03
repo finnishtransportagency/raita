@@ -1249,7 +1249,7 @@ export class DataProcessStack extends NestedStack {
           S3_TARGET_BUCKET: targetBucket.bucketName,
           ...databaseEnvironmentVariables,
         },
-        readonlyRootFilesystem: true,
+        readonlyRootFilesystem: false,
       },
     );
 
