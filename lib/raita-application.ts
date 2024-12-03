@@ -89,8 +89,6 @@ export class ApplicationStack extends NestedStack {
       ? GEOVIITE_HOSTNAME_PROD
       : GEOVIITE_HOSTNAME_DEV;
 
-    console.log(geoviiteHostname, 'geoviiteHostname');
-
     const conversionProcessStack = new ConversionProcessStack(
       this,
       'stack-conversion-process',
