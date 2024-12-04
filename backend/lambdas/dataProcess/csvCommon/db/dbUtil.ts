@@ -695,6 +695,23 @@ export function produceGeoviiteBatchUpdateSql(
   latValsArray.push(-1);
   latValsArray.push(-1);
 
+  if(updateOldLatLong) {
+    //flippedOriginalLong
+
+    flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
+    flippedOriginalLongQueryArray.push(` then `);
+    flippedOriginalLongValsArray.push(-1);
+    flippedOriginalLongValsArray.push(-1);
+
+    //flippedOriginalLat
+    flippedOriginalLatQueryArray.push(` END, lat = CASE when id = `);
+    flippedOriginalLatQueryArray.push(` then `);
+    flippedOriginalLatValsArray.push(-1);
+    flippedOriginalLatValsArray.push(-1);
+
+
+  }
+
   rataosuusNumeroQueryArray.push(
     ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
   );
@@ -796,21 +813,14 @@ export function produceGeoviiteBatchUpdateSql(
 
     if(updateOldLatLong){
       //flippedOriginalLong
-      if (firstRow) {
-        flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
-      } else {
-        flippedOriginalLongQueryArray.push(` when id = `);
-      }
+
+      flippedOriginalLongQueryArray.push(` when id = `);
       flippedOriginalLongQueryArray.push(` then `);
       flippedOriginalLongValsArray.push(row.id);
       flippedOriginalLongValsArray.push(row.oldLong);
 
-      //flippedOriginalLat
-      if (firstRow) {
-        flippedOriginalLatQueryArray.push(` END, lat = CASE when id = `);
-      } else {
-        flippedOriginalLatQueryArray.push(` when id = `);
-      }
+
+      flippedOriginalLatQueryArray.push(` when id = `);
       flippedOriginalLatQueryArray.push(` then `);
       flippedOriginalLatValsArray.push(row.id);
       flippedOriginalLatValsArray.push(row.oldLat);
@@ -1003,7 +1013,7 @@ export function produceGeoviiteBatchUpdateStatementInitSql(
     } ;
     batch.push(item);
   }
-  const sql = produceGeoviiteBatchUpdateSql(batch, new Date(2024, 12, 24),system);
+  const sql = produceGeoviiteBatchUpdateSql(batch, new Date(2024, 12, 24),system, false);
   return sql;
 }
 
