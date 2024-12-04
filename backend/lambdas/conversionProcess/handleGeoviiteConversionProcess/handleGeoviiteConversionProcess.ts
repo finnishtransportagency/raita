@@ -165,6 +165,9 @@ export async function handleGeoviiteConversionProcess(
 
       const latLongFlipped = await isLatLongFlipped(mittausRows);
       if(latLongFlipped){
+        await adminLogger.warn(
+          `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+        );
         mittausRows.forEach((row: { lat: any; long: any }) => {
           const oldLat = row.lat;
           row.lat = row.long;
