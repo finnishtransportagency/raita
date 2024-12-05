@@ -242,6 +242,8 @@ async function copyFileInPlace(
       new CreateMultipartUploadCommand({
         Bucket: input.Bucket,
         Key: input.Key,
+        Metadata: metadata,
+        MetadataDirective: 'REPLACE',
       }),
     );
     const partPromises = [];
