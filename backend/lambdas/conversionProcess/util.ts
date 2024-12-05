@@ -19,3 +19,10 @@ export type ConversionMessage = {
    */
   invocationId: string;
 };
+
+/**
+ * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
+ */
+export async function isLatLongFlipped(mittausRows: any[]): Promise<boolean> {
+  return !!mittausRows.find(mittaus => mittaus.lat && mittaus.lat < 40);
+}

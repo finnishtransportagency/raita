@@ -3,7 +3,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 
-import { ConversionMessage } from '../util';
+import { ConversionMessage, isLatLongFlipped } from '../util';
 import {
   GeoviiteClient,
   GeoviiteClientResultItem,
@@ -13,7 +13,8 @@ import {
   DBConnection,
   getDBConnection,
   getMittausSubtable,
-  produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateStatementInitSql,
+  produceGeoviiteBatchUpdateSql,
+  produceGeoviiteBatchUpdateStatementInitSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -41,13 +42,6 @@ const init = () => {
 };
 
 const { withRequest, dbConnection, adminLogger } = init();
-
-/**
- * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
- */
-async function isLatLongFlipped(mittausRows: any[]): Promise<boolean> {
-  return !!mittausRows.find(mittaus => mittaus.lat || mittaus.lat < 40);
-}
 
 /**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
