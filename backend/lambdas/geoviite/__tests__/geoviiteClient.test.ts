@@ -6,6 +6,8 @@ import { jest } from '@jest/globals';
 
 import { produceGeoviiteBatchUpdateSql } from '../../dataProcess/csvCommon/db/dbUtil';
 
+import {isLatLongFlipped} from "../../conversionProcess/util";
+
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
 
 beforeEach(() => {
@@ -867,5 +869,17 @@ describe('geoviite parse sql from response flipped lat long', () => {
         '',
       ],
     });
+  });
+});
+
+
+describe('test detecting flipped lat long', () => {
+  test('success: basic operation', async () => {
+    const a= await isLatLongFlipped([{lat:null, long:null}]);
+    const b= await isLatLongFlipped([{lat:61.2, long:23.5}]);
+    const c= await isLatLongFlipped([{lat:23.5, long:61.2}]);
+    expect (a).toBeFalsy();
+    expect (b).toBeFalsy();
+    expect (c).toBeTruthy();
   });
 });
