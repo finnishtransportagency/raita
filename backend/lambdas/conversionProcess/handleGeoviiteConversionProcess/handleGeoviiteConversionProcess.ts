@@ -215,7 +215,7 @@ export async function handleGeoviiteConversionProcess(
           );
           log.error(
             { updateSql });
-          if(err.message.includes('incorrect binary data format'){
+          if(err.message.includes('incorrect binary data format')){
             log.warn('incorrect binary data format; try deallocate prep statement')
             try {
               await prismaClient.$executeRawUnsafe('DEALLOCATE ALL;');
