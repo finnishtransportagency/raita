@@ -235,13 +235,14 @@ async function copyFileInPlace(
     return s3Client.send(command);
   }
   const partSize = sizeLimit;
-
+  const { Bucket, Key, Metadata } = input;
   let uploadId: string | undefined;
   try {
     const multipartUpload = await s3Client.send(
       new CreateMultipartUploadCommand({
-        Bucket: input.Bucket,
-        Key: input.Key,
+        Bucket: Bucket,
+        Key: Key,
+        Metadata: Metadata,
       }),
     );
     const partPromises = [];
