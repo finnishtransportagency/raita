@@ -142,8 +142,8 @@ export type GeoviiteClientResultItem = {
   ratanumero?: string;
   y?: number;
   id: number;
-  oldLat?: number;
-  oldLong?: number;
+  inputLat?: number;  //return input coords foer wrriting to db in case of flipped coords
+  inputLong?: number;
   ratakilometri?: number;
   virheet?: string[];
 };

@@ -532,15 +532,15 @@ describe('geoviite parse sql from response', () => {
 });
 
 
-describe('geoviite parse sql from response flipped lat long', () => {
+describe('geoviite parse sql from response with updateAlsoNonConvertedLatLong true as in case with flipped lat and long', () => {
   test('success: basic operation', async () => {
     const sql = produceGeoviiteBatchUpdateSql(
       [
         {
-          y: 259348.20489785323,
-          x: 6804094.514968412,
-          oldLat: 6804093.914968412,
-          oldLong: 259349.0489785323,
+          x: 259348.20489785323,
+          y: 6804094.514968412,
+          inputLat: 6804093.914968412,
+          inputLong: 259349.0489785323,
           valimatka: 2.0372681319713593e-10,
           ratanumero: '002',
           sijaintiraide: '002',
@@ -554,10 +554,10 @@ describe('geoviite parse sql from response flipped lat long', () => {
           id: 27562774,
         },
         {
-          y: 245347.20489785323,
-          x: 6704095.514968412,
-          oldLat: 6704095.514968412,
-          oldLong: 245349.20489785323,
+          x: 245347.20489785323,
+          y: 6704095.514968412,
+          inputLat: 6704095.514968412,
+          inputLong: 245349.20489785323,
           valimatka: 1.0372681319713593e-10,
           ratanumero: '001',
           sijaintiraide: '003',
@@ -589,17 +589,17 @@ describe('geoviite parse sql from response flipped lat long', () => {
         -1,
         -1,
         27562774,
-        6804094.514968412,
+        259348.20489785323,
         27562775,
-        6704095.514968412,
+        245347.20489785323,
         27562776,
         undefined,
         -1,
         -1,
         27562774,
-        259348.20489785323,
+        6804094.514968412,
         27562775,
-        245347.20489785323,
+        6704095.514968412,
         27562776,
         undefined,
         -1,
