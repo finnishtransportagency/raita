@@ -211,12 +211,12 @@ export class GeoviiteClient {
   ): GeoviiteClientResultItem[] {
     const resultArray = [];
     for (let [index, val] of resultData.features.entries()) {
-      const oldLat = oldCoords[index].lat ? oldCoords[index].lat?.toNumber() : undefined;
-      const oldLong = oldCoords[index].long ? oldCoords[index].long?.toNumber() : undefined;
+      const inputLat = oldCoords[index].lat ? oldCoords[index].lat?.toNumber() : undefined;
+      const inputLong = oldCoords[index].long ? oldCoords[index].long?.toNumber() : undefined;
       resultArray.push({
         id: oldCoords[index].id,
-        oldLat,
-        oldLong,
+        inputLat,
+        inputLong,
         ...val.properties,
       });
     }
