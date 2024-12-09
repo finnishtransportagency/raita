@@ -999,21 +999,28 @@ export function produceGeoviiteBatchUpdateSql(
 export function produceGeoviiteBatchUpdateStatementInitSql(
   saveBatchSize: number,
   system: string | null,
+  updateOldLatLong: boolean,
 ) {
-
   const batch: GeoviiteClientResultItem[] = [];
-  for(let index = 0; index < saveBatchSize; index++){
-    const item:GeoviiteClientResultItem ={
+  for (let index = 0; index < saveBatchSize; index++) {
+    const item: GeoviiteClientResultItem = {
       id: -1,
       ratametri: 123,
       ratametri_desimaalit: 231,
       valimatka: 124.124,
       x: 999.999,
       y: 999.999,
-    } ;
+      oldLat: 999.999,
+      oldLong: 999.999,
+    };
     batch.push(item);
   }
-  const sql = produceGeoviiteBatchUpdateSql(batch, new Date(2024, 12, 24),system, false);
+  const sql = produceGeoviiteBatchUpdateSql(
+    batch,
+    new Date(2024, 12, 24),
+    system,
+    updateOldLatLong,
+  );
   return sql;
 }
 
