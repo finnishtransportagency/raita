@@ -641,7 +641,7 @@ export function produceGeoviiteBatchUpdateSql(
   batch: GeoviiteClientResultItem[],
   timestamp: Date,
   system: string | null,
-  updateOldLatLong: boolean, //use when we insert flipped coords
+  updateAlsoNonConvertedLatLong: boolean, //use when we insert flipped coords
 ) {
   const queryArray = [];
   const valsArray = [];
@@ -695,7 +695,7 @@ export function produceGeoviiteBatchUpdateSql(
   latValsArray.push(-1);
   latValsArray.push(-1);
 
-  if(updateOldLatLong) {
+  if(updateAlsoNonConvertedLatLong) {
     //flippedOriginalLong
 
     flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
@@ -811,19 +811,19 @@ export function produceGeoviiteBatchUpdateSql(
     latValsArray.push(row.id);
     latValsArray.push(row.y);
 
-    if(updateOldLatLong){
+    if(updateAlsoNonConvertedLatLong){
       //flippedOriginalLong
 
       flippedOriginalLongQueryArray.push(` when id = `);
       flippedOriginalLongQueryArray.push(` then `);
       flippedOriginalLongValsArray.push(row.id);
-      flippedOriginalLongValsArray.push(row.oldLong);
+      flippedOriginalLongValsArray.push(row.inputLong);
 
 
       flippedOriginalLatQueryArray.push(` when id = `);
       flippedOriginalLatQueryArray.push(` then `);
       flippedOriginalLatValsArray.push(row.id);
-      flippedOriginalLatValsArray.push(row.oldLat);
+      flippedOriginalLatValsArray.push(row.inputLat);
 
     }
 
@@ -927,7 +927,7 @@ export function produceGeoviiteBatchUpdateSql(
   queryArray.push(...latQueryArray);
   valsArray.push(...latValsArray);
 
-  if(updateOldLatLong){
+  if(updateAlsoNonConvertedLatLong){
     queryArray.push(...flippedOriginalLongQueryArray);
     valsArray.push(...flippedOriginalLongValsArray);
 
@@ -999,7 +999,7 @@ export function produceGeoviiteBatchUpdateSql(
 export function produceGeoviiteBatchUpdateStatementInitSql(
   saveBatchSize: number,
   system: string | null,
-  updateOldLatLong: boolean,
+  updateAlsoNonConvertedLatLong: boolean,
 ) {
   const batch: GeoviiteClientResultItem[] = [];
   for (let index = 0; index < saveBatchSize; index++) {
@@ -1010,8 +1010,8 @@ export function produceGeoviiteBatchUpdateStatementInitSql(
       valimatka: 124.124,
       x: 999.999,
       y: 999.999,
-      oldLat: 999.999,
-      oldLong: 999.999,
+      inputLat: 999.999,
+      inputLong: 999.999,
     };
     batch.push(item);
   }
@@ -1019,7 +1019,7 @@ export function produceGeoviiteBatchUpdateStatementInitSql(
     batch,
     new Date(2024, 12, 24),
     system,
-    updateOldLatLong,
+    updateAlsoNonConvertedLatLong,
   );
   return sql;
 }
