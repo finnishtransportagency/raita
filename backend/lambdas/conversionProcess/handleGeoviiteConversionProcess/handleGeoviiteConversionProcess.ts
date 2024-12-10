@@ -103,6 +103,8 @@ export async function handleGeoviiteConversionProcess(
     const system = message.system;
 
     const invocationId = message.invocationId;
+
+    log.debug('NOW HELLO init ' + source + ' ' + invocationId);
     await adminLogger.init('conversion-process', invocationId);
 
     // how many to handle in this invocation
