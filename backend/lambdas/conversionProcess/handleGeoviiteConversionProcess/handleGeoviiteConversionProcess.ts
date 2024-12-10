@@ -86,6 +86,7 @@ export async function handleGeoviiteConversionProcess(
   event: SQSEvent,
   context: Context,
 ): Promise<void> {
+  log.warn("HELLO?");
   let message: ConversionMessage | null = null;
   const geoviiteHostname = getEnvOrFail('GEOVIITE_HOSTNAME');
   const geoviiteClient = new GeoviiteClient(geoviiteHostname);
