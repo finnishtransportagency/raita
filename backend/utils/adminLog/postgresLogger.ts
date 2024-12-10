@@ -17,10 +17,12 @@ export class PostgresLogger implements IAdminLogger {
   }
 
   async init(source: AdminLogSource, invocationId: string) {
+    log.debug('HELLO init ' + source + ' ' + invocationId);
     this.source = source;
     this.invocationId = invocationId;
     return;
   }
+
 
   async info(message: string) {
     return this.logToPostgres([message], 'info');
