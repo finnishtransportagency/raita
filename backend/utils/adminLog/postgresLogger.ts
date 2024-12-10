@@ -47,7 +47,7 @@ export class PostgresLogger implements IAdminLogger {
 
   private async logToPostgres(messages: string[], level: AdminLogLevel) {
     if (!this.source || !this.invocationId) {
-      log.warn('Trying to log with PostgresLogger before initialization;');
+      log.warn(messages, 'Trying to log with PostgresLogger before initialization;');
       return;
     }
     const connection = await this.getConnection();
