@@ -641,12 +641,16 @@ export function produceGeoviiteBatchUpdateSql(
   batch: GeoviiteClientResultItem[],
   timestamp: Date,
   system: string | null,
+  updateAlsoNonConvertedLatLong: boolean, //use when we insert flipped coords
 ) {
   const queryArray = [];
   const valsArray = [];
 
+
   const longQueryArray: string[] = [];
   const latQueryArray: string[] = [];
+  const flippedOriginalLongQueryArray: string[] = [];
+  const flippedOriginalLatQueryArray: string[] = [];
   const rataosuusNumeroQueryArray: string[] = [];
   const kmQueryArray: string[] = [];
   const mQueryArray: string[] = [];
@@ -663,6 +667,8 @@ export function produceGeoviiteBatchUpdateSql(
 
   const longValsArray: (number | undefined)[] = [];
   const latValsArray: (number | undefined)[] = [];
+  const flippedOriginalLongValsArray: (number | undefined)[] = [];
+  const flippedOriginalLatValsArray: (number | undefined)[] = [];
   const rataosuusNumeroValsArray: any[] = [];
   const kmValsArray: (number | undefined)[] = [];
   const mValsArray: (number | null)[] = [];
@@ -688,6 +694,23 @@ export function produceGeoviiteBatchUpdateSql(
   latQueryArray.push(` then `);
   latValsArray.push(-1);
   latValsArray.push(-1);
+
+  if(updateAlsoNonConvertedLatLong) {
+    //flippedOriginalLong
+
+    flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
+    flippedOriginalLongQueryArray.push(` then `);
+    flippedOriginalLongValsArray.push(-1);
+    flippedOriginalLongValsArray.push(-1);
+
+    //flippedOriginalLat
+    flippedOriginalLatQueryArray.push(` END, lat = CASE when id = `);
+    flippedOriginalLatQueryArray.push(` then `);
+    flippedOriginalLatValsArray.push(-1);
+    flippedOriginalLatValsArray.push(-1);
+
+
+  }
 
   rataosuusNumeroQueryArray.push(
     ` END, geoviite_konvertoitu_rataosuus_numero = CASE when id = `,
@@ -787,6 +810,22 @@ export function produceGeoviiteBatchUpdateSql(
     latQueryArray.push(` then `);
     latValsArray.push(row.id);
     latValsArray.push(row.y);
+
+    if(updateAlsoNonConvertedLatLong){
+      //flippedOriginalLong
+
+      flippedOriginalLongQueryArray.push(` when id = `);
+      flippedOriginalLongQueryArray.push(` then `);
+      flippedOriginalLongValsArray.push(row.id);
+      flippedOriginalLongValsArray.push(row.inputLong);
+
+
+      flippedOriginalLatQueryArray.push(` when id = `);
+      flippedOriginalLatQueryArray.push(` then `);
+      flippedOriginalLatValsArray.push(row.id);
+      flippedOriginalLatValsArray.push(row.inputLat);
+
+    }
 
     //rataosuus_numero
     rataosuusNumeroQueryArray.push(` when id = `);
@@ -888,6 +927,14 @@ export function produceGeoviiteBatchUpdateSql(
   queryArray.push(...latQueryArray);
   valsArray.push(...latValsArray);
 
+  if(updateAlsoNonConvertedLatLong){
+    queryArray.push(...flippedOriginalLongQueryArray);
+    valsArray.push(...flippedOriginalLongValsArray);
+
+    queryArray.push(...flippedOriginalLatQueryArray);
+    valsArray.push(...flippedOriginalLatValsArray);
+  }
+
   queryArray.push(...rataosuusNumeroQueryArray);
   valsArray.push(...rataosuusNumeroValsArray);
 
@@ -952,21 +999,28 @@ export function produceGeoviiteBatchUpdateSql(
 export function produceGeoviiteBatchUpdateStatementInitSql(
   saveBatchSize: number,
   system: string | null,
+  updateAlsoNonConvertedLatLong: boolean,
 ) {
-
   const batch: GeoviiteClientResultItem[] = [];
-  for(let index = 0; index < saveBatchSize; index++){
-    const item:GeoviiteClientResultItem ={
+  for (let index = 0; index < saveBatchSize; index++) {
+    const item: GeoviiteClientResultItem = {
       id: -1,
       ratametri: 123,
       ratametri_desimaalit: 231,
       valimatka: 124.124,
       x: 999.999,
       y: 999.999,
-    } ;
+      inputLat: 999.999,
+      inputLong: 999.999,
+    };
     batch.push(item);
   }
-  const sql = produceGeoviiteBatchUpdateSql(batch, new Date(2024, 12, 24),system);
+  const sql = produceGeoviiteBatchUpdateSql(
+    batch,
+    new Date(2024, 12, 24),
+    system,
+    updateAlsoNonConvertedLatLong,
+  );
   return sql;
 }
 
