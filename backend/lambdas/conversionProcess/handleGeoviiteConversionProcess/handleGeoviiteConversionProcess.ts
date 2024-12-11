@@ -3,7 +3,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 
-import { ConversionMessage, isLatLongFlipped } from '../util';
+import {ConversionMessage, isLatLongFlipped, isNonsenseCoords} from '../util';
 import {
   GeoviiteClient,
   GeoviiteClientResultItem,
@@ -169,15 +169,21 @@ export async function handleGeoviiteConversionProcess(
       });
       log.trace({ length: mittausRows.length }, 'Got from db');
 
-
-      const latLongFlipped = await isLatLongFlipped(mittausRows);
+      let latLongFlipped = false;
+      if(isNonsenseCoords(mittausRows)){
+        await adminLogger.warn(
+          `Normaalien koordinaattien ulkpuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+        );
+      }
+      else{
+        latLongFlipped = isLatLongFlipped(mittausRows);
+      }
 
 
       if(first) {
         initStatement(saveBatchSize, system, latLongFlipped, prismaClient, invocationTotalBatchIndex);
         first = false;
       }
-
 
 
       if(latLongFlipped){
