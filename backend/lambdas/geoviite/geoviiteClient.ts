@@ -142,6 +142,8 @@ export type GeoviiteClientResultItem = {
   ratanumero?: string;
   y?: number;
   id: number;
+  inputLat?: number;  //return input coords foer wrriting to db in case of flipped coords
+  inputLong?: number;
   ratakilometri?: number;
   virheet?: string[];
 };
@@ -203,16 +205,22 @@ export class GeoviiteClient {
     return resultData;
   }
 
-  private mergeIdsToResults(
+  private mergeIdsAndOldCoordsToResults(
     resultData: GetConvertedTrackAddressesWithCoordsResultType,
-    ids: Array<{
-      id: number;
-    }>,
-  ) {
+    oldCoords: Array<{ lat: Decimal | null; long: Decimal | null; id: number }>,
+  ): GeoviiteClientResultItem[] {
     const resultArray = [];
     for (let [index, val] of resultData.features.entries()) {
-      resultArray.push({ id: ids[index].id, ...val.properties });
+      const inputLat = oldCoords[index].lat ? oldCoords[index].lat?.toNumber() : undefined;
+      const inputLong = oldCoords[index].long ? oldCoords[index].long?.toNumber() : undefined;
+      resultArray.push({
+        id: oldCoords[index].id,
+        inputLat,
+        inputLong,
+        ...val.properties,
+      });
     }
+
     return resultArray;
   }
 
@@ -240,10 +248,8 @@ export class GeoviiteClient {
           : defaultTrackAddressWithCoordinatePathParams,
       );
 
-    const convertedResult: GeoviiteClientResultItem[] = this.mergeIdsToResults(
-      resultData,
-      coords,
-    );
+    const convertedResult: GeoviiteClientResultItem[] =
+      this.mergeIdsAndOldCoordsToResults(resultData, coords);
 
     return convertedResult;
   }

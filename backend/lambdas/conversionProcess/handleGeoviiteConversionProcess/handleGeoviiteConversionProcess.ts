@@ -3,7 +3,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 
-import { ConversionMessage } from '../util';
+import {ConversionMessage, isLatLongFlipped, isNonsenseCoords} from '../util';
 import {
   GeoviiteClient,
   GeoviiteClientResultItem,
@@ -13,11 +13,13 @@ import {
   DBConnection,
   getDBConnection,
   getMittausSubtable,
-  produceGeoviiteBatchUpdateSql, produceGeoviiteBatchUpdateStatementInitSql,
+  produceGeoviiteBatchUpdateSql,
+  produceGeoviiteBatchUpdateStatementInitSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
+import { PrismaClient } from '@prisma/client';
 
 const init = () => {
   try {
@@ -41,6 +43,41 @@ const init = () => {
 };
 
 const { withRequest, dbConnection, adminLogger } = init();
+
+// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
+// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
+async function initStatement(
+  saveBatchSize: number,
+  system: string | null,
+  latLongFlipped: boolean,
+  prismaClient: PrismaClient,
+  invocationTotalBatchIndex: string | number,
+): Promise<void> {
+  const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
+    saveBatchSize,
+    system,
+    latLongFlipped,
+  );
+
+  try {
+    log.trace('start geoviite StatementInit update');
+    await prismaClient.$executeRaw(updateSql);
+    log.trace('done geoviite StatementInit update');
+  } catch (err) {
+    log.error(
+      { err },
+      'StatementInit error at invocationBatchIndex: ' +
+        invocationTotalBatchIndex,
+    );
+    log.error({ updateSql });
+    throw err;
+  }
+
+  log.trace(
+    'StatementInit success at invocationBatchIndex: ' +
+      invocationTotalBatchIndex,
+  );
+}
 
 /**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
@@ -103,36 +140,12 @@ export async function handleGeoviiteConversionProcess(
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
-    // First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
-    // call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
-    const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
-      saveBatchSize,
-      system,
-    );
-
-    try {
-      log.trace('start geoviite StatementInit update');
-      await prismaClient.$executeRaw(updateSql);
-      log.trace('done geoviite StatementInit update');
-    } catch (err) {
-      log.error(
-        { err },
-        'StatementInit error at invocationBatchIndex: ' +
-        invocationTotalBatchIndex
-      );
-      log.error(
-        { updateSql });
-      throw err;
-    }
-
-    log.trace(
-      'StatementInit success at invocationBatchIndex: ' +
-      invocationTotalBatchIndex
-    );
 
 
 
 
+
+    let first = true;
 
     // loop through array in batches: get results for batch and save to db
     for (
@@ -155,6 +168,34 @@ export async function handleGeoviiteConversionProcess(
         skip: startingSkip + requestIndex,
       });
       log.trace({ length: mittausRows.length }, 'Got from db');
+
+      let latLongFlipped = false;
+      if(isNonsenseCoords(mittausRows)){
+        await adminLogger.warn(
+          `Normaalien koordinaattien ulkpuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+        );
+      }
+      else{
+        latLongFlipped = isLatLongFlipped(mittausRows);
+      }
+
+
+      if(first) {
+        initStatement(saveBatchSize, system, latLongFlipped, prismaClient, invocationTotalBatchIndex);
+        first = false;
+      }
+
+
+      if(latLongFlipped){
+        await adminLogger.warn(
+          `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+        );
+        mittausRows.forEach((row: { lat: any; long: any }) => {
+          const oldLat = row.lat;
+          row.lat = row.long;
+          row.long = oldLat;
+        });
+      }
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
@@ -186,6 +227,7 @@ export async function handleGeoviiteConversionProcess(
           batch,
           timestamp,
           system,
+          latLongFlipped,
         );
         try {
           await prismaClient.$executeRaw(updateSql);
