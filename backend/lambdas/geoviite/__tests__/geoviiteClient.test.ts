@@ -872,7 +872,7 @@ describe('geoviite parse sql from response with updateAlsoNonConvertedLatLong tr
   });
 });
 
-describe('test detecting flipped lat long', () => {
+describe('test detecting flipped and nonsense lat long', () => {
   test('success: basic operation', async () => {
     expect(isLatLongFlipped([{ lat: null, long: null }])).toBeFalsy();
     expect(isLatLongFlipped([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
@@ -888,6 +888,21 @@ describe('test detecting flipped lat long', () => {
     expect(isLatLongFlipped([{ lat: 23.5, long: undefined }])).toBeFalsy();
     expect(isLatLongFlipped([{ lat: 61.2, long: 61.2 }])).toBeFalsy();
     expect(isLatLongFlipped([{ lat: 23.5, long: 23.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 50.5, long: 23.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 81.2, long: 11.2 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 50.2, long: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 81.2, long: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 50.2, long: 11.2 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 61.2, long: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ lat: 61.2, long: 11.2 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 81.2, lat: 23.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 50.5, lat: 23.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 81.2, lat: 11.2 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 50.2, lat: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 81.2, lat: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 50.2, lat: 11.2 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 61.2, lat: 37.5 }])).toBeFalsy();
+    expect(isLatLongFlipped([{ long: 61.2, lat: 11.2 }])).toBeFalsy();
 
     expect(isNonsenseCoords([{ lat: null, long: null }])).toBeFalsy();
     expect(isNonsenseCoords([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
@@ -903,6 +918,23 @@ describe('test detecting flipped lat long', () => {
     expect(isNonsenseCoords([{ lat: 23.5, long: undefined }])).toBeTruthy();
     expect(isNonsenseCoords([{ lat: 61.2, long: 61.2 }])).toBeTruthy();
     expect(isNonsenseCoords([{ lat: 23.5, long: 23.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 81.2, long: 23.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 50.5, long: 23.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 81.2, long: 11.2 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 50.2, long: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 81.2, long: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 50.2, long: 11.2 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 61.2, long: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ lat: 61.2, long: 11.2 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 81.2, lat: 23.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 50.5, lat: 23.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 81.2, lat: 11.2 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 50.2, lat: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 81.2, lat: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 50.2, lat: 11.2 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 61.2, lat: 37.5 }])).toBeTruthy();
+    expect(isNonsenseCoords([{ long: 61.2, lat: 11.2 }])).toBeTruthy();
+
 
   });
 });
