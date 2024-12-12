@@ -166,6 +166,7 @@ export async function handleStartConversionProcess(
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
             MessageBody: JSON.stringify(body),
+            MessageGroupId: key,
           });
           const queueResponse = await sqsClient.send(command);
           if (queueResponse.$metadata.httpStatusCode !== 200) {
