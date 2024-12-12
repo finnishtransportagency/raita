@@ -110,11 +110,6 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
 
-    log.warn(
-      { invocationTotalBatchIndex, invocationTotalBatchCount },
-      'hello: ',
-    );
-
     await prismaClient.raportti.updateMany({
       where: {
         id,
