@@ -3,7 +3,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 
-import {ConversionMessage, isLatLongFlipped, isNonsenseCoords} from '../util';
+import { ConversionMessage, isLatLongFlipped, isNonsenseCoords } from '../util';
 import {
   GeoviiteClient,
   GeoviiteClientResultItem,
@@ -140,11 +140,6 @@ export async function handleGeoviiteConversionProcess(
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
-
-
-
-
-
     let first = true;
 
     // loop through array in batches: get results for batch and save to db
@@ -170,23 +165,26 @@ export async function handleGeoviiteConversionProcess(
       log.trace({ length: mittausRows.length }, 'Got from db');
 
       let latLongFlipped = false;
-      if(isNonsenseCoords(mittausRows)){
+      if (isNonsenseCoords(mittausRows)) {
         await adminLogger.warn(
           `Normaalien koordinaattien ulkpuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
         );
-      }
-      else{
+      } else {
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
 
-
-      if(first) {
-        initStatement(saveBatchSize, system, latLongFlipped, prismaClient, invocationTotalBatchIndex);
+      if (first) {
+        initStatement(
+          saveBatchSize,
+          system,
+          latLongFlipped,
+          prismaClient,
+          invocationTotalBatchIndex,
+        );
         first = false;
       }
 
-
-      if(latLongFlipped){
+      if (latLongFlipped) {
         await adminLogger.warn(
           `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
         );
@@ -208,8 +206,6 @@ export async function handleGeoviiteConversionProcess(
          */
         log.error('Size mismatch');
       }
-
-
 
       // one timestamp for all
       const timestamp = new Date();
@@ -235,24 +231,23 @@ export async function handleGeoviiteConversionProcess(
           log.error(
             { err },
             'update error at invocationBatchIndex: ' +
-            invocationTotalBatchIndex +
-            ' requestIndex:' +
-            requestIndex +
-            ' saveBatchIndex:' +
-            saveBatchIndex,
+              invocationTotalBatchIndex +
+              ' requestIndex:' +
+              requestIndex +
+              ' saveBatchIndex:' +
+              saveBatchIndex,
           );
-          log.error(
-            { updateSql });
+          log.error({ updateSql });
           throw err;
         }
 
         log.trace(
           ' success at invocationBatchIndex: ' +
-          invocationTotalBatchIndex +
-          ' requestIndex:' +
-          requestIndex +
-          ' saveBatchIndex:' +
-          saveBatchIndex,
+            invocationTotalBatchIndex +
+            ' requestIndex:' +
+            requestIndex +
+            ' saveBatchIndex:' +
+            saveBatchIndex,
         );
       }
     }
@@ -262,6 +257,7 @@ export async function handleGeoviiteConversionProcess(
     await prismaClient.raportti.update({
       where: {
         id,
+        geoviite_status: { not: ConversionStatus.ERROR },
       },
       data: {
         geoviite_status: ConversionStatus.SUCCESS,
