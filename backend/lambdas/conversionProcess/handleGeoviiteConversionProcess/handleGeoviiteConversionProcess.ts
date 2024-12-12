@@ -108,6 +108,23 @@ export async function handleGeoviiteConversionProcess(
     // how many to handle in this invocation
     const invocationTotalBatchSize = message.batchSize;
     const invocationTotalBatchIndex = message.batchIndex;
+    const invocationTotalBatchCount = message.batchCount;
+
+    await prismaClient.raportti.update({
+      where: {
+        id,
+        geoviite_status: { not: ConversionStatus.ERROR },
+      },
+      data: {
+        geoviite_status:
+          ConversionStatus.IN_PROGRESS +
+          '_' +
+          invocationTotalBatchIndex +
+          '/' +
+          invocationTotalBatchCount,
+      },
+    });
+
     const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
     // how many to handle in one request
     const requestBatchSize = 1000;
@@ -254,16 +271,18 @@ export async function handleGeoviiteConversionProcess(
 
     const readyTimestamp = new Date().toISOString();
 
-    await prismaClient.raportti.update({
-      where: {
-        id,
-        geoviite_status: { not: ConversionStatus.ERROR },
-      },
-      data: {
-        geoviite_status: ConversionStatus.SUCCESS,
-        geoviite_update_at: readyTimestamp,
-      },
-    });
+    if (invocationTotalBatchIndex == invocationTotalBatchCount) {
+      await prismaClient.raportti.update({
+        where: {
+          id,
+          geoviite_status: { not: ConversionStatus.ERROR },
+        },
+        data: {
+          geoviite_status: ConversionStatus.SUCCESS,
+          geoviite_update_at: readyTimestamp,
+        },
+      });
+    }
   } catch (err) {
     log.error(err);
     log.error(

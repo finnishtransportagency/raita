@@ -11,6 +11,10 @@ export type ConversionMessage = {
    */
   batchIndex: number;
   /**
+   * how many batches of this raportti
+   */
+  batchCount: number;
+  /**
    * Sort by which key to determine index
    */
   orderBy: 'id';

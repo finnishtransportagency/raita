@@ -159,6 +159,7 @@ export async function handleStartConversionProcess(
             system: raportti.system,
             batchSize: conversionBatchSize,
             batchIndex,
+            batchCount,
             orderBy: 'id',
             invocationId,
           };
@@ -178,7 +179,7 @@ export async function handleStartConversionProcess(
       }
       await prismaClient.raportti.updateMany({
         data: {
-          geoviite_status: ConversionStatus.IN_PROGRESS,
+          geoviite_status: ConversionStatus.IN_QUEUE,
         },
         where: {
           key: {
