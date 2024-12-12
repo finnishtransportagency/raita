@@ -110,7 +110,10 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
 
-    log.warn({invocationTotalBatchIndex, invocationTotalBatchCount},'hello: ');
+    log.warn(
+      { invocationTotalBatchIndex, invocationTotalBatchCount },
+      'hello: ',
+    );
 
     await prismaClient.raportti.updateMany({
       where: {
@@ -273,7 +276,7 @@ export async function handleGeoviiteConversionProcess(
 
     const readyTimestamp = new Date().toISOString();
 
-    if (invocationTotalBatchIndex == invocationTotalBatchCount) {
+    if (invocationTotalBatchIndex + 1 == invocationTotalBatchCount) {
       await prismaClient.raportti.updateMany({
         where: {
           id,

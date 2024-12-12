@@ -163,10 +163,13 @@ export async function handleStartConversionProcess(
             orderBy: 'id',
             invocationId,
           };
+
+          let messageGroupId = key.replace(/\s/g, '');
+          messageGroupId = messageGroupId.length > 128 ? messageGroupId.substring(0, 128): messageGroupId;
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
             MessageBody: JSON.stringify(body),
-            MessageGroupId: key,
+            MessageGroupId: messageGroupId,
           });
           const queueResponse = await sqsClient.send(command);
           if (queueResponse.$metadata.httpStatusCode !== 200) {
