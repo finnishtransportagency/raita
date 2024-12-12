@@ -110,7 +110,7 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
 
-    await prismaClient.raportti.update({
+    await prismaClient.raportti.updateMany({
       where: {
         id,
         geoviite_status: { not: ConversionStatus.ERROR },
@@ -184,7 +184,7 @@ export async function handleGeoviiteConversionProcess(
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
         await adminLogger.warn(
-          `Normaalien koordinaattien ulkpuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+          `Normaalien koordinaattien ulkopuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
         );
       } else {
         latLongFlipped = isLatLongFlipped(mittausRows);
@@ -272,7 +272,7 @@ export async function handleGeoviiteConversionProcess(
     const readyTimestamp = new Date().toISOString();
 
     if (invocationTotalBatchIndex == invocationTotalBatchCount) {
-      await prismaClient.raportti.update({
+      await prismaClient.raportti.updateMany({
         where: {
           id,
           geoviite_status: { not: ConversionStatus.ERROR },
