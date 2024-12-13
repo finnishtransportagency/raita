@@ -159,12 +159,18 @@ export async function handleStartConversionProcess(
             system: raportti.system,
             batchSize: conversionBatchSize,
             batchIndex,
+            batchCount,
             orderBy: 'id',
             invocationId,
           };
+
+          let messageGroupId = key.replace(/\s/g, '');
+          messageGroupId = messageGroupId.length > 128 ? messageGroupId.substring(0, 128): messageGroupId;
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
             MessageBody: JSON.stringify(body),
+            MessageGroupId: messageGroupId,
+            MessageDeduplicationId: `${raportti.id}_${batchIndex}`
           });
           const queueResponse = await sqsClient.send(command);
           if (queueResponse.$metadata.httpStatusCode !== 200) {
@@ -178,7 +184,7 @@ export async function handleStartConversionProcess(
       }
       await prismaClient.raportti.updateMany({
         data: {
-          geoviite_status: ConversionStatus.IN_PROGRESS,
+          geoviite_status: ConversionStatus.IN_QUEUE,
         },
         where: {
           key: {

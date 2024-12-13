@@ -77,6 +77,7 @@ export class ConversionProcessStack extends NestedStack {
     const conversionQueue = new Queue(this, 'geoviite-conversion-queue', {
       visibilityTimeout: cdk.Duration.minutes(15),
       retentionPeriod: cdk.Duration.days(7),
+      fifo: true,
     });
 
     const startConversionProcessHandler =
