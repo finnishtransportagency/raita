@@ -170,6 +170,7 @@ export async function handleStartConversionProcess(
             QueueUrl: config.queueUrl,
             MessageBody: JSON.stringify(body),
             MessageGroupId: messageGroupId,
+            MessageDeduplicationId: `${raportti.id}_${batchIndex}`
           });
           const queueResponse = await sqsClient.send(command);
           if (queueResponse.$metadata.httpStatusCode !== 200) {
