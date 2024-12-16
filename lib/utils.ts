@@ -9,6 +9,7 @@ import {
   PRODUCTION_STACK_ID,
 } from '../constants';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
 /**
  * Returns RemovalPolicy property value for stack resources based on given raita environment value
@@ -92,4 +93,44 @@ export const prismaBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
  */
 export const graphqlBundlingOptions: aws_lambda_nodejs.BundlingOptions = {
   loader: { '.graphql': 'text' },
+};
+
+/**
+ * this function sends emails of reports and errors weekly
+ */
+export const sendMail = async (
+  to: string,
+  subject: string,
+  data: string,
+  config: {
+    targetBucketName: string;
+    region: string;
+    raitaStackIdentifier: string;
+  },
+) => {
+  const sesClient = new SESClient(config);
+  try {
+    const params = {
+      Source: 'your-verified-email@example.com', // Replace with your verified email
+      Destination: {
+        ToAddresses: [to], // Replace with the recipient's email
+      },
+      Message: {
+        Subject: {
+          Data: subject, // Email subject
+        },
+        Body: {
+          Text: {
+            Data: data, // Email body
+          },
+        },
+      },
+    };
+
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    return response;
+  } catch (e) {
+    return e;
+  }
 };

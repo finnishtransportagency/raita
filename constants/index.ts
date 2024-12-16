@@ -55,6 +55,7 @@ export const VAYLA_POLICY_USER_ID = 'raita-vayla-policy-user-id';
 export const LORAM_POLICY_USER_ID = 'raita-loram-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
 export const SSM_API_KEY = 'raita-api-key';
+export const SSM_EMAIL = 'raita-vayla-email';
 
 export const REQUEST_HEADER_API_KEY = 'x-api-key';
 export const RAITA_APIKEY_USER_UID = 'raita-api-key-user';
