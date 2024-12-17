@@ -688,12 +688,12 @@ export function produceGeoviiteBatchUpdateSql(
   longQueryArray.push(getSubtableUpdateQueryBeginning(system));
   longQueryArray.push(` then `);
   longValsArray.push(-1);
-  longValsArray.push(-1);
+  longValsArray.push(-1.1);
 
   latQueryArray.push(` END, geoviite_konvertoitu_lat = CASE when id = `);
   latQueryArray.push(` then `);
   latValsArray.push(-1);
-  latValsArray.push(-1);
+  latValsArray.push(-1.1);
 
   if(updateAlsoNonConvertedLatLong) {
     //flippedOriginalLong
@@ -701,13 +701,13 @@ export function produceGeoviiteBatchUpdateSql(
     flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
     flippedOriginalLongQueryArray.push(` then `);
     flippedOriginalLongValsArray.push(-1);
-    flippedOriginalLongValsArray.push(-1);
+    flippedOriginalLongValsArray.push(-1.1);
 
     //flippedOriginalLat
     flippedOriginalLatQueryArray.push(` END, lat = CASE when id = `);
     flippedOriginalLatQueryArray.push(` then `);
     flippedOriginalLatValsArray.push(-1);
-    flippedOriginalLatValsArray.push(-1);
+    flippedOriginalLatValsArray.push(-1.1);
 
 
   }
@@ -736,7 +736,7 @@ export function produceGeoviiteBatchUpdateSql(
   mQueryArray.push(` END, geoviite_konvertoitu_rata_metrit= CASE when id = `);
   mQueryArray.push(` then `);
   mValsArray.push(-1);
-  mValsArray.push(-1);
+  mValsArray.push(-1.1);
 
   raideNumeroQueryArray.push(
     ` END, geoviite_konvertoitu_raide_numero = CASE when id = `,
@@ -748,7 +748,7 @@ export function produceGeoviiteBatchUpdateSql(
   valimatkaQueryArray.push(` END, geoviite_valimatka= CASE when id = `);
   valimatkaQueryArray.push(` then `);
   valimatkaValsArray.push(-1);
-  valimatkaValsArray.push(-1);
+  valimatkaValsArray.push(-1.1);
 
   sijRaideQueryArray.push(` END, geoviite_sijaintiraide= CASE when id = `);
   sijRaideQueryArray.push(` then `);
