@@ -164,13 +164,17 @@ export async function handleStartConversionProcess(
             invocationId,
           };
 
-          let messageGroupId = key.replace(/\s/g, '');
-          messageGroupId = messageGroupId.length > 128 ? messageGroupId.substring(0, 128): messageGroupId;
+          let messageGroupId = key.replace(/_|\W/g, '');
+
+          messageGroupId =
+            messageGroupId.length > 128
+              ? messageGroupId.substring(messageGroupId.length-128, messageGroupId.length)
+              : messageGroupId;
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
             MessageBody: JSON.stringify(body),
             MessageGroupId: messageGroupId,
-            MessageDeduplicationId: `${raportti.id}_${batchIndex}`
+            MessageDeduplicationId: `${raportti.id}_${batchIndex}`,
           });
           const queueResponse = await sqsClient.send(command);
           if (queueResponse.$metadata.httpStatusCode !== 200) {
