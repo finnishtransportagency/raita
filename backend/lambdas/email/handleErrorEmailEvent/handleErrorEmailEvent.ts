@@ -44,7 +44,9 @@ async function generateErrorMail(receiver: string) {
   });
 
   const erroredZips = [...new Set(errorLogs)];
-  const zipsToEmail = erroredZips.map(key => `- ${key}`).join('\n');
+  const zipsToEmail = erroredZips
+    .map(key => `- ${key.invocation_id}`)
+    .join('\n');
 
   // Step 2: Format the report keys for the email body
   const emailBody =

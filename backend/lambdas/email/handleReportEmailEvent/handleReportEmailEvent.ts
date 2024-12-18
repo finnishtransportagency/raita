@@ -41,7 +41,7 @@ async function generateReportMail(receiver: string) {
   // Step 2: Format the report keys for the email body
   const reportList =
     raportti.length > 0
-      ? raportti.map(key => `- ${key}`).join('\n')
+      ? raportti.map(key => `- ${key.key}`).join('\n')
       : 'No reports were received during the last week.';
 
   const emailBody = `These are the reports that are received during the last week:\n\n${reportList}`;
