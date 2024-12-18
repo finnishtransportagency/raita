@@ -19,6 +19,7 @@ import {
   getDatabaseEnvironmentVariables,
   prismaBundlingOptions,
 } from './utils';
+import { createRaitaServiceRole } from './raitaResourceCreators';
 
 interface EmailStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -30,7 +31,7 @@ interface EmailStackProps extends NestedStackProps {
 }
 
 export class EmailProcessStack extends NestedStack {
-  public readonly dataProcessorLambdaServiceRole: iam.Role;
+  public readonly emailLambdaServiceRole: iam.Role;
   public readonly handleErrorEmailEventFn: NodejsFunction;
   public readonly handleReportEmailEventFn: NodejsFunction;
 
@@ -43,11 +44,18 @@ export class EmailProcessStack extends NestedStack {
       stackId,
       raitaEnv,
     );
+    this.emailLambdaServiceRole = createRaitaServiceRole({
+      scope: this,
+      name: 'EmailLambdaServiceRole',
+      servicePrincipal: 'lambda.amazonaws.com',
+      policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+      raitaStackIdentifier,
+    });
 
     // Create lambda for emailing errors
     const handleErrorEmailEventFn = this.createErrorEmailHandler({
       name: 'dp-handler-error-email-transportation',
-      lambdaRole: this.dataProcessorLambdaServiceRole,
+      lambdaRole: this.emailLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
@@ -57,12 +65,20 @@ export class EmailProcessStack extends NestedStack {
     // Create Lambda for emailing reports
     const handleReportEmailEventFn = this.createReportEmailHandler({
       name: 'dp-handler-report-email-transportation',
-      lambdaRole: this.dataProcessorLambdaServiceRole,
+      lambdaRole: this.emailLambdaServiceRole,
       raitaStackIdentifier,
       vpc,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
     });
+
+    this.emailLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ssm:GetParameter', 'secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO: specify keys?
+      }),
+    );
   }
   private createErrorEmailHandler({
     name,

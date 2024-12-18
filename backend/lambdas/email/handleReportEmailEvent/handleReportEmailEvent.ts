@@ -6,8 +6,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 import { SSM_EMAIL } from '../../../../constants';
-import { PrismaClient } from '@prisma/client';
-import { QualifiedFunctionBase } from 'aws-cdk-lib/aws-lambda';
+import { getSSMParameter } from '../../../utils/ssm';
 
 function getLambdaConfigOrFail() {
   return {
@@ -20,11 +19,11 @@ const withRequest = lambdaRequestTracker();
 
 const config = getLambdaConfigOrFail();
 
-async function generateReportMail() {
+async function generateReportMail(receiver: string) {
   const { prisma } = await getDBConnection();
   const today = new Date(); // Current date
   const oneWeekLater = new Date();
-  oneWeekLater.setDate(today.getDate() - 7);
+  oneWeekLater.setDate(today.getDate() - 60);
 
   //list of keys with inspection dates between these dates
   const raportti = await prisma.raportti.findMany({
@@ -51,7 +50,7 @@ async function generateReportMail() {
   const params = {
     Source: 'your-verified-email@example.com', // Replace with your verified email
     Destination: {
-      ToAddresses: ['receiver@example.com'], // Replace with the recipient's email
+      ToAddresses: [receiver], // Replace with the recipient's email
     },
     Message: {
       Subject: {
@@ -65,7 +64,6 @@ async function generateReportMail() {
     },
   };
   log.info(emailBody);
-  log.info(`THIS IS PARAMS IN REPORTS: ${JSON.stringify(params)}`);
 
   return params;
 }
@@ -75,10 +73,16 @@ export async function handleReportEmailEvent(
   context: Context,
 ): Promise<void> {
   try {
-    const generetatedReportMail = generateReportMail();
-
+    const email = await getSSMParameter({
+      parameterName: SSM_EMAIL,
+      encrypted: false,
+    });
+    const generatedReportMail = await generateReportMail(email!);
+    log.info(
+      `THIS IS PARAMS IN REPORTS: ${JSON.stringify(generatedReportMail)}`,
+    );
     log.info(`THIS IS LOG FROM EMAIL LAMBDA`);
-    log.info(`Receiver email is ${SSM_EMAIL}`);
+    log.info(`Receiver email is ${email}`);
   } catch (error) {
     log.error(`Error sending email: ${error}`);
   }

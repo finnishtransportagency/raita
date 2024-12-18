@@ -20,6 +20,57 @@ const withRequest = lambdaRequestTracker();
 const config = getLambdaConfigOrFail();
 const dbConnection = getDBConnection();
 
+async function generateErrorMail(receiver: string) {
+  const { prisma } = await getDBConnection();
+  const today = new Date(); // Current date
+  const oneWeekLater = new Date();
+  oneWeekLater.setDate(today.getDate() - 60);
+
+  const errorLogs = await prisma.logging.findMany({
+    where: {
+      AND: [
+        {
+          log_timestamp: {
+            gte: oneWeekLater,
+            lte: today,
+          },
+        },
+        { log_level: { in: ['error', 'warn'] } },
+      ],
+    },
+    select: {
+      invocation_id: true,
+    },
+  });
+
+  // Step 2: Format the report keys for the email body
+  const emailBody =
+    errorLogs.length > 0
+      ? `There are ${errorLogs.length} received error or warning logs during the last week. Check adminlog for more.`
+      : 'No error logs were received during the last week.';
+
+  // Step 3: Define email parameters
+  const params = {
+    Source: 'your-verified-email@example.com', // Replace with your verified email
+    Destination: {
+      ToAddresses: [receiver], // Replace with the recipient's email
+    },
+    Message: {
+      Subject: {
+        Data: 'Weekly error log Summary', // Email subject
+      },
+      Body: {
+        Text: {
+          Data: emailBody, // Email body containing the report list
+        },
+      },
+    },
+  };
+  log.info(emailBody);
+
+  return params;
+}
+
 export async function handleErrorEmailEvent(
   queueEvent: SQSEvent,
   context: Context,
@@ -29,9 +80,8 @@ export async function handleErrorEmailEvent(
       parameterName: SSM_EMAIL,
       encrypted: false,
     });
-    /*const generetatedAlarmMail = generateErrorMail();
-      const generetatedReportMail = generateReportMail();*/
-
+    const generatedErrorMail = await generateErrorMail(email!);
+    log.info(`THIS IS PARAMS IN Errors: ${JSON.stringify(generatedErrorMail)}`);
     log.info(`THIS IS LOG FROM EMAIL LAMBDA`);
     log.info(`Receiver email is ${email}`);
   } catch (error) {
