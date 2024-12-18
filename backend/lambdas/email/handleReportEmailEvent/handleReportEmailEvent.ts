@@ -23,7 +23,7 @@ async function generateReportMail(receiver: string) {
   const { prisma } = await getDBConnection();
   const today = new Date(); // Current date
   const oneWeekLater = new Date();
-  oneWeekLater.setDate(today.getDate() - 60);
+  oneWeekLater.setDate(today.getDate() - 120);
 
   //list of keys with inspection dates between these dates
   const raportti = await prisma.raportti.findMany({
@@ -54,7 +54,7 @@ async function generateReportMail(receiver: string) {
     },
     Message: {
       Subject: {
-        Data: 'Weekly Report Summary', // Email subject
+        Data: 'RAITA - Weekly Report Summary', // Email subject
       },
       Body: {
         Text: {

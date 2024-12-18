@@ -43,10 +43,13 @@ async function generateErrorMail(receiver: string) {
     },
   });
 
+  const erroredZips = [...new Set(errorLogs)];
+  const zipsToEmail = erroredZips.map(key => `- ${key}`).join('\n');
+
   // Step 2: Format the report keys for the email body
   const emailBody =
     errorLogs.length > 0
-      ? `There are ${errorLogs.length} received error or warning logs during the last week. Check adminlog for more.`
+      ? `There are ${errorLogs.length} received error or warning logs during the last week. ${zipsToEmail} \n Check adminlog for more.`
       : 'No error logs were received during the last week.';
 
   // Step 3: Define email parameters
@@ -57,7 +60,7 @@ async function generateErrorMail(receiver: string) {
     },
     Message: {
       Subject: {
-        Data: 'Weekly error log Summary', // Email subject
+        Data: 'RAITA - Weekly error log Summary', // Email subject
       },
       Body: {
         Text: {
