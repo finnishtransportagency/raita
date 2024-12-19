@@ -7,6 +7,10 @@ import { lambdaRequestTracker } from 'pino-lambda';
 import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 import { SSM_EMAIL } from '../../../../constants';
 import { getSSMParameter } from '../../../utils/ssm';
+import {
+  CloudWatchClient,
+  DescribeAlarmsCommand,
+} from '@aws-sdk/client-cloudwatch';
 
 function getLambdaConfigOrFail() {
   return {
@@ -19,6 +23,34 @@ const withRequest = lambdaRequestTracker();
 
 const config = getLambdaConfigOrFail();
 const dbConnection = getDBConnection();
+const cloudWatchClient = new CloudWatchClient({ region: config.region });
+
+/*async function checkCompositeAlarms() {
+  try {
+    // Fetch alarms, including composite alarms
+    const command = new DescribeAlarmsCommand({});
+    const response = await cloudWatchClient.send(command);
+
+    // Filter for composite alarms
+    const compositeAlarms = response.CompositeAlarms || [];
+
+    // Check their states
+    const alarmStates = compositeAlarms.map(alarm => ({
+      Name: alarm.AlarmName,
+      State: alarm.StateValue,
+    }));
+
+    console.log('Composite Alarm States:', alarmStates);
+
+    // Find composite alarms that are in "ALARM" state
+    const activeCompositeAlarms = alarmStates.filter(
+      alarm => alarm.State === 'ALARM',
+    );
+    console.log('Active Composite Alarms:', activeCompositeAlarms);
+  } catch (error) {
+    console.error('Error fetching composite alarms:', error);
+  }
+}*/
 
 async function generateErrorMail(receiver: string) {
   const { prisma } = await getDBConnection();
@@ -43,10 +75,8 @@ async function generateErrorMail(receiver: string) {
     },
   });
 
-  const erroredZips = [...new Set(errorLogs)];
-  const zipsToEmail = erroredZips
-    .map(key => `- ${key.invocation_id}`)
-    .join('\n');
+  const erroredZips = [...new Set(errorLogs.map(log => log.invocation_id))];
+  const zipsToEmail = erroredZips.map(key => `- ${key}`).join('\n');
 
   // Step 2: Format the report keys for the email body
   const emailBody =
