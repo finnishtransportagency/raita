@@ -172,8 +172,8 @@ export class DataProcessStack extends NestedStack {
     ];
     // Grant access to sftp users from SOA offices AWS account. In prod and main only
     if (
-      isDevelopmentMainStack(this.stackId, raitaEnv) ||
-      isProductionStack(this.stackId, raitaEnv)
+      isDevelopmentMainStack(stackId, raitaEnv) ||
+      isProductionStack(stackId, raitaEnv)
     ) {
       // Grant sftpUser full access to data reception bucket
       const sftpReceivePolicy = this.createBucketPolicy({
@@ -389,6 +389,7 @@ export class DataProcessStack extends NestedStack {
       prismaLambdaLayer,
       readyForGeoviiteConversionQueue: this.readyForGeoviiteConversionQueue,
       raitaEnv,
+      stackId,
     });
 
     this.readyForGeoviiteConversionQueue.grantSendMessages(
@@ -844,6 +845,7 @@ export class DataProcessStack extends NestedStack {
     prismaLambdaLayer,
     readyForGeoviiteConversionQueue,
     raitaEnv,
+    stackId,
   }: {
     name: string;
     csvBucketName: string;
@@ -855,6 +857,7 @@ export class DataProcessStack extends NestedStack {
     prismaLambdaLayer: lambda.LayerVersion;
     readyForGeoviiteConversionQueue: Queue;
     raitaEnv: RaitaEnvironment;
+    stackId: string;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -873,9 +876,7 @@ export class DataProcessStack extends NestedStack {
         READY_FOR_CONVERSION_QUEUE_URL:
           readyForGeoviiteConversionQueue.queueUrl,
         // flag to disable conversion in prod. TODO: remove
-        DISABLE_CONVERSION: isProductionStack(this.stackId, raitaEnv)
-          ? '1'
-          : '0',
+        DISABLE_CONVERSION: isProductionStack(stackId, raitaEnv) ? '1' : '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
