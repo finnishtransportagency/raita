@@ -1,7 +1,7 @@
 import { Context, SQSEvent } from 'aws-lambda';
 import { log } from '../../../utils/logger';
 import { getEnvOrFail } from '../../../../utils';
-
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { lambdaRequestTracker } from 'pino-lambda';
 
 import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
@@ -18,43 +18,46 @@ function getLambdaConfigOrFail() {
 const withRequest = lambdaRequestTracker();
 
 const config = getLambdaConfigOrFail();
+const sesClient = new SESClient({ region: config.region });
 
 async function generateReportMail(receiver: string) {
   const { prisma } = await getDBConnection();
   const today = new Date(); // Current date
-  const oneWeekLater = new Date();
-  oneWeekLater.setDate(today.getDate() - 60);
+  const onMonthLater = new Date();
+  onMonthLater.setDate(today.getMonth() - 1);
 
   //list of keys with inspection dates between these dates
   const raportti = await prisma.raportti.findMany({
     where: {
       inspection_date: {
-        gte: oneWeekLater,
+        gte: onMonthLater,
         lte: today,
       },
     },
     select: {
-      key: true, // Replace 'key' with actual keys/fields you want to select
+      key: true,
+      inspection_date: true,
+    },
+    orderBy: {
+      inspection_date: 'asc',
     },
   });
 
-  // Step 2: Format the report keys for the email body
   const reportList =
     raportti.length > 0
-      ? raportti.map(key => `- ${key}`).join('\n')
-      : 'No reports were received during the last week.';
+      ? raportti.map(key => `- ${key.key}, ${key.inspection_date}`).join('\n')
+      : 'Ei vastaanotettuja raportteja viime kuukauden aikana';
 
-  const emailBody = `These are the reports that are received during the last week:\n\n${reportList}`;
+  const emailBody = `Raportteja vastaanotettu yhteensä: ${raportti.length}. Nämä raportit vastaanotettiin viime kuukauden aikana:\n\n${reportList}`;
 
-  // Step 3: Define email parameters
   const params = {
     Source: 'your-verified-email@example.com', // Replace with your verified email
     Destination: {
-      ToAddresses: [receiver], // Replace with the recipient's email
+      ToAddresses: [receiver],
     },
     Message: {
       Subject: {
-        Data: 'Weekly Report Summary', // Email subject
+        Data: 'RAITA - Raportti yhteenveto', // Email subject
       },
       Body: {
         Text: {
@@ -63,7 +66,6 @@ async function generateReportMail(receiver: string) {
       },
     },
   };
-  log.info(emailBody);
 
   return params;
 }
@@ -81,8 +83,9 @@ export async function handleReportEmailEvent(
     log.info(
       `THIS IS PARAMS IN REPORTS: ${JSON.stringify(generatedReportMail)}`,
     );
-    log.info(`THIS IS LOG FROM EMAIL LAMBDA`);
-    log.info(`Receiver email is ${email}`);
+    /* THESE LINES ARE COMMENTED UNTIL EMAIL ADDRESS IS SET
+    const command = new SendEmailCommand(generatedReportMail);
+    const response = await sesClient.send(command);*/
   } catch (error) {
     log.error(`Error sending email: ${error}`);
   }

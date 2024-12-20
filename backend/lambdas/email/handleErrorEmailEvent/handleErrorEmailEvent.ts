@@ -7,7 +7,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
 import { SSM_EMAIL } from '../../../../constants';
 import { getSSMParameter } from '../../../utils/ssm';
-
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 function getLambdaConfigOrFail() {
   return {
     region: getEnvOrFail('REGION'),
@@ -20,11 +20,13 @@ const withRequest = lambdaRequestTracker();
 const config = getLambdaConfigOrFail();
 const dbConnection = getDBConnection();
 
+const sesClient = new SESClient({ region: config.region });
+
 async function generateErrorMail(receiver: string) {
   const { prisma } = await getDBConnection();
   const today = new Date(); // Current date
   const oneWeekLater = new Date();
-  oneWeekLater.setDate(today.getDate() - 60);
+  oneWeekLater.setDate(today.getDate() - 7);
 
   const errorLogs = await prisma.logging.findMany({
     where: {
@@ -43,30 +45,30 @@ async function generateErrorMail(receiver: string) {
     },
   });
 
-  // Step 2: Format the report keys for the email body
+  const erroredZips = [...new Set(errorLogs.map(log => log.invocation_id))];
+  const zipsToEmail = erroredZips.map(key => `- ${key}`).join('\n');
+
   const emailBody =
     errorLogs.length > 0
-      ? `There are ${errorLogs.length} received error or warning logs during the last week. Check adminlog for more.`
-      : 'No error logs were received during the last week.';
+      ? `${errorLogs.length} vastaanotettua virhettä tai varoitusta viime viikon aikana. Virheet havaittu seuraavissa zip-tiedostoissa${zipsToEmail} \n Katso lisää adminlokista: https://raita.vaylapilvi.fi/admin/logs.`
+      : 'Ei uusia erroreita viime viikon ajalta.';
 
-  // Step 3: Define email parameters
   const params = {
     Source: 'your-verified-email@example.com', // Replace with your verified email
     Destination: {
-      ToAddresses: [receiver], // Replace with the recipient's email
+      ToAddresses: [receiver],
     },
     Message: {
       Subject: {
-        Data: 'Weekly error log Summary', // Email subject
+        Data: 'RAITA - Virhe yhteenveto',
       },
       Body: {
         Text: {
-          Data: emailBody, // Email body containing the report list
+          Data: emailBody,
         },
       },
     },
   };
-  log.info(emailBody);
 
   return params;
 }
@@ -82,8 +84,9 @@ export async function handleErrorEmailEvent(
     });
     const generatedErrorMail = await generateErrorMail(email!);
     log.info(`THIS IS PARAMS IN Errors: ${JSON.stringify(generatedErrorMail)}`);
-    log.info(`THIS IS LOG FROM EMAIL LAMBDA`);
-    log.info(`Receiver email is ${email}`);
+    /* THESE LINES ARE COMMENTED UNTIL EMAIL ADDRESS IS SET
+    const command = new SendEmailCommand(generatedErrorMail);
+    const response = await sesClient.send(command);*/
   } catch (error) {
     log.error(`Error sending email: ${error}`);
   }
