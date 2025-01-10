@@ -20,9 +20,16 @@ export interface ZipFileData {
   metadata: { [key: string]: string };
 }
 
-export function isZipPath(arg: Array<string>): arg is ZipPath {
+/**
+ * Check is given path is a possible zip file path
+ */
+export function isPossibleZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
-  return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+  return (
+    (arg.length === 5 || arg.length === 4) &&
+    !!system &&
+    isRaitaSourceSystem(system)
+  );
 }
 
 // END duplicates

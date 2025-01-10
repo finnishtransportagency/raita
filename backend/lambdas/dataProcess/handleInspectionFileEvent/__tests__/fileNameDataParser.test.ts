@@ -135,9 +135,7 @@ describe('extractFileNameData', () => {
   const testExtractionSpec: IExtractionSpec = {
     parserVersion: '0.0.1',
     fileContentExtractionSpec: [],
-    folderTreeExtractionSpec: {},
-    folderTreeExtractionSpecWithTestTrackExtraInfo: {},
-    vRunFolderTreeExtractionSpec: {},
+    folderTreeExtractionSpecs: [],
     fileNameExtractionSpec: {
       txt: [
         {

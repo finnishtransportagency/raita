@@ -15,7 +15,7 @@ import {
   logMessages,
   RaitaZipError,
 } from './utils';
-import { isZipPath, ZipFileData } from './types';
+import { isPossibleZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
 import { log } from './logger';
 import { IAdminLogger, PostgresLogger } from './adminLog/postgresLogger';
@@ -107,8 +107,9 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
-    // Note: Adherence to zip path type is also checked in lambda
-    if (!isZipPath(path)) {
+    // Note: More complex validation of zip path is checked in reception handler
+    // only check length here
+    if (!isPossibleZipPath(path)) {
       throw new RaitaZipError('incorrectPath');
     }
     const s3 = new S3({});
