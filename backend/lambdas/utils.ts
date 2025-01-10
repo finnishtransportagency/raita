@@ -142,7 +142,7 @@ export type ZipPath = [
  * Try to determine if name can be a valid zip name.
  * Name does not follow strict specification so false positives are possible
  */
-function isValidZipName(name: string) {
+export function isValidZipName(name: string) {
   // not number
   if (Number(name).toString() === name) {
     return false;
@@ -156,13 +156,16 @@ function isValidZipName(name: string) {
  * either 3 or 4
  * TODO: can this be more robust?
  */
-function getZipFileNameIndex(path: string[]) {
+export function getZipFileNameIndex(path: string[]) {
   if (path.length < 4) {
     throw new Error('Invalid path');
   }
   // this should be either date or zip name
   if (isValidZipName(path[3])) {
     return 3;
+  }
+  if (path.length < 5) {
+    throw new Error('Invalid path');
   }
   if (isValidZipName(path[4])) {
     return 4;
