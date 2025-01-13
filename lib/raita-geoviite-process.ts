@@ -159,7 +159,7 @@ export class ConversionProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(300), // TODO: what is a maximum realistic running time?
+      timeout: cdk.Duration.seconds(900), // TODO: what is a maximum realistic running time?
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleStartConversionProcess',
       entry: path.join(
