@@ -24,6 +24,10 @@ describe('isValidZipName', () => {
     const name = '20250110';
     expect(isValidZipName(name)).toEqual(false);
   });
+  test('fail: date', () => {
+    const name = '20250110-11';
+    expect(isValidZipName(name)).toEqual(false);
+  });
   test('success: anything else', () => {
     const name = 'test';
     expect(isValidZipName(name)).toEqual(true);

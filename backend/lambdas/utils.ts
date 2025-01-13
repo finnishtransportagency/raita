@@ -139,12 +139,22 @@ export type ZipPath = [
 // Type guards
 
 /**
+ * Check if name is possible a year or date field
+ */
+function isPossibleYearOrDate(name: string) {
+  // date can also be two days split with dash like '20250101-02'
+  const split = name.split('-');
+  const filtered = split.filter(name => Number(name).toString() === name);
+  return split.length === filtered.length;
+}
+
+/**
  * Try to determine if name can be a valid zip name.
  * Name does not follow strict specification so false positives are possible
  */
 export function isValidZipName(name: string) {
   // not number
-  if (Number(name).toString() === name) {
+  if (isPossibleYearOrDate(name)) {
     return false;
   }
   // id more validation is needed, could try to find these: _, date, system, track_part?
