@@ -38,7 +38,7 @@ describe('geoviite single point with default params', () => {
       ),
     ).toBeTruthy();
     expect(
-      loggings.includes('Post data: [{"x":25.7482,"y":61.9241}]'),
+      loggings.includes('Post data: [{"x":25.7482,"y":61.9241,"sade":150}]'),
     ).toBeTruthy();
   });
 });
@@ -111,7 +111,7 @@ describe('geoviite single point with two custom path params', () => {
       ),
     ).toBeTruthy();
     expect(
-      loggings.includes('Post data: [{"x":25.7482,"y":61.9241}]'),
+      loggings.includes('Post data: [{"x":25.7482,"y":61.9241,"sade":150}]'),
     ).toBeTruthy();
   });
 });
@@ -141,7 +141,7 @@ describe('geoviite multiple points with default params', () => {
     ).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x":25.7482,"y":61.9241},{"x":24.7182,"y":61.5641},{"x":25.1482,"y":61.1231}]',
+          'Post data: [{"x":25.7482,"y":61.9241,"sade":150},{"x":24.7182,"y":61.5641,"sade":150},{"x":25.1482,"y":61.1231,"sade":150}]',
       ),
     ).toBeTruthy();
   });
@@ -172,7 +172,7 @@ describe('geoviite multiple points with Prisma coords', () => {
     ).toBeTruthy();
     expect(
       loggings.includes(
-        'Post data: [{"x":25.7482,"y":61.9241},{"x":24.7182,"y":61.5641},{"x":25.1482,"y":61.1231}]',
+          'Post data: [{"x":25.7482,"y":61.9241,"sade":150},{"x":24.7182,"y":61.5641,"sade":150},{"x":25.1482,"y":61.1231,"sade":150}]',
       ),
     ).toBeTruthy();
   });

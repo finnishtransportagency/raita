@@ -124,7 +124,7 @@ const defaultTrackAddressWithCoordinatePostParams: Omit<
   'x' | 'y'
 > = {
   ratanumero: undefined,
-  sade: undefined,
+  sade: 150,
   sijaintiraide: undefined,
   sijaintiraide_tyyppi: undefined,
 };
