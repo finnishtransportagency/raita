@@ -11,10 +11,7 @@ import { KeyData } from '../../../utils';
 import { readRunningDateFromLine } from '../../csvCommon/csvConversionUtils';
 import { getLambdaConfigOrFail } from '../util';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { IAdminLogger } from '../../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../../utils/adminLog/postgresLogger';
-
-const adminLogger: IAdminLogger = new PostgresLogger();
 
 async function writeFileChunkToQueueS3(
   inputFileChunkBody: string,
@@ -23,7 +20,9 @@ async function writeFileChunkToQueueS3(
   chunkNumber: number,
   invocationId: string,
   doGeoviiteConversion: boolean,
+  dbConnection: DBConnection,
 ) {
+  const adminLogger = new PostgresLogger(Promise.resolve(dbConnection));
   try {
     await adminLogger.init('data-inspection', invocationId);
     const pathString = key.path.slice(0, key.path.length - 1).join('/');
@@ -159,6 +158,7 @@ export async function chopCSVFileStream(
               chunkCounter,
               invocationId,
               doGeoviiteConversion,
+              dbConnection,
             );
             //  log.debug("handled bufferd: " + handleCounter);
           }
@@ -194,6 +194,7 @@ export async function chopCSVFileStream(
         chunkCounter,
         invocationId,
         doGeoviiteConversion,
+        dbConnection,
       );
     }
 

@@ -27,6 +27,7 @@ export type Mittaus = {
 
 export enum ConversionStatus {
   READY_FOR_CONVERSION = 'READY_FOR_CONVERSION', // set status to this in db for manual processing
+  IN_QUEUE = 'IN_QUEUE',
   IN_PROGRESS = 'IN_PROGRESS',
   SUCCESS = 'SUCCESS',
   ERROR = 'ERROR',

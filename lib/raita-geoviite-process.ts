@@ -15,6 +15,13 @@ import {
 
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
+import { FilterPattern, ILogGroup } from 'aws-cdk-lib/aws-logs';
+import {
+  Alarm,
+  ComparisonOperator,
+  Stats,
+  TreatMissingData,
+} from 'aws-cdk-lib/aws-cloudwatch';
 
 interface ConversionProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -70,6 +77,7 @@ export class ConversionProcessStack extends NestedStack {
     const conversionQueue = new Queue(this, 'geoviite-conversion-queue', {
       visibilityTimeout: cdk.Duration.minutes(15),
       retentionPeriod: cdk.Duration.days(7),
+      fifo: true,
     });
 
     const startConversionProcessHandler =
@@ -110,7 +118,15 @@ export class ConversionProcessStack extends NestedStack {
 
     conversionQueue.grantSendMessages(startConversionProcessHandler);
     doConversionProcessHandler.addEventSource(coversionQueueSource);
-    // TODO: how to trigger lambda?
+
+    this.createStartConversionProcessAlarms(
+      startConversionProcessHandler.logGroup,
+      raitaStackIdentifier,
+    );
+    this.createDoConversionProcessAlarms(
+      doConversionProcessHandler.logGroup,
+      raitaStackIdentifier,
+    );
   }
 
   /**
@@ -143,7 +159,7 @@ export class ConversionProcessStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(300), // TODO: what is a maximum realistic running time?
+      timeout: cdk.Duration.seconds(900), // TODO: what is a maximum realistic running time?
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleStartConversionProcess',
       entry: path.join(
@@ -218,5 +234,65 @@ export class ConversionProcessStack extends NestedStack {
       },
       deadLetterQueue,
     });
+  }
+
+  private createStartConversionProcessAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const errorMetricFilter = logGroup.addMetricFilter(
+      'start-conversion-process-error-filter',
+      {
+        filterPattern: FilterPattern.stringValue('$.level', '=', 'error'),
+        metricName: `start-conversion-process-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-conversion-process',
+        metricValue: '1',
+      },
+    );
+    const errorAlarm = new Alarm(
+      this,
+      'start-conversion-process-errors-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `start-conversion-process-errors-alarm-${raitaStackIdentifier}`,
+        metric: errorMetricFilter.metric({
+          label: `Conversion process start errors ${raitaStackIdentifier}`,
+          period: cdk.Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    return [errorAlarm];
+  }
+  private createDoConversionProcessAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const errorMetricFilter = logGroup.addMetricFilter(
+      'do-conversion-process-error-filter',
+      {
+        filterPattern: FilterPattern.stringValue('$.level', '=', 'error'),
+        metricName: `do-conversion-process-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-conversion-process',
+        metricValue: '1',
+      },
+    );
+    const errorAlarm = new Alarm(this, 'do-conversion-process-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `do-conversion-process-errors-alarm-${raitaStackIdentifier}`,
+      metric: errorMetricFilter.metric({
+        label: `Conversion process function errors ${raitaStackIdentifier}`,
+        period: cdk.Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [errorAlarm];
   }
 }

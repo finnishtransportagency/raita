@@ -3,13 +3,20 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 import { Duration, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { SqsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { IVpc } from 'aws-cdk-lib/aws-ec2';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { FilterPattern, ILogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
+import {
+  FilterPattern,
+  ILogGroup,
+  LogGroup,
+  RetentionDays,
+} from 'aws-cdk-lib/aws-logs';
 import * as path from 'path';
 import { Construct } from 'constructs';
 import { DatabaseEnvironmentVariables, RaitaEnvironment } from './config';
@@ -24,6 +31,7 @@ import {
 } from './raitaResourceCreators';
 import {
   getDatabaseEnvironmentVariables,
+  isDevelopmentMainStack,
   isProductionStack,
   prismaBundlingOptions,
 } from './utils';
@@ -33,6 +41,7 @@ import {
   ComparisonOperator,
   CompositeAlarm,
   MathExpression,
+  Metric,
   Stats,
   TreatMissingData,
 } from 'aws-cdk-lib/aws-cloudwatch';
@@ -69,6 +78,7 @@ export class DataProcessStack extends NestedStack {
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
   public readonly readyForGeoviiteConversionQueue: Queue;
+  public readonly handleFileCountEventFn: NodejsFunction;
 
   constructor(scope: Construct, id: string, props: DataProcessStackProps) {
     super(scope, id, props);
@@ -160,43 +170,49 @@ export class DataProcessStack extends NestedStack {
       's3:GetObjectVersion',
       's3:GetObjectAcl',
     ];
-    // Grant sftpUser full access to data reception bucket
-    const sftpReceivePolicy = this.createBucketPolicy({
-      policyAccountId: sftpPolicyAccountId,
-      policyUserId: sftpPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
+    // Grant access to sftp users from SOA offices AWS account. In prod and main only
+    if (
+      isDevelopmentMainStack(stackId, raitaEnv) ||
+      isProductionStack(stackId, raitaEnv)
+    ) {
+      // Grant sftpUser full access to data reception bucket
+      const sftpReceivePolicy = this.createBucketPolicy({
+        policyAccountId: sftpPolicyAccountId,
+        policyUserId: sftpPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(sftpReceivePolicy);
 
-    // Grant RAITA developer SFTP user full access to the bucket
-    const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
-      policyAccountId: sftpPolicyAccountId,
-      policyUserId: sftpRaitaDeveloperPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(
-      sftpRaitaDeveloperUserBucketPolicy,
-    );
+      // Grant RAITA developer SFTP user full access to the bucket
+      const sftpRaitaDeveloperUserBucketPolicy = this.createBucketPolicy({
+        policyAccountId: sftpPolicyAccountId,
+        policyUserId: sftpRaitaDeveloperPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(
+        sftpRaitaDeveloperUserBucketPolicy,
+      );
 
-    // Grant SOA-offices väylä role full access to data reception bucket
-    const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
-      policyAccountId: soaPolicyAccountId,
-      policyUserId: vaylaPolicyUserId,
-      resources: receptionBucketResources,
-      actions: fullAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
+      // Grant SOA-offices väylä role full access to data reception bucket
+      const soaOfficeVaylaBucketPolicy = this.createBucketPolicy({
+        policyAccountId: soaPolicyAccountId,
+        policyUserId: vaylaPolicyUserId,
+        resources: receptionBucketResources,
+        actions: fullAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(soaOfficeVaylaBucketPolicy);
 
-    // Grant SOA-offices loram role read access to data reception bucket
-    const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
-      policyAccountId: soaPolicyAccountId,
-      policyUserId: loramPolicyUserId,
-      resources: receptionBucketResources,
-      actions: readAccessBucketActions,
-    });
-    this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+      // Grant SOA-offices loram role read access to data reception bucket
+      const soaOfficeLoramBucketPolicy = this.createBucketPolicy({
+        policyAccountId: soaPolicyAccountId,
+        policyUserId: loramPolicyUserId,
+        resources: receptionBucketResources,
+        actions: readAccessBucketActions,
+      });
+      this.dataReceptionBucket.addToResourcePolicy(soaOfficeLoramBucketPolicy);
+    }
 
     // Create ECS cluster resources for zip extraction task
     const {
@@ -225,6 +241,23 @@ export class DataProcessStack extends NestedStack {
         actions: ['secretsmanager:GetSecretValue'],
         resources: ['*'], // TODO: specify keys?
       }),
+    );
+    // Create filecount inspector lambda and grant permissions
+    const handleFileCountEventFn = this.createFileCountEventHandler({
+      name: 'dp-handler-file-count-inspector',
+      targetBucket: this.inspectionDataBucket,
+      lambdaRole: this.dataProcessorLambdaServiceRole,
+      raitaStackIdentifier,
+      vpc,
+      databaseEnvironmentVariables,
+      prismaLambdaLayer,
+    });
+
+    this.inspectionDataBucket.grantRead(handleFileCountEventFn);
+
+    const fileCountMismatchAlarms = this.createFileCountInspectionAlarms(
+      handleFileCountEventFn.logGroup,
+      raitaStackIdentifier,
     );
 
     // Create zip handler lambda and grant permissions
@@ -356,6 +389,7 @@ export class DataProcessStack extends NestedStack {
       prismaLambdaLayer,
       readyForGeoviiteConversionQueue: this.readyForGeoviiteConversionQueue,
       raitaEnv,
+      stackId,
     });
 
     this.readyForGeoviiteConversionQueue.grantSendMessages(
@@ -811,6 +845,7 @@ export class DataProcessStack extends NestedStack {
     prismaLambdaLayer,
     readyForGeoviiteConversionQueue,
     raitaEnv,
+    stackId,
   }: {
     name: string;
     csvBucketName: string;
@@ -822,6 +857,7 @@ export class DataProcessStack extends NestedStack {
     prismaLambdaLayer: lambda.LayerVersion;
     readyForGeoviiteConversionQueue: Queue;
     raitaEnv: RaitaEnvironment;
+    stackId: string;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -840,9 +876,7 @@ export class DataProcessStack extends NestedStack {
         READY_FOR_CONVERSION_QUEUE_URL:
           readyForGeoviiteConversionQueue.queueUrl,
         // flag to disable conversion in prod. TODO: remove
-        DISABLE_CONVERSION: isProductionStack(this.stackId, raitaEnv)
-          ? '1'
-          : '0',
+        DISABLE_CONVERSION: isProductionStack(stackId, raitaEnv) ? '1' : '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -1129,6 +1163,48 @@ export class DataProcessStack extends NestedStack {
     ];
   }
 
+  /* FileCount Mismatch Alarm */
+  private createFileCountInspectionAlarms(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const fileCountMisMatchErrorFilter = logGroup.addMetricFilter(
+      'filecount-mismatch-error-filter',
+      {
+        filterPattern: FilterPattern.all(
+          FilterPattern.any(
+            FilterPattern.stringValue('$.tag', '=', 'RAITA_BACKEND'),
+          ),
+          FilterPattern.stringValue('$.level', '=', 'warn'),
+          FilterPattern.stringValue('$.msg', '=', 'Filecounts mismatch!'),
+        ),
+        metricName: `filecount-mismatch-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const fileCountInspectorAlarm = new Alarm(
+      this,
+      'filecount-inspector-mismatch-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `filecount-inspector-mismatch-alarm-${raitaStackIdentifier}`,
+        alarmDescription:
+          'Alarm for mismatched filecount between database and s3 buckets',
+        metric: fileCountMisMatchErrorFilter.metric({
+          label: `Inspection any errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    return fileCountInspectorAlarm;
+  }
+
   /**
    * Helper to create bucket policies
    */
@@ -1242,6 +1318,7 @@ export class DataProcessStack extends NestedStack {
           S3_TARGET_BUCKET: targetBucket.bucketName,
           ...databaseEnvironmentVariables,
         },
+        readonlyRootFilesystem: false,
       },
     );
 
@@ -1289,5 +1366,59 @@ export class DataProcessStack extends NestedStack {
       zipHandlerService,
       zipHandlerQueue,
     };
+  }
+  private createFileCountEventHandler({
+    name,
+    targetBucket,
+    lambdaRole,
+    raitaStackIdentifier,
+    vpc,
+    databaseEnvironmentVariables,
+    prismaLambdaLayer,
+  }: {
+    name: string;
+    targetBucket: s3.Bucket;
+    lambdaRole: iam.Role;
+    raitaStackIdentifier: string;
+    vpc: IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
+  }) {
+    const fileCountHandler = new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1500,
+      timeout: Duration.seconds(180),
+      runtime: Runtime.NODEJS_20_X,
+      handler: 'handleFileCountInspection',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/dataProcess/handleFileCountInspection/handleFileCountInspection.ts`,
+      ),
+      environment: {
+        TARGET_BUCKET_NAME: targetBucket.bucketName,
+        REGION: this.region,
+        RAITA_STACK_ID: raitaStackIdentifier,
+        ...databaseEnvironmentVariables,
+      },
+      role: lambdaRole,
+      vpc,
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+    });
+    // Create an EventBridge rule to trigger the Lambda weekly
+    const weeklyRule = new events.Rule(this, `${name}WeeklyScheduleRule`, {
+      schedule: events.Schedule.cron({
+        minute: '0', // At the 0th minute
+        hour: '8', // At 8:00 AM
+        weekDay: '1', // On Monday (1 represents Monday)
+      }),
+    });
+
+    // Add the Lambda as the target of the rule
+    weeklyRule.addTarget(new targets.LambdaFunction(fileCountHandler));
+    return fileCountHandler;
   }
 }

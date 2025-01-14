@@ -10,7 +10,7 @@ export class PostgresLogger implements IAdminLogger {
   private invocationId: string;
   private connection: Promise<DBConnection>;
 
-  constructor(dbConnection?: Promise<DBConnection>) {
+  constructor(dbConnection: Promise<DBConnection>) {
     if (dbConnection) {
       this.connection = dbConnection;
     }

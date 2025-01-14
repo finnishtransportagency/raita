@@ -1,7 +1,7 @@
 {
   "page_labels": {
     "reports": "Raportit",
-    "csv": "Csv-haku",
+    "csv": "Mittausdata-haku",
     "admin": {
       "logs": "Adminloki",
       "delete": "Tietojen poisto",
@@ -99,7 +99,7 @@
   "stale_mittaus_count": "Huom: hakuehtoja on muutettu, näytetty mittausten määrä ei välttämättä enää vastaa valittuja hakuehtoja. Tee uusi haku päivittääksesi mittausten määrä.",
   "error_size_limit": "Virhe: liian suuri datamäärä. Rajaa hakuehtoja tarkemmaksi",
   "csv_filter_header": "Mittausarvojen suodatin",
-  "csv_combination_logic_geoviite_rataosoite_rounded": "Geoviite rataosoite (pyöristetty)",
+  "csv_combination_logic_geoviite_rataosoite_rounded": "Viitekehysmuunnin korjattu rataosoite (pyöristetty)",
   "csv_combination_logic_meeri_rataosoite": "Meeri rataosoite",
   "csv_mittaus_combination_logic_header": "Mittausten yhdistelylogiikka"
 }

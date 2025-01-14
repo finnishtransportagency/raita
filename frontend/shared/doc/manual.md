@@ -47,6 +47,14 @@ Hakuun voi asettaa arvon sekä alkupisteelle että loppupisteelle lisäämällä
 
 Paras tapa selvittää hakukriteerien toimintoja on tehdä ensin yleisempi haku, jonka jälkeen on mahdollista tarkentaa hakua täsmällisemmillä hakukriteereillä.
 
+### Mittausdatan hakeminen
+
+Hakua on mahdollista rajata valitsemalla järjestelmät, raportointiosuudet ja tilirataosanumerot vasemman laidan valikosta. Jos käyttäjä ei valitse mitään näytetään kaikki järjestelmät, raportointiosuudet ja tilirataosanumerot.
+Painamalla "Hae"-nappia aukeaa valikko, jossa voi suodattaa tuloksia, valita sarakkeet sekä raportit.
+Painamalla "Hae mittausrivien määrä"-nappia ohjelma kerää datan ja antaa arvion tiedoston kokoluokasta.
+Painamalla "Generoi CSV-tiedosto"-nappia ohjelma luo tiedoston latausvalmiiksi.
+Luodun tiedoston voi ladata painamalla oikean yläkulman valkoista "Lataa ZIP"-nappia
+
 ## Käyttöoikeusasiat, ongelmat ja kehitysehdotukset
 
 Kehitysehdotuksiin, käyttöoikeusasioihin ja ongelmatilanteisiin liittyen ole yhteydessä raide@vayla.fi

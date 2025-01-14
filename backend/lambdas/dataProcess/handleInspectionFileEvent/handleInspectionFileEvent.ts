@@ -25,14 +25,10 @@ import {
   insertRaporttiData,
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
-import { ENVIRONMENTS } from '../../../../constants';
-import { getPrismaClient } from '../../../utils/prismaClient';
 import { getLambdaConfigOrFail } from './util';
 
-const findReportByKey = async (key: string) => {
-  const foundReport = await (
-    await prisma
-  ).raportti.findFirst({
+const findReportByKey = async (key: string, dbConnection: DBConnection) => {
+  const foundReport = await dbConnection.prisma.raportti.findFirst({
     where: {
       key: {
         in: [key],
@@ -45,16 +41,12 @@ const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
 
-    // init db connections and such
-    // TODO: there should only be one db library used
-    const prisma = getPrismaClient();
     const postgresConnection: Promise<DBConnection> = getDBConnection();
     const config = getLambdaConfigOrFail();
     const backend = BackendFacade.getBackend(config);
     const adminLogger: IAdminLogger = new PostgresLogger(postgresConnection);
     return {
       withRequest,
-      prisma,
       postgresConnection,
       config,
       backend,
@@ -69,14 +61,8 @@ const init = () => {
   }
 };
 
-const {
-  withRequest,
-  prisma,
-  postgresConnection,
-  config,
-  backend,
-  adminLogger,
-} = init();
+const { withRequest, postgresConnection, config, backend, adminLogger } =
+  init();
 
 /**
  * Currently function takes in S3 events. This has implication that file port
@@ -183,7 +169,7 @@ export async function handleInspectionFileEvent(
         };
         let shouldParse = true;
         // DB connection exists
-        const foundReport = await findReportByKey(key);
+        const foundReport = await findReportByKey(key, dbConnection);
         if (foundReport) {
           // Report found
           reportId = foundReport.id;

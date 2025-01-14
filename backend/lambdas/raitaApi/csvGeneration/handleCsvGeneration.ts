@@ -71,6 +71,15 @@ export async function handleCsvGeneration(
   }
 }
 
+// Function to prepend BOM to the stream
+function prependBOMToStream(readableStream: Readable) {
+  const BOM = '\uFEFF';
+  const bomStream = new PassThrough();
+  bomStream.write(BOM); // Write BOM at the beginning
+  readableStream.pipe(bomStream); // Pipe the original stream after BOM
+  return bomStream;
+}
+
 async function generateCsv(
   event: CsvGenerationEvent,
   s3Client: S3Client,
@@ -123,7 +132,7 @@ async function generateCsv(
     mittausCombinationLogic,
   );
 
-  const csvStream = csvReadResult.outputStream;
+  const csvStream = prependBOMToStream(csvReadResult.outputStream);
 
   try {
     await Promise.all([
@@ -332,13 +341,14 @@ const readDbToReadable = async (
     .map(res => res.system!);
   // handle one chunk at a time to allow arbitrary length
   const rowCountToRead = CSV_CHUNK_SIZE;
-  const defaultSelectedColumns = [
-    'lat',
-    'long',
-    'track',
-    'geoviite_konvertoitu_lat',
-    'geoviite_konvertoitu_long',
-  ];
+  const defaultSelectedColumns = ['lat', 'long', 'track'];
+
+  if (mittausCombinationLogic === 'GEOVIITE_RATAOSOITE_ROUNDED') {
+    defaultSelectedColumns.push(
+      'geoviite_konvertoitu_lat',
+      'geoviite_konvertoitu_long',
+    );
+  }
 
   const outputStream = new PassThrough();
   outputStream.pause();

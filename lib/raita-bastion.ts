@@ -79,6 +79,7 @@ export class BastionStack extends cdk.NestedStack {
       }),
       role,
       userData,
+      requireImdsv2: true,
     });
   }
 }
