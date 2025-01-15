@@ -64,17 +64,24 @@ const extractionSpec: IExtractionSpec = {
       },
     ],
   },
-  folderTreeExtractionSpec: {
-    '1': { name: 'pathOnly1' },
-    '2': { name: 'pathOnly2' },
-    '3': { name: 'overlapping' },
-    '4': { name: 'filename' },
-  },
-  folderTreeExtractionSpecWithTestTrackExtraInfo: {},
-  vRunFolderTreeExtractionSpec: {
-    '1': { name: 'pathOnly1' },
-    '2': { name: 'vPathOnly2' },
-  },
+  folderTreeExtractionSpecs: [
+    {
+      name: 'v1',
+      spec: {
+        '1': { name: 'pathOnly1' },
+        '2': { name: 'pathOnly2' },
+        '3': { name: 'overlapping' },
+        '4': { name: 'filename' },
+      },
+    },
+    {
+      name: 'virtualRun',
+      spec: {
+        '1': { name: 'pathOnly1' },
+        '2': { name: 'vPathOnly2' },
+      },
+    },
+  ],
   fileContentExtractionSpec: [
     {
       propertyKey: 'contentOnly1',
@@ -117,7 +124,7 @@ data here
 `;
 
 describe('parseFileMetadata', () => {
-  test('success: normal .txt', async () => {
+  test('success: v1 .txt', async () => {
     const keyData: KeyData = {
       path: ['test', 'path', 'FROMPATH', 'TEST_FROMNAME_112233.txt'],
       rootFolder: 'test',

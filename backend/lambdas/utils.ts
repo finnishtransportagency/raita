@@ -138,18 +138,80 @@ export type ZipPath = [
 
 // Type guards
 
+/**
+ * Check if name is possible a year or date field
+ */
+function isPossibleYearOrDate(name: string) {
+  // date can also be two days split with dash like '20250101-02'
+  const split = name.split('-');
+  const filtered = split.filter(name => Number(name).toString() === name);
+  return split.length === filtered.length;
+}
+
+/**
+ * Try to determine if name can be a valid zip name.
+ * Name does not follow strict specification so false positives are possible
+ */
+export function isValidZipName(name: string) {
+  // not number
+  if (isPossibleYearOrDate(name)) {
+    return false;
+  }
+  // id more validation is needed, could try to find these: _, date, system, track_part?
+  return true;
+}
+
+/**
+ * Try to determine index at which zip file is
+ * either 3 or 4
+ * TODO: can this be more robust?
+ */
+export function getZipFileNameIndex(path: string[]) {
+  if (path.length < 4) {
+    throw new Error('Invalid path');
+  }
+  // this should be either date or zip name
+  if (isValidZipName(path[3])) {
+    return 3;
+  }
+  if (path.length < 5) {
+    throw new Error('Invalid path');
+  }
+  if (isValidZipName(path[4])) {
+    return 4;
+  }
+  throw new Error('Invalid path');
+}
+
 export function isZipPath(arg: Array<string>): arg is ZipPath {
   const [system] = arg;
-  return arg.length === 5 && !!system && isRaitaSourceSystem(system);
+  if (!system || !isRaitaSourceSystem(system)) {
+    return false;
+  }
+  if (arg.length === 5 && isValidZipName(arg[4])) {
+    return true;
+  }
+  if (arg.length === 4 && isValidZipName(arg[3])) {
+    return true;
+  }
+  return false;
 }
 /**
  * Check if arg file path references either 'system', 'year', 'campaign' or 'date' in the predefined file structure
  */
 export function isZipParentPath(arg: Array<string>): boolean {
   const [system] = arg;
-  return (
-    arg.length > 0 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
-  );
+  if (!system || !isRaitaSourceSystem(system)) {
+    return false;
+  }
+  if ([1, 2, 3].includes(arg.length)) {
+    return true;
+  }
+  // fourth entry can be either date or zip name
+  if (arg.length === 4 && !isValidZipName(arg[3])) {
+    return true;
+  }
+  return false;
 }
 
 export function addZipFileExtension(prefix: string) {
@@ -164,9 +226,17 @@ export function addZipFileExtension(prefix: string) {
  */
 export function isCampaignOrMoreSpecificPath(arg: Array<string>): boolean {
   const [system] = arg;
-  return (
-    arg.length > 2 && arg.length < 5 && !!system && isRaitaSourceSystem(system)
-  );
+  if (!system || !isRaitaSourceSystem(system)) {
+    return false;
+  }
+  if (arg.length === 3) {
+    return true;
+  }
+  // fourth entry can be either date or zip name
+  if (arg.length === 4 && !isValidZipName(arg[3])) {
+    return true;
+  }
+  return false;
 }
 
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
@@ -189,11 +259,15 @@ export function isCsvSuffix(arg: string): arg is ExcelSuffix {
   return fileSuffixesToIncludeInMetadataParsing.CSV_FILE === arg;
 }
 
+/**
+ * @param path Should be full path so position of zip name can be determined
+ */
 export function getOriginalZipNameFromPath(path: string[]): string {
-  if (path.length < 5) {
+  if (path.length < 4) {
     return '';
   }
-  return `${path.slice(0, 5).join('/')}.zip`;
+  const zipNameIndex = getZipFileNameIndex(path);
+  return `${path.slice(0, zipNameIndex + 1).join('/')}.zip`;
 }
 
 export function checkExistingHash(

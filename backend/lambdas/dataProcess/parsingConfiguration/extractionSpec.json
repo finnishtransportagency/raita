@@ -1,5 +1,5 @@
 {
-  "parserVersion": "1.4.0",
+  "parserVersion": "2.0.0",
   "fileNameExtractionSpec": {
     "csv": [
       {
@@ -59,49 +59,78 @@
       }
     ]
   },
-  "folderTreeExtractionSpec": {
-    "1": { "name": "source_system" },
-    "2": { "name": "zip_reception__year" },
-    "3": { "name": "campaign" },
-    "4": { "name": "zip_reception__date" },
-    "5": { "name": "zip_name" },
-    "6": { "name": "track_number", "parseAs": "integer" },
-    "7": { "name": "track_part" },
-    "8": { "name": "track_id" },
-    "9": { "name": "year", "parseAs": "integer" },
-    "10": { "name": "system" },
-    "11": { "name": "inspection_datetime", "parseAs": "date" },
-    "12": { "name": "report_category" },
-    "13": { "name": "filename" }
-  },
-   "folderTreeExtractionSpecWithTestTrackExtraInfo": {
-    "1": { "name": "source_system" },
-    "2": { "name": "zip_reception__year" },
-    "3": { "name": "campaign" },
-    "4": { "name": "zip_reception__date" },
-    "5": { "name": "zip_name" },
-    "6": { "name": "extra_information" },
-    "7": { "name": "track_number", "parseAs": "integer" },
-    "8": { "name": "track_part" },
-    "9": { "name": "track_id" },
-    "10": { "name": "year", "parseAs": "integer" },
-    "11": { "name": "system" },
-    "12": { "name": "inspection_datetime", "parseAs": "date" },
-    "13": { "name": "report_category" },
-    "14": { "name": "filename" }
-  },
-  "vRunFolderTreeExtractionSpec": {
-    "1": { "name": "source_system" },
-    "2": { "name": "zip_reception__year" },
-    "3": { "name": "campaign" },
-    "4": { "name": "zip_reception__date" },
-    "5": { "name": "zip_name" },
-    "6": { "name": "year", "parseAs": "integer"},
-    "7": { "name": "track_number", "parseAs": "integer"},
-    "8": { "name": "track_part"},
-    "9": { "name": "track_id"},
-    "10": { "name": "filename"}
-  },
+  "folderTreeExtractionSpecs": [
+    {
+      "name": "v1",
+      "description": "Original spec for 2021-2022 data",
+      "spec": {
+        "1": { "name": "source_system" },
+        "2": { "name": "zip_reception__year" },
+        "3": { "name": "campaign" },
+        "4": { "name": "zip_reception__date" },
+        "5": { "name": "zip_name" },
+        "6": { "name": "track_number", "parseAs": "integer" },
+        "7": { "name": "track_part" },
+        "8": { "name": "track_id" },
+        "9": { "name": "year", "parseAs": "integer" },
+        "10": { "name": "system" },
+        "11": { "name": "inspection_datetime", "parseAs": "date" },
+        "12": { "name": "report_category" },
+        "13": { "name": "filename" }
+      }
+    },
+    {
+      "name": "v1WithTestTrackExtraInfo",
+      "description": "Spec for 2021-2022 data with 'extra_information' field containing 'TEST TRACK' information",
+      "spec": {
+        "1": { "name": "source_system" },
+        "2": { "name": "zip_reception__year" },
+        "3": { "name": "campaign" },
+        "4": { "name": "zip_reception__date" },
+        "5": { "name": "zip_name" },
+        "6": { "name": "extra_information" },
+        "7": { "name": "track_number", "parseAs": "integer" },
+        "8": { "name": "track_part" },
+        "9": { "name": "track_id" },
+        "10": { "name": "year", "parseAs": "integer" },
+        "11": { "name": "system" },
+        "12": { "name": "inspection_datetime", "parseAs": "date" },
+        "13": { "name": "report_category" },
+        "14": { "name": "filename" }
+      }
+    },
+    {
+      "name": "virtualRun",
+      "description": "Spec for 'virtual run' data for years 2023-2024 ",
+      "spec": {
+        "1": { "name": "source_system" },
+        "2": { "name": "zip_reception__year" },
+        "3": { "name": "campaign" },
+        "4": { "name": "zip_reception__date" },
+        "5": { "name": "zip_name" },
+        "6": { "name": "year", "parseAs": "integer" },
+        "7": { "name": "track_number", "parseAs": "integer" },
+        "8": { "name": "track_part" },
+        "9": { "name": "track_id" },
+        "10": { "name": "filename" }
+      }
+    },
+    {
+      "name": "virtualRunWithoutDate",
+      "description": "Spec for 'virtual run' without date folder. For years 2025-",
+      "spec": {
+        "1": { "name": "source_system" },
+        "2": { "name": "zip_reception__year" },
+        "3": { "name": "campaign" },
+        "4": { "name": "zip_name" },
+        "5": { "name": "year", "parseAs": "integer" },
+        "6": { "name": "track_number", "parseAs": "integer" },
+        "7": { "name": "track_part" },
+        "8": { "name": "track_id" },
+        "9": { "name": "filename" }
+      }
+    }
+  ],
   "fileContentExtractionSpec": [
     {
       "propertyKey": "maintenance_area",
