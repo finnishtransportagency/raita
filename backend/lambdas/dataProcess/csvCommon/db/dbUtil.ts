@@ -543,7 +543,8 @@ async function addAMSMittausRecord(
       data: parsedCSVRows,
     });
     return recordCount.count;
-  } catch {
+  } catch (e){
+    log.error(e);
     throw new Error(`Error in mittaus additions`);
   }
 }
