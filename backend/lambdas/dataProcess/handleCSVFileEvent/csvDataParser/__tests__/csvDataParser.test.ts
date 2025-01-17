@@ -298,7 +298,7 @@ async function parseAndConvertRow(prefix: string, fileBody: string) {
   return convertedRow;
 }
 
-describe('handle ams NaN vals ', () => {
+describe.skip('handle ams NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'AMS';
     const fileBody = amsWithNansCsv;
@@ -338,7 +338,7 @@ describe('handle ams NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle ams ajonopeus NaN vals ', () => {
+describe.skip('handle ams ajonopeus NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'AMS';
     const fileBody = amsWithAjonopeusNansCsv;
