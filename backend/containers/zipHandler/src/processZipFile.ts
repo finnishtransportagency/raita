@@ -42,7 +42,10 @@ export const processZipFile = ({
         const entries: Array<Promise<EntryRecord>> = [];
         // If opening zip files fails, reject promise and return;
         if (err) {
-          reject(err);
+          reject({
+            reason: 'ERROR_OPENING',
+            originalError: err,
+          });
           return;
         }
         // Handler to run when zipfile is processed
