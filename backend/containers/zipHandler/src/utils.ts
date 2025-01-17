@@ -9,6 +9,7 @@ import {
   RaitaSourceSystem,
   raitaSourceSystems,
 } from './constants';
+import { log } from './logger';
 
 // Duplicates BEGIN: Functions duplicating logic from main code base
 const decodeUriString = (uriString: string) => {
@@ -141,3 +142,32 @@ export class RaitaZipError extends Error {
     super(message);
   }
 }
+
+/**
+ * Delete .filepart file for given key if it exists
+ *
+ * @return true if filepart was found and deleted
+ */
+export const deleteFilePart = async (
+  targetBucket: string,
+  key: string,
+  s3: S3,
+): Promise<Boolean> => {
+  const filepartKey = `${key}.filepart`;
+  try {
+    await s3.headObject({
+      Bucket: targetBucket,
+      Key: filepartKey,
+    });
+    await s3.deleteObject({
+      Bucket: targetBucket,
+      Key: filepartKey,
+    });
+    return true;
+  } catch (error: any) {
+    if (error && error?.$metadata?.httpStatusCode === 404) {
+      return false;
+    }
+    throw error;
+  }
+};

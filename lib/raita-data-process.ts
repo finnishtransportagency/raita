@@ -232,7 +232,8 @@ export class DataProcessStack extends NestedStack {
       targetBucket: this.inspectionDataBucket,
     });
 
-    this.dataReceptionBucket.grantRead(zipTaskTaskRole);
+    // grant read and write to reception bucket to allow cleanup of filepart files
+    this.dataReceptionBucket.grantReadWrite(zipTaskTaskRole);
     this.inspectionDataBucket.grantWrite(zipTaskTaskRole);
 
     zipTaskTaskRole.addToPolicy(
@@ -325,10 +326,24 @@ export class DataProcessStack extends NestedStack {
       batchSize: 1,
       maxConcurrency: 2,
     });
+    const receptionQueueDestination = new SqsDestination(receptionQueue);
+
+    // Filter reception handler by suffix
+    // specifically .filepart files and directories are ignored
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
-      new SqsDestination(receptionQueue),
-      { prefix: `${raitaSourceSystems.Meeri}/` },
+      receptionQueueDestination,
+      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.zip' },
+    );
+    this.dataReceptionBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      receptionQueueDestination,
+      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xlsx' },
+    );
+    this.dataReceptionBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      receptionQueueDestination,
+      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xls' },
     );
 
     handleReceptionFileEventFn.addEventSource(receptionQueueSource);
