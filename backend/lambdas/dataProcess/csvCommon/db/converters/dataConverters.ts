@@ -1,5 +1,5 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import { jarjestelma } from '@prisma/client';
+import { jarjestelma,  ams_mittaus } from '@prisma/client';
 
 function sanitizeValue<T>(value: T) {
   return Number.isNaN(value) || !value || value == 'NaN' ? null : value;
@@ -62,8 +62,8 @@ type AMSMittausData = {
   geoviite_updated_at?: Date | null;
 };
 
-export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
-  return data.map(item => ({
+export function convertDataToAMSMittaus(item: any): AMSMittausData {
+  return {
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
@@ -257,8 +257,10 @@ export function convertDataToAMSMittausArray(data: any[]): AMSMittausData[] {
     geoviite_updated_at: sanitizeValue(item.geoviite_updated_at)
       ? new Date(item.geoviite_updated_at)
       : null,
-  }));
+  };
 }
+
+
 
 type OhlMittausData = {
   raportti_id: number;

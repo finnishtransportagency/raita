@@ -7,7 +7,8 @@ import { FileMetadataEntry } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
 import {
-  convertDataToAMSMittausArray,
+  convertDataToAMSMittaus,
+
   convertDataToOhlMittausArray,
   convertDataToPiMittausArray,
   convertDataToRcMittausArray,
@@ -229,7 +230,7 @@ function handleNanMissingColumns(
 }
 
 export function convertToDBRow(
-  row: Mittaus,
+  row: any,
   runningDate: Date,
   reportId: number,
   fileNamePrefix: string,
@@ -255,10 +256,18 @@ export function convertToDBRow(
     long,
     ...rataosoite,
   };
-  return {
+ const x =  {
     ...convertedRow,
     ...handleNan(convertedRow, missingOptionalColumns),
   };
+
+  switch (fileNamePrefix) {
+    case 'AMS':
+      return convertDataToAMSMittaus(x);
+      break
+  }
+  return x;
+
 }
 
 /**
@@ -529,9 +538,9 @@ async function addAMSMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
+   // const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
     const recordCount = await prisma.ams_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
