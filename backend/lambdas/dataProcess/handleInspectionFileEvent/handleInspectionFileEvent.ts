@@ -1,4 +1,4 @@
-import { Context, S3Event, SQSEvent } from 'aws-lambda';
+import { Context, S3Event, S3EventRecord, SQSEvent } from 'aws-lambda';
 import { FileMetadataEntry } from '../../../types';
 import { lambdaRequestTracker } from 'pino-lambda';
 
@@ -26,6 +26,13 @@ import {
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { getLambdaConfigOrFail } from './util';
+import {
+  extractSingleFileMetadata,
+  getMetadataFileKey,
+  parseMetadataFile,
+} from './parseJsonMetadata';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 
 const findReportByKey = async (key: string, dbConnection: DBConnection) => {
   const foundReport = await dbConnection.prisma.raportti.findFirst({
@@ -98,6 +105,21 @@ export async function handleInspectionFileEvent(
         log.info({ fileName: key }, 'Start inspection file handler');
         const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
+
+        // fetch metadata file from same directory
+        const metadataKey = getMetadataFileKey(key);
+
+        // tmp solution with s3client
+        const s3Client = new S3Client();
+        const command = new GetObjectCommand({
+          Bucket: eventRecord.s3.bucket.name,
+          Key: metadataKey,
+        });
+        const metadataFileResult = await s3Client.send(command);
+        // TODO: it is possible metadata file is note yet in bucket? solve this
+        const metadataFile =
+          (await metadataFileResult.Body?.transformToString()) ?? '';
+
         // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
         const hash = eventRecord.s3.object.eTag;
         const s3MetaData = fileStreamResult.metaData;
@@ -123,13 +145,14 @@ export async function handleInspectionFileEvent(
         }
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
-        if (!isRaitaSourceSystem(keyData.rootFolder)) {
-          log.warn(`Ignoring file ${key} outside Raita source system folders.`);
-          await adminLogger.error(
-            `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
-          );
-          return null;
-        }
+        // TODO: tmp disabled
+        // if (!isRaitaSourceSystem(keyData.rootFolder)) {
+        //   log.warn(`Ignoring file ${key} outside Raita source system folders.`);
+        //   await adminLogger.error(
+        //     `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
+        //   );
+        //   return null;
+        // }
         if (!isKnownSuffix(keyData.fileSuffix)) {
           if (isKnownIgnoredSuffix(keyData.fileSuffix)) {
             log.info(
@@ -192,7 +215,7 @@ export async function handleInspectionFileEvent(
           return null;
         }
 
-        const parseResults = await parseFileMetadata({
+        const parseResultOriginal = await parseFileMetadata({
           keyData,
           fileStream: fileStreamResult.fileStream,
           spec,
@@ -202,6 +225,13 @@ export async function handleInspectionFileEvent(
           invocationId,
           doGeoviiteConversion: !skipGeoviiteConversion,
         });
+        const parsedMetadataFile = parseMetadataFile(metadataFile);
+        // no validation for now
+        const metadataEntry = extractSingleFileMetadata(
+          parsedMetadataFile,
+          key,
+        );
+        const parseResults = { ...parseResultOriginal, ...metadataEntry };
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -243,6 +273,21 @@ export async function handleInspectionFileEvent(
 
       await updateRaporttiMetadata(entries, dbConnection);
 
+      const snsClient = new SNSClient();
+      const snsOperations = entries.map(async entry => {
+        const metadata = entry.metadata;
+        const snsCommand = new PublishCommand({
+          Message: JSON.stringify({
+            metadata,
+            key: entry.key,
+            status: 'FULLY_PARSED',
+          }),
+          TopicArn: config.externalDataTopicArn,
+        });
+        return await snsClient.send(snsCommand);
+      });
+      await Promise.all(snsOperations);
+      // send message to new data topic? need topic name/url/what here?
       return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);

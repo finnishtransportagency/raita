@@ -9,6 +9,7 @@ export function getLambdaConfigOrFail() {
     csvBucket: getEnv('CSV_BUCKET'),
     region: getEnv('REGION'),
     environment: getEnv('ENVIRONMENT'),
+    externalDataTopicArn: getEnv('EXTERNAL_DATA_TOPIC_ARN'),
   };
 }
 export type IMetadataParserConfig = ReturnType<typeof getLambdaConfigOrFail>;

@@ -184,6 +184,8 @@ export function getZipFileNameIndex(path: string[]) {
 }
 
 export function isZipPath(arg: Array<string>): arg is ZipPath {
+  // remove validations for proto
+  return true;
   const [system] = arg;
   if (!system || !isRaitaSourceSystem(system)) {
     return false;

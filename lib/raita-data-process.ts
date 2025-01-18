@@ -50,8 +50,12 @@ import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
-import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
+import {
+  SnsDestination,
+  SqsDestination,
+} from 'aws-cdk-lib/aws-s3-notifications';
 import { AdjustmentType } from 'aws-cdk-lib/aws-autoscaling';
+import { ExternalNotificationStack } from './proto/raita-proto-external-notification';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -333,20 +337,32 @@ export class DataProcessStack extends NestedStack {
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.zip' },
+      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.zip' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xlsx' },
+      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xlsx' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xls' },
+      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xls' },
     );
 
     handleReceptionFileEventFn.addEventSource(receptionQueueSource);
+
+    const extNotificationStack = new ExternalNotificationStack(
+      this,
+      'stack-external-notification',
+      {
+        raitaStackIdentifier,
+        vpc,
+        raitaEnv,
+        dataReceptionBucket: this.dataReceptionBucket,
+        inspectionDataBucket: this.inspectionDataBucket,
+      },
+    );
 
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
@@ -361,10 +377,15 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
+      externalDataTopicArn: extNotificationStack.externalNewDataTopic.topicArn,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
       this.handleInspectionFileEventFn.logGroup,
       raitaStackIdentifier,
+    );
+
+    extNotificationStack.externalNewDataTopic.grantPublish(
+      this.handleInspectionFileEventFn,
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
@@ -563,6 +584,7 @@ export class DataProcessStack extends NestedStack {
     raitaEnv,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    externalDataTopicArn,
   }: {
     name: string;
     configurationBucketName: string;
@@ -575,6 +597,7 @@ export class DataProcessStack extends NestedStack {
     raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    externalDataTopicArn: string;
   }) {
     // any events that fail cause lambda to fail twice will be written here
     // currently nothing is done to this queue
@@ -600,6 +623,7 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
+        EXTERNAL_DATA_TOPIC_ARN: externalDataTopicArn,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
