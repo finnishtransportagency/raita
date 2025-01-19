@@ -13,7 +13,7 @@ export const fileSuffixesToIncludeInMetadataParsing = {
   XLS_FILE: 'xls',
 } as const;
 
-export const KNOWN_IGNORED_FILE_SUFFIXES = ['png'];
+export const KNOWN_IGNORED_FILE_SUFFIXES = ['json'];
 
 export const ZIP_SUFFIX = 'zip';
 export const FILEPART_SUFFIX = 'filepart';

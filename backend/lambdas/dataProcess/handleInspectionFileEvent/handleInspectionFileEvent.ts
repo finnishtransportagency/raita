@@ -119,7 +119,10 @@ export async function handleInspectionFileEvent(
         // TODO: it is possible metadata file is note yet in bucket? solve this
         const metadataFile =
           (await metadataFileResult.Body?.transformToString()) ?? '';
-
+        log.info({
+          metadataKey,
+          metadataFile,
+        });
         // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
         const hash = eventRecord.s3.object.eTag;
         const s3MetaData = fileStreamResult.metaData;
@@ -231,6 +234,7 @@ export async function handleInspectionFileEvent(
           parsedMetadataFile,
           key,
         );
+        log.info({ parsedMetadataFile, metadataEntry });
         const parseResults = { ...parseResultOriginal, ...metadataEntry };
         if (parseResults.errors) {
           await adminLogger.error(
