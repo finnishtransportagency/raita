@@ -14,7 +14,8 @@ module.exports = {
     '/integration/',
     '/zod-csv/',
     'parseFileMetaData.test.ts', // ignore for now
-    'geoviiteClient.test.ts', // ignore for now
+    'geoviiteClient.test.ts',
+    'utils.test.ts',
   ],
   runtime: '@side/jest-runtime', // custom runtime to fix memory issues
 };
