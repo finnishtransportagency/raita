@@ -184,7 +184,9 @@ export async function handleInspectionFileEvent(
             snsClient,
             keyData.keyWithoutSuffix,
             {
+              file_name: keyData.fileName,
               test: 'something here',
+              file_type: 'png',
             },
             'IMG_EXPORT',
           );
@@ -247,11 +249,11 @@ export async function handleInspectionFileEvent(
         });
         const parsedMetadataFile = parseMetadataFile(metadataFile);
         // no validation for now
-        const metadataEntry = extractSingleFileMetadata(
+        const metadataFromFile = extractSingleFileMetadata(
           parsedMetadataFile,
           key,
         );
-        log.info({ parsedMetadataFile, metadataEntry });
+        log.info({ parsedMetadataFile, metadataEntry: metadataFromFile });
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -271,7 +273,7 @@ export async function handleInspectionFileEvent(
           ...entryBeforeParsing,
           metadata: {
             ...parseResults.metadata,
-            ...metadataEntry,
+            ...metadataFromFile,
             parsed_at_datetime,
           },
           tags: fileStreamResult.tags,
@@ -339,12 +341,14 @@ async function sendToExternalTopic(
   metadata: any,
   status: string,
 ) {
+  const message = {
+    metadata,
+    key,
+    status,
+  };
+  log.info(message, 'send to topic');
   const snsCommand = new PublishCommand({
-    Message: JSON.stringify({
-      metadata,
-      key,
-      status,
-    }),
+    Message: JSON.stringify(message),
     TopicArn: config.externalDataTopicArn,
   });
   return await snsClient.send(snsCommand);
