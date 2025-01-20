@@ -7,7 +7,8 @@ SRC_PATH=./data
 ZIP_PATH=./tmp
 # FILENAME=$1
 ZIP_NAME=test-$(date +%s).zip
-DEST_PATH=/TEST_PRODUCER/$(date +%Y%m%d)/
+DEST_PATH=/TEST_PRODUCER_1/$(date +%Y%m%d)/
+# DEST_PATH=/TEST_PRODUCER_2/$(date +%Y%m%d)/
 
 cd $SRC_PATH
 zip .$ZIP_PATH/$ZIP_NAME ./*

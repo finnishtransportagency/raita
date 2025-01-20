@@ -29,8 +29,7 @@
       "campaign": "Test campaign 2022",
       "year": 2022,
       "inspection_date": "2022-04-26T00:00:00.000Z",
-      "version": "1.0",
-      "linked": "test_error_report.txt"
+      "version": "1.0"
     },
     {
       "file_name": "test_error_report.txt",
@@ -44,7 +43,8 @@
       "campaign": "Test campaign 2022",
       "year": 2022,
       "inspection_date": "2022-04-26T00:00:00.000Z",
-      "version": "1.0"
+      "version": "1.0",
+      "linked_image": "testimage.png"
     }
   ]
 }

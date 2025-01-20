@@ -111,9 +111,9 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
     // Note: More complex validation of zip path is checked in reception handler
     // only check length here
     // tmp ignore
-    // if (!isPossibleZipPath(path)) {
-    //   throw new RaitaZipError('incorrectPath');
-    // }
+    if (!isPossibleZipPath(path)) {
+      throw new Error('PATH_VALIDATION_ERROR');
+    }
     const s3 = new S3({});
     const getObjectResult = await s3.getObject({
       Bucket: bucket,

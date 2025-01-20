@@ -286,6 +286,20 @@ export class DataProcessStack extends NestedStack {
       zipTaskLogGroup!,
       raitaStackIdentifier,
     );
+    const zipHandlerExternalErrorAlarms =
+      this.createZipHandlerExternalNotificationAlarm(
+        zipTaskLogGroup!,
+        raitaStackIdentifier,
+      );
+
+    // forward specific actions to sns topic
+    // format of message needs to be processed somehow?
+    zipHandlerExternalErrorAlarms.forEach(alarm => {
+      alarm.addAlarmAction(
+        new SnsAction(extNotificationStack.externalErrorTopic),
+      );
+    });
+
     const receptionAlarms = this.createReceptionHandlerAlarms(
       handleReceptionFileEventFn.logGroup,
       raitaStackIdentifier,
@@ -497,6 +511,7 @@ export class DataProcessStack extends NestedStack {
       ...inspectionAlarms,
       ...zipHandlerAlarms,
       ...csvAlarms,
+      ...zipHandlerExternalErrorAlarms,
     ];
 
     // create composite alarm that triggers when any alarm for different error types trigger
@@ -684,6 +699,34 @@ export class DataProcessStack extends NestedStack {
       }),
     });
     return [errorAlarm, anyErrorAlarm];
+  }
+
+  private createZipHandlerExternalNotificationAlarm(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const validationErrorFilter = logGroup.addMetricFilter(
+      'zip-handler-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'PATH_VALIDATION_ERROR'),
+        metricName: `zip-handler-validation-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const validationErrorAlarm = new Alarm(this, 'zip-handler-errors-alarm', {
+      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: TreatMissingData.NOT_BREACHING,
+      alarmName: `zip-handler-errors-alarm-${raitaStackIdentifier}`,
+      metric: validationErrorFilter.metric({
+        label: `Reception zip handler errors ${raitaStackIdentifier}`,
+        period: Duration.days(1),
+        statistic: Stats.SUM,
+      }),
+    });
+    return [validationErrorAlarm];
   }
 
   /**
