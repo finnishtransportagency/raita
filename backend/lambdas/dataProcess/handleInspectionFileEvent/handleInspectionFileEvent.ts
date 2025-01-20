@@ -34,6 +34,7 @@ import {
 } from './parseJsonMetadata';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
+import { ExternalDataMessage } from '../../proto/types';
 
 const findReportByKey = async (key: string, dbConnection: DBConnection) => {
   const foundReport = await dbConnection.prisma.raportti.findFirst({
@@ -179,15 +180,19 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
+        const parsedMetadataFile = parseMetadataFile(metadataFile);
+        // no validation for now
+        const metadataFromFile = extractSingleFileMetadata(
+          parsedMetadataFile,
+          key,
+        );
+        log.info({ parsedMetadataFile, metadataEntry: metadataFromFile });
+
         if (isExportedSuffix(keyData.fileSuffix)) {
           await sendToExternalTopic(
             snsClient,
-            keyData.keyWithoutSuffix,
-            {
-              file_name: keyData.fileName,
-              test: 'something here',
-              file_type: 'png',
-            },
+            key,
+            metadataFromFile,
             'IMG_EXPORT',
           );
           log.info('send img to export');
@@ -247,13 +252,6 @@ export async function handleInspectionFileEvent(
           invocationId,
           doGeoviiteConversion: !skipGeoviiteConversion,
         });
-        const parsedMetadataFile = parseMetadataFile(metadataFile);
-        // no validation for now
-        const metadataFromFile = extractSingleFileMetadata(
-          parsedMetadataFile,
-          key,
-        );
-        log.info({ parsedMetadataFile, metadataEntry: metadataFromFile });
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -339,9 +337,9 @@ async function sendToExternalTopic(
   snsClient: SNSClient,
   key: string,
   metadata: any,
-  status: string,
+  status: ExternalDataMessage['status'],
 ) {
-  const message = {
+  const message: ExternalDataMessage = {
     metadata,
     key,
     status,
