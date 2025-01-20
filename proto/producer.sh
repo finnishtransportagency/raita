@@ -10,6 +10,9 @@ ZIP_NAME=test-$(date +%s).zip
 DEST_PATH=/TEST_PRODUCER_1/$(date +%Y%m%d)/
 # DEST_PATH=/TEST_PRODUCER_2/$(date +%Y%m%d)/
 
+# TODO: generate unique id?
+# link image to txt file based on id?
+
 cd $SRC_PATH
 zip .$ZIP_PATH/$ZIP_NAME ./*
 cd ..

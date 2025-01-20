@@ -706,7 +706,7 @@ export class DataProcessStack extends NestedStack {
     raitaStackIdentifier: string,
   ) {
     const validationErrorFilter = logGroup.addMetricFilter(
-      'zip-handler-error-filter',
+      'zip-handler-ext-validation-error-filter',
       {
         filterPattern: FilterPattern.anyTerm('error', 'PATH_VALIDATION_ERROR'),
         metricName: `zip-handler-validation-error-${raitaStackIdentifier}`,
@@ -714,18 +714,23 @@ export class DataProcessStack extends NestedStack {
         metricValue: '1',
       },
     );
-    const validationErrorAlarm = new Alarm(this, 'zip-handler-errors-alarm', {
-      comparisonOperator: ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-      threshold: 1,
-      evaluationPeriods: 1,
-      treatMissingData: TreatMissingData.NOT_BREACHING,
-      alarmName: `zip-handler-errors-alarm-${raitaStackIdentifier}`,
-      metric: validationErrorFilter.metric({
-        label: `Reception zip handler errors ${raitaStackIdentifier}`,
-        period: Duration.days(1),
-        statistic: Stats.SUM,
-      }),
-    });
+    const validationErrorAlarm = new Alarm(
+      this,
+      'zip-handler-ext-validation-errors-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `zip-handler-ext-validation-errors-alarm-${raitaStackIdentifier}`,
+        metric: validationErrorFilter.metric({
+          label: `Reception zip handler ext-validation errors ${raitaStackIdentifier}`,
+          period: Duration.days(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
     return [validationErrorAlarm];
   }
 
