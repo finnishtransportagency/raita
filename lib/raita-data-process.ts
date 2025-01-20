@@ -292,14 +292,6 @@ export class DataProcessStack extends NestedStack {
         raitaStackIdentifier,
       );
 
-    // forward specific actions to sns topic
-    // format of message needs to be processed somehow?
-    zipHandlerExternalErrorAlarms.forEach(alarm => {
-      alarm.addAlarmAction(
-        new SnsAction(extNotificationStack.externalErrorTopic),
-      );
-    });
-
     const receptionAlarms = this.createReceptionHandlerAlarms(
       handleReceptionFileEventFn.logGroup,
       raitaStackIdentifier,
@@ -377,6 +369,14 @@ export class DataProcessStack extends NestedStack {
         inspectionDataBucket: this.inspectionDataBucket,
       },
     );
+
+    // forward specific actions to sns topic
+    // format of message needs to be processed somehow?
+    zipHandlerExternalErrorAlarms.forEach(alarm => {
+      alarm.addAlarmAction(
+        new SnsAction(extNotificationStack.externalErrorTopic),
+      );
+    });
 
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
