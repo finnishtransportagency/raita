@@ -13,6 +13,10 @@ export const fileSuffixesToIncludeInMetadataParsing = {
   XLS_FILE: 'xls',
 } as const;
 
+export const externalSystemExportFileSuffixes = {
+  PNG_FILE: 'png',
+};
+
 export const KNOWN_IGNORED_FILE_SUFFIXES = ['json'];
 
 export const ZIP_SUFFIX = 'zip';

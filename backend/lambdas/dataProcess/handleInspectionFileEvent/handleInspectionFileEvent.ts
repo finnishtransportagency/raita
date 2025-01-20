@@ -13,6 +13,7 @@ import {
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
+  isExportedSuffix,
   isKnownIgnoredSuffix,
   isKnownSuffix,
 } from '../../utils';
@@ -89,6 +90,7 @@ export async function handleInspectionFileEvent(
   let currentKey: string = ''; // for logging in case of errors
   try {
     withRequest(event, context);
+    const snsClient = new SNSClient();
     const dbConnection = await postgresConnection;
     if (!dbConnection) {
       throw new Error('No db connection');
@@ -156,7 +158,10 @@ export async function handleInspectionFileEvent(
         //   );
         //   return null;
         // }
-        if (!isKnownSuffix(keyData.fileSuffix)) {
+        if (
+          !isKnownSuffix(keyData.fileSuffix) &&
+          !isExportedSuffix(keyData.fileSuffix)
+        ) {
           if (isKnownIgnoredSuffix(keyData.fileSuffix)) {
             log.info(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
@@ -174,7 +179,18 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
-
+        if (isExportedSuffix(keyData.fileSuffix)) {
+          await sendToExternalTopic(
+            snsClient,
+            keyData.keyWithoutSuffix,
+            {
+              test: 'something here',
+            },
+            'IMG_EXPORT',
+          );
+          log.info('send img to export');
+          return null; // TODO?
+        }
         let reportId: number;
 
         // entry values that are known before parsing
@@ -218,7 +234,7 @@ export async function handleInspectionFileEvent(
           return null;
         }
 
-        const parseResultOriginal = await parseFileMetadata({
+        const parseResults = await parseFileMetadata({
           keyData,
           fileStream: fileStreamResult.fileStream,
           spec,
@@ -235,7 +251,6 @@ export async function handleInspectionFileEvent(
           key,
         );
         log.info({ parsedMetadataFile, metadataEntry });
-        const parseResults = { ...parseResultOriginal, ...metadataEntry };
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -255,6 +270,7 @@ export async function handleInspectionFileEvent(
           ...entryBeforeParsing,
           metadata: {
             ...parseResults.metadata,
+            ...metadataEntry,
             parsed_at_datetime,
           },
           tags: fileStreamResult.tags,
@@ -277,21 +293,15 @@ export async function handleInspectionFileEvent(
 
       await updateRaporttiMetadata(entries, dbConnection);
 
-      const snsClient = new SNSClient();
       const snsOperations = entries.map(async entry => {
-        const metadata = entry.metadata;
-        const snsCommand = new PublishCommand({
-          Message: JSON.stringify({
-            metadata,
-            key: entry.key,
-            status: 'FULLY_PARSED',
-          }),
-          TopicArn: config.externalDataTopicArn,
-        });
-        return await snsClient.send(snsCommand);
+        return sendToExternalTopic(
+          snsClient,
+          entry.key,
+          entry.metadata,
+          'FULLY_PARSED',
+        );
       });
       await Promise.all(snsOperations);
-      // send message to new data topic? need topic name/url/what here?
       return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);
@@ -320,4 +330,21 @@ export async function handleInspectionFileEvent(
       `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
     );
   }
+}
+
+async function sendToExternalTopic(
+  snsClient: SNSClient,
+  key: string,
+  metadata: any,
+  status: string,
+) {
+  const snsCommand = new PublishCommand({
+    Message: JSON.stringify({
+      metadata,
+      key,
+      status,
+    }),
+    TopicArn: config.externalDataTopicArn,
+  });
+  return await snsClient.send(snsCommand);
 }

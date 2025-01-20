@@ -1,6 +1,7 @@
 import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
+  externalSystemExportFileSuffixes,
   fileSuffixesToIncludeInMetadataParsing,
   KNOWN_IGNORED_FILE_SUFFIXES,
   KnownSuffix,
@@ -243,6 +244,11 @@ export function isCampaignOrMoreSpecificPath(arg: Array<string>): boolean {
 
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
   return Object.values(fileSuffixesToIncludeInMetadataParsing).some(
+    suffix => suffix === arg,
+  );
+}
+export function isExportedSuffix(arg: string): arg is KnownSuffix {
+  return Object.values(externalSystemExportFileSuffixes).some(
     suffix => suffix === arg,
   );
 }
