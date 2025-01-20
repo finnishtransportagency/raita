@@ -42,5 +42,16 @@ export function extractSingleFileMetadata(metadata: MetadataJson, key: string) {
   if (!found) {
     throw new Error('Not found');
   }
-  return found;
+  return {
+    file_name: found.file_name ?? null,
+    system: found.system ?? null,
+    track_number: found.track_number ?? null,
+    track_part: found.track_part ?? null,
+    track_id: found.track_id ?? null,
+    km_start: found.km_start ?? null,
+    km_end: found.km_end ?? null,
+    campaign: found.campaign ?? null,
+    year: found.year ?? null,
+    inspection_date: found.file_name ?? null,
+  };
 }

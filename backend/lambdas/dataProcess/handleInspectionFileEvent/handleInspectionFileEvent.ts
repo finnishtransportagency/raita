@@ -189,6 +189,7 @@ export async function handleInspectionFileEvent(
             'IMG_EXPORT',
           );
           log.info('send img to export');
+          // admin log?
           return null; // TODO?
         }
         let reportId: number;
