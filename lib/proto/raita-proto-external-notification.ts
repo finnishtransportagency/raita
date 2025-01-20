@@ -125,7 +125,7 @@ export class ExternalNotificationStack extends cdk.NestedStack {
       memorySize: 1024,
       timeout: cdk.Duration.seconds(300),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'externalUploader',
+      handler: 'handleExternalDataUpload',
       entry: path.join(
         __dirname,
         `../../backend/lambdas/proto/externalData/externalUploader.ts`,

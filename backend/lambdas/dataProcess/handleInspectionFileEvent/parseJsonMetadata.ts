@@ -52,6 +52,6 @@ export function extractSingleFileMetadata(metadata: MetadataJson, key: string) {
     km_end: found.km_end ?? null,
     campaign: found.campaign ?? null,
     year: found.year ?? null,
-    inspection_date: found.file_name ?? null,
+    inspection_date: found.inspection_date ?? null,
   };
 }
