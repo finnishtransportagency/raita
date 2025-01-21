@@ -32,9 +32,10 @@
       "version": "1.0"
     },
     {
-      "file_name": "test_error_report.txt",
+      "file_name": "RP_Virhelistaus_test.txt",
       "file_type": "txt",
       "system": "RP",
+      "report_type": "Virhelistaus",
       "track_number": "3",
       "track_part": "LLHSK",
       "track_id": "1",

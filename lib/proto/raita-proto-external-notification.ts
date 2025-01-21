@@ -11,6 +11,8 @@ import { SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 
 import { createRaitaServiceRole } from '../raitaResourceCreators';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
+import { SqsSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 
 interface ExternalNotificationProps extends cdk.NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -68,10 +70,28 @@ export class ExternalNotificationStack extends cdk.NestedStack {
     // send messages here by filtering error alarms?
     this.externalErrorTopic = new Topic(this, 'proto-external-error-topic');
 
-    const externalBucket = new Bucket(
-      this,
-      'raita-proto-external-simulate-external-bucket',
+    // for easily viewing messages
+    const testErrorQueue = new Queue(this, 'proto-error-test-queue');
+    this.externalErrorTopic.addSubscription(
+      new SqsSubscription(testErrorQueue),
     );
+
+    const testIncomingDataQueue = new Queue(this, 'proto-incoming-data-queue');
+    this.externalNewDataTopic.addSubscription(
+      new SqsSubscription(testIncomingDataQueue, {
+        filterPolicyWithMessageBody: {
+          metadata: FilterOrPolicy.policy({
+            report_type: FilterOrPolicy.filter(
+              SubscriptionFilter.stringFilter({
+                allowlist: ['Virhelistaus'],
+              }),
+            ),
+          }),
+        },
+      }),
+    );
+
+    const externalBucket = new Bucket(this, 's3-raita-dev-proto-external-data');
 
     // this will read file from S3 and input to external system
     const externalDataHandler = this.createExternalDataUploader({

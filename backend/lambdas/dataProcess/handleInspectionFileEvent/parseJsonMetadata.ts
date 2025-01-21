@@ -2,6 +2,7 @@ export type MetadataJsonEntry = {
   file_name: string;
   file_type?: string;
   system?: string;
+  report_type?: string;
   track_number?: number;
   track_part?: string;
   track_id?: number;
