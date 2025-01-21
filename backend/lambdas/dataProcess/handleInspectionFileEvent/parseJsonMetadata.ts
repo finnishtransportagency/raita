@@ -1,5 +1,6 @@
 export type MetadataJsonEntry = {
   file_name: string;
+  file_type?: string;
   system?: string;
   track_number?: number;
   track_part?: string;
@@ -44,6 +45,7 @@ export function extractSingleFileMetadata(metadata: MetadataJson, key: string) {
   }
   return {
     file_name: found.file_name ?? null,
+    file_type: found.file_type ?? null,
     system: found.system ?? null,
     track_number: found.track_number ?? null,
     track_part: found.track_part ?? null,

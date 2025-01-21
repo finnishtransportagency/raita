@@ -26,3 +26,5 @@ upload () {
 }
 
 upload
+
+rm $SOURCE
