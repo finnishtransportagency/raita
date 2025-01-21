@@ -101,7 +101,7 @@ export async function handleGeoviiteConversionProcess(
     }
     const id = message.id;
 
-    log.debug({ id }, 'handleGeoviiteConversionProcess raportti id');
+    log.info({ id }, 'handleGeoviiteConversionProcess raportti id');
     const system = message.system;
 
     const invocationId = message.invocationId;
@@ -184,12 +184,12 @@ export async function handleGeoviiteConversionProcess(
         orderBy: { id: 'asc' },
         take: requestBatchSize,
       });
-      log.debug({ length: mittausRows.length }, 'Got from db');
+      log.info({ length: mittausRows.length }, 'Got from db');
 
       maxHandledId = mittausRows[mittausRows.length - 1].id;
 
 
-      log.debug({ maxHandledId }, 'maxHandledId');
+      log.info({ maxHandledId }, 'maxHandledId');
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
