@@ -726,7 +726,7 @@ export class DataProcessStack extends NestedStack {
         alarmName: `zip-handler-ext-validation-errors-alarm-${raitaStackIdentifier}`,
         metric: validationErrorFilter.metric({
           label: `Reception zip handler ext-validation errors ${raitaStackIdentifier}`,
-          period: Duration.days(1),
+          period: Duration.minutes(1),
           statistic: Stats.SUM,
         }),
       },
