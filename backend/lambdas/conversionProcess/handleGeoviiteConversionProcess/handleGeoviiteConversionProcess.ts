@@ -100,6 +100,8 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('Error parsing JSON');
     }
     const id = message.id;
+
+    log.debug({ id }, 'handleGeoviiteConversionProcess raportti id');
     const system = message.system;
 
     const invocationId = message.invocationId;
@@ -158,6 +160,7 @@ export async function handleGeoviiteConversionProcess(
     const saveBatchSize = 500;
 
     let first = true;
+    let maxHandledId = 0;
 
     // loop through array in batches: get results for batch and save to db
     for (
@@ -169,6 +172,9 @@ export async function handleGeoviiteConversionProcess(
       const mittausRows = await mittausTable.findMany({
         where: {
           raportti_id: id,
+          id: {
+            gt: maxHandledId,
+          },
         },
         select: {
           lat: true,
@@ -177,9 +183,13 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
         take: requestBatchSize,
-        skip: startingSkip + requestIndex,
       });
-      log.trace({ length: mittausRows.length }, 'Got from db');
+      log.debug({ length: mittausRows.length }, 'Got from db');
+
+      maxHandledId = mittausRows[mittausRows.length - 1].id;
+
+
+      log.debug({ maxHandledId }, 'maxHandledId');
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
