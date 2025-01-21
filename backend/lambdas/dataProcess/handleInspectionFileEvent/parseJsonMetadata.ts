@@ -1,3 +1,5 @@
+import { log } from '../../../utils/logger';
+
 export type MetadataJsonEntry = {
   file_name: string;
   file_type?: string;
@@ -42,6 +44,7 @@ export function extractSingleFileMetadata(metadata: MetadataJson, key: string) {
   const fileName = split[split.length - 1];
   const found = metadata.contents.find(entry => entry.file_name === fileName);
   if (!found) {
+    log.error('metadata not found in file');
     throw new Error('Not found');
   }
   return {

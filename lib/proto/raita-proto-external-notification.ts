@@ -87,6 +87,11 @@ export class ExternalNotificationStack extends cdk.NestedStack {
               }),
             ),
           }),
+          status: FilterOrPolicy.filter(
+            SubscriptionFilter.stringFilter({
+              allowlist: ['FULLY_PARSED'],
+            }),
+          ),
         },
       }),
     );
@@ -118,6 +123,11 @@ export class ExternalNotificationStack extends cdk.NestedStack {
               }),
             ),
           }),
+          status: FilterOrPolicy.filter(
+            SubscriptionFilter.stringFilter({
+              allowlist: ['IMG_EXPORT'],
+            }),
+          ),
         },
       }),
     );
