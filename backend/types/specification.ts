@@ -30,12 +30,16 @@ export const ExtractionSpec = z.object({
     xlsx: z.array(z.record(z.string(), FieldExtractionSpecObject)),
     xls: z.array(z.record(z.string(), FieldExtractionSpecObject)),
   }),
-  // TODO change these too?
-  folderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
-  folderTreeExtractionSpecWithTestTrackExtraInfo: z.record(
-    FieldExtractionSpecObject,
+  folderTreeExtractionSpecs: z.array(
+    z.object({
+      name: z.string(),
+      /**
+       * description for developer, not used for parsing
+       */
+      description: z.optional(z.string()),
+      spec: z.record(FieldExtractionSpecObject),
+    }),
   ),
-  vRunFolderTreeExtractionSpec: z.record(FieldExtractionSpecObject),
   fileContentExtractionSpec: z.array(ColonSeparatedKeyValuePairDefinition),
   knownExceptions: z.object({
     fileNameExtractionSpec: z.object({

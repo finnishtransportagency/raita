@@ -1,6 +1,9 @@
 import { IExtractionSpec } from '../../../../types';
 import { KeyData, RaitaParseError } from '../../../utils';
-import { determineParsingSpec, extractPathData } from '../pathDataParser';
+import {
+  determineParsingSpecForPathParsing,
+  extractPathData,
+} from '../pathDataParser';
 
 jest.mock('../../../../utils/logger', () => {
   return {
@@ -22,29 +25,40 @@ jest.mock('../../../../utils/logger', () => {
 const extractionSpec: IExtractionSpec = {
   parserVersion: '0.0.1',
   fileNameExtractionSpec: { csv: [], txt: [], pdf: [], xlsx: [], xls: [] },
-  folderTreeExtractionSpec: {
-    '1': { name: 'part1' },
-    '2': { name: 'part2' },
-    '3': { name: 'part3' },
-    '4': { name: 'part4' },
-    '5': { name: 'zipFile' },
-    '6': { name: 'directory' },
-    '7': { name: 'filename' },
-  },
-  folderTreeExtractionSpecWithTestTrackExtraInfo: {
-    '1': { name: 'part1' },
-    '2': { name: 'part2' },
-    '3': { name: 'part3' },
-    '4': { name: 'part4' },
-    '5': { name: 'zipFile' },
-    '6': { name: 'extraInfo' },
-    '7': { name: 'directory' },
-    '8': { name: 'filename' },
-  },
-  vRunFolderTreeExtractionSpec: {
-    '1': { name: 'vPart1' },
-    '2': { name: 'filename' },
-  },
+  folderTreeExtractionSpecs: [
+    {
+      name: 'v1',
+      spec: {
+        '1': { name: 'part1' },
+        '2': { name: 'part2' },
+        '3': { name: 'part3' },
+        '4': { name: 'part4' },
+        '5': { name: 'zipFile' },
+        '6': { name: 'directory' },
+        '7': { name: 'filename' },
+      },
+    },
+    {
+      name: 'v1WithTestTrackExtraInfo',
+      spec: {
+        '1': { name: 'part1' },
+        '2': { name: 'part2' },
+        '3': { name: 'part3' },
+        '4': { name: 'part4' },
+        '5': { name: 'zipFile' },
+        '6': { name: 'extraInfo' },
+        '7': { name: 'directory' },
+        '8': { name: 'filename' },
+      },
+    },
+    {
+      name: 'virtualRun',
+      spec: {
+        '1': { name: 'vPart1' },
+        '2': { name: 'filename' },
+      },
+    },
+  ],
   fileContentExtractionSpec: [],
   knownExceptions: {
     fileNameExtractionSpec: { containsUnderscore: [], removePrefix: [] },
@@ -117,18 +131,23 @@ describe('extractPathData', () => {
       fileSuffix: 'xlsx',
       keyWithoutSuffix: 'test/path/here/Over Head Line Geometry/test_123_456',
     };
-    const folderTreeExtractionSpec = {
-      '1': { name: 'part1' },
-      '2': { name: 'part2' },
-      '3': { name: 'part3' },
-      '4': { name: 'system' },
-      '5': { name: 'filename' },
-    };
+    const folderTreeExtractionSpecs = [
+      {
+        name: 'v1',
+        spec: {
+          '1': { name: 'part1' },
+          '2': { name: 'part2' },
+          '3': { name: 'part3' },
+          '4': { name: 'system' },
+          '5': { name: 'filename' },
+        },
+      },
+    ];
 
     expect(
       extractPathData(keyData, {
         ...extractionSpec,
-        folderTreeExtractionSpec,
+        folderTreeExtractionSpecs,
         knownExceptions: {
           substituteValues: [
             {
@@ -149,7 +168,7 @@ describe('extractPathData', () => {
 });
 
 describe('determineParsingSpec', () => {
-  test('success: folderTreeExtractionSpec', () => {
+  test('success: v1', () => {
     const testKeyData: KeyData = {
       path: ['test', 'path', '1', 'a', 'zip', 'b', 'test_123_456.txt'],
       rootFolder: '',
@@ -158,11 +177,13 @@ describe('determineParsingSpec', () => {
       fileSuffix: '',
       keyWithoutSuffix: '',
     };
-    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
-      extractionSpec.folderTreeExtractionSpec,
+    expect(
+      determineParsingSpecForPathParsing(testKeyData, extractionSpec),
+    ).toEqual(
+      extractionSpec.folderTreeExtractionSpecs.find(s => s.name === 'v1'),
     );
   });
-  test('success: vRunFolderTreeExtractionSpec', () => {
+  test('success: virtualRun', () => {
     const testKeyData: KeyData = {
       path: ['test', 'filename.txt'],
       rootFolder: '',
@@ -171,11 +192,15 @@ describe('determineParsingSpec', () => {
       fileSuffix: '',
       keyWithoutSuffix: '',
     };
-    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
-      extractionSpec.vRunFolderTreeExtractionSpec,
+    expect(
+      determineParsingSpecForPathParsing(testKeyData, extractionSpec),
+    ).toEqual(
+      extractionSpec.folderTreeExtractionSpecs.find(
+        s => s.name === 'virtualRun',
+      ),
     );
   });
-  test('success: folderTreeExtractionSpecWithTestTrackExtraInfo', () => {
+  test('success: v1WithTestTrackExtraInfo', () => {
     const testKeyData: KeyData = {
       path: [
         'test',
@@ -193,11 +218,15 @@ describe('determineParsingSpec', () => {
       fileSuffix: '',
       keyWithoutSuffix: '',
     };
-    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(
-      extractionSpec.folderTreeExtractionSpecWithTestTrackExtraInfo,
+    expect(
+      determineParsingSpecForPathParsing(testKeyData, extractionSpec),
+    ).toEqual(
+      extractionSpec.folderTreeExtractionSpecs.find(
+        s => s.name === 'v1WithTestTrackExtraInfo',
+      ),
     );
   });
-  test('failure: folderTreeExtractionSpecWithTestTrackExtraInfo with wrong extra info', () => {
+  test('failure: v1WithTestTrackExtraInfo with wrong extra info', () => {
     const testKeyData: KeyData = {
       path: [
         'test',
@@ -215,6 +244,8 @@ describe('determineParsingSpec', () => {
       fileSuffix: '',
       keyWithoutSuffix: '',
     };
-    expect(determineParsingSpec(testKeyData, extractionSpec)).toEqual(null);
+    expect(
+      determineParsingSpecForPathParsing(testKeyData, extractionSpec),
+    ).toEqual(null);
   });
 });

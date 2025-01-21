@@ -227,7 +227,6 @@ const ReportsIndex: RaitaNextPage = () => {
 
   const showAdminFields =
     user.user && user.user.roles.includes(RaitaRole.Admin);
-  const zipFileNameIndex = cfg.zipFileNameIndex;
 
   // some fields are hidden on non-admin users
   const adminOnlyMetadataFields = ['parser_version'];
@@ -553,10 +552,13 @@ const ReportsIndex: RaitaNextPage = () => {
                 <div>
                   <ul className="space-y-2 divide-y-2">
                     {resultsData?.raportti?.map((document, index: number) => {
+                      const fullPath = document?.key?.split('/') ?? [];
+                      const zipFileNameIndex = document.zip_name
+                        ? fullPath.indexOf(document.zip_name)
+                        : -1;
                       const zipPath =
-                        document.key
-                          ?.split('/')
-                          .slice(0, zipFileNameIndex)
+                        fullPath
+                          .slice(0, zipFileNameIndex + 1)
                           .join('/')
                           .replace('.xlsx', '') ?? '';
 

@@ -11,11 +11,12 @@ import { getConfig } from './config';
 import { processZipFile } from './processZipFile';
 import {
   decodeS3EventPropertyString,
+  deleteFilePart,
   getKeyData,
   logMessages,
   RaitaZipError,
 } from './utils';
-import { isZipPath, ZipFileData } from './types';
+import { isPossibleZipPath, ZipFileData } from './types';
 import { ZIP_SUFFIX } from './constants';
 import { log } from './logger';
 import { IAdminLogger, PostgresLogger } from './adminLog/postgresLogger';
@@ -107,8 +108,9 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
     if (fileSuffix !== ZIP_SUFFIX) {
       throw new RaitaZipError('incorrectSuffix');
     }
-    // Note: Adherence to zip path type is also checked in lambda
-    if (!isZipPath(path)) {
+    // Note: More complex validation of zip path is checked in reception handler
+    // only check length here
+    if (!isPossibleZipPath(path)) {
       throw new RaitaZipError('incorrectPath');
     }
     const s3 = new S3({});
@@ -145,7 +147,7 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
         };
     const readStream = getObjectResult.Body as Readable;
     const ZIP_FILE_ON_DISK_PATH = '/tmp/file.zip';
-    return await new Promise((resolve, reject) => {
+    const zipResult = await new Promise((resolve, reject) => {
       const writeStream = fs.createWriteStream(ZIP_FILE_ON_DISK_PATH);
       writeStream.on('error', (err: unknown) => {
         reject(err);
@@ -214,11 +216,20 @@ async function handleZip(bucket: string, key: string, targetBucket: string) {
       });
       readStream.pipe(writeStream);
     });
+    // zip handled successfully
+    const filepartDeleteResult = await deleteFilePart(bucket, key, s3);
+    if (filepartDeleteResult) {
+      log.info('filepart deleted');
+    }
+    return zipResult;
   } catch (err: any) {
-    // TODO: Temporary logging
-    await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
     log.error({ err }, 'Error caught');
-    throw err;
+    if (err && err.reason && err.reason === 'ERROR_OPENING') {
+      await adminLogger.error('Virhe zip-tiedoston avaamisessa.');
+    } else {
+      await adminLogger.error('Tiedostojen purkamisessa tapahtui virhe');
+      throw err;
+    }
     // TODO: Possible recovery actions apart from logging
   }
 }
