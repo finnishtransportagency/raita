@@ -183,11 +183,11 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
         take: requestBatchSize,
+        ...(first && { skip: startingSkip }),
       });
       log.info({ length: mittausRows.length }, 'Got from db');
 
       maxHandledId = mittausRows[mittausRows.length - 1].id;
-
 
       log.info({ maxHandledId }, 'maxHandledId');
 
