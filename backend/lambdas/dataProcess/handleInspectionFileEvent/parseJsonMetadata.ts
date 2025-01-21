@@ -48,6 +48,7 @@ export function extractSingleFileMetadata(metadata: MetadataJson, key: string) {
     file_name: found.file_name ?? null,
     file_type: found.file_type ?? null,
     system: found.system ?? null,
+    report_type: found.report_type ?? null,
     track_number: found.track_number ?? null,
     track_part: found.track_part ?? null,
     track_id: found.track_id ?? null,
