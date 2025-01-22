@@ -155,7 +155,7 @@ export async function handleStartConversionProcess(
           },
         });
 
-        log.info('maxMittausId: ' + maxMittausId);
+
 
         const minMittausId = await prismaClient.mittaus.aggregate({
           where: {
@@ -166,18 +166,16 @@ export async function handleStartConversionProcess(
           },
         });
 
-        log.info('minMittausId: ' + minMittausId);
+
 
         const maxId = maxMittausId._max.id;
         const minId = minMittausId._min.id;
-        // @ts-ignore
-        const a = maxId - minId;
-        log.info('a: ' + a);
-        const idIncrement = Math.ceil(a / conversionBatchSize);
-        log.info('idIncrement: ' + idIncrement);
+        log.info('maxMittausId: ' + maxId);
+        log.info('minMittausId: ' + minId);
 
-        if (!minId) {
-          throw new Error('Error getting start id');
+
+        if (!minId || !maxId) {
+          throw new Error('Error getting start or end id');
         }
         let startID: number = minId;
 
@@ -188,6 +186,12 @@ export async function handleStartConversionProcess(
         }
         // split one raportti into batches
         const batchCount = Math.ceil(mittausCount / conversionBatchSize);
+
+        const idDifference = maxId - minId;
+        log.info('idDifference: ' + idDifference);
+        const idIncrement = Math.ceil(idDifference / batchCount);
+        log.info('idIncrement: ' + idIncrement);
+
 
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const endID = startID + idIncrement;

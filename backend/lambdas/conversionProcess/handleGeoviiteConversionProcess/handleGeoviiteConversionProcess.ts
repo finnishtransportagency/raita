@@ -114,7 +114,7 @@ export async function handleGeoviiteConversionProcess(
 
     const invocationStartId = message.startID;
     const invocationEndId = message.endID;
-    log.info('start end: ' + invocationStartId + ' ' + invocationStartId);
+    log.info('start end: ' + invocationStartId + ' ' + invocationEndId);
 
     await prismaClient.raportti.updateMany({
       where: {

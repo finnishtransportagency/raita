@@ -22,6 +22,18 @@ export type ConversionMessage = {
    * For admin logging
    */
   invocationId: string;
+
+  /**
+   * mittaus id to start at
+   */
+  startID: number;
+
+  /**
+   * mittaus id to stop at
+   */
+  endID: number
+
+
 };
 
 const finlandGenerousMinLat = 55.0;
