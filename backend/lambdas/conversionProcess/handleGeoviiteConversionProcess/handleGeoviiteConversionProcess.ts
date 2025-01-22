@@ -112,6 +112,10 @@ export async function handleGeoviiteConversionProcess(
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
 
+    const invocationStartId = message.startID;
+    const invocationEndId = message.endID;
+    log.info('start end: ' + invocationStartId + ' ' + invocationStartId);
+
     await prismaClient.raportti.updateMany({
       where: {
         id,
@@ -164,16 +168,17 @@ export async function handleGeoviiteConversionProcess(
 
     // loop through array in batches: get results for batch and save to db
     for (
-      let requestIndex = 0;
-      requestIndex < mittausCount;
-      requestIndex += requestBatchSize
+      let startId = invocationStartId;
+      startId < invocationEndId;
+      startId += requestBatchSize
     ) {
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
           raportti_id: id,
           id: {
-            gt: maxHandledId,
+            gt: startId,
+            lt: startId + requestBatchSize,
           },
         },
         select: {
@@ -182,14 +187,12 @@ export async function handleGeoviiteConversionProcess(
           id: true,
         },
         orderBy: { id: 'asc' },
-        take: requestBatchSize,
-        ...(first && { skip: startingSkip }),
       });
       log.info({ length: mittausRows.length }, 'Got from db');
 
       maxHandledId = mittausRows[mittausRows.length - 1].id;
 
-      log.info({ maxHandledId }, 'maxHandledId');
+      log.info('startId: ' + startId);
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
@@ -259,8 +262,8 @@ export async function handleGeoviiteConversionProcess(
             { err },
             'update error at invocationBatchIndex: ' +
               invocationTotalBatchIndex +
-              ' requestIndex:' +
-              requestIndex +
+              ' startId:' +
+              startId +
               ' saveBatchIndex:' +
               saveBatchIndex,
           );
@@ -271,8 +274,8 @@ export async function handleGeoviiteConversionProcess(
         log.trace(
           ' success at invocationBatchIndex: ' +
             invocationTotalBatchIndex +
-            ' requestIndex:' +
-            requestIndex +
+            ' startId:' +
+            startId +
             ' saveBatchIndex:' +
             saveBatchIndex,
         );

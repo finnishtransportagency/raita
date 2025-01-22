@@ -16,6 +16,7 @@ import {
   getDBConnection,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 
+
 const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
@@ -145,6 +146,41 @@ export async function handleStartConversionProcess(
           },
         });
 
+        const maxMittausId = await prismaClient.mittaus.aggregate({
+          where: {
+            raportti_id: raportti.id,
+          },
+          _max: {
+            id: true,
+          },
+        });
+
+        log.info('maxMittausId: ' + maxMittausId);
+
+        const minMittausId = await prismaClient.mittaus.aggregate({
+          where: {
+            raportti_id: raportti.id,
+          },
+          _min: {
+            id: true,
+          },
+        });
+
+        log.info('minMittausId: ' + minMittausId);
+
+        const maxId = maxMittausId._max.id;
+        const minId = minMittausId._min.id;
+        // @ts-ignore
+        const a = maxId - minId;
+        log.info('a: ' + a);
+        const idIncrement = Math.ceil(a / conversionBatchSize);
+        log.info('idIncrement: ' + idIncrement);
+
+        if (!minId) {
+          throw new Error('Error getting start id');
+        }
+        let startID: number = minId;
+
         const key = raportti.key;
         if (key === null) {
           log.error('File with no key?');
@@ -152,7 +188,9 @@ export async function handleStartConversionProcess(
         }
         // split one raportti into batches
         const batchCount = Math.ceil(mittausCount / conversionBatchSize);
+
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+          const endID = startID + idIncrement;
           const body: ConversionMessage = {
             key,
             id: raportti.id,
@@ -162,13 +200,19 @@ export async function handleStartConversionProcess(
             batchCount,
             orderBy: 'id',
             invocationId,
+            startID,
+            endID,
           };
 
+          startID = endID + 1;
           let messageGroupId = key.replace(/_|\W/g, '');
 
           messageGroupId =
             messageGroupId.length > 128
-              ? messageGroupId.substring(messageGroupId.length-128, messageGroupId.length)
+              ? messageGroupId.substring(
+                  messageGroupId.length - 128,
+                  messageGroupId.length,
+                )
               : messageGroupId;
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,
