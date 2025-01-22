@@ -4,7 +4,11 @@ import {
   acquirePipelineLockOrFail,
   lockTableExists,
 } from '../../../utils/dataProcessLock';
-import { CodePipeline } from 'aws-sdk';
+import {
+  CodePipelineClient,
+  PutJobFailureResultCommand,
+  PutJobSuccessResultCommand,
+} from '@aws-sdk/client-codepipeline';
 import { logPipeline } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { getDBConnection } from '../../dataProcess/csvCommon/db/dbUtil';
@@ -17,46 +21,46 @@ export async function handleAcquirePipelineLock(
   context: Context,
 ): Promise<void> {
   withRequest(event, context);
-  const pipeline = new CodePipeline();
+  const pipelineClient = new CodePipelineClient();
   const jobId = event['CodePipeline.job'].id;
   try {
     const exists = await lockTableExists(await dbConnection);
     if (!exists) {
       const message = 'Lock table does not exist, lock not acquired';
       logPipeline.warn(message);
-      await pipeline
-        .putJobSuccessResult({
+      await pipelineClient.send(
+        new PutJobSuccessResultCommand({
           jobId,
           executionDetails: {
             summary: message,
           },
-        })
-        .promise();
+        }),
+      );
       return;
     }
     await acquirePipelineLockOrFail(await dbConnection);
-    await pipeline
-      .putJobSuccessResult({
+    await pipelineClient.send(
+      new PutJobSuccessResultCommand({
         jobId,
         executionDetails: {
           summary: 'Lock acquired',
         },
-      })
-      .promise();
+      }),
+    );
   } catch (error: any) {
     logPipeline.error(error);
     let message =
       error instanceof DataProcessLockedError
         ? 'Failed to acquire lock: data process in progress'
         : error.message ?? error;
-    await pipeline
-      .putJobFailureResult({
+    await pipelineClient.send(
+      new PutJobFailureResultCommand({
         jobId,
         failureDetails: {
           message,
           type: 'JobFailed',
         },
-      })
-      .promise();
+      }),
+    );
   }
 }

@@ -4,7 +4,6 @@ import {
   PutObjectCommandOutput,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { S3 } from 'aws-sdk';
 import { failedProgressData } from './constants';
 import { Readable, PassThrough } from 'stream';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -75,12 +74,16 @@ export async function uploadDeHydratedToS3(
   return s3Client.send(params);
 }
 
-export async function getJsonObjectFromS3(bucket: string, key: string, s3: S3) {
-  const command = {
+export async function getJsonObjectFromS3(
+  bucket: string,
+  key: string,
+  s3: S3Client,
+) {
+  const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
-  };
-  const data = await s3.getObject(command).promise();
+  });
+  const data = await s3.send(command);
   return data?.Body ? JSON.parse(data.Body.toString()) : null;
 }
 

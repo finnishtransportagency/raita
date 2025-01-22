@@ -1,5 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
-import { S3 } from 'aws-sdk';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import archiver, { Archiver } from 'archiver';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
@@ -19,6 +18,7 @@ import {
 } from './utils';
 import { lambdaRequestTracker } from 'pino-lambda';
 import { Context } from 'aws-lambda';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
@@ -67,7 +67,6 @@ export async function handleZipProcessing(
 ) {
   withRequest(event, context);
   const s3Client = new S3Client({});
-  const s3 = new S3();
   const archive = archiver('zip', {
     zlib: { level: 5 },
   });
@@ -79,7 +78,7 @@ export async function handleZipProcessing(
         ? await getJsonObjectFromS3(
             dataCollectionBucket,
             event.keys[0],
-            s3,
+            s3Client,
           ).then(obj => obj.keys)
         : event.keys;
     const { pollingFileKey } = event;
@@ -112,18 +111,13 @@ export async function handleZipProcessing(
       uploadZip(dataCollectionBucket, destKey, archive, s3Client),
     ]);
 
-    const url = await s3
-      .getSignedUrlPromise('getObject', {
-        Bucket: dataCollectionBucket,
-        Key: destKey,
-        Expires: 600,
-      })
-      .catch(async err => {
-        log.error(
-          `Error getting the signed url for key: ${destKey} error: ${err}`,
-        );
-        throw err;
-      });
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: dataCollectionBucket,
+      Key: destKey,
+    });
+    const url = await getSignedUrl(s3Client, getObjectCommand, {
+      expiresIn: 600,
+    });
 
     await uploadProgressData(
       { ...successProgressData, url },
