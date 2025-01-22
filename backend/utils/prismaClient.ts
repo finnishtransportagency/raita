@@ -4,7 +4,7 @@ import { getSecretsManagerSecret } from './secretsManager';
 import { logDatabaseOperation } from './logger';
 
 // disable query logging. TODO: some kind of flag to enable it, if needed
-const enableQueryLogging = true;
+const enableQueryLogging = false;
 
 export const getPrismaClient = async () => {
   const user = getEnvOrFail('PGUSER');
