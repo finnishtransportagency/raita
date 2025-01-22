@@ -199,7 +199,6 @@ export async function handleStartConversionProcess(
             key,
             id: raportti.id,
             system: raportti.system,
-            batchSize: conversionBatchSize,
             batchIndex,
             batchCount,
             orderBy: 'id',

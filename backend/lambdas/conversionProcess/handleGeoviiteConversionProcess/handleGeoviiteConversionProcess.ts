@@ -107,11 +107,10 @@ export async function handleGeoviiteConversionProcess(
     const invocationId = message.invocationId;
     await adminLogger.init('conversion-process', invocationId);
 
-    // how many to handle in this invocation
-    const invocationTotalBatchSize = message.batchSize;
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
 
+    // what to handle in this invocation
     const invocationStartId = message.startID;
     const invocationEndId = message.endID;
     log.info('start end: ' + invocationStartId + ' ' + invocationEndId);
@@ -131,7 +130,7 @@ export async function handleGeoviiteConversionProcess(
       },
     });
 
-    const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
+
     // how many to handle in one request
     const requestBatchSize = 1000;
 
@@ -142,29 +141,12 @@ export async function handleGeoviiteConversionProcess(
     //Use subtable for performance
     const mittausTable = await getMittausSubtable(system, prismaClient);
 
-    // separate mittaus count query for optimization
-
-    // @ts-ignore
-    const totalMittausCount = await mittausTable.count({
-      where: {
-        raportti_id: id,
-      },
-    });
-    // this will be smaller on last batch
-    const remainingMittausCount = totalMittausCount - startingSkip;
-    if (totalMittausCount === 0) {
-      throw new Error('Mittaus count 0');
-    }
-    // how many to handle in this invocation
-    const mittausCount = Math.min(remainingMittausCount, message.batchSize);
-    log.trace({ mittausCount, remainingMittausCount, totalMittausCount });
-
     // Save result in smaller batches.
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
     let first = true;
-    let maxHandledId = 0;
+
 
     // loop through array in batches: get results for batch and save to db
     for (
@@ -177,7 +159,7 @@ export async function handleGeoviiteConversionProcess(
         where: {
           raportti_id: id,
           id: {
-            gt: startId,
+            gte: startId,
             lt: startId + requestBatchSize,
           },
         },
@@ -188,9 +170,9 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
       });
-      log.info({ length: mittausRows.length }, 'Got from db');
+      log.info('Got from db' +  mittausRows.length);
 
-      maxHandledId = mittausRows[mittausRows.length - 1].id;
+
 
       log.info('startId: ' + startId);
 
