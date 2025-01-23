@@ -131,7 +131,7 @@ export async function handleGeoviiteConversionProcess(
     });
 
 
-    // how many to handle in one request
+    // how many to handle in one request (could be less cause ids not necessarily adjacent)
     const requestBatchSize = 1000;
 
     if (message.orderBy !== 'id') {

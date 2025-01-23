@@ -16,7 +16,6 @@ import {
   getDBConnection,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 
-
 const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
@@ -139,6 +138,11 @@ export async function handleStartConversionProcess(
       let failedKeys: string[] = [];
       for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
         const raportti = raporttis[fileIndex];
+        const key = raportti.key;
+        if (key === null) {
+          log.error('File with no key?');
+          continue;
+        }
         // faster to fetch mittaus count for each raportti separately than to do in initial raportti query
         const mittausCount = await prismaClient.mittaus.count({
           where: {
@@ -146,52 +150,56 @@ export async function handleStartConversionProcess(
           },
         });
 
-        const maxMittausId = await prismaClient.mittaus.aggregate({
-          where: {
-            raportti_id: raportti.id,
-          },
-          _max: {
-            id: true,
-          },
-        });
+        // raportti with no mittauses is set to geoviite success
+        if(mittausCount == 0){
+          await adminLogger.warn("Raportissa ei mittauksia: " + key);
+          await prismaClient.raportti.updateMany({
+            where: {
+              id: raportti.id,
+            },
+            data: {
+              geoviite_status: ConversionStatus.SUCCESS,
+              geoviite_update_at: new Date().toISOString(),
+            },
+          });
+          continue;
+        }
 
 
-
-        const minMittausId = await prismaClient.mittaus.aggregate({
+        const minMittausId = (await prismaClient.mittaus.aggregate({
           where: {
             raportti_id: raportti.id,
           },
           _min: {
             id: true,
           },
-        });
+        }))._min.id;
 
+        const maxMittausId = (await prismaClient.mittaus.aggregate({
+          where: {
+            raportti_id: raportti.id,
+          },
+          _max: {
+            id: true,
+          },
+        }))._max.id;
 
+        log.info('maxMittausId: ' + maxMittausId);
+        log.info('minMittausId: ' + minMittausId);
 
-        const maxId = maxMittausId._max.id;
-        const minId = minMittausId._min.id;
-        log.info('maxMittausId: ' + maxId);
-        log.info('minMittausId: ' + minId);
-
-
-        if (!minId || !maxId) {
+        if (!minMittausId || !maxMittausId) {
           throw new Error('Error getting start or end id');
         }
-        let startID: number = minId;
+        let startID: number = minMittausId;
 
-        const key = raportti.key;
-        if (key === null) {
-          log.error('File with no key?');
-          continue;
-        }
+
         // split one raportti into batches
         const batchCount = Math.ceil(mittausCount / conversionBatchSize);
 
-        const idDifference = maxId - minId;
+        const idDifference = maxMittausId - minMittausId;
         log.info('idDifference: ' + idDifference);
         const idIncrement = Math.ceil(idDifference / batchCount);
         log.info('idIncrement: ' + idIncrement);
-
 
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const endID = startID + idIncrement;
