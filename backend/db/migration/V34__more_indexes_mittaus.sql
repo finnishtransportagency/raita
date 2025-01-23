@@ -15,3 +15,12 @@ create index concurrently if not exists rc_geoviite_updated_at_index on rc_mitta
 create index concurrently if not exists rp_geoviite_updated_at_index on rp_mittaus(geoviite_updated_at);
 create index concurrently if not exists tg_geoviite_updated_at_index on tg_mittaus(geoviite_updated_at);
 create index concurrently if not exists tsight_geoviite_updated_at_index on tsight_mittaus(geoviite_updated_at);
+
+create index concurrently if not exists geoviite_virhe_index on mittaus(geoviite_virhe);
+create index concurrently if not exists ams_geoviite_virhe_index on ams_mittaus(geoviite_virhe);
+create index concurrently if not exists ohl_geoviite_virhe_index on ohl_mittaus(geoviite_virhe);
+create index concurrently if not exists pi_geoviite_virhe_index on pi_mittaus(geoviite_virhe);
+create index concurrently if not exists rc_geoviite_virhe_index on rc_mittaus(geoviite_virhe);
+create index concurrently if not exists rp_geoviite_virhe_index on rp_mittaus(geoviite_virhe);
+create index concurrently if not exists tg_geoviite_virhe_index on tg_mittaus(geoviite_virhe);
+create index concurrently if not exists tsight_geoviite_virhe_index on tsight_mittaus(geoviite_virhe);
