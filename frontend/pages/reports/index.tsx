@@ -103,6 +103,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
   // S3 file URL endpoint mutation
   const getFileUrl = useFileQuery();
+  const getProtoExternalFileUrl = useFileQuery();
 
   // #endregion
 
@@ -664,7 +665,11 @@ const ReportsIndex: RaitaNextPage = () => {
 
                               <Button
                                 size="sm"
-                                label={t('common:download')}
+                                label={
+                                  document.data_location === 'RAITA'
+                                    ? t('common:download')
+                                    : t('common:external_download')
+                                }
                                 onClick={() => {
                                   if (!document.key || !document.file_name) {
                                     return;
@@ -673,8 +678,13 @@ const ReportsIndex: RaitaNextPage = () => {
                                     key: document.key,
                                     fileName: document.file_name,
                                   };
-
-                                  getFileUrl.mutate(opts);
+                                  if (document.data_location === 'RAITA') {
+                                    getFileUrl.mutate(opts);
+                                  } else if (
+                                    document.data_location === 'PROTO_EXT'
+                                  ) {
+                                    getProtoExternalFileUrl.mutate(opts);
+                                  }
                                 }}
                               />
                             </footer>
