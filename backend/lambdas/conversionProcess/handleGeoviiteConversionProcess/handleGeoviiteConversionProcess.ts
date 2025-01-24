@@ -100,15 +100,20 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('Error parsing JSON');
     }
     const id = message.id;
+
+    log.info({ id }, 'handleGeoviiteConversionProcess raportti id');
     const system = message.system;
 
     const invocationId = message.invocationId;
     await adminLogger.init('conversion-process', invocationId);
 
-    // how many to handle in this invocation
-    const invocationTotalBatchSize = message.batchSize;
     const invocationTotalBatchIndex = message.batchIndex;
     const invocationTotalBatchCount = message.batchCount;
+
+    // what to handle in this invocation
+    const invocationStartId = message.startID;
+    const invocationEndId = message.endID;
+    log.info('start end: ' + invocationStartId + ' ' + invocationEndId);
 
     await prismaClient.raportti.updateMany({
       where: {
@@ -125,8 +130,8 @@ export async function handleGeoviiteConversionProcess(
       },
     });
 
-    const startingSkip = invocationTotalBatchSize * invocationTotalBatchIndex;
-    // how many to handle in one request
+
+    // how many to handle in one request (could be less cause ids not necessarily adjacent)
     const requestBatchSize = 1000;
 
     if (message.orderBy !== 'id') {
@@ -136,39 +141,27 @@ export async function handleGeoviiteConversionProcess(
     //Use subtable for performance
     const mittausTable = await getMittausSubtable(system, prismaClient);
 
-    // separate mittaus count query for optimization
-
-    // @ts-ignore
-    const totalMittausCount = await mittausTable.count({
-      where: {
-        raportti_id: id,
-      },
-    });
-    // this will be smaller on last batch
-    const remainingMittausCount = totalMittausCount - startingSkip;
-    if (totalMittausCount === 0) {
-      throw new Error('Mittaus count 0');
-    }
-    // how many to handle in this invocation
-    const mittausCount = Math.min(remainingMittausCount, message.batchSize);
-    log.trace({ mittausCount, remainingMittausCount, totalMittausCount });
-
     // Save result in smaller batches.
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
     let first = true;
 
+
     // loop through array in batches: get results for batch and save to db
     for (
-      let requestIndex = 0;
-      requestIndex < mittausCount;
-      requestIndex += requestBatchSize
+      let startId = invocationStartId;
+      startId < invocationEndId;
+      startId += requestBatchSize
     ) {
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
           raportti_id: id,
+          id: {
+            gte: startId,
+            lt: startId + requestBatchSize,
+          },
         },
         select: {
           lat: true,
@@ -176,10 +169,9 @@ export async function handleGeoviiteConversionProcess(
           id: true,
         },
         orderBy: { id: 'asc' },
-        take: requestBatchSize,
-        skip: startingSkip + requestIndex,
       });
-      log.trace({ length: mittausRows.length }, 'Got from db');
+      log.trace('Got from db' +  mittausRows.length);
+      log.trace('startId: ' + startId);
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
@@ -249,8 +241,8 @@ export async function handleGeoviiteConversionProcess(
             { err },
             'update error at invocationBatchIndex: ' +
               invocationTotalBatchIndex +
-              ' requestIndex:' +
-              requestIndex +
+              ' startId:' +
+              startId +
               ' saveBatchIndex:' +
               saveBatchIndex,
           );
@@ -261,8 +253,8 @@ export async function handleGeoviiteConversionProcess(
         log.trace(
           ' success at invocationBatchIndex: ' +
             invocationTotalBatchIndex +
-            ' requestIndex:' +
-            requestIndex +
+            ' startId:' +
+            startId +
             ' saveBatchIndex:' +
             saveBatchIndex,
         );

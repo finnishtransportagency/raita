@@ -138,6 +138,11 @@ export async function handleStartConversionProcess(
       let failedKeys: string[] = [];
       for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
         const raportti = raporttis[fileIndex];
+        const key = raportti.key;
+        if (key === null) {
+          log.error('File with no key?');
+          continue;
+        }
         // faster to fetch mittaus count for each raportti separately than to do in initial raportti query
         const mittausCount = await prismaClient.mittaus.count({
           where: {
@@ -145,30 +150,80 @@ export async function handleStartConversionProcess(
           },
         });
 
-        const key = raportti.key;
-        if (key === null) {
-          log.error('File with no key?');
+        // raportti with no mittauses is set to geoviite success
+        if(mittausCount == 0){
+          await adminLogger.warn("Raportissa ei mittauksia: " + key);
+          await prismaClient.raportti.updateMany({
+            where: {
+              id: raportti.id,
+            },
+            data: {
+              geoviite_status: ConversionStatus.SUCCESS,
+              geoviite_update_at: new Date().toISOString(),
+            },
+          });
           continue;
         }
+
+
+        const minMittausId = (await prismaClient.mittaus.aggregate({
+          where: {
+            raportti_id: raportti.id,
+          },
+          _min: {
+            id: true,
+          },
+        }))._min.id;
+
+        const maxMittausId = (await prismaClient.mittaus.aggregate({
+          where: {
+            raportti_id: raportti.id,
+          },
+          _max: {
+            id: true,
+          },
+        }))._max.id;
+
+        log.info('maxMittausId: ' + maxMittausId);
+        log.info('minMittausId: ' + minMittausId);
+
+        if (!minMittausId || !maxMittausId) {
+          throw new Error('Error getting start or end id');
+        }
+        let startID: number = minMittausId;
+
+
         // split one raportti into batches
         const batchCount = Math.ceil(mittausCount / conversionBatchSize);
+
+        const idDifference = maxMittausId - minMittausId;
+        log.info('idDifference: ' + idDifference);
+        const idIncrement = Math.ceil(idDifference / batchCount);
+        log.info('idIncrement: ' + idIncrement);
+
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
+          const endID = startID + idIncrement;
           const body: ConversionMessage = {
             key,
             id: raportti.id,
             system: raportti.system,
-            batchSize: conversionBatchSize,
             batchIndex,
             batchCount,
             orderBy: 'id',
             invocationId,
+            startID,
+            endID,
           };
 
+          startID = endID + 1;
           let messageGroupId = key.replace(/_|\W/g, '');
 
           messageGroupId =
             messageGroupId.length > 128
-              ? messageGroupId.substring(messageGroupId.length-128, messageGroupId.length)
+              ? messageGroupId.substring(
+                  messageGroupId.length - 128,
+                  messageGroupId.length,
+                )
               : messageGroupId;
           const command = new SendMessageCommand({
             QueueUrl: config.queueUrl,

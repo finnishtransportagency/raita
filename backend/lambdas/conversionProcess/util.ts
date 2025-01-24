@@ -3,10 +3,6 @@ export type ConversionMessage = {
   system: string | null;
   key: string;
   /**
-   * how many mittaus entries to handle in one invocation
-   */
-  batchSize: number;
-  /**
    * Which index to start at
    */
   batchIndex: number;
@@ -22,6 +18,18 @@ export type ConversionMessage = {
    * For admin logging
    */
   invocationId: string;
+
+  /**
+   * mittaus id to start at
+   */
+  startID: number;
+
+  /**
+   * mittaus id to stop at
+   */
+  endID: number
+
+
 };
 
 const finlandGenerousMinLat = 55.0;
