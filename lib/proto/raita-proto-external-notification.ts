@@ -130,7 +130,7 @@ export class ExternalNotificationStack extends cdk.NestedStack {
           }),
           status: FilterOrPolicy.filter(
             SubscriptionFilter.stringFilter({
-              allowlist: ['IMG_EXPORT'],
+              allowlist: ['FULLY_PARSED'],
             }),
           ),
         },
