@@ -86,6 +86,11 @@ export class ExternalNotificationStack extends cdk.NestedStack {
                 allowlist: ['Virhelistaus'],
               }),
             ),
+            file_type: FilterOrPolicy.filter(
+              SubscriptionFilter.stringFilter({
+                allowlist: ['txt'],
+              }),
+            ),
           }),
           status: FilterOrPolicy.filter(
             SubscriptionFilter.stringFilter({
