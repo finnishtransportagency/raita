@@ -34,7 +34,7 @@ export async function handleExternalDataUpload(
     }
     // could save something to metadata database from here?
     // id or other property that is only generated on upload, if uploading to some real external system
-    if (parsed.status === 'IMG_EXPORT') {
+    if (parsed.metadata.data_location === 'PROTO_EXT') {
       // TODO use metadata somehow?
       const metadata = parsed.metadata;
       const command = new CopyObjectCommand({
@@ -43,8 +43,8 @@ export async function handleExternalDataUpload(
         CopySource: `${config.sourceBucket}/${key}`,
       });
       await client.send(command);
-    } else if (parsed.status === 'FULLY_PARSED') {
-      throw new Error('Receive fully parsed');
+    } else {
+      throw new Error('Wrong location');
     }
   });
   await Promise.all(handled);

@@ -127,6 +127,11 @@ export class ExternalNotificationStack extends cdk.NestedStack {
                 allowlist: ['png'],
               }),
             ),
+            data_location: FilterOrPolicy.filter(
+              SubscriptionFilter.stringFilter({
+                allowlist: ['PROTO_EXT'],
+              }),
+            ),
           }),
           status: FilterOrPolicy.filter(
             SubscriptionFilter.stringFilter({
