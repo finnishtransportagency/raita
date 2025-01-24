@@ -188,17 +188,6 @@ export async function handleInspectionFileEvent(
         );
         log.info({ parsedMetadataFile, metadataEntry: metadataFromFile });
 
-        if (isExportedSuffix(keyData.fileSuffix)) {
-          await sendToExternalTopic(
-            snsClient,
-            key,
-            metadataFromFile,
-            'IMG_EXPORT',
-          );
-          log.info('send img to export');
-          // admin log?
-          return null; // TODO?
-        }
         let reportId: number;
 
         // entry values that are known before parsing
@@ -252,6 +241,23 @@ export async function handleInspectionFileEvent(
           invocationId,
           doGeoviiteConversion: !skipGeoviiteConversion,
         });
+
+        let dataLocation = 'RAITA';
+        if (isExportedSuffix(keyData.fileSuffix)) {
+          // await sendToExternalTopic(
+          //   snsClient,
+          //   key,
+          //   metadataFromFile,
+          //   'IMG_EXPORT',
+          // );
+          // log.info('send img to export');
+          // // admin log?
+          // return null; // TODO?
+          dataLocation = 'PROTO_EXT';
+          // TODO: could define more locations based on data type
+          // only test bucket for now
+        }
+
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -273,6 +279,7 @@ export async function handleInspectionFileEvent(
             ...parseResults.metadata,
             ...metadataFromFile,
             parsed_at_datetime,
+            data_location: dataLocation,
           },
           tags: fileStreamResult.tags,
           reportId,

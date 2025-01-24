@@ -36,6 +36,7 @@ type Raportti {
   parsed_at_datetime: String # TODO date?
   inspection_datetime: String # TODO date?
   metadata_changed_at_datetime: String # TODO date
+  data_location: String
 }
 
 type SearchRaporttiResponse {

@@ -39,6 +39,7 @@ interface RaitaApiStackProps extends NestedStackProps {
   readonly cloudfrontDomainName: string;
   readonly raitaSecurityGroup: ec2.ISecurityGroup;
   prismaLambdaLayer: lambda.LayerVersion;
+  readonly externalDataBucket: Bucket;
 }
 
 type ListenerTargetLambdas = {
@@ -85,6 +86,7 @@ export class RaitaApiStack extends NestedStack {
       cloudfrontDomainName,
       raitaSecurityGroup,
       prismaLambdaLayer,
+      externalDataBucket,
     } = props;
 
     const databaseEnvironmentVariables = getDatabaseEnvironmentVariables(
@@ -241,6 +243,17 @@ export class RaitaApiStack extends NestedStack {
       dataBucket: inspectionDataBucket,
       vpc,
     });
+    const handleProtoExternalFileRequestFn =
+      this.createProtoExternalFileRequestHandler({
+        name: 'api-handler-proto-ext-file',
+        raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        jwtTokenIssuer,
+        lambdaRole: this.raitaApiLambdaServiceRole,
+        dataBucket: externalDataBucket,
+        vpc,
+      });
 
     const handleImagesRequestFn = this.createImagesRequestHandler({
       name: 'api-handler-images',
@@ -407,6 +420,12 @@ export class RaitaApiStack extends NestedStack {
         lambda: handleFileRequestFn,
         priority: 200,
         path: [`${apiBaseUrl}/file`],
+        targetName: 'file',
+      },
+      {
+        lambda: handleProtoExternalFileRequestFn,
+        priority: 205,
+        path: [`${apiBaseUrl}/proto-ext-file`],
         targetName: 'file',
       },
       {
@@ -620,6 +639,54 @@ export class RaitaApiStack extends NestedStack {
     lambdaRole: Role;
     vpc: ec2.IVpc;
   }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 1024,
+      timeout: Duration.seconds(5),
+      runtime: Runtime.NODEJS_20_X,
+      handler: 'handleFileRequest',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/handleFileRequest/handleFileRequest.ts`,
+      ),
+      environment: {
+        DATA_BUCKET: dataBucket.bucketName,
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+      },
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+  /**
+   *
+   */
+  private createProtoExternalFileRequestHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    dataBucket,
+    lambdaRole,
+    vpc,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    dataBucket: Bucket;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+  }) {
+    // use same handle as /file but with different bucket
+    // TODO: is something else needed?
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1024,

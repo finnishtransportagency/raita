@@ -20,6 +20,7 @@ interface ExternalNotificationProps extends cdk.NestedStackProps {
   readonly raitaEnv: RaitaEnvironment;
   readonly dataReceptionBucket: Bucket;
   readonly inspectionDataBucket: Bucket;
+  readonly externalDataBucket: Bucket;
 }
 
 /**
@@ -38,6 +39,7 @@ export class ExternalNotificationStack extends cdk.NestedStack {
       raitaEnv,
       dataReceptionBucket,
       inspectionDataBucket,
+      externalDataBucket,
     } = props;
 
     const role: Role = createRaitaServiceRole({
@@ -101,8 +103,6 @@ export class ExternalNotificationStack extends cdk.NestedStack {
       }),
     );
 
-    const externalBucket = new Bucket(this, 's3-raita-dev-proto-external-data');
-
     // this will read file from S3 and input to external system
     const externalDataHandler = this.createExternalDataUploader({
       name: 'ext-data-uploader',
@@ -110,12 +110,12 @@ export class ExternalNotificationStack extends cdk.NestedStack {
       raitaStackIdentifier,
       vpc,
       raitaEnv,
-      externalBucket: externalBucket.bucketName,
+      externalBucket: externalDataBucket.bucketName,
       inspectionBucket: inspectionDataBucket.bucketName,
     });
 
     inspectionDataBucket.grantRead(externalDataHandler);
-    externalBucket.grantReadWrite(externalDataHandler);
+    externalDataBucket.grantReadWrite(externalDataHandler);
     // TODO forward from enw data topic to here and handle somehow
 
     externalDataHandler.addEventSource(

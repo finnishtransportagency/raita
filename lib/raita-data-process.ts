@@ -81,6 +81,7 @@ export class DataProcessStack extends NestedStack {
   public readonly handleCSVFileMassImportEventFn: NodejsFunction;
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
+  public readonly externalDataBucket: Bucket;
   public readonly readyForGeoviiteConversionQueue: Queue;
   public readonly handleFileCountEventFn: NodejsFunction;
 
@@ -143,6 +144,12 @@ export class DataProcessStack extends NestedStack {
     this.csvMassImportDataBucket = createRaitaBucket({
       scope: this,
       name: 'csv-data-mass-import',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+    this.externalDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'external-data',
       raitaEnv,
       raitaStackIdentifier,
     });
@@ -367,6 +374,7 @@ export class DataProcessStack extends NestedStack {
         raitaEnv,
         dataReceptionBucket: this.dataReceptionBucket,
         inspectionDataBucket: this.inspectionDataBucket,
+        externalDataBucket: this.externalDataBucket,
       },
     );
 

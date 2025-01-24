@@ -49,6 +49,7 @@ export const SEARCH_RAPORTTI = gql(`
         parsed_at_datetime
         inspection_datetime
         metadata_changed_at_datetime
+        data_location
       }
       count
       total_size

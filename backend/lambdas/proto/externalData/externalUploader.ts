@@ -32,6 +32,8 @@ export async function handleExternalDataUpload(
     if (!key) {
       throw new Error('no key');
     }
+    // could save something to metadata database from here?
+    // id or other property that is only generated on upload, if uploading to some real external system
     if (parsed.status === 'IMG_EXPORT') {
       // TODO use metadata somehow?
       const metadata = parsed.metadata;
@@ -42,7 +44,7 @@ export async function handleExternalDataUpload(
       });
       await client.send(command);
     } else if (parsed.status === 'FULLY_PARSED') {
-      log.info('receive fully parsed');
+      throw new Error('Receive fully parsed');
     }
   });
   await Promise.all(handled);
