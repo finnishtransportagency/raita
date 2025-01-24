@@ -170,11 +170,8 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
       });
-      log.info('Got from db' +  mittausRows.length);
-
-
-
-      log.info('startId: ' + startId);
+      log.trace('Got from db' +  mittausRows.length);
+      log.trace('startId: ' + startId);
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
