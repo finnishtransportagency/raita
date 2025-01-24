@@ -117,6 +117,7 @@ export class ApplicationStack extends NestedStack {
       vpc,
       raitaSecurityGroup,
       prismaLambdaLayer,
+      externalDataBucket: dataProcessStack.externalDataBucket,
     });
 
     // Create Bastion Host for dev (main branch/stack) and production
