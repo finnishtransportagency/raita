@@ -16,6 +16,7 @@ module.exports = {
     'parseFileMetaData.test.ts', // ignore for now
     'geoviiteClient.test.ts',
     'utils.test.ts',
+    'backend/lambdas/dataProcess/handleInspectionFileEvent/__tests__/postgresRepository.test.ts',
   ],
   runtime: '@side/jest-runtime', // custom runtime to fix memory issues
 };
