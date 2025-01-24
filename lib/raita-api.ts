@@ -426,7 +426,7 @@ export class RaitaApiStack extends NestedStack {
         lambda: handleProtoExternalFileRequestFn,
         priority: 205,
         path: [`${apiBaseUrl}/proto-ext-file`],
-        targetName: 'file',
+        targetName: 'proto-ext-file',
       },
       {
         lambda: handleImagesRequestFn,
