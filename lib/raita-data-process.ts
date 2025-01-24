@@ -350,17 +350,17 @@ export class DataProcessStack extends NestedStack {
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.zip' },
+      { suffix: '.zip' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xlsx' },
+      { suffix: '.xlsx' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      // { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xls' },
+      { suffix: '.xls' },
     );
 
     handleReceptionFileEventFn.addEventSource(receptionQueueSource);
