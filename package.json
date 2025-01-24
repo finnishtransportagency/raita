@@ -55,7 +55,6 @@
   "dependencies": {
     "@apollo/server": "^4.10.3",
     "@as-integrations/aws-lambda": "^3.1.0",
-<<<<<<< HEAD
     "@aws-sdk/client-codepipeline": "^3.731.1",
     "@aws-sdk/client-ecs": "^3.731.1",
     "@aws-sdk/client-lambda": "^3.731.1",
@@ -64,16 +63,6 @@
     "@aws-sdk/credential-provider-node": "^3.731.1",
     "@aws-sdk/lib-storage": "^3.731.1",
     "@aws-sdk/s3-request-presigner": "^3.731.1",
-=======
-    "@aws-sdk/client-ecs": "^3.470.0",
-    "@aws-sdk/client-lambda": "^3.470.0",
-    "@aws-sdk/client-s3": "^3.470.0",
-    "@aws-sdk/client-sqs": "^3.609.0",
-    "@aws-sdk/client-sns": "^3.609.0",
-    "@aws-sdk/credential-provider-node": "^3.470.0",
-    "@aws-sdk/lib-storage": "^3.470.0",
-    "@aws-sdk/s3-request-presigner": "^3.470.0",
->>>>>>> cd44f0a7 (testing proto)
     "@prisma/client": "^5.12.1",
     "@side/jest-runtime": "^1.1.0",
     "archiver": "^6.0.1",
