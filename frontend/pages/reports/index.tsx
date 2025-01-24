@@ -30,7 +30,7 @@ import ResultsPager from 'components/results-pager';
 import LoadingOverlay from 'components/loading-overlay';
 import InfoBanner from 'components/infobanner';
 
-import { useFileQuery } from '../../shared/hooks';
+import { useFileQuery, useProtoExternalFileQuery } from '../../shared/hooks';
 import css from '../reports/reports.module.css';
 
 import { getFile, getImageKeysForFileKey } from 'shared/rest';
@@ -103,7 +103,7 @@ const ReportsIndex: RaitaNextPage = () => {
 
   // S3 file URL endpoint mutation
   const getFileUrl = useFileQuery();
-  const getProtoExternalFileUrl = useFileQuery();
+  const getProtoExternalFileUrl = useProtoExternalFileQuery();
 
   // #endregion
 

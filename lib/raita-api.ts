@@ -254,6 +254,7 @@ export class RaitaApiStack extends NestedStack {
         dataBucket: externalDataBucket,
         vpc,
       });
+    externalDataBucket.grantRead(handleProtoExternalFileRequestFn);
 
     const handleImagesRequestFn = this.createImagesRequestHandler({
       name: 'api-handler-images',
