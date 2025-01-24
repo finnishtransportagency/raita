@@ -1,5 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import { jarjestelma,  ams_mittaus } from '@prisma/client';
+import {undefined} from "zod";
+import {parseInt} from "lodash";
 
 function sanitizeValue<T>(value: T) {
   return Number.isNaN(value) || !value || value == 'NaN' ? null : value;
@@ -62,8 +64,36 @@ type AMSMittausData = {
   geoviite_updated_at?: Date | null;
 };
 
-export function convertDataToAMSMittaus(item: any): AMSMittausData {
+export function convertDataToAMSMittaus(item: any): Omit<ams_mittaus, 'id'> {
   return {
+    ajonopeus_nan_reason: null,
+    ams_ajonopeus_nan_reason: null,
+    geoviite_ratanumero_oid: null,
+    geoviite_sijaintiraide: null,
+    geoviite_sijaintiraide_oid: null,
+    geoviite_virhe: null,
+    oikea_poikittainen_kiihtyvyys_c1_keskihajonta_nan_reason: null,
+    oikea_poikittainen_kiihtyvyys_c1_nan_reason: null,
+    oikea_poikittainen_kiihtyvyys_c1_suodatettu_nan_reason: null,
+    oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason: null,
+    oikea_pystysuuntainen_kiihtyvyys_c1_nan_reason: null,
+    oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason: null,
+    poikittainen_kiihtyvyys_c2_nan_reason: null,
+    poikittainen_kiihtyvyys_c2_suodatettu_nan_reason: null,
+    poikittainen_kiihtyvyys_c3_nan_reason: null,
+    poikittainen_kiihtyvyys_c3_suodatettu_nan_reason: null,
+    pystysuuntainen_kiihtyvyys_c2_nan_reason: null,
+    pystysuuntainen_kiihtyvyys_c2_suodatettu_nan_reason: null,
+    pystysuuntainen_kiihtyvyys_c3_nan_reason: null,
+    pystysuuntainen_kiihtyvyys_c3_suodatettu_nan_reason: null,
+    transversal_acceleration_c2_mean_to_peak_nan_reason: null,
+    transversal_acceleration_c3_mean_to_peak_nan_reason: null,
+    vasen_poikittainen_kiihtyvyys_c1_keskihajonta_nan_reason: null,
+    vasen_poikittainen_kiihtyvyys_c1_nan_reason: null,
+    vasen_poikittainen_kiihtyvyys_c1_suodatettu_nan_reason: null,
+    vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta_nan_reason: null,
+    vasen_pystysuuntainen_kiihtyvyys_c1_nan_reason: null,
+    vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu_nan_reason: null,
     raportti_id: parseInt(item.raportti_id, 10),
     running_date: item.running_date,
 
@@ -256,7 +286,7 @@ export function convertDataToAMSMittaus(item: any): AMSMittausData {
 
     geoviite_updated_at: sanitizeValue(item.geoviite_updated_at)
       ? new Date(item.geoviite_updated_at)
-      : null,
+      : null
   };
 }
 

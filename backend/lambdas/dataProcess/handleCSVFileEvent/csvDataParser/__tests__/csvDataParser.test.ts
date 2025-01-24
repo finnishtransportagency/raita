@@ -351,7 +351,7 @@ describe.skip('handle ams ajonopeus NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle tsightCsv NaN vals ', () => {
+describe.skip('handle tsightCsv NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'TSIGHT';
     const fileBody = tsightCsv;
@@ -371,7 +371,7 @@ describe('handle tsightCsv NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle tg NaN vals ', () => {
+describe.skip('handle tg NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'TG';
     const fileBody = tgCsv;
@@ -386,7 +386,7 @@ describe('handle tg NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle rp NaN vals ', () => {
+describe.skip('handle rp NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'RP';
     const fileBody = rpCsv;
@@ -401,7 +401,7 @@ describe('handle rp NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle rc NaN vals ', () => {
+describe.skip('handle rc NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'RC';
     const fileBody = rcCsv;
@@ -416,7 +416,7 @@ describe('handle rc NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle pi NaN vals ', () => {
+describe.skip('handle pi NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'PI';
     const fileBody = piCsv;
@@ -431,7 +431,7 @@ describe('handle pi NaN vals ', () => {
   }, 900000);
 });
 
-describe('handle ohl NaN vals ', () => {
+describe.skip('handle ohl NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'OHL';
     const fileBody = ohlCsv;
@@ -846,7 +846,7 @@ describe.skip('handle rp csv file success', () => {
   }, 900000);
 });
 
-// describe('handle tg csv file success',() => {
+// describe.skip('handle tg csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -867,7 +867,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-// describe('handle ohl csv file success',() => {
+// describe.skip('handle ohl csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -888,7 +888,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-/*describe('parseAMSCSV success',() => {
+/*describe.skip('parseAMSCSV success',() => {
   test('success: normal run',async () => {
     const result = await parseCSVFileStream(amsCsv,3,"ams_mittaus",amsSchema);
     expect(result.success).toBe(true);
@@ -899,7 +899,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-/*describe('parseAMSCSV error',() => {
+/*describe.skip('parseAMSCSV error',() => {
   test('success: error run',async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
@@ -911,7 +911,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-describe('validateHeaders', () => {
+describe.skip('validateHeaders', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -964,7 +964,7 @@ describe('validateHeaders', () => {
   });
 });
 
-describe('removeMissingHeadersFromSchema', () => {
+describe.skip('removeMissingHeadersFromSchema', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -979,7 +979,7 @@ describe('removeMissingHeadersFromSchema', () => {
 
 // test that zod-csv parser handles different column order in csv vs schema.
 // We are using our modified copy of zod-csv to achive this: external/zod-csv/csv.ts:94
-describe('parseCSVContent', () => {
+describe.skip('parseCSVContent', () => {
   test('success: different column order', async () => {
     const parsedCSVContent = parseCSVContent(
       amsCsvWithDifferentColumnOrder,

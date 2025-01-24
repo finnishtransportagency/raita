@@ -175,14 +175,14 @@ function handleNan(row: any, missingOptionalColumns: string[] | undefined) {
           // @ts-ignore
           nanFields[key + NAN_REASON_POSTFIX] = 'UNKNOWN_VALUE';
         }
-        //Measurement fields will be set to NaN.
-        measurements[key] = 'NaN';
+        //Measurement fields will be set to NULL.
+        measurements[key] = null;
       }
     } else {
       // @ts-ignore
       nanFields[key + NAN_REASON_POSTFIX] = 'EMPTY_VALUE';
-      //Measurement fields will be set to NaN.
-      measurements[key] = 'NaN';
+      //Measurement fields will be set to NULL.
+      measurements[key] = null;
     }
   }
   return { ...measurements, ...nanFields, ...missingOptionalColumnsFields };
@@ -263,7 +263,7 @@ export function convertToDBRow(
 
   switch (fileNamePrefix) {
     case 'AMS':
-      return convertDataToAMSMittaus(x);
+      return x;
       break
   }
   return x;
