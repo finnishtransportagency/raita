@@ -19,6 +19,7 @@ import {
 import { Construct } from 'constructs';
 import {
   BuildEnvironmentVariableType,
+  BuildSpec,
   Cache,
   LinuxBuildImage,
   LocalCacheMode,
@@ -194,6 +195,15 @@ export class RaitaPipelineStack extends Stack {
           buildEnvironment: {
             buildImage: LinuxBuildImage.STANDARD_7_0,
           },
+          partialBuildSpec: BuildSpec.fromObject({
+            phases: {
+              install: {
+                'runtime-versions': {
+                  nodejs: '20',
+                },
+              },
+            },
+          }),
           // TODO: Cacheing not working currently
           cache: Cache.local(
             LocalCacheMode.CUSTOM,
