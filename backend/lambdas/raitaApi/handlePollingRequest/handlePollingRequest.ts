@@ -1,5 +1,5 @@
-import { S3 } from 'aws-sdk';
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateReadUser } from '../../../utils/userService';
@@ -16,13 +16,18 @@ function getLambdaConfigOrFail() {
   };
 }
 
-async function getProgressDataFromS3(bucket: string, key: string, s3: S3) {
-  const command = {
-    Bucket: bucket,
-    Key: key,
-  };
-  const data = await s3.getObject(command).promise();
-  return data?.Body ? JSON.parse(data.Body.toString()) : null;
+async function getProgressDataFromS3(
+  bucket: string,
+  key: string,
+  s3Client: S3Client,
+) {
+  const data = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }),
+  );
+  return data?.Body ? JSON.parse(await data.Body.transformToString()) : null;
 }
 
 const withRequest = lambdaRequestTracker();
@@ -37,7 +42,7 @@ export async function handlePollingRequest(
 ): Promise<APIGatewayProxyResult> {
   withRequest(event, _context);
   const { queryStringParameters } = event;
-  const s3 = new S3();
+  const s3Client = new S3Client();
   try {
     const user = await getUser(event);
     await validateReadUser(user);
@@ -47,7 +52,11 @@ export async function handlePollingRequest(
       throw new Error('Key not specified');
     }
     // Check if progress file exists
-    const progressData = await getProgressDataFromS3(dataBucket, queryKey, s3);
+    const progressData = await getProgressDataFromS3(
+      dataBucket,
+      queryKey,
+      s3Client,
+    );
     if (!progressData) {
       throw new RaitaLambdaError('Invalid input', 400);
     }

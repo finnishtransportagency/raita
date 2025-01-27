@@ -1,5 +1,10 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateReadUser } from '../../../utils/userService';
@@ -27,7 +32,7 @@ export async function handleFileRequest(
 ): Promise<APIGatewayProxyResult> {
   withRequest(event, _context);
   const { body } = event;
-  const s3 = new S3();
+  const s3Client = new S3Client();
   try {
     const user = await getUser(event);
     await validateReadUser(user);
@@ -39,20 +44,22 @@ export async function handleFileRequest(
     const { key } = requestBody;
     log.info(user, `Generating pre-signed url for ${key}`);
     // Check if file exists
-    const exists = await s3
-      .headObject({
+    const exists = await s3Client.send(
+      new HeadObjectCommand({
         Bucket: dataBucket,
         Key: key,
-      })
-      .promise();
+      }),
+    );
     if (!exists) {
       throw new RaitaLambdaError('Invalid input', 400);
     }
     // Create pre-signed url
-    const url = s3.getSignedUrl('getObject', {
+    const downloadCommand = new GetObjectCommand({
       Bucket: dataBucket,
       Key: key,
-      Expires: 30,
+    });
+    const url = await getSignedUrl(s3Client, downloadCommand, {
+      expiresIn: 30,
     });
     return getRaitaSuccessResponse({ url });
   } catch (err: any) {

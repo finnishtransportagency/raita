@@ -1,16 +1,19 @@
 import { S3EventRecord } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
-import { IFileResult, IFileStreamResult } from '../types';
+import { IFileStreamResult } from '../types';
 import { IFileInterface } from '../types/portFile';
-import { log } from '../utils/logger';
+import {
+  GetObjectCommand,
+  GetObjectTaggingCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
 export class S3FileRepository implements IFileInterface {
-  #s3: S3;
+  #s3: S3Client;
 
   constructor() {
-    this.#s3 = new S3();
+    this.#s3 = new S3Client();
   }
-
 
   getFileStream = async (
     eventRecord: S3EventRecord,
@@ -21,43 +24,41 @@ export class S3FileRepository implements IFileInterface {
     );
     // get metadata separately with head request because fileStream only contains file body
 
-    const fileStream = this.#s3
-      .getObject({
+    const file = await this.#s3.send(
+      new GetObjectCommand({
         Bucket: bucket,
         Key: key,
-      })
-      .createReadStream();
-
-    let tags = {};
-    let metadata = {};
-    let contentType: string | undefined = '';
-
-    const tagsPromise = this.#s3
-      .getObjectTagging({
-        Bucket: bucket,
-        Key: key,
-      })
-      .promise();
-    const tagSet = await tagsPromise;
-    tags = tagSet.TagSet.reduce(
-      (acc, cur) => {
-        acc[cur.Key] = cur.Value;
-        return acc;
-      },
-      {} as Record<string, string>,
+      }),
     );
 
-    const headPromise = this.#s3
-      .headObject({
+    if (!file.Body) {
+      throw new Error('Error getting file stream');
+    }
+    const fileStream: Readable = file.Body as Readable;
+
+    const metadata = file.Metadata ?? {};
+    const contentType: string | undefined = file.ContentType;
+
+    const tagsPromise = this.#s3.send(
+      new GetObjectTaggingCommand({
         Bucket: bucket,
         Key: key,
-      })
-      .promise();
+      }),
+    );
+    const tagSet = await tagsPromise;
 
-    const headResponse = await headPromise;
-    metadata = headResponse.Metadata ?? {};
-    contentType = headResponse.ContentType;
-
+    const tags =
+      tagSet && tagSet.TagSet
+        ? tagSet.TagSet.reduce(
+            (acc, cur) => {
+              if (cur.Key) {
+                acc[cur.Key] = cur.Value ?? '';
+              }
+              return acc;
+            },
+            {} as Record<string, string>,
+          )
+        : {};
     return {
       fileStream,
       contentType,

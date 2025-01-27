@@ -1,8 +1,8 @@
-import { S3 } from 'aws-sdk';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ISpecificationAdapterInterface } from '../types/portSpecification';
 
 export class S3ConfigRepository implements ISpecificationAdapterInterface {
-  #s3: S3;
+  #s3: S3Client;
   #configurationBucket: string;
   #configurationFile: string;
 
@@ -13,19 +13,19 @@ export class S3ConfigRepository implements ISpecificationAdapterInterface {
     configurationBucket: string;
     configurationFile: string;
   }) {
-    this.#s3 = new S3();
+    this.#s3 = new S3Client();
     this.#configurationBucket = configurationBucket;
     this.#configurationFile = configurationFile;
   }
 
   getSpecification = async (): Promise<string> => {
-    const specJSONDoc = await this.#s3
-      .getObject({
+    const specJSONDoc = await this.#s3.send(
+      new GetObjectCommand({
         Bucket: this.#configurationBucket,
         Key: this.#configurationFile,
-      })
-      .promise();
-    const specJSON = specJSONDoc.Body?.toString();
+      }),
+    );
+    const specJSON = await specJSONDoc.Body?.transformToString();
     if (specJSON) {
       return specJSON;
     } else {
