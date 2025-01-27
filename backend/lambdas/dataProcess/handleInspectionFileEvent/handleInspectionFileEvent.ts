@@ -4,10 +4,7 @@ import { lambdaRequestTracker } from 'pino-lambda';
 
 import { log, logLambdaInitializationError } from '../../../utils/logger';
 import BackendFacade from '../../../ports/backend';
-import {
-  getGetEnvWithPreassignedContext,
-  isRaitaSourceSystem,
-} from '../../../../utils';
+import { isRaitaSourceSystem } from '../../../../utils';
 import {
   checkExistingHash,
   getDecodedS3ObjectKey,
@@ -267,6 +264,7 @@ export async function handleInspectionFileEvent(
       currentKey,
       message: 'An error occured while processing events',
     });
+    log.error(err);
     await adminLogger.error(
       `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
     );

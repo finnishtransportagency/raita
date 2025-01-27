@@ -1,4 +1,4 @@
-import { SSM } from 'aws-sdk';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 export const getSSMParameter = async ({
   parameterName,
@@ -7,12 +7,12 @@ export const getSSMParameter = async ({
   parameterName: string;
   encrypted: boolean;
 }) => {
-  const ssm = new SSM();
-  const parameter = await ssm
-    .getParameter({
+  const ssm = new SSMClient();
+  const parameter = await ssm.send(
+    new GetParameterCommand({
       Name: parameterName,
       WithDecryption: encrypted,
-    })
-    .promise();
+    }),
+  );
   return parameter.Parameter?.Value;
 };

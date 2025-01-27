@@ -1,5 +1,10 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { S3 } from 'aws-sdk';
+import {
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+  ListObjectsV2CommandInput,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getEnvOrFail } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { getUser, validateAdminUser } from '../../../utils/userService';
@@ -46,7 +51,7 @@ export async function handleDeleteRequest(
   withRequest(event, _context);
   try {
     const { body } = event;
-    const s3 = new S3();
+    const s3Client = new S3Client();
     const { receptionBucket, inspectionBucket } = getLambdaConfigOrFail();
     const user = await getUser(event);
     await validateAdminUser(user);
@@ -92,7 +97,7 @@ export async function handleDeleteRequest(
       receptionDeleteCount = await deleteFromBucket(
         isZip ? addZipFileExtension(prefix) : prefix,
         receptionBucket,
-        s3,
+        s3Client,
       );
     }
 
@@ -101,7 +106,7 @@ export async function handleDeleteRequest(
       inspectionDeleteCount = await deleteFromBucket(
         prefix,
         inspectionBucket,
-        s3,
+        s3Client,
       );
     }
 
@@ -143,7 +148,11 @@ export async function handleDeleteRequest(
  * Delete objects from bucket that begin with given prefix
  * @return amount of deleted objects
  */
-async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
+async function deleteFromBucket(
+  prefix: string,
+  bucket: string,
+  s3Client: S3Client,
+) {
   const waitPerRequest = 500;
   try {
     let fetchMore = true;
@@ -153,14 +162,16 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     // loop through multiple requests if there are more than 1000 keys
     while (fetchMore) {
       // first fetch list of object keys to delete
-      const params: S3.ListObjectsV2Request = {
+      const params: ListObjectsV2CommandInput = {
         Bucket: bucket,
         Prefix: prefix,
       };
       if (continuationToken) {
         params.ContinuationToken = continuationToken;
       }
-      const listResponse = await s3.listObjectsV2(params).promise();
+      const listResponse = await s3Client.send(
+        new ListObjectsV2Command(params),
+      );
       if (!listResponse) {
         throw new RaitaLambdaError('Error with listObjects', 500);
       }
@@ -183,16 +194,16 @@ async function deleteFromBucket(prefix: string, bucket: string, s3: S3) {
     let deleteCount = 0;
     for (let i = 0; i < keyBatches.length; i++) {
       const keyBatch = keyBatches[i];
-      const response = await s3
-        .deleteObjects({
+      const response = await s3Client.send(
+        new DeleteObjectsCommand({
           Bucket: bucket,
           Delete: {
             Objects: keyBatch.map(key => ({
               Key: key,
             })),
           },
-        })
-        .promise();
+        }),
+      );
       if (response.Deleted && response.Deleted.length) {
         const deletedKeys = response.Deleted.map(d => d.Key);
         log.info({ keys: deletedKeys }, `Deleted from ${bucket}`);

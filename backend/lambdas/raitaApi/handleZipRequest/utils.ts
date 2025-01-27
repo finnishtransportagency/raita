@@ -84,7 +84,7 @@ export async function getJsonObjectFromS3(
     Key: key,
   });
   const data = await s3.send(command);
-  return data?.Body ? JSON.parse(data.Body.toString()) : null;
+  return data?.Body ? JSON.parse(await data.Body.transformToString()) : null;
 }
 
 export async function updateProgressFailed(
