@@ -170,7 +170,7 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
       });
-      log.trace('Got from db' +  mittausRows.length);
+      log.info('Got from db' +  mittausRows.length);
       log.trace('startId: ' + startId);
 
       let latLongFlipped = false;
@@ -182,16 +182,16 @@ export async function handleGeoviiteConversionProcess(
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
 
-      if (first) {
+
         initStatement(
-          saveBatchSize,
+          mittausRows.length,
           system,
           latLongFlipped,
           prismaClient,
           invocationTotalBatchIndex,
         );
         first = false;
-      }
+
 
       if (latLongFlipped) {
         await adminLogger.warn(
