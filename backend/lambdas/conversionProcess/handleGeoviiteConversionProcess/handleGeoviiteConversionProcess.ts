@@ -166,6 +166,11 @@ export async function handleGeoviiteConversionProcess(
         take: requestBatchSize,
       });
       log.info('Got from db' + mittausRows.length);
+
+      if(mittausRows.length == 0){
+        continue;
+      }
+
       startId = 1 + mittausRows[mittausRows.length-1].id;
       log.trace('startId: ' + startId+1);
 
@@ -179,6 +184,9 @@ export async function handleGeoviiteConversionProcess(
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
 
+      log.info("saveBatchSize: " +saveBatchSize);
+      log.info("mittausRows.length: " +mittausRows.length);
+
       if (first) {
         initStatement(
           saveBatchSize,
@@ -189,6 +197,17 @@ export async function handleGeoviiteConversionProcess(
         );
         first = false;
       }
+
+      if (mittausRows.length < saveBatchSize) {
+        initStatement(
+          mittausRows.length,
+          system,
+          latLongFlipped,
+          prismaClient,
+          invocationTotalBatchIndex,
+        );
+      }
+
 
       if (latLongFlipped) {
         await adminLogger.warn(

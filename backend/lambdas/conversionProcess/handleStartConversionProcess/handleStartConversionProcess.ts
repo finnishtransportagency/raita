@@ -139,6 +139,7 @@ export async function handleStartConversionProcess(
       for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
         const raportti = raporttis[fileIndex];
         const key = raportti.key;
+        log.info('key: ' + key);
         if (key === null) {
           log.error('File with no key?');
           continue;
@@ -149,6 +150,7 @@ export async function handleStartConversionProcess(
             raportti_id: raportti.id,
           },
         });
+        log.info('mittausCount: ' + mittausCount);
 
         // raportti with no mittauses is set to geoviite success
         if(mittausCount == 0){
@@ -174,6 +176,8 @@ export async function handleStartConversionProcess(
             id: true,
           },
         }))._min.id;
+        log.info('minMittausId: ' + minMittausId);
+
 
         const maxMittausId = (await prismaClient.mittaus.aggregate({
           where: {
@@ -185,7 +189,7 @@ export async function handleStartConversionProcess(
         }))._max.id;
 
         log.info('maxMittausId: ' + maxMittausId);
-        log.info('minMittausId: ' + minMittausId);
+
 
         if (!minMittausId || !maxMittausId) {
           throw new Error('Error getting start or end id');
