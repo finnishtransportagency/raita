@@ -146,19 +146,15 @@ export async function handleGeoviiteConversionProcess(
 
     let first = true;
 
+    let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
-    for (
-      let startId = invocationStartId;
-      startId < invocationEndId;
-      startId += requestBatchSize
-    ) {
+    while (startId <= invocationEndId) {
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
           raportti_id: id,
           id: {
             gte: startId,
-            lt: startId + requestBatchSize,
           },
         },
         select: {
@@ -167,12 +163,12 @@ export async function handleGeoviiteConversionProcess(
           id: true,
         },
         orderBy: { id: 'asc' },
+        take: requestBatchSize,
       });
       log.info('Got from db' + mittausRows.length);
-      log.trace('startId: ' + startId);
-      if(mittausRows.length == 0){
-        continue;
-      }
+      startId = 1 + mittausRows[mittausRows.length-1].id;
+      log.trace('startId: ' + startId+1);
+
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
@@ -181,6 +177,17 @@ export async function handleGeoviiteConversionProcess(
         );
       } else {
         latLongFlipped = isLatLongFlipped(mittausRows);
+      }
+
+      if (first) {
+        initStatement(
+          saveBatchSize,
+          system,
+          latLongFlipped,
+          prismaClient,
+          invocationTotalBatchIndex,
+        );
+        first = false;
       }
 
       if (latLongFlipped) {
@@ -193,6 +200,7 @@ export async function handleGeoviiteConversionProcess(
           row.long = oldLat;
         });
       }
+
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
@@ -226,13 +234,6 @@ export async function handleGeoviiteConversionProcess(
         );
 
         try {
-          initStatement(
-            batch.length,
-            system,
-            latLongFlipped,
-            prismaClient,
-            invocationTotalBatchIndex,
-          );
           await prismaClient.$executeRaw(updateSql);
         } catch (err) {
           log.error(
