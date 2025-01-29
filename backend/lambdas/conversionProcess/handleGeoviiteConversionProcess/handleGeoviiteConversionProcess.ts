@@ -165,13 +165,14 @@ export async function handleGeoviiteConversionProcess(
         orderBy: { id: 'asc' },
         take: requestBatchSize,
       });
-      log.info('Got from db' + mittausRows.length);
+      log.info('Got from db' + mittausRows.length + ' ' + id +' ' + startId);
 
+      startId += requestBatchSize;
       if(mittausRows.length == 0){
-        continue;
+        break;
       }
 
-      startId = 1 + mittausRows[mittausRows.length-1].id;
+
       log.trace('startId: ' + startId+1);
 
 
