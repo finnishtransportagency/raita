@@ -130,7 +130,6 @@ export async function handleGeoviiteConversionProcess(
       },
     });
 
-
     // how many to handle in one request (could be less cause ids not necessarily adjacent)
     const requestBatchSize = 1000;
 
@@ -146,7 +145,6 @@ export async function handleGeoviiteConversionProcess(
     const saveBatchSize = 500;
 
     let first = true;
-
 
     // loop through array in batches: get results for batch and save to db
     for (
@@ -170,8 +168,11 @@ export async function handleGeoviiteConversionProcess(
         },
         orderBy: { id: 'asc' },
       });
-      log.info('Got from db' +  mittausRows.length);
+      log.info('Got from db' + mittausRows.length);
       log.trace('startId: ' + startId);
+      if(mittausRows.length == 0){
+        continue;
+      }
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
@@ -181,17 +182,6 @@ export async function handleGeoviiteConversionProcess(
       } else {
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
-
-
-        initStatement(
-          mittausRows.length,
-          system,
-          latLongFlipped,
-          prismaClient,
-          invocationTotalBatchIndex,
-        );
-        first = false;
-
 
       if (latLongFlipped) {
         await adminLogger.warn(
@@ -234,7 +224,15 @@ export async function handleGeoviiteConversionProcess(
           system,
           latLongFlipped,
         );
+
         try {
+          initStatement(
+            batch.length,
+            system,
+            latLongFlipped,
+            prismaClient,
+            invocationTotalBatchIndex,
+          );
           await prismaClient.$executeRaw(updateSql);
         } catch (err) {
           log.error(
