@@ -149,6 +149,8 @@ export async function handleGeoviiteConversionProcess(
     let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
     while (startId <= invocationEndId) {
+
+      const a = Date.now();
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
@@ -165,13 +167,13 @@ export async function handleGeoviiteConversionProcess(
         orderBy: { id: 'asc' },
         take: requestBatchSize,
       });
-      log.info('Got from db' + mittausRows.length + ' ' + id +' ' + startId);
+      const b = Date.now() - a;
+      log.info('Got from db' + mittausRows.length + ' ' + id +' ' + startId + ' ' + b/1000);
 
-      startId += requestBatchSize;
       if(mittausRows.length == 0){
         break;
       }
-
+      startId = 1 + mittausRows[mittausRows.length-1].id;
 
       log.trace('startId: ' + startId+1);
 
