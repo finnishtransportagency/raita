@@ -113,7 +113,7 @@ export async function handleGeoviiteConversionProcess(
     // what to handle in this invocation
     const invocationStartId = message.startID;
     const invocationEndId = message.endID;
-    log.info('start end: ' + invocationStartId + ' ' + invocationEndId);
+    log.trace('start end: ' + invocationStartId + ' ' + invocationEndId);
 
     await prismaClient.raportti.updateMany({
       where: {
@@ -129,7 +129,6 @@ export async function handleGeoviiteConversionProcess(
           invocationTotalBatchCount,
       },
     });
-
 
     // how many to handle in one request (could be less cause ids not necessarily adjacent)
     const requestBatchSize = 1000;
@@ -147,20 +146,15 @@ export async function handleGeoviiteConversionProcess(
 
     let first = true;
 
-
+    let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
-    for (
-      let startId = invocationStartId;
-      startId < invocationEndId;
-      startId += requestBatchSize
-    ) {
+    while (startId <= invocationEndId) {
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
           raportti_id: id,
           id: {
             gte: startId,
-            lt: startId + requestBatchSize,
           },
         },
         select: {
@@ -169,8 +163,23 @@ export async function handleGeoviiteConversionProcess(
           id: true,
         },
         orderBy: { id: 'asc' },
+        take: requestBatchSize,
       });
-      log.trace('Got from db' +  mittausRows.length);
+
+      log.trace(
+        'Got from db' +
+          mittausRows.length +
+          ' Raportti id: ' +
+          id +
+          ' Mittaus start id: ' +
+          startId,
+      );
+
+      if (mittausRows.length == 0) {
+        break;
+      }
+      startId = 1 + mittausRows[mittausRows.length - 1].id;
+
       log.trace('startId: ' + startId);
 
       let latLongFlipped = false;
@@ -182,6 +191,9 @@ export async function handleGeoviiteConversionProcess(
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
 
+      log.trace('saveBatchSize: ' + saveBatchSize);
+      log.trace('mittausRows.length: ' + mittausRows.length);
+
       if (first) {
         initStatement(
           saveBatchSize,
@@ -191,6 +203,16 @@ export async function handleGeoviiteConversionProcess(
           invocationTotalBatchIndex,
         );
         first = false;
+      }
+
+      if (mittausRows.length < saveBatchSize) {
+        initStatement(
+          mittausRows.length,
+          system,
+          latLongFlipped,
+          prismaClient,
+          invocationTotalBatchIndex,
+        );
       }
 
       if (latLongFlipped) {
@@ -234,6 +256,7 @@ export async function handleGeoviiteConversionProcess(
           system,
           latLongFlipped,
         );
+
         try {
           await prismaClient.$executeRaw(updateSql);
         } catch (err) {
