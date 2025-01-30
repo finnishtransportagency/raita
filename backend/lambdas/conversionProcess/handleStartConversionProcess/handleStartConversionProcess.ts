@@ -69,6 +69,8 @@ export async function handleStartConversionProcess(
     withRequest(event, context);
     const queueTrigger = event.Records && event.Records.length;
 
+
+
     // init logger first with placeholder invocationId
     let invocationId = 'INVOCATION_ID_NOT_FOUND_YET';
     await adminLogger.init('conversion-process', invocationId);
@@ -125,6 +127,8 @@ export async function handleStartConversionProcess(
       // get next set of files
       // as raportti entries are handled the status is changed, so always search the next available ones
       // TODO: make sure this paging works with other ways to determine raporttis than status
+
+      let a = Date.now();
       const raporttis = await prismaClient.raportti.findMany({
         where: whereInput,
         select: {
@@ -134,6 +138,8 @@ export async function handleStartConversionProcess(
         },
         take: pageCount,
       });
+      log.info("find raporttis time: " + (Date.now() - a)/1000);
+
       let successfulKeys: string[] = [];
       let failedKeys: string[] = [];
       for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
@@ -145,16 +151,19 @@ export async function handleStartConversionProcess(
           continue;
         }
         // faster to fetch mittaus count for each raportti separately than to do in initial raportti query
+        a = Date.now();
         const mittausCount = await prismaClient.mittaus.count({
           where: {
             raportti_id: raportti.id,
           },
         });
+        log.info("mittaus.count time: " + (Date.now() - a)/1000);
         log.trace('mittausCount: ' + mittausCount);
 
         // raportti with no mittauses is set to geoviite success
         if (mittausCount == 0) {
           await adminLogger.warn('Raportissa ei mittauksia: ' + key);
+          a = Date.now();
           await prismaClient.raportti.updateMany({
             where: {
               id: raportti.id,
@@ -164,9 +173,10 @@ export async function handleStartConversionProcess(
               geoviite_update_at: new Date().toISOString(),
             },
           });
+          log.info("updateMany.succes e,pty time: " + (Date.now() - a)/1000);
           continue;
         }
-
+        a = Date.now();
         const minMittausId = (
           await prismaClient.mittaus.aggregate({
             where: {
@@ -177,8 +187,9 @@ export async function handleStartConversionProcess(
             },
           })
         )._min.id;
+        log.info("min time: " + (Date.now() - a)/1000);
         log.trace('minMittausId: ' + minMittausId);
-
+        a = Date.now();
         const maxMittausId = (
           await prismaClient.mittaus.aggregate({
             where: {
@@ -189,7 +200,7 @@ export async function handleStartConversionProcess(
             },
           })
         )._max.id;
-
+        log.info("min time: " + (Date.now() - a)/1000);
         log.trace('maxMittausId: ' + maxMittausId);
 
         if (!minMittausId || !maxMittausId) {
@@ -205,6 +216,7 @@ export async function handleStartConversionProcess(
         const idIncrement = Math.ceil(idDifference / batchCount);
         log.trace('idIncrement: ' + idIncrement);
 
+        a = Date.now();
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const endID = startID + idIncrement;
           const body: ConversionMessage = {
@@ -244,7 +256,9 @@ export async function handleStartConversionProcess(
           }
           await asyncWait(5); // wait to avoid hitting rate limits
         }
+        log.info("ConversionMessage: " + (Date.now() - a)/1000);
       }
+      a = Date.now();
       await prismaClient.raportti.updateMany({
         data: {
           geoviite_status: ConversionStatus.IN_QUEUE,
@@ -255,6 +269,7 @@ export async function handleStartConversionProcess(
           },
         },
       });
+      log.info("updateMany queue: " + (Date.now() - a)/1000);
       if (failedKeys.length) {
         log.error({ failedKeys });
       }
