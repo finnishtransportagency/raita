@@ -139,7 +139,7 @@ export async function handleStartConversionProcess(
       for (let fileIndex = 0; fileIndex < raporttis.length; fileIndex++) {
         const raportti = raporttis[fileIndex];
         const key = raportti.key;
-        log.info('key: ' + key);
+        log.trace('key: ' + key);
         if (key === null) {
           log.error('File with no key?');
           continue;
@@ -150,11 +150,11 @@ export async function handleStartConversionProcess(
             raportti_id: raportti.id,
           },
         });
-        log.info('mittausCount: ' + mittausCount);
+        log.trace('mittausCount: ' + mittausCount);
 
         // raportti with no mittauses is set to geoviite success
-        if(mittausCount == 0){
-          await adminLogger.warn("Raportissa ei mittauksia: " + key);
+        if (mittausCount == 0) {
+          await adminLogger.warn('Raportissa ei mittauksia: ' + key);
           await prismaClient.raportti.updateMany({
             where: {
               id: raportti.id,
@@ -167,43 +167,43 @@ export async function handleStartConversionProcess(
           continue;
         }
 
+        const minMittausId = (
+          await prismaClient.mittaus.aggregate({
+            where: {
+              raportti_id: raportti.id,
+            },
+            _min: {
+              id: true,
+            },
+          })
+        )._min.id;
+        log.trace('minMittausId: ' + minMittausId);
 
-        const minMittausId = (await prismaClient.mittaus.aggregate({
-          where: {
-            raportti_id: raportti.id,
-          },
-          _min: {
-            id: true,
-          },
-        }))._min.id;
-        log.info('minMittausId: ' + minMittausId);
+        const maxMittausId = (
+          await prismaClient.mittaus.aggregate({
+            where: {
+              raportti_id: raportti.id,
+            },
+            _max: {
+              id: true,
+            },
+          })
+        )._max.id;
 
-
-        const maxMittausId = (await prismaClient.mittaus.aggregate({
-          where: {
-            raportti_id: raportti.id,
-          },
-          _max: {
-            id: true,
-          },
-        }))._max.id;
-
-        log.info('maxMittausId: ' + maxMittausId);
-
+        log.trace('maxMittausId: ' + maxMittausId);
 
         if (!minMittausId || !maxMittausId) {
           throw new Error('Error getting start or end id');
         }
         let startID: number = minMittausId;
 
-
         // split one raportti into batches
         const batchCount = Math.ceil(mittausCount / conversionBatchSize);
 
         const idDifference = maxMittausId - minMittausId;
-        log.info('idDifference: ' + idDifference);
+        log.trace('idDifference: ' + idDifference);
         const idIncrement = Math.ceil(idDifference / batchCount);
-        log.info('idIncrement: ' + idIncrement);
+        log.trace('idIncrement: ' + idIncrement);
 
         for (let batchIndex = 0; batchIndex < batchCount; batchIndex++) {
           const endID = startID + idIncrement;

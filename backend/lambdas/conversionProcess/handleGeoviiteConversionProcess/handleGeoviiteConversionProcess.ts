@@ -113,7 +113,7 @@ export async function handleGeoviiteConversionProcess(
     // what to handle in this invocation
     const invocationStartId = message.startID;
     const invocationEndId = message.endID;
-    log.info('start end: ' + invocationStartId + ' ' + invocationEndId);
+    log.trace('start end: ' + invocationStartId + ' ' + invocationEndId);
 
     await prismaClient.raportti.updateMany({
       where: {
@@ -149,8 +149,6 @@ export async function handleGeoviiteConversionProcess(
     let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
     while (startId <= invocationEndId) {
-
-      const a = Date.now();
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
@@ -167,16 +165,22 @@ export async function handleGeoviiteConversionProcess(
         orderBy: { id: 'asc' },
         take: requestBatchSize,
       });
-      const b = Date.now() - a;
-      log.info('Got from db' + mittausRows.length + ' ' + id +' ' + startId + ' ' + b/1000);
 
-      if(mittausRows.length == 0){
+      log.trace(
+        'Got from db' +
+          mittausRows.length +
+          ' Raportti id: ' +
+          id +
+          ' Mittaus start id: ' +
+          startId,
+      );
+
+      if (mittausRows.length == 0) {
         break;
       }
-      startId = 1 + mittausRows[mittausRows.length-1].id;
+      startId = 1 + mittausRows[mittausRows.length - 1].id;
 
-      log.trace('startId: ' + startId+1);
-
+      log.trace('startId: ' + startId);
 
       let latLongFlipped = false;
       if (isNonsenseCoords(mittausRows)) {
@@ -187,8 +191,8 @@ export async function handleGeoviiteConversionProcess(
         latLongFlipped = isLatLongFlipped(mittausRows);
       }
 
-      log.info("saveBatchSize: " +saveBatchSize);
-      log.info("mittausRows.length: " +mittausRows.length);
+      log.trace('saveBatchSize: ' + saveBatchSize);
+      log.trace('mittausRows.length: ' + mittausRows.length);
 
       if (first) {
         initStatement(
@@ -211,7 +215,6 @@ export async function handleGeoviiteConversionProcess(
         );
       }
 
-
       if (latLongFlipped) {
         await adminLogger.warn(
           `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
@@ -222,7 +225,6 @@ export async function handleGeoviiteConversionProcess(
           row.long = oldLat;
         });
       }
-
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
