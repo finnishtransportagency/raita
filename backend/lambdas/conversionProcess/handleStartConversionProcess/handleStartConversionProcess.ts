@@ -200,7 +200,7 @@ export async function handleStartConversionProcess(
             },
           })
         )._max.id;
-        log.info("min time: " + (Date.now() - a)/1000);
+        log.info("max time: " + (Date.now() - a)/1000);
         log.trace('maxMittausId: ' + maxMittausId);
 
         if (!minMittausId || !maxMittausId) {
@@ -256,7 +256,7 @@ export async function handleStartConversionProcess(
           }
           await asyncWait(5); // wait to avoid hitting rate limits
         }
-        log.info("ConversionMessage: " + (Date.now() - a)/1000);
+        log.info("ConversionMessage time: " + (Date.now() - a)/1000);
       }
       a = Date.now();
       await prismaClient.raportti.updateMany({
