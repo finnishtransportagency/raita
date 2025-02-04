@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import { SSM_DEFAULT_EC2_AMI_ID } from '../constants';
 
 interface BastionStackProps extends cdk.NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -74,9 +75,10 @@ export class BastionStack extends cdk.NestedStack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.SMALL,
       ),
-      machineImage: ec2.MachineImage.genericLinux({
-        'eu-west-1': 'ami-0b9b4e1a3d497aefa',
-      }),
+      machineImage: new ec2.GenericSSMParameterImage(
+        SSM_DEFAULT_EC2_AMI_ID,
+        ec2.OperatingSystemType.LINUX,
+      ),
       role,
       userData,
       requireImdsv2: true,
