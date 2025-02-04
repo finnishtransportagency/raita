@@ -298,7 +298,7 @@ async function parseAndConvertRow(prefix: string, fileBody: string) {
   return convertedRow;
 }
 
-describe.skip('handle ams NaN vals ', () => {
+describe('handle ams NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'AMS';
     const fileBody = amsWithNansCsv;
@@ -333,12 +333,12 @@ describe.skip('handle ams NaN vals ', () => {
       '"vasen_poikittainen_kiihtyvyys_c1_keskihajonta":"1.7761"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"vasen_pystysuuntainen_kiihtyvyys_c1":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","oikea_poikittainen_kiihtyvyys_c1":"NaN","vasen_poikittainen_kiihtyvyys_c1":"NaN"',
+      '"vasen_pystysuuntainen_kiihtyvyys_c1":null,"oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu":null,"vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu":null,"oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta":null,"vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta":null,"oikea_poikittainen_kiihtyvyys_c1":null,"vasen_poikittainen_kiihtyvyys_c1":null',
     );
   }, 900000);
 });
 
-describe.skip('handle ams ajonopeus NaN vals ', () => {
+describe('handle ams ajonopeus NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'AMS';
     const fileBody = amsWithAjonopeusNansCsv;
@@ -351,7 +351,7 @@ describe.skip('handle ams ajonopeus NaN vals ', () => {
   }, 900000);
 });
 
-describe.skip('handle tsightCsv NaN vals ', () => {
+describe('handle tsightCsv NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'TSIGHT';
     const fileBody = tsightCsv;
@@ -360,7 +360,7 @@ describe.skip('handle tsightCsv NaN vals ', () => {
       '"ballast_slope_l":"-22.49492264"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"platform_center_h_l":"NaN"',
+      '"platform_center_h_l":null',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"platform_center_h_l_nan_reason":"NAN_VALUE"',
@@ -371,14 +371,14 @@ describe.skip('handle tsightCsv NaN vals ', () => {
   }, 900000);
 });
 
-describe.skip('handle tg NaN vals ', () => {
+describe('handle tg NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'TG';
     const fileBody = tgCsv;
     const convertedRow = await parseAndConvertRow(prefix, fileBody);
     console.log('convertedRow ', JSON.stringify(convertedRow));
     expect(JSON.stringify(convertedRow)).toContain(
-      '"raideleveyden_poikkeama":"NaN","kallistus":"-0.76"',
+      '"raideleveyden_poikkeama":null,"kallistus":"-0.76"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"raideleveyden_poikkeama_nan_reason":"INV_VALUE"',
@@ -386,7 +386,7 @@ describe.skip('handle tg NaN vals ', () => {
   }, 900000);
 });
 
-describe.skip('handle rp NaN vals ', () => {
+describe('handle rp NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'RP';
     const fileBody = rpCsv;
@@ -396,19 +396,19 @@ describe.skip('handle rp NaN vals ', () => {
       '"vasen_pystysuora_kuluman_keskihajonta_nan_reason":"EMPTY_VALUE","oikea_pystysuora_kuluman_keskihajonta_nan_reason":"NULL_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"oikea_pystysuora_kuluman_keskiarvo":"1.302","vasen_pystysuora_kuluman_keskihajonta":"NaN","oikea_pystysuora_kuluman_keskihajonta":"NaN"',
+      '"oikea_pystysuora_kuluman_keskiarvo":"1.302","vasen_pystysuora_kuluman_keskihajonta":null,"oikea_pystysuora_kuluman_keskihajonta":null',
     );
   }, 900000);
 });
 
-describe.skip('handle rc NaN vals ', () => {
+describe('handle rc NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'RC';
     const fileBody = rcCsv;
     const convertedRow = await parseAndConvertRow(prefix, fileBody);
     console.log('convertedRow ', JSON.stringify(convertedRow));
     expect(JSON.stringify(convertedRow)).toContain(
-      '"vasen_raiteen_aallon_rms_10_30mm":"NaN","oikea_raiteen_aallon_rms_30_100mm":"2.0000"',
+      '"vasen_raiteen_aallon_rms_10_30mm":null,"oikea_raiteen_aallon_rms_30_100mm":"2.0000"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"oikea_raiteen_aallon_rms_10_30mm_nan_reason":"EMPTY_VALUE","vasen_raiteen_aallon_rms_10_30mm_nan_reason":"UNKNOWN_VALUE"',
@@ -416,7 +416,7 @@ describe.skip('handle rc NaN vals ', () => {
   }, 900000);
 });
 
-describe.skip('handle pi NaN vals ', () => {
+describe('handle pi NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'PI';
     const fileBody = piCsv;
@@ -426,12 +426,12 @@ describe.skip('handle pi NaN vals ', () => {
       '"accz_2_2_nan_reason":"EMPTY_VALUE","f_1_1_nan_reason":"NAN_VALUE","height_ws_nan_reason":"EMPTY_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"accz_2_1":"-0.1709","accz_2_2":"NaN","f_1_1":"NaN"',
+      '"accz_2_1":"-0.1709","accz_2_2":null,"f_1_1":null',
     );
   }, 900000);
 });
 
-describe.skip('handle ohl NaN vals ', () => {
+describe('handle ohl NaN vals ', () => {
   test('success: normal run', async () => {
     const prefix = 'OHL';
     const fileBody = ohlCsv;
@@ -441,7 +441,7 @@ describe.skip('handle ohl NaN vals ', () => {
       '"korkeuden_poikkeama_nan_reason":"EMPTY_VALUE","siksakkin_poikkeama_nan_reason":"INV_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"korkeus_1":"6198.96","korkeus_2":"NaN"',
+      '"korkeus_1":"6198.96","korkeus_2":null',
     );
   }, 900000);
 });
@@ -846,7 +846,7 @@ describe.skip('handle rp csv file success', () => {
   }, 900000);
 });
 
-// describe.skip('handle tg csv file success',() => {
+// describe('handle tg csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -867,7 +867,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-// describe.skip('handle ohl csv file success',() => {
+// describe('handle ohl csv file success',() => {
 //   test('success: normal run',async () => {
 //      const dbConnection = await getDBConnection();
 //     const result = await parseCSVFileStream(
@@ -888,7 +888,7 @@ describe.skip('handle rp csv file success', () => {
 //   },900000);
 // });
 
-/*describe.skip('parseAMSCSV success',() => {
+/*describe('parseAMSCSV success',() => {
   test('success: normal run',async () => {
     const result = await parseCSVFileStream(amsCsv,3,"ams_mittaus",amsSchema);
     expect(result.success).toBe(true);
@@ -899,7 +899,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-/*describe.skip('parseAMSCSV error',() => {
+/*describe('parseAMSCSV error',() => {
   test('success: error run',async () => {
     const result = await parseAMSCSVData(amsCsvError);
     expect(result.success).toBe(false);
@@ -911,7 +911,7 @@ describe.skip('handle rp csv file success', () => {
   });
 });*/
 
-describe.skip('validateHeaders', () => {
+describe('validateHeaders', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -964,7 +964,7 @@ describe.skip('validateHeaders', () => {
   });
 });
 
-describe.skip('removeMissingHeadersFromSchema', () => {
+describe('removeMissingHeadersFromSchema', () => {
   const schema = z.object({
     a: zcsv.string(),
     b: zcsv.string(),
@@ -979,7 +979,7 @@ describe.skip('removeMissingHeadersFromSchema', () => {
 
 // test that zod-csv parser handles different column order in csv vs schema.
 // We are using our modified copy of zod-csv to achive this: external/zod-csv/csv.ts:94
-describe.skip('parseCSVContent', () => {
+describe('parseCSVContent', () => {
   test('success: different column order', async () => {
     const parsedCSVContent = parseCSVContent(
       amsCsvWithDifferentColumnOrder,
