@@ -1,26 +1,12 @@
 import { getEnvOrFail } from '../../../../../utils';
-import { getSecretsManagerSecret } from '../../../../utils/secretsManager';
-import { Mittaus } from './model/Mittaus';
 import { Rataosoite } from './model/Rataosoite';
 import { log } from '../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
-import {
-  convertDataToAMSMittaus,
 
-  convertDataToOhlMittausArray,
-  convertDataToPiMittausArray,
-  convertDataToRcMittausArray,
-  convertDataToRpMittausArray,
-  convertDataToTgMittausArray,
-  convertDataToTsightMittausArray,
-} from './converters/dataConverters';
 import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
-
-let connCount = 0;
-let connReuseCount = 0;
 
 export async function getDBConnection(): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
@@ -538,7 +524,7 @@ async function addAMSMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-   // const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
+   //const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
     const recordCount = await prisma.ams_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -553,9 +539,9 @@ async function addOHLMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
     const recordCount = await prisma.ohl_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
@@ -568,9 +554,9 @@ async function addPIMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToPiMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToPiMittausArray(parsedCSVRows);
     const recordCount = await prisma.pi_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
@@ -583,9 +569,9 @@ async function addRCMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToRcMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToRcMittausArray(parsedCSVRows);
     const recordCount = await prisma.rc_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
@@ -598,9 +584,9 @@ async function addRPMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToRpMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToRpMittausArray(parsedCSVRows);
     const recordCount = await prisma.rp_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
@@ -613,9 +599,9 @@ async function addTGMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToTgMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToTgMittausArray(parsedCSVRows);
     const recordCount = await prisma.tg_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
@@ -628,9 +614,9 @@ async function addTsightMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
+    //const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
     const recordCount = await prisma.tsight_mittaus.createMany({
-      data: convertedData,
+      data: parsedCSVRows,
     });
     return recordCount.count;
   } catch {
