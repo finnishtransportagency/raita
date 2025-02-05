@@ -1402,7 +1402,7 @@ export class DataProcessStack extends NestedStack {
     const fileCountHandler = new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 1500,
-      timeout: Duration.seconds(180),
+      timeout: Duration.minutes(15),
       runtime: Runtime.NODEJS_20_X,
       handler: 'handleFileCountInspection',
       entry: path.join(
