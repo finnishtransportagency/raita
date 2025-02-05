@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import { SSM_DEFAULT_EC2_AMI_ID } from '../constants';
 
 interface PsqlClientStackProps extends cdk.NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -14,11 +15,7 @@ export class PsqlClientStack extends cdk.NestedStack {
 
   constructor(scope: Construct, id: string, props: PsqlClientStackProps) {
     super(scope, id, props);
-    const {
-      raitaStackIdentifier,
-      vpc,
-      securityGroup,
-    } = props;
+    const { raitaStackIdentifier, vpc, securityGroup } = props;
 
     this.psqlClientRole = new Role(this, 'RaitaEc2PsqlClientRole', {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
@@ -73,7 +70,10 @@ export class PsqlClientStack extends cdk.NestedStack {
         ec2.InstanceClass.T2,
         ec2.InstanceSize.MICRO,
       ),
-      machineImage: ec2.MachineImage.latestAmazonLinux2023(),
+      machineImage: new ec2.GenericSSMParameterImage(
+        SSM_DEFAULT_EC2_AMI_ID,
+        ec2.OperatingSystemType.LINUX,
+      ),
       role,
       userData,
     });

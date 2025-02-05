@@ -12,12 +12,14 @@ import {
   CodeBuildStep,
   CodePipeline,
   CodePipelineSource,
+  DockerCredential,
   ShellStep,
   Step,
 } from 'aws-cdk-lib/pipelines';
 import { Construct } from 'constructs';
 import {
   BuildEnvironmentVariableType,
+  BuildSpec,
   Cache,
   LinuxBuildImage,
   LocalCacheMode,
@@ -42,6 +44,7 @@ import { RaitaPipelineLockStack } from './raita-pipeline-lock';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import path from 'path';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 
 /**
  * The stack that defines the application pipeline
@@ -149,11 +152,26 @@ export class RaitaPipelineStack extends Stack {
         })
       : null;
 
+    // secret contains credentials as json
+    // { "username": "x", "secret": "x"}
+    const dockerCredentialsSecret = Secret.fromSecretNameV2(
+      this,
+      'docker-credentials',
+      'docker-hub-credentials',
+    );
+    const dockerCredentials = DockerCredential.dockerHub(
+      dockerCredentialsSecret,
+      {
+        secretPasswordField: 'secret',
+        secretUsernameField: 'username',
+      },
+    );
     const codePipeline = new CodePipeline(
       this,
       `pipeline-raita-${config.stackId}`,
       {
         codePipeline: pipeline,
+        dockerCredentials: [dockerCredentials],
         synth: new ShellStep('Synth', {
           input: githubSource,
           installCommands: [
@@ -177,6 +195,15 @@ export class RaitaPipelineStack extends Stack {
           buildEnvironment: {
             buildImage: LinuxBuildImage.STANDARD_7_0,
           },
+          partialBuildSpec: BuildSpec.fromObject({
+            phases: {
+              install: {
+                'runtime-versions': {
+                  nodejs: '20',
+                },
+              },
+            },
+          }),
           // TODO: Cacheing not working currently
           cache: Cache.local(
             LocalCacheMode.CUSTOM,
@@ -219,7 +246,11 @@ export class RaitaPipelineStack extends Stack {
             },
             DOCKER_PASSWORD: {
               type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-              value: 'docker_password',
+              value: 'docker-hub-credentials:secret',
+            },
+            DOCKER_USERNAME: {
+              type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+              value: 'docker-hub-credentials:username',
             },
             CONF_FILE_DIR: {
               type: BuildEnvironmentVariableType.PLAINTEXT,
@@ -231,7 +262,7 @@ export class RaitaPipelineStack extends Stack {
           'echo $CONF_FILE_DIR',
           'echo Logging in to Docker hub...',
           dbConfEditCommand,
-          'docker login -u=raita2dockeruser -p=$DOCKER_PASSWORD',
+          'docker login -u=$DOCKER_USERNAME -p=$DOCKER_PASSWORD',
           'docker run --rm -v $(pwd)/backend/db/migration:/flyway/sql -v $(pwd)/backend/db/conf/$CONF_FILE_DIR:/flyway/conf flyway/flyway migrate -password=$DB_PASSWORD',
         ],
       }),

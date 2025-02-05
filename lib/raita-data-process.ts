@@ -891,7 +891,7 @@ export class DataProcessStack extends NestedStack {
         READY_FOR_CONVERSION_QUEUE_URL:
           readyForGeoviiteConversionQueue.queueUrl,
         // flag to disable conversion in prod. TODO: remove
-        DISABLE_CONVERSION: isProductionStack(stackId, raitaEnv) ? '1' : '0',
+        DISABLE_CONVERSION: '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
