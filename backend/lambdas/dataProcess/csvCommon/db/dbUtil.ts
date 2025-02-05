@@ -4,9 +4,9 @@ import { log } from '../../../../utils/logger';
 import { FileMetadataEntry } from '../../../../types';
 import { Raportti } from './model/Raportti';
 import { getPrismaClient } from '../../../../utils/prismaClient';
-
 import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
+import { Mittaus } from './model/Mittaus';
 
 export async function getDBConnection(): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
@@ -216,7 +216,7 @@ function handleNanMissingColumns(
 }
 
 export function convertToDBRow(
-  row: any,
+  row: Mittaus,
   runningDate: Date,
   reportId: number,
   fileNamePrefix: string,
@@ -242,18 +242,10 @@ export function convertToDBRow(
     long,
     ...rataosoite,
   };
- const x =  {
+  return {
     ...convertedRow,
     ...handleNan(convertedRow, missingOptionalColumns),
   };
-
-  switch (fileNamePrefix) {
-    case 'AMS':
-      return x;
-      break
-  }
-  return x;
-
 }
 
 /**
@@ -323,35 +315,6 @@ export async function updateRaporttiMetadataStatus(
     throw error;
   }
 }
-
-/*key": "Meeri/2022/Kamppis/20220202/20221020_TG_AMS_OHL_CW_Reports/554/KONVUS/1/2022/Over Head Line Geometry/20221020_144556/TextualReports/OHL_20221020_554_KONVUS_1_662_753.csv",
-"file_name": "OHL_20221020_554_KONVUS_1_662_753.csv",
-  "bucket_arn": "arn:aws:s3:::s3-raita-dev-premain-inspection-data",
-  "bucket_name": "s3-raita-dev-premain-inspection-data",
-  "size": 67343922,
-  "metadata": {
-  "source_system": "Meeri",
-    "zip_reception__year": "2022",
-    "campaign": "Kamppis",
-    "zip_reception__date": "20220202",
-    "zip_name": "20221020_TG_AMS_OHL_CW_Reports",
-    "track_number": "554",
-    "track_part": "KONVUS",
-    "track_id": "1",
-    "year": 2022,
-    "system": "OHL",
-    "inspection_datetime": "2022-10-20T11:45:56.000Z",
-    "report_category": "TextualReports",
-    "file_type": "csv",
-    "inspection_date": "2022-10-20T00:00:00.000Z",
-    "km_start": 662,
-    "km_end": 753,
-    "parser_version": "1.2.0",
-    "parsed_at_datetime": "2024-03-13T10:14:28.427Z"
-},
-"hash": "bfd88d25e3840470f80db9ca9713f49a68addcb4da3c8790e418dd78594b32a1",
-  "tags": {},
-"reportId": 237*/
 
 export async function updateRaporttiMetadata(
   data: Array<FileMetadataEntry>,
@@ -524,12 +487,11 @@ async function addAMSMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-   //const convertedData = convertDataToAMSMittausArray(parsedCSVRows);
     const recordCount = await prisma.ams_mittaus.createMany({
       data: parsedCSVRows,
     });
     return recordCount.count;
-  } catch (e){
+  } catch (e) {
     log.error(e);
     throw new Error(`Error in mittaus additions`);
   }
@@ -539,7 +501,6 @@ async function addOHLMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToOhlMittausArray(parsedCSVRows);
     const recordCount = await prisma.ohl_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -554,7 +515,6 @@ async function addPIMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToPiMittausArray(parsedCSVRows);
     const recordCount = await prisma.pi_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -569,7 +529,6 @@ async function addRCMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToRcMittausArray(parsedCSVRows);
     const recordCount = await prisma.rc_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -584,7 +543,6 @@ async function addRPMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToRpMittausArray(parsedCSVRows);
     const recordCount = await prisma.rp_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -599,7 +557,6 @@ async function addTGMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToTgMittausArray(parsedCSVRows);
     const recordCount = await prisma.tg_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -614,7 +571,6 @@ async function addTsightMittausRecord(
   parsedCSVRows: any[],
 ): Promise<number> {
   try {
-    //const convertedData = convertDataToTsightMittausArray(parsedCSVRows);
     const recordCount = await prisma.tsight_mittaus.createMany({
       data: parsedCSVRows,
     });
@@ -641,7 +597,6 @@ export function produceGeoviiteBatchUpdateSql(
 ) {
   const queryArray = [];
   const valsArray = [];
-
 
   const longQueryArray: string[] = [];
   const latQueryArray: string[] = [];
@@ -691,10 +646,10 @@ export function produceGeoviiteBatchUpdateSql(
   latValsArray.push(-1);
   latValsArray.push(-1.1);
 
-  if(updateAlsoNonConvertedLatLong) {
+  if (updateAlsoNonConvertedLatLong) {
     //flippedOriginalLong
 
-    flippedOriginalLongQueryArray.push(` END, long = CASE when id = `,);
+    flippedOriginalLongQueryArray.push(` END, long = CASE when id = `);
     flippedOriginalLongQueryArray.push(` then `);
     flippedOriginalLongValsArray.push(-1);
     flippedOriginalLongValsArray.push(-1.1);
@@ -704,8 +659,6 @@ export function produceGeoviiteBatchUpdateSql(
     flippedOriginalLatQueryArray.push(` then `);
     flippedOriginalLatValsArray.push(-1);
     flippedOriginalLatValsArray.push(-1.1);
-
-
   }
 
   rataosuusNumeroQueryArray.push(
@@ -792,7 +745,6 @@ export function produceGeoviiteBatchUpdateSql(
   const idArray: number[] = [];
 
   batch.forEach((row: GeoviiteClientResultItem) => {
-
     idArray.push(row.id);
 
     //long
@@ -807,7 +759,7 @@ export function produceGeoviiteBatchUpdateSql(
     latValsArray.push(row.id);
     latValsArray.push(row.y);
 
-    if(updateAlsoNonConvertedLatLong){
+    if (updateAlsoNonConvertedLatLong) {
       //flippedOriginalLong
 
       flippedOriginalLongQueryArray.push(` when id = `);
@@ -815,12 +767,10 @@ export function produceGeoviiteBatchUpdateSql(
       flippedOriginalLongValsArray.push(row.id);
       flippedOriginalLongValsArray.push(row.inputLong);
 
-
       flippedOriginalLatQueryArray.push(` when id = `);
       flippedOriginalLatQueryArray.push(` then `);
       flippedOriginalLatValsArray.push(row.id);
       flippedOriginalLatValsArray.push(row.inputLat);
-
     }
 
     //rataosuus_numero
@@ -848,7 +798,7 @@ export function produceGeoviiteBatchUpdateSql(
     let rata_metrit = '';
     if (row.ratametri || row.ratametri == 0) {
       rata_metrit = `${row.ratametri}.`;
-      if (row.ratametri_desimaalit  || row.ratametri_desimaalit == 0) {
+      if (row.ratametri_desimaalit || row.ratametri_desimaalit == 0) {
         rata_metrit = `${row.ratametri}.${row.ratametri_desimaalit}`;
       }
     } else if (row.ratametri_desimaalit) {
@@ -923,7 +873,7 @@ export function produceGeoviiteBatchUpdateSql(
   queryArray.push(...latQueryArray);
   valsArray.push(...latValsArray);
 
-  if(updateAlsoNonConvertedLatLong){
+  if (updateAlsoNonConvertedLatLong) {
     queryArray.push(...flippedOriginalLongQueryArray);
     valsArray.push(...flippedOriginalLongValsArray);
 
@@ -988,8 +938,6 @@ export function produceGeoviiteBatchUpdateSql(
   return Prisma.sql(queryArray, ...valsArray);
 }
 
-
-
 // First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
 // call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
 export function produceGeoviiteBatchUpdateStatementInitSql(
@@ -1019,7 +967,6 @@ export function produceGeoviiteBatchUpdateStatementInitSql(
   );
   return sql;
 }
-
 
 export async function getMittausSubtable(system: string | null, prisma: any) {
   switch (system) {
