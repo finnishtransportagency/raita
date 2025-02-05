@@ -410,6 +410,10 @@ const CsvIndex: RaitaNextPage = () => {
                   />
                 </section>
                 <section>
+                  <InfoBanner
+                    bannerType={BannerType.INFO}
+                    text={t('common:csv_vkm_info')}
+                  />
                   <header>
                     {t('common:csv_mittaus_combination_logic_header')}
                   </header>
