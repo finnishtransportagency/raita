@@ -101,5 +101,6 @@
   "csv_filter_header": "Mittausarvojen suodatin",
   "csv_combination_logic_geoviite_rataosoite_rounded": "Viitekehysmuunnin korjattu rataosoite (pyöristetty)",
   "csv_combination_logic_meeri_rataosoite": "Meeri rataosoite",
-  "csv_mittaus_combination_logic_header": "Mittausten yhdistelylogiikka"
+  "csv_mittaus_combination_logic_header": "Mittausten yhdistelylogiikka",
+  "csv_vkm_info": "Yhdistelylogiikan valinta \"Viitekehysmuunnin korjattu rataosoite\" ei toimi vielä koko aineistolla koska prosessi rataosoitteiden korjaamiseksi on kesken. Mikäli haku palauttaa tyhjiä rataosoitteita tällä valinnalla, yritä myöhemmin uudestaan."
 }
