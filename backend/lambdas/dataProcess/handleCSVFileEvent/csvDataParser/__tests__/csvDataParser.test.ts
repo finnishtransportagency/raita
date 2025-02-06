@@ -333,7 +333,7 @@ describe('handle ams NaN vals ', () => {
       '"vasen_poikittainen_kiihtyvyys_c1_keskihajonta":"1.7761"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"vasen_pystysuuntainen_kiihtyvyys_c1":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu":"NaN","oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta":"NaN","oikea_poikittainen_kiihtyvyys_c1":"NaN","vasen_poikittainen_kiihtyvyys_c1":"NaN"',
+      '"vasen_pystysuuntainen_kiihtyvyys_c1":null,"oikea_pystysuuntainen_kiihtyvyys_c1_suodatettu":null,"vasen_pystysuuntainen_kiihtyvyys_c1_suodatettu":null,"oikea_pystysuuntainen_kiihtyvyys_c1_keskihajonta":null,"vasen_pystysuuntainen_kiihtyvyys_c1_keskihajonta":null,"oikea_poikittainen_kiihtyvyys_c1":null,"vasen_poikittainen_kiihtyvyys_c1":null',
     );
   }, 900000);
 });
@@ -360,7 +360,7 @@ describe('handle tsightCsv NaN vals ', () => {
       '"ballast_slope_l":"-22.49492264"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"platform_center_h_l":"NaN"',
+      '"platform_center_h_l":null',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"platform_center_h_l_nan_reason":"NAN_VALUE"',
@@ -378,7 +378,7 @@ describe('handle tg NaN vals ', () => {
     const convertedRow = await parseAndConvertRow(prefix, fileBody);
     console.log('convertedRow ', JSON.stringify(convertedRow));
     expect(JSON.stringify(convertedRow)).toContain(
-      '"raideleveyden_poikkeama":"NaN","kallistus":"-0.76"',
+      '"raideleveyden_poikkeama":null,"kallistus":"-0.76"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"raideleveyden_poikkeama_nan_reason":"INV_VALUE"',
@@ -396,7 +396,7 @@ describe('handle rp NaN vals ', () => {
       '"vasen_pystysuora_kuluman_keskihajonta_nan_reason":"EMPTY_VALUE","oikea_pystysuora_kuluman_keskihajonta_nan_reason":"NULL_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"oikea_pystysuora_kuluman_keskiarvo":"1.302","vasen_pystysuora_kuluman_keskihajonta":"NaN","oikea_pystysuora_kuluman_keskihajonta":"NaN"',
+      '"oikea_pystysuora_kuluman_keskiarvo":"1.302","vasen_pystysuora_kuluman_keskihajonta":null,"oikea_pystysuora_kuluman_keskihajonta":null',
     );
   }, 900000);
 });
@@ -408,7 +408,7 @@ describe('handle rc NaN vals ', () => {
     const convertedRow = await parseAndConvertRow(prefix, fileBody);
     console.log('convertedRow ', JSON.stringify(convertedRow));
     expect(JSON.stringify(convertedRow)).toContain(
-      '"vasen_raiteen_aallon_rms_10_30mm":"NaN","oikea_raiteen_aallon_rms_30_100mm":"2.0000"',
+      '"vasen_raiteen_aallon_rms_10_30mm":null,"oikea_raiteen_aallon_rms_30_100mm":"2.0000"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
       '"oikea_raiteen_aallon_rms_10_30mm_nan_reason":"EMPTY_VALUE","vasen_raiteen_aallon_rms_10_30mm_nan_reason":"UNKNOWN_VALUE"',
@@ -426,7 +426,7 @@ describe('handle pi NaN vals ', () => {
       '"accz_2_2_nan_reason":"EMPTY_VALUE","f_1_1_nan_reason":"NAN_VALUE","height_ws_nan_reason":"EMPTY_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"accz_2_1":"-0.1709","accz_2_2":"NaN","f_1_1":"NaN"',
+      '"accz_2_1":"-0.1709","accz_2_2":null,"f_1_1":null',
     );
   }, 900000);
 });
@@ -441,7 +441,7 @@ describe('handle ohl NaN vals ', () => {
       '"korkeuden_poikkeama_nan_reason":"EMPTY_VALUE","siksakkin_poikkeama_nan_reason":"INV_VALUE"',
     );
     expect(JSON.stringify(convertedRow)).toContain(
-      '"korkeus_1":"6198.96","korkeus_2":"NaN"',
+      '"korkeus_1":"6198.96","korkeus_2":null',
     );
   }, 900000);
 });
