@@ -2,7 +2,9 @@ import {
   LORAM_POLICY_USER_ID,
   raitaSourceSystems,
   SOA_POLICY_ACCOUNT_ID,
+  SSM_EMAIL_SENDER_ADDRESS,
   SSM_JWT_TOKEN_ISSUER,
+  SSM_SMTP_ENDPOINT,
   VAYLA_POLICY_USER_ID,
 } from '../constants';
 import { getEnvOrFail } from '../utils';
@@ -139,6 +141,8 @@ export const getRaitaStackConfig = (
   vaylaPolicyUserId: getSSMParameter(scope, VAYLA_POLICY_USER_ID),
   loramPolicyUserId: getSSMParameter(scope, LORAM_POLICY_USER_ID),
   jwtTokenIssuer: getSSMParameter(scope, SSM_JWT_TOKEN_ISSUER),
+  emailSenderAddress: getSSMParameter(scope, SSM_EMAIL_SENDER_ADDRESS),
+  smtpEndpoint: getSSMParameter(scope, SSM_SMTP_ENDPOINT),
   ...getAccountVpcResourceConfig(raitaEnv),
 });
 

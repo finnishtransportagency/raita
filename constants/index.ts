@@ -56,7 +56,22 @@ export const LORAM_POLICY_USER_ID = 'raita-loram-policy-user-id';
 export const SSM_JWT_TOKEN_ISSUER = 'raita-jwt-token-issuer';
 export const SSM_API_KEY = 'raita-api-key';
 export const SSM_DEFAULT_EC2_AMI_ID = 'Vayla-AMI-2023-CISLEVEL1';
-export const SSM_EMAIL = 'raita-vayla-email';
+
+/**
+ * Sender email address
+ */
+export const SSM_EMAIL_SENDER_ADDRESS = 'raita-email-sender-address';
+export const SSM_SMTP_ENDPOINT = 'raita-smtp-endpoint';
+/**
+ * Comma separated email addresses
+ */
+export const SSM_EMAIL_REPORTS_RECEIVERS = 'raita-email-reports-receivers';
+/**
+ * JSON with fields username and passwords
+ */
+export const SECRET_KEY_SMTP_CREDENTIALS = 'raita-smtp-credentials';
+
+export const SMTP_PORT = 25;
 
 export const REQUEST_HEADER_API_KEY = 'x-api-key';
 export const RAITA_APIKEY_USER_UID = 'raita-api-key-user';
