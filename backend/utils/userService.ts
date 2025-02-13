@@ -19,22 +19,24 @@ const ENVIRONMENT = process.env.ENVIRONMENT || '';
 // OAM: custom:rooli "sovellus_role1,sovellus_role2"
 // EntraID: custom:rooli "[\"sovellus_role1\",\"sovellus_role2\"]"
 
-const STATIC_ROLES_OAM = {
+const STATIC_ROLES = {
   read: 'Raita_luku',
   admin: 'Raita_admin',
   extended: 'Raita_extended',
 };
-
 
 export type RaitaUser = {
   uid: string;
   roles?: string[];
 };
 
-function parseRoles(roles: string): string[] | undefined {
+export function parseRoles(roles: string): string[] | undefined {
   return roles
     ? roles
-        .replace('\\', '')
+        .replace(/\"/g, '')
+        .replace(/\[/g, '')
+        .replace(/\]/g, '')
+        .replace(/\\/g, '')
         .split(',')
         .map(s => {
           const s1 = s.split('/').pop();
@@ -53,7 +55,7 @@ function parseRoles(roles: string): string[] | undefined {
  */
 const getMockUser = (): RaitaUser => ({
   uid: 'MOCK_UID',
-  roles: [STATIC_ROLES_OAM.read, STATIC_ROLES_OAM.admin],
+  roles: [STATIC_ROLES.read, STATIC_ROLES.admin],
 });
 
 const handleApiKeyRequest = async (
@@ -75,15 +77,15 @@ const handleApiKeyRequest = async (
     return {
       uid: RAITA_APIKEY_USER_UID,
       roles: [
-        STATIC_ROLES_OAM.read,
-        STATIC_ROLES_OAM.extended,
-        STATIC_ROLES_OAM.admin,
+        STATIC_ROLES.read,
+        STATIC_ROLES.extended,
+        STATIC_ROLES.admin,
       ],
     };
   }
   return {
     uid: RAITA_APIKEY_USER_UID,
-    roles: [STATIC_ROLES_OAM.read],
+    roles: [STATIC_ROLES.read],
   };
 };
 
@@ -120,7 +122,7 @@ const handleOidcRequest = async (
  * Get only roles useful for Raita
  */
 const filterRaitaRoles = (roles: string[]) => {
-  const raitaRoles = Object.values(STATIC_ROLES_OAM);
+  const raitaRoles = Object.values(STATIC_ROLES);
   return roles.filter(role => raitaRoles.includes(role));
 };
 
@@ -147,22 +149,22 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
 const isReadUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
   const allowedRoles = [
-    STATIC_ROLES_OAM.read,
-    STATIC_ROLES_OAM.extended,
-    STATIC_ROLES_OAM.admin,
+    STATIC_ROLES.read,
+    STATIC_ROLES.extended,
+    STATIC_ROLES.admin,
   ];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
 const isExtendedUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
-  const allowedRoles = [STATIC_ROLES_OAM.extended, STATIC_ROLES_OAM.admin];
+  const allowedRoles = [STATIC_ROLES.extended, STATIC_ROLES.admin];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
 const isAdminUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
-  const allowedRoles = [STATIC_ROLES_OAM.admin];
+  const allowedRoles = [STATIC_ROLES.admin];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
