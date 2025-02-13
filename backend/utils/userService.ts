@@ -15,11 +15,16 @@ const ISSUER = process.env.JWT_TOKEN_ISSUER;
 const STACK_ID = process.env.STACK_ID || '';
 const ENVIRONMENT = process.env.ENVIRONMENT || '';
 
-const STATIC_ROLES = {
+//EntraID tuottaa käyttäjän roolitiedon JWTokenille eri muodossa kuin nykyisin käytössä oleva OAM. Sovelluksen tulee jatkossa kyetä vastaanottamaan käyttäjän roolitieto molemmissa muodoissa.
+// OAM: custom:rooli "sovellus_role1,sovellus_role2"
+// EntraID: custom:rooli "[\"sovellus_role1\",\"sovellus_role2\"]"
+
+const STATIC_ROLES_OAM = {
   read: 'Raita_luku',
   admin: 'Raita_admin',
   extended: 'Raita_extended',
 };
+
 
 export type RaitaUser = {
   uid: string;
@@ -48,7 +53,7 @@ function parseRoles(roles: string): string[] | undefined {
  */
 const getMockUser = (): RaitaUser => ({
   uid: 'MOCK_UID',
-  roles: [STATIC_ROLES.read, STATIC_ROLES.admin],
+  roles: [STATIC_ROLES_OAM.read, STATIC_ROLES_OAM.admin],
 });
 
 const handleApiKeyRequest = async (
@@ -69,12 +74,16 @@ const handleApiKeyRequest = async (
     // grant all roles to api key requests in premain env for development
     return {
       uid: RAITA_APIKEY_USER_UID,
-      roles: [STATIC_ROLES.read, STATIC_ROLES.extended, STATIC_ROLES.admin],
+      roles: [
+        STATIC_ROLES_OAM.read,
+        STATIC_ROLES_OAM.extended,
+        STATIC_ROLES_OAM.admin,
+      ],
     };
   }
   return {
     uid: RAITA_APIKEY_USER_UID,
-    roles: [STATIC_ROLES.read],
+    roles: [STATIC_ROLES_OAM.read],
   };
 };
 
@@ -92,14 +101,18 @@ const handleOidcRequest = async (
     ISSUER,
   );
 
+  if (jwt) log.info(jwt, 'jwt decoded');
+
   if (!jwt) {
     throw new RaitaLambdaError('User validation failed', 500);
   }
   const roles = parseRoles(jwt['custom:rooli']);
+  if (roles) log.info(roles, 'roles parsed');
   const user: RaitaUser = {
     uid: jwt['custom:uid'],
     roles: roles ? filterRaitaRoles(roles) : [],
   };
+  if (user.roles) log.info(user.roles, 'roles filtered');
   return user;
 };
 
@@ -107,16 +120,19 @@ const handleOidcRequest = async (
  * Get only roles useful for Raita
  */
 const filterRaitaRoles = (roles: string[]) => {
-  const raitaRoles = Object.values(STATIC_ROLES);
+  const raitaRoles = Object.values(STATIC_ROLES_OAM);
   return roles.filter(role => raitaRoles.includes(role));
 };
 
 const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
   const headers = event.headers;
+
   if (!headers) {
     log.error('Headers missing');
     throw new RaitaLambdaError('Headers missing', 400);
   }
+
+  log.info(headers, 'parseUserFromEvent headers');
   /**
    * If request has api key header present, authentication/authorization is based solely on that,
    * not on possible oidc-headers.
@@ -131,27 +147,28 @@ const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
 const isReadUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
   const allowedRoles = [
-    STATIC_ROLES.read,
-    STATIC_ROLES.extended,
-    STATIC_ROLES.admin,
+    STATIC_ROLES_OAM.read,
+    STATIC_ROLES_OAM.extended,
+    STATIC_ROLES_OAM.admin,
   ];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
 const isExtendedUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
-  const allowedRoles = [STATIC_ROLES.extended, STATIC_ROLES.admin];
+  const allowedRoles = [STATIC_ROLES_OAM.extended, STATIC_ROLES_OAM.admin];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
 const isAdminUser = (user: RaitaUser) => {
   const userRoles = user.roles ?? [];
-  const allowedRoles = [STATIC_ROLES.admin];
+  const allowedRoles = [STATIC_ROLES_OAM.admin];
   const matchingRole = allowedRoles.find(role => userRoles.includes(role));
   return !!matchingRole;
 };
 
 export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
+  log.info(event, 'getUser ALBEvent');
   if (!STACK_ID || !ENVIRONMENT) {
     log.error('STACK_ID or ENVIRONMENT missing!');
     throw new RaitaLambdaError('Error', 500);
