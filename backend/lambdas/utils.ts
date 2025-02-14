@@ -1,6 +1,7 @@
 import { S3EventRecord } from 'aws-lambda';
 import {
   ExcelSuffix,
+  externalSystemExportFileSuffixes,
   fileSuffixesToIncludeInMetadataParsing,
   KNOWN_IGNORED_FILE_SUFFIXES,
   KnownSuffix,
@@ -184,6 +185,8 @@ export function getZipFileNameIndex(path: string[]) {
 }
 
 export function isZipPath(arg: Array<string>): arg is ZipPath {
+  // TMP: remove validations for proto
+  return true;
   const [system] = arg;
   if (!system || !isRaitaSourceSystem(system)) {
     return false;
@@ -241,6 +244,14 @@ export function isCampaignOrMoreSpecificPath(arg: Array<string>): boolean {
 
 export function isKnownSuffix(arg: string): arg is KnownSuffix {
   return Object.values(fileSuffixesToIncludeInMetadataParsing).some(
+    suffix => suffix === arg,
+  );
+}
+/**
+ * Should this suffix be sent to external system export handler?
+ */
+export function isExportedSuffix(arg: string): arg is KnownSuffix {
+  return Object.values(externalSystemExportFileSuffixes).some(
     suffix => suffix === arg,
   );
 }

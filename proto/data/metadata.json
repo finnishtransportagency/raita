@@ -1,0 +1,51 @@
+{
+  "format_version": "0.1.0",
+  "contents": [
+    {
+      "file_name": "RP_20220426_003_LLHSK_1_193_261_EDITED.csv",
+      "file_type": "csv",
+      "system": "RP",
+      "track_number": "3",
+      "track_part": "LLHSK",
+      "track_id": "1",
+      "km_start": 193,
+      "km_end": 261,
+      "campaign": "Test campaign 2022",
+      "year": 2022,
+      "inspection_date": "2022-04-26T00:00:00.000Z",
+      "version": "1.0",
+      "note": "parsed from original name, name changed",
+      "unknown_field": "test"
+    },
+    {
+      "file_name": "testimage.png",
+      "file_type": "png",
+      "system": "RP",
+      "track_number": "3",
+      "track_part": "LLHSK",
+      "track_id": "1",
+      "km_start": 193,
+      "km_end": 261,
+      "campaign": "Test campaign 2022",
+      "year": 2022,
+      "inspection_date": "2022-04-26T00:00:00.000Z",
+      "version": "1.0"
+    },
+    {
+      "file_name": "RP_Virhelistaus_test.txt",
+      "file_type": "txt",
+      "system": "RP",
+      "report_type": "Virhelistaus",
+      "track_number": "3",
+      "track_part": "LLHSK",
+      "track_id": "1",
+      "km_start": 193,
+      "km_end": 261,
+      "campaign": "Test campaign 2022",
+      "year": 2022,
+      "inspection_date": "2022-04-26T00:00:00.000Z",
+      "version": "1.0",
+      "linked_image": "testimage.png"
+    }
+  ]
+}

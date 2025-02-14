@@ -31,65 +31,66 @@ export async function parseFileMetadata({
 }> {
   let errorsFound = false;
   let fileNameData: any = {};
-  try {
-    fileNameData = extractFileNameData(keyData, spec);
-  } catch (error: any) {
-    errorsFound = true;
-    if (error instanceof RaitaParseError) {
-      logParsingException.error(
-        { errorType: error.errorType, fileName: error.fileName },
-        `${error.message}. File name extraction skipped.`,
-      );
-    } else {
-      log.error(error);
-    }
-  }
+  // disable unused metadata parsing methods here
+  // try {
+  //   fileNameData = extractFileNameData(keyData, spec);
+  // } catch (error: any) {
+  //   errorsFound = true;
+  //   if (error instanceof RaitaParseError) {
+  //     logParsingException.error(
+  //       { errorType: error.errorType, fileName: error.fileName },
+  //       `${error.message}. File name extraction skipped.`,
+  //     );
+  //   } else {
+  //     log.error(error);
+  //   }
+  // }
   let pathData: any = {};
-  try {
-    pathData = extractPathData(keyData, spec);
-  } catch (error: any) {
-    errorsFound = true;
-    if (error instanceof RaitaParseError) {
-      logParsingException.error(
-        { errorType: error.errorType, fileName: error.fileName },
-        `${error.message}. Path extraction skipped.`,
-      );
-    } else {
-      log.error(error);
-    }
-  }
+  // try {
+  //   pathData = extractPathData(keyData, spec);
+  // } catch (error: any) {
+  //   errorsFound = true;
+  //   if (error instanceof RaitaParseError) {
+  //     logParsingException.error(
+  //       { errorType: error.errorType, fileName: error.fileName },
+  //       `${error.message}. Path extraction skipped.`,
+  //     );
+  //   } else {
+  //     log.error(error);
+  //   }
+  // }
   let fileContentData: any = {};
-  try {
-    if (fileStream) {
-      const contentResult = await parseFileContent(
-        spec,
-        keyData,
-        fileStream,
-        dbConnection,
-        doCSVParsing,
-        reportId,
-        invocationId,
-        doGeoviiteConversion,
-      );
-      fileContentData = contentResult.contentData;
-    } else {
-      throw new RaitaParseError(
-        'No fileStream',
-        'FILE_READ_ERROR',
-        keyData.fileName,
-      );
-    }
-  } catch (error: any) {
-    errorsFound = true;
-    if (error instanceof RaitaParseError) {
-      logParsingException.error(
-        { errorType: error.errorType, fileName: error.fileName },
-        `${error.message}. File content extraction skipped.`,
-      );
-    } else {
-      log.error(error);
-    }
-  }
+  // try {
+  //   if (fileStream) {
+  //     const contentResult = await parseFileContent(
+  //       spec,
+  //       keyData,
+  //       fileStream,
+  //       dbConnection,
+  //       doCSVParsing,
+  //       reportId,
+  //       invocationId,
+  //       doGeoviiteConversion,
+  //     );
+  //     fileContentData = contentResult.contentData;
+  //   } else {
+  //     throw new RaitaParseError(
+  //       'No fileStream',
+  //       'FILE_READ_ERROR',
+  //       keyData.fileName,
+  //     );
+  //   }
+  // } catch (error: any) {
+  //   errorsFound = true;
+  //   if (error instanceof RaitaParseError) {
+  //     logParsingException.error(
+  //       { errorType: error.errorType, fileName: error.fileName },
+  //       `${error.message}. File content extraction skipped.`,
+  //     );
+  //   } else {
+  //     log.error(error);
+  //   }
+  // }
   const generatedMetadata = generateMetadata(spec);
   const allMetadata = {
     ...pathData,

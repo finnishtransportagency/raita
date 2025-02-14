@@ -19,17 +19,16 @@ export interface ZipFileData {
   fileName: string;
   metadata: { [key: string]: string };
 }
+// accept only data from these test producers
+const TestProducers = ['TEST_PRODUCER_1', 'TEST_PRODUCER_2'];
 
 /**
  * Check is given path is a possible zip file path
  */
 export function isPossibleZipPath(arg: Array<string>): arg is ZipPath {
+  // simplify path structure proto: 3 levels only
   const [system] = arg;
-  return (
-    (arg.length === 5 || arg.length === 4) &&
-    !!system &&
-    isRaitaSourceSystem(system)
-  );
+  return arg.length === 3 && !!system && TestProducers.includes(system);
 }
 
 // END duplicates

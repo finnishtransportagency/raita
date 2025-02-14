@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { DependencyList, useState } from 'react';
 import { saveAs } from 'file-saver';
 
-import { getFile } from 'shared/rest';
+import { getFile, getProtoExternalFile } from 'shared/rest';
 
 // #region Queries
 
@@ -17,6 +17,15 @@ export function useFileQuery(saveFile = true) {
     );
 
     return getFile(key).then(res => {
+      if (saveFile) saveAs(res.url, fileName);
+      return res;
+    });
+  });
+}
+export function useProtoExternalFileQuery(saveFile = true) {
+  return useMutation((opts: UseFileQueryArgs) => {
+    const { key, fileName } = opts;
+    return getProtoExternalFile(key).then(res => {
       if (saveFile) saveAs(res.url, fileName);
       return res;
     });

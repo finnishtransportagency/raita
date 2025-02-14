@@ -380,6 +380,7 @@ model raportti {
   hash                          String?            @db.VarChar(64)
   geoviite_update_at            DateTime?          @db.Timestamp(6)
   geoviite_status               String?            @db.VarChar(20)
+  data_location                 String?            @db.VarChar(20)
   ams_mittaus                   ams_mittaus[]
   mittaus                       mittaus[]
   ohl_mittaus                   ohl_mittaus[]
