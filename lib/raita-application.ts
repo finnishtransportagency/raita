@@ -122,6 +122,7 @@ export class ApplicationStack extends NestedStack {
       vpc,
       raitaSecurityGroup,
       prismaLambdaLayer,
+      externalDataBucket: dataProcessStack.externalDataBucket,
     });
 
     // if (isPermanentStack(stackId, raitaEnv)) {

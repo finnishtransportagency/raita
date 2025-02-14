@@ -52,6 +52,7 @@ import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { Queue } from 'aws-cdk-lib/aws-sqs';
 import { SqsDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { AdjustmentType } from 'aws-cdk-lib/aws-autoscaling';
+import { ExternalNotificationStack } from './proto/raita-proto-external-notification';
 
 interface DataProcessStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -77,6 +78,7 @@ export class DataProcessStack extends NestedStack {
   public readonly handleCSVFileMassImportEventFn: NodejsFunction;
   public readonly csvMassImportDataBucket: Bucket;
   public readonly csvDataBucket: Bucket;
+  public readonly externalDataBucket: Bucket;
   public readonly readyForGeoviiteConversionQueue: Queue;
   public readonly handleFileCountEventFn: NodejsFunction;
 
@@ -139,6 +141,12 @@ export class DataProcessStack extends NestedStack {
     this.csvMassImportDataBucket = createRaitaBucket({
       scope: this,
       name: 'csv-data-mass-import',
+      raitaEnv,
+      raitaStackIdentifier,
+    });
+    this.externalDataBucket = createRaitaBucket({
+      scope: this,
+      name: 'external-data',
       raitaEnv,
       raitaStackIdentifier,
     });
@@ -282,6 +290,12 @@ export class DataProcessStack extends NestedStack {
       zipTaskLogGroup!,
       raitaStackIdentifier,
     );
+    const zipHandlerExternalErrorAlarms =
+      this.createZipHandlerExternalNotificationAlarm(
+        zipTaskLogGroup!,
+        raitaStackIdentifier,
+      );
+
     const receptionAlarms = this.createReceptionHandlerAlarms(
       handleReceptionFileEventFn.logGroup,
       raitaStackIdentifier,
@@ -333,20 +347,42 @@ export class DataProcessStack extends NestedStack {
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.zip' },
+      { suffix: '.zip' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xlsx' },
+      { suffix: '.xlsx' },
     );
     this.dataReceptionBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       receptionQueueDestination,
-      { prefix: `${raitaSourceSystems.Meeri}/`, suffix: '.xls' },
+      { suffix: '.xls' },
     );
 
     handleReceptionFileEventFn.addEventSource(receptionQueueSource);
+
+    const extNotificationStack = new ExternalNotificationStack(
+      this,
+      'stack-external-notification',
+      {
+        raitaStackIdentifier,
+        vpc,
+        raitaEnv,
+        dataReceptionBucket: this.dataReceptionBucket,
+        inspectionDataBucket: this.inspectionDataBucket,
+        externalDataBucket: this.externalDataBucket,
+      },
+    );
+
+    // forward specific actions to sns topic
+    // TODO: format of message is not legible
+    // should have a lambda to format the message?
+    zipHandlerExternalErrorAlarms.forEach(alarm => {
+      alarm.addAlarmAction(
+        new SnsAction(extNotificationStack.externalErrorTopic),
+      );
+    });
 
     // Create meta data parser lambda, grant permissions and create event sources
     this.handleInspectionFileEventFn = this.createInspectionFileEventHandler({
@@ -361,10 +397,15 @@ export class DataProcessStack extends NestedStack {
       raitaEnv,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
+      externalDataTopicArn: extNotificationStack.externalNewDataTopic.topicArn,
     });
     const inspectionAlarms = this.createInspectionHandlerAlarms(
       this.handleInspectionFileEventFn.logGroup,
       raitaStackIdentifier,
+    );
+
+    extNotificationStack.externalNewDataTopic.grantPublish(
+      this.handleInspectionFileEventFn,
     );
     // Grant lambda permissions to buckets
     configurationBucket.grantRead(this.handleInspectionFileEventFn);
@@ -476,6 +517,7 @@ export class DataProcessStack extends NestedStack {
       ...inspectionAlarms,
       ...zipHandlerAlarms,
       ...csvAlarms,
+      ...zipHandlerExternalErrorAlarms,
     ];
 
     // create composite alarm that triggers when any alarm for different error types trigger
@@ -563,6 +605,7 @@ export class DataProcessStack extends NestedStack {
     raitaEnv,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    externalDataTopicArn,
   }: {
     name: string;
     configurationBucketName: string;
@@ -575,6 +618,7 @@ export class DataProcessStack extends NestedStack {
     raitaEnv: string;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    externalDataTopicArn: string;
   }) {
     // any events that fail cause lambda to fail twice will be written here
     // currently nothing is done to this queue
@@ -600,6 +644,7 @@ export class DataProcessStack extends NestedStack {
         CONFIGURATION_FILE: configurationFile,
         REGION: this.region,
         ENVIRONMENT: raitaEnv,
+        EXTERNAL_DATA_TOPIC_ARN: externalDataTopicArn,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -660,6 +705,43 @@ export class DataProcessStack extends NestedStack {
       }),
     });
     return [errorAlarm, anyErrorAlarm];
+  }
+
+  /**
+   * Detect errors with a specific message and send to error notification message service
+   * TODO: actual offending log messages should be captured
+   */
+  private createZipHandlerExternalNotificationAlarm(
+    logGroup: ILogGroup,
+    raitaStackIdentifier: string,
+  ) {
+    const validationErrorFilter = logGroup.addMetricFilter(
+      'zip-handler-ext-validation-error-filter',
+      {
+        filterPattern: FilterPattern.anyTerm('error', 'PATH_VALIDATION_ERROR'),
+        metricName: `zip-handler-validation-error-${raitaStackIdentifier}`,
+        metricNamespace: 'raita-data-process',
+        metricValue: '1',
+      },
+    );
+    const validationErrorAlarm = new Alarm(
+      this,
+      'zip-handler-ext-validation-errors-alarm',
+      {
+        comparisonOperator:
+          ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        alarmName: `zip-handler-ext-validation-errors-alarm-${raitaStackIdentifier}`,
+        metric: validationErrorFilter.metric({
+          label: `Reception zip handler ext-validation errors ${raitaStackIdentifier}`,
+          period: Duration.minutes(1),
+          statistic: Stats.SUM,
+        }),
+      },
+    );
+    return [validationErrorAlarm];
   }
 
   /**

@@ -21,6 +21,10 @@ export const getUser = () =>
 
 export const getFile = (key: string) =>
   apiClient.post<GetSignedUrlResult>('file', { key }).then(res => res.data);
+export const getProtoExternalFile = (key: string) =>
+  apiClient
+    .post<GetSignedUrlResult>('proto-ext-file', { key })
+    .then(res => res.data);
 
 export const getPollingProgress = (queryKey: string) => {
   return apiClient

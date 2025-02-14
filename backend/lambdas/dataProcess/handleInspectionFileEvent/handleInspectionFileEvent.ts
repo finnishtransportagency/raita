@@ -10,6 +10,7 @@ import {
   getDecodedS3ObjectKey,
   getKeyData,
   getOriginalZipNameFromPath,
+  isExportedSuffix,
   isKnownIgnoredSuffix,
   isKnownSuffix,
 } from '../../utils';
@@ -23,6 +24,14 @@ import {
   updateRaporttiMetadata,
 } from '../csvCommon/db/dbUtil';
 import { getLambdaConfigOrFail } from './util';
+import {
+  extractSingleFileMetadata,
+  getMetadataFileKey,
+  parseMetadataFile,
+} from './parseJsonMetadata';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
+import { ExternalDataMessage } from '../../proto/types';
 
 const findReportByKey = async (key: string, dbConnection: DBConnection) => {
   const foundReport = await dbConnection.prisma.raportti.findFirst({
@@ -79,6 +88,7 @@ export async function handleInspectionFileEvent(
   let currentKey: string = ''; // for logging in case of errors
   try {
     withRequest(event, context);
+    const snsClient = new SNSClient();
     const dbConnection = await postgresConnection;
     if (!dbConnection) {
       throw new Error('No db connection');
@@ -95,6 +105,24 @@ export async function handleInspectionFileEvent(
         log.info({ fileName: key }, 'Start inspection file handler');
         const fileStreamResult = await backend.files.getFileStream(eventRecord);
         const keyData = getKeyData(key);
+
+        // fetch metadata file from same directory
+        // note: it is possible that metadata file is not parsed yet. TODO: should wait here?
+        const metadataKey = getMetadataFileKey(key);
+
+        // fetch: tmp solution with new s3client
+        const s3Client = new S3Client();
+        const command = new GetObjectCommand({
+          Bucket: eventRecord.s3.bucket.name,
+          Key: metadataKey,
+        });
+        const metadataFileResult = await s3Client.send(command);
+        const metadataFile =
+          (await metadataFileResult.Body?.transformToString()) ?? '';
+        log.info({
+          metadataKey,
+          metadataFile,
+        });
         // note: etag can change if same object is uploaded again with multipart upload using different chunk size, is this a problem?
         const hash = eventRecord.s3.object.eTag;
         const s3MetaData = fileStreamResult.metaData;
@@ -120,14 +148,18 @@ export async function handleInspectionFileEvent(
         }
         // Return empty null result if the top level folder does not match any of the names
         // of the designated source systems.
-        if (!isRaitaSourceSystem(keyData.rootFolder)) {
-          log.warn(`Ignoring file ${key} outside Raita source system folders.`);
-          await adminLogger.error(
-            `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
-          );
-          return null;
-        }
-        if (!isKnownSuffix(keyData.fileSuffix)) {
+        // TMP: disable this check for proto
+        // if (!isRaitaSourceSystem(keyData.rootFolder)) {
+        //   log.warn(`Ignoring file ${key} outside Raita source system folders.`);
+        //   await adminLogger.error(
+        //     `Tiedosto ${key} on väärässä tiedostopolussa ja sitä ei käsitellä`,
+        //   );
+        //   return null;
+        // }
+        if (
+          !isKnownSuffix(keyData.fileSuffix) &&
+          !isExportedSuffix(keyData.fileSuffix)
+        ) {
           if (isKnownIgnoredSuffix(keyData.fileSuffix)) {
             log.info(
               `Ignoring file ${key} with known ignored suffix ${keyData.fileSuffix}`,
@@ -145,6 +177,13 @@ export async function handleInspectionFileEvent(
           }
           return null;
         }
+        const parsedMetadataFile = parseMetadataFile(metadataFile);
+        // no validation for now
+        const metadataFromFile = extractSingleFileMetadata(
+          parsedMetadataFile,
+          key,
+        );
+        log.info({ parsedMetadataFile, metadataEntry: metadataFromFile });
 
         let reportId: number;
 
@@ -199,6 +238,23 @@ export async function handleInspectionFileEvent(
           invocationId,
           doGeoviiteConversion: !skipGeoviiteConversion,
         });
+
+        let dataLocation = 'RAITA';
+        if (isExportedSuffix(keyData.fileSuffix)) {
+          // await sendToExternalTopic(
+          //   snsClient,
+          //   key,
+          //   metadataFromFile,
+          //   'IMG_EXPORT',
+          // );
+          // log.info('send img to export');
+          // // admin log?
+          // return null; // TODO?
+          dataLocation = 'PROTO_EXT';
+          // TODO: could define more locations based on data type
+          // only test bucket for now
+        }
+
         if (parseResults.errors) {
           await adminLogger.error(
             `Tiedoston ${keyData.fileName} metadatan parsinnassa tapahtui virheitä. Metadata tallennetaan tietokantaan puutteellisena.`,
@@ -218,7 +274,9 @@ export async function handleInspectionFileEvent(
           ...entryBeforeParsing,
           metadata: {
             ...parseResults.metadata,
+            ...metadataFromFile,
             parsed_at_datetime,
+            data_location: dataLocation,
           },
           tags: fileStreamResult.tags,
           reportId,
@@ -240,6 +298,15 @@ export async function handleInspectionFileEvent(
 
       await updateRaporttiMetadata(entries, dbConnection);
 
+      const snsOperations = entries.map(async entry => {
+        return sendToExternalTopic(
+          snsClient,
+          entry.key,
+          entry.metadata,
+          'FULLY_PARSED',
+        );
+      });
+      await Promise.all(snsOperations);
       return true;
     });
     const settled = await Promise.allSettled(sqsRecordResults);
@@ -269,4 +336,27 @@ export async function handleInspectionFileEvent(
       `Tiedoston ${currentKey} käsittely epäonnistui. Metadataa ei tallennettu.`,
     );
   }
+}
+
+/**
+ * Send message to topic to indicate new data is in system
+ * Note: CSV data is not yet parsed at this point
+ */
+async function sendToExternalTopic(
+  snsClient: SNSClient,
+  key: string,
+  metadata: any,
+  status: ExternalDataMessage['status'],
+) {
+  const message: ExternalDataMessage = {
+    metadata,
+    key,
+    status,
+  };
+  log.info(message, 'send to topic');
+  const snsCommand = new PublishCommand({
+    Message: JSON.stringify(message),
+    TopicArn: config.externalDataTopicArn,
+  });
+  return await snsClient.send(snsCommand);
 }
