@@ -18,6 +18,7 @@ import {
 import { Code, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import path from 'path';
 import { ConversionProcessStack } from './raita-geoviite-process';
+import { EmailProcessStack } from './raita-email';
 
 interface ApplicationStackProps extends NestedStackProps {
   readonly raitaStackIdentifier: string;
@@ -34,6 +35,8 @@ interface ApplicationStackProps extends NestedStackProps {
   readonly vaylaPolicyUserId: string;
   readonly loramPolicyUserId: string;
   readonly cloudfrontDomainName: string;
+  readonly emailSenderAddress: string;
+  readonly smtpEndpoint: string;
 }
 
 export class ApplicationStack extends NestedStack {
@@ -54,6 +57,8 @@ export class ApplicationStack extends NestedStack {
       vaylaPolicyUserId,
       loramPolicyUserId,
       cloudfrontDomainName,
+      emailSenderAddress,
+      smtpEndpoint,
     } = props;
 
     // Create a lambda layer containing prisma client and engine, to avoid bundling big engine files for every lambda
@@ -118,6 +123,19 @@ export class ApplicationStack extends NestedStack {
       raitaSecurityGroup,
       prismaLambdaLayer,
     });
+
+    // if (isPermanentStack(stackId, raitaEnv)) {
+    new EmailProcessStack(this, 'stack-emailprocess', {
+      raitaStackIdentifier: raitaStackIdentifier,
+      inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+      raitaEnv,
+      stackId,
+      vpc,
+      prismaLambdaLayer,
+      emailSenderAddress,
+      smtpEndpoint,
+    });
+    // }
 
     // Create Bastion Host for dev (main branch/stack) and production
     if (isPermanentStack(stackId, raitaEnv)) {
