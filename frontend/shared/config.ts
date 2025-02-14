@@ -16,6 +16,3 @@ export const paging = {
 
 export const maxFileSizeForZip = 5 * 1000 * 1000 * 1000;
 export const maxFileCountForZip = 4000;
-
-export const enableCsvPage: boolean =
-  !!process.env.NEXT_PUBLIC_ENABLE_CSV_PAGE || false;
