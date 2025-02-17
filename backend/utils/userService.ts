@@ -15,6 +15,10 @@ const ISSUER = process.env.JWT_TOKEN_ISSUER;
 const STACK_ID = process.env.STACK_ID || '';
 const ENVIRONMENT = process.env.ENVIRONMENT || '';
 
+//EntraID tuottaa käyttäjän roolitiedon JWTokenille eri muodossa kuin nykyisin käytössä oleva OAM. Sovelluksen tulee jatkossa kyetä vastaanottamaan käyttäjän roolitieto molemmissa muodoissa.
+// OAM: custom:rooli "sovellus_role1,sovellus_role2"
+// EntraID: custom:rooli "[\"sovellus_role1\",\"sovellus_role2\"]"
+
 const STATIC_ROLES = {
   read: 'Raita_luku',
   admin: 'Raita_admin',
@@ -26,10 +30,13 @@ export type RaitaUser = {
   roles?: string[];
 };
 
-function parseRoles(roles: string): string[] | undefined {
+export function parseRoles(roles: string): string[] | undefined {
   return roles
     ? roles
-        .replace('\\', '')
+        .replace(/\"/g, '')
+        .replace(/\[/g, '')
+        .replace(/\]/g, '')
+        .replace(/\\/g, '')
         .split(',')
         .map(s => {
           const s1 = s.split('/').pop();
@@ -69,7 +76,11 @@ const handleApiKeyRequest = async (
     // grant all roles to api key requests in premain env for development
     return {
       uid: RAITA_APIKEY_USER_UID,
-      roles: [STATIC_ROLES.read, STATIC_ROLES.extended, STATIC_ROLES.admin],
+      roles: [
+        STATIC_ROLES.read,
+        STATIC_ROLES.extended,
+        STATIC_ROLES.admin,
+      ],
     };
   }
   return {
@@ -92,14 +103,18 @@ const handleOidcRequest = async (
     ISSUER,
   );
 
+  if (jwt) log.info(jwt, 'jwt decoded');
+
   if (!jwt) {
     throw new RaitaLambdaError('User validation failed', 500);
   }
   const roles = parseRoles(jwt['custom:rooli']);
+  if (roles) log.info(roles, 'roles parsed');
   const user: RaitaUser = {
     uid: jwt['custom:uid'],
     roles: roles ? filterRaitaRoles(roles) : [],
   };
+  if (user.roles) log.info(user.roles, 'roles filtered');
   return user;
 };
 
@@ -113,10 +128,13 @@ const filterRaitaRoles = (roles: string[]) => {
 
 const parseUserFromEvent = async (event: ALBEvent): Promise<RaitaUser> => {
   const headers = event.headers;
+
   if (!headers) {
     log.error('Headers missing');
     throw new RaitaLambdaError('Headers missing', 400);
   }
+
+  log.info(headers, 'parseUserFromEvent headers');
   /**
    * If request has api key header present, authentication/authorization is based solely on that,
    * not on possible oidc-headers.
@@ -152,6 +170,7 @@ const isAdminUser = (user: RaitaUser) => {
 };
 
 export const getUser = async (event: ALBEvent): Promise<RaitaUser> => {
+  log.info(event, 'getUser ALBEvent');
   if (!STACK_ID || !ENVIRONMENT) {
     log.error('STACK_ID or ENVIRONMENT missing!');
     throw new RaitaLambdaError('Error', 500);

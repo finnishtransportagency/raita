@@ -1,4 +1,5 @@
 import {
+  parseRoles,
   RaitaUser,
   validateAdminUser,
   validateExtendedUser,
@@ -32,5 +33,31 @@ describe('userService role checks', () => {
     expect(validateReadUser(adminUser)).resolves.not.toThrow();
     expect(validateExtendedUser(adminUser)).resolves.not.toThrow();
     expect(validateAdminUser(adminUser)).resolves.not.toThrow();
+  });
+});
+
+describe('userService parse jwt roles ', () => {
+  test('success: read user OAM', () => {
+    //OAM "custom:rooli": "xxx_muokkaaja,Extranet_Kayttaja,yyy_konsultti,Raita_luku",
+    const roles = parseRoles(
+      'xxx_muokkaaja,Extranet_Kayttaja,yyy_konsultti,Raita_luku',
+    );
+    expect(roles).toContain('Raita_luku');
+  });
+  test('success: read user EntraID', () => {
+    //EntraID: "custom:rooli" "[\"sovellus_role1\",\"sovellus_role2\"]"
+    const input =
+      '["xxx_muokkaaja","Extranet_Kayttaja","yyy_konsultti","Raita_luku"]';
+    console.log(input);
+    const roles = parseRoles(input);
+    expect(roles).toContain('Raita_luku');
+  });
+  test('success: read user EntraID2', () => {
+    //EntraID: "custom:rooli" "[\"sovellus_role1\",\"sovellus_role2\"]"
+    const input =
+      '[\\"xxx_muokkaaja\\",\\"Extranet_Kayttaja\\",\\"yyy_konsultti\\",\\"Raita_luku\\"]';
+    console.log(input);
+    const roles = parseRoles(input);
+    expect(roles).toContain('Raita_luku');
   });
 });
