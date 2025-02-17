@@ -890,8 +890,6 @@ export class DataProcessStack extends NestedStack {
         REGION: this.region,
         READY_FOR_CONVERSION_QUEUE_URL:
           readyForGeoviiteConversionQueue.queueUrl,
-        // flag to disable conversion in prod. TODO: remove
-        DISABLE_CONVERSION: '0',
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,

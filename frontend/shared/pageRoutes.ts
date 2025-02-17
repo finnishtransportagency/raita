@@ -1,4 +1,3 @@
-import { enableCsvPage } from './config';
 import { RaitaRole } from './user';
 
 export type PageDescription = {
@@ -11,23 +10,17 @@ export type PageDescription = {
 // requiredRole is also defined by page components
 // TODO: can this be simplified?
 export const getRaitaPages: () => PageDescription[] = () => {
-  let pages: PageDescription[] = [];
-
-  pages.push({
-    labelTranslationKey: 'page_labels.reports',
-    href: '/reports',
-    requiredRole: RaitaRole.Read,
-  });
-
-  if (enableCsvPage) {
-    pages.push({
+  const pages: PageDescription[] = [
+    {
+      labelTranslationKey: 'page_labels.reports',
+      href: '/reports',
+      requiredRole: RaitaRole.Read,
+    },
+    {
       labelTranslationKey: 'page_labels.csv',
       href: '/csv',
       requiredRole: RaitaRole.Read,
-    });
-  }
-
-  pages.push(
+    },
     {
       labelTranslationKey: 'page_labels.admin.logs',
       href: '/admin/logs',
@@ -43,6 +36,6 @@ export const getRaitaPages: () => PageDescription[] = () => {
       href: '/admin/process',
       requiredRole: RaitaRole.Admin,
     },
-  );
+  ];
   return pages;
 };

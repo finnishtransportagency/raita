@@ -68,12 +68,6 @@ export class RaitaPipelineStack extends Stack {
       }),
     });
 
-    //temporary flag to show csv page. TODO: remove later
-    const enableCsvPage = StringParameter.valueFromLookup(
-      this,
-      'raita-enable-csv-page',
-    );
-
     // Get config based on Raita environment
     const vpcConfig = getAccountVpcResourceConfig(config.env);
 
@@ -183,7 +177,6 @@ export class RaitaPipelineStack extends Stack {
           ],
           env: {
             NEXT_PUBLIC_RAITA_BASEURL: overwriteBaseUrl,
-            NEXT_PUBLIC_ENABLE_CSV_PAGE: enableCsvPage === '1' ? '1' : '',
           },
           commands: [
             'npm run --prefix frontend build',
