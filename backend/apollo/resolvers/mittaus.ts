@@ -6,6 +6,7 @@ import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { getRaporttiWhereInput } from '../utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
 import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/types';
+import { format } from 'date-fns';
 
 /**
  * Return estimate of result file size in bytes
@@ -88,9 +89,9 @@ export const mittausResolvers: Resolvers = {
       if (!csvGenerationLambda || !region) {
         throw new Error('Missing env vars');
       }
-
+      const now = new Date();
       // TODO: file name
-      const fileBaseName = `test-${Date.now()}`;
+      const fileBaseName = `RAITA-export-${format(now, 'dd.MM.yyyy-HH-mm')}`;
       const progressKey = `csv/progress/${fileBaseName}.json`;
       const csvKey = `csv/data/${fileBaseName}.csv`;
       const event: CsvGenerationEvent = {
