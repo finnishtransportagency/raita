@@ -48,6 +48,8 @@ export class RaitaStack extends Stack {
       vaylaPolicyUserId: config.vaylaPolicyUserId,
       loramPolicyUserId: config.loramPolicyUserId,
       cloudfrontDomainName: config.cloudfrontDomainName,
+      emailSenderAddress: config.emailSenderAddress,
+      smtpEndpoint: config.smtpEndpoint,
     });
     Object.entries(tags).forEach(([key, value]) =>
       Tags.of(applicationStack).add(key, value),
