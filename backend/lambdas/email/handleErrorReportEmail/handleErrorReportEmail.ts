@@ -23,7 +23,6 @@ import {
   previousMonday,
   previousSunday,
   startOfDay,
-  startOfWeek,
 } from 'date-fns';
 import { Attachment } from 'nodemailer/lib/mailer';
 function getLambdaConfigOrFail() {
