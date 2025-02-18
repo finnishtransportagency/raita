@@ -17,7 +17,14 @@ import {
   SMTP_PORT,
   SSM_EMAIL_REPORTS_RECEIVERS,
 } from '../../../../constants';
-import { format, previousSunday, startOfWeek } from 'date-fns';
+import {
+  endOfDay,
+  format,
+  previousMonday,
+  previousSunday,
+  startOfDay,
+  startOfWeek,
+} from 'date-fns';
 import { Attachment } from 'nodemailer/lib/mailer';
 function getLambdaConfigOrFail() {
   return {
@@ -181,8 +188,8 @@ export async function handleErrorReportEmail(
 
     const now = new Date();
     // gather report from last week
-    const endTime = previousSunday(now);
-    const startTime = startOfWeek(endTime);
+    const endTime = endOfDay(previousSunday(now));
+    const startTime = startOfDay(previousMonday(endTime));
 
     const startDateFormatted = format(startTime, 'dd.MM.yyyy');
     const endDateFormatted = format(endTime, 'dd.MM.yyyy');
