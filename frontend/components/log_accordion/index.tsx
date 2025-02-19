@@ -18,7 +18,7 @@ import {
   SingleEventAdminLogsResponse,
 } from 'shared/types';
 import clsx from 'clsx';
-import format from 'date-fns/format';
+import { format } from 'date-fns';
 import { getAdminLogsSummary, getSingleEventAdminLogs } from 'shared/rest';
 import {
   ADMIN_LOG_PAGE_SIZE,

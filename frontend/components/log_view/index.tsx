@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import format from 'date-fns/format';
+import { format } from 'date-fns';
 import clsx from 'clsx';
 import css from './log_view.module.css';
 import { SingleEventAdminLogsResponse } from 'shared/types';

@@ -1,5 +1,5 @@
-import parse from 'date-fns/parse';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { parse } from 'date-fns';
+import { tz } from '@date-fns/tz';
 import { format, isMatch } from 'date-fns';
 import { logParsingException } from '../../../utils/logger';
 import { DATA_TIME_ZONE } from '../../../../constants';
@@ -13,8 +13,11 @@ const parseDate = (date: string) => {
     isMatch(date, format),
   );
   if (dateTimesMatching.length) {
-    const parsed = parse(date, dateTimesMatching[0], new Date()).toISOString();
-    return zonedTimeToUtc(parsed, timeZone).toISOString();
+    const tzDate = parse(date, dateTimesMatching[0], new Date(), {
+      in: tz(timeZone),
+    });
+    // note TZDate.toISOString() outputs the internal timezone instead of UTC
+    return new Date(tzDate.toISOString()).toISOString();
   }
   const dateOnlyFormats = ['yyyyMMdd'];
   const datesOnlyMatching = dateOnlyFormats.filter(format =>
@@ -43,8 +46,11 @@ const parseDate = (date: string) => {
   });
   if (validDates.length === dateCount) {
     const dateToParse = split.slice(0, 3).join(' ');
-    const parsed = parse(dateToParse, formatToTest, new Date()).toISOString();
-    return zonedTimeToUtc(parsed, timeZone).toISOString();
+    const tzDate = parse(dateToParse, formatToTest, new Date(), {
+      in: tz(timeZone),
+    });
+    // note TZDate.toISOString() outputs the internal timezone instead of UTC
+    return new Date(tzDate.toISOString()).toISOString();
   }
   throw new Error(`Date in invalid format: ${date}`);
 };
