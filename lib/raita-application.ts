@@ -124,18 +124,18 @@ export class ApplicationStack extends NestedStack {
       prismaLambdaLayer,
     });
 
-    // if (isPermanentStack(stackId, raitaEnv)) {
-    new EmailProcessStack(this, 'stack-emailprocess', {
-      raitaStackIdentifier: raitaStackIdentifier,
-      inspectionDataBucket: dataProcessStack.inspectionDataBucket,
-      raitaEnv,
-      stackId,
-      vpc,
-      prismaLambdaLayer,
-      emailSenderAddress,
-      smtpEndpoint,
-    });
-    // }
+    if (isPermanentStack(stackId, raitaEnv)) {
+      new EmailProcessStack(this, 'stack-emailprocess', {
+        raitaStackIdentifier: raitaStackIdentifier,
+        inspectionDataBucket: dataProcessStack.inspectionDataBucket,
+        raitaEnv,
+        stackId,
+        vpc,
+        prismaLambdaLayer,
+        emailSenderAddress,
+        smtpEndpoint,
+      });
+    }
 
     // Create Bastion Host for dev (main branch/stack) and production
     if (isPermanentStack(stackId, raitaEnv)) {
