@@ -241,10 +241,15 @@ async function deleteFromBucket(
 
 async function deleteFromPostgres(prefix: string) {
   try {
+    const now = new Date().toISOString();
     const response = await (
       await dbConnection
-    ).prisma.raportti.deleteMany({
-      where: { key: { startsWith: prefix } },
+    ).prisma.raportti.updateMany({
+      data: {
+        deleted: true,
+        deleted_at: now,
+      },
+      where: { key: { startsWith: prefix }, deleted: false },
     });
     return response.count;
   } catch (err: any) {

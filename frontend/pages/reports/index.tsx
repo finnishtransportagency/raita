@@ -54,6 +54,8 @@ import {
   fileDownloadContext,
   initialState as fileDownloadInitialState,
 } from 'shared/fileDownloadContext';
+import { endOfDay, previousMonday, previousSunday, startOfDay } from 'date-fns';
+import { TZDate } from '@date-fns/tz';
 
 const initialState: ReportsState = {
   resetFilters: false,
@@ -105,6 +107,15 @@ const ReportsIndex: RaitaNextPage = () => {
   const getFileUrl = useFileQuery();
 
   // #endregion
+
+  const now = new TZDate(new Date(), 'Europe/Helsinki');
+  // gather report from last week
+  const endTime = endOfDay(previousSunday(now));
+  const startTime = startOfDay(previousMonday(endTime));
+
+  console.log('---');
+  console.log(startTime.toISOString());
+  console.log(endTime.toISOString());
 
   const doSearch = () => {
     setState(R.assocPath(['queryVariables', 'page'], 1));

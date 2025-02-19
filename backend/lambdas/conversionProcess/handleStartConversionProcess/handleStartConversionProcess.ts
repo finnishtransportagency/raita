@@ -102,6 +102,9 @@ export async function handleStartConversionProcess(
         throw new Error('From trigger event format');
       }
       whereInput = {
+        deleted: {
+          equals: false,
+        },
         geoviite_status: {
           equals: ConversionStatus.READY_FOR_CONVERSION,
         },
