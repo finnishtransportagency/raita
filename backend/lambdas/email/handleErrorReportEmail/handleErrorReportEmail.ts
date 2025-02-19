@@ -13,12 +13,20 @@ import {
 import { getSSMParameter } from '../../../utils/ssm';
 import { getSecretsManagerSecret } from '../../../utils/secretsManager';
 import {
+  DATA_TIME_ZONE,
   SECRET_KEY_SMTP_CREDENTIALS,
   SMTP_PORT,
   SSM_EMAIL_REPORTS_RECEIVERS,
 } from '../../../../constants';
-import { format, previousSunday, startOfWeek } from 'date-fns';
+import {
+  endOfDay,
+  format,
+  previousMonday,
+  previousSunday,
+  startOfDay,
+} from 'date-fns';
 import { Attachment } from 'nodemailer/lib/mailer';
+import { tz, TZDate } from '@date-fns/tz';
 function getLambdaConfigOrFail() {
   return {
     region: getEnvOrFail('REGION'),
@@ -27,6 +35,8 @@ function getLambdaConfigOrFail() {
     smtpEndpoint: getEnvOrFail('SMTP_ENDPOINT'),
   };
 }
+
+const timeZone = DATA_TIME_ZONE;
 
 type TestEvent = {
   testEvent?: boolean;
@@ -46,6 +56,9 @@ async function generateErrorReportContent(
   endTime: Date,
   addTestEnvironmentNotification: boolean,
 ): Promise<{ messageBody: string; csvBody: string }> {
+  // db timestamps are in utc
+  const startUtc = new Date(startTime).toISOString();
+  const endUtc = new Date(endTime).toISOString();
   const maxZipsToListInBody = 20;
   const prisma = dbConnection.prisma;
   const errorLogs = await prisma.logging.findMany({
@@ -53,8 +66,8 @@ async function generateErrorReportContent(
       AND: [
         {
           log_timestamp: {
-            gte: startTime.toISOString(),
-            lte: endTime.toISOString(),
+            gte: startUtc,
+            lte: endUtc,
           },
         },
         {
@@ -97,10 +110,14 @@ async function generateErrorReportContent(
   });
 
   const zips = Object.keys(logStats);
-
-  const startTimeFormatted = format(startTime, 'dd.MM.yyyy HH:mm');
-  const endTimeFormatted = format(endTime, 'dd.MM.yyyy HH:mm');
-  // TODO: support for different languages? better formattin? HTML?
+  // display times in Finland timezone for report
+  const startTimeFormatted = format(startTime, 'dd.MM.yyyy HH:mm', {
+    in: tz(timeZone),
+  });
+  const endTimeFormatted = format(endTime, 'dd.MM.yyyy HH:mm', {
+    in: tz(timeZone),
+  });
+  // TODO: support for different languages? better formatting? HTML?
   const firstRow = `Raportti RAITA dataprosessin virheistä aikavälillä ${startTimeFormatted} - ${endTimeFormatted}\n`;
   const envNotification = addTestEnvironmentNotification
     ? 'Raportti on generoitu TESTIympäristössä\n'
@@ -179,13 +196,18 @@ export async function handleErrorReportEmail(
 
     const dbConnection = await getDBConnection();
 
-    const now = new Date();
+    // Search based on correct time zone
+    const now = new TZDate(new Date(), timeZone);
     // gather report from last week
-    const endTime = previousSunday(now);
-    const startTime = startOfWeek(endTime);
+    const endTime = endOfDay(previousSunday(now));
+    const startTime = startOfDay(previousMonday(endTime));
 
-    const startDateFormatted = format(startTime, 'dd.MM.yyyy');
-    const endDateFormatted = format(endTime, 'dd.MM.yyyy');
+    const startDateFormatted = format(startTime, 'dd.MM.yyyy', {
+      in: tz(timeZone),
+    });
+    const endDateFormatted = format(endTime, 'dd.MM.yyyy', {
+      in: tz(timeZone),
+    });
     const subject = `RAITA virheraportti ${startDateFormatted} - ${endDateFormatted}`;
 
     const addTestEnvironmentNotification = config.raitaEnv !== 'prod';
