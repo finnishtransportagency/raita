@@ -58,9 +58,7 @@ export const raporttiResolvers: Resolvers = {
             key: {
               startsWith: key,
             },
-            deleted: {
-              equals: false,
-            },
+            deleted: false,
           },
           _count: {
             id: true,
@@ -74,6 +72,7 @@ export const raporttiResolvers: Resolvers = {
             key: {
               startsWith: key,
             },
+            deleted: false,
           },
           skip: (page - 1) * page_size,
           take: page_size,
