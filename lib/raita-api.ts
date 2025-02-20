@@ -63,10 +63,11 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleZipProcessFn: NodejsFunction;
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
-  public readonly handleAdminLogsRequestFn: NodejsFunction;
+  public readonly handleAdminLogRequestFn: NodejsFunction;
   public readonly handleV2GraphqlRequest: NodejsFunction;
   public readonly handleCsvGenerationFn: NodejsFunction;
-  public readonly handleAdminLogsSummaryRequestFn: NodejsFunction;
+  public readonly handleAdminLogSummaryRequestFn: NodejsFunction;
+  public readonly handleAdminLogExportRequestFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
@@ -326,8 +327,8 @@ export class RaitaApiStack extends NestedStack {
       },
     );
 
-    this.handleAdminLogsRequestFn = this.createAdminLogsRequestHandler({
-      name: 'api-handler-admin-logs',
+    this.handleAdminLogRequestFn = this.createAdminLogRequestHandler({
+      name: 'api-handler-admin-log',
       raitaStackIdentifier,
       raitaEnv,
       stackId,
@@ -337,9 +338,20 @@ export class RaitaApiStack extends NestedStack {
       databaseEnvironmentVariables,
       prismaLambdaLayer,
     });
-    this.handleAdminLogsSummaryRequestFn =
+    this.handleAdminLogExportRequestFn = this.createAdminLogExportHandler({
+      name: 'api-handler-admin-log-export',
+      raitaStackIdentifier,
+      raitaEnv,
+      stackId,
+      jwtTokenIssuer,
+      lambdaRole: this.raitaApiLambdaServiceRole,
+      vpc,
+      databaseEnvironmentVariables,
+      prismaLambdaLayer,
+    });
+    this.handleAdminLogSummaryRequestFn =
       this.createAdminLogsRequestSummaryHandler({
-        name: 'api-handler-admin-logs-summary',
+        name: 'api-handler-admin-log-summary',
         raitaStackIdentifier,
         raitaEnv,
         stackId,
@@ -440,16 +452,22 @@ export class RaitaApiStack extends NestedStack {
         targetName: 'manual-data-process',
       },
       {
-        lambda: this.handleAdminLogsSummaryRequestFn,
+        lambda: this.handleAdminLogSummaryRequestFn,
         priority: 340,
         path: [`${apiBaseUrl}/admin/logs/summary`],
-        targetName: 'admin-logs-summary',
+        targetName: 'admin-log-summary',
       },
       {
-        lambda: this.handleAdminLogsRequestFn,
+        lambda: this.handleAdminLogExportRequestFn,
+        priority: 345,
+        path: [`${apiBaseUrl}/admin/logs/export`],
+        targetName: 'admin-log',
+      },
+      {
+        lambda: this.handleAdminLogRequestFn,
         priority: 350,
         path: [`${apiBaseUrl}/admin/logs`],
-        targetName: 'admin-logs',
+        targetName: 'admin-log',
       },
       {
         lambda: this.handleV2GraphqlRequest,
@@ -887,7 +905,7 @@ export class RaitaApiStack extends NestedStack {
   /**
    * Creates and returns handler for admin log request
    */
-  private createAdminLogsRequestHandler({
+  private createAdminLogRequestHandler({
     name,
     raitaStackIdentifier,
     raitaEnv,
@@ -936,6 +954,57 @@ export class RaitaApiStack extends NestedStack {
   }
 
   /**
+   * Creates and returns handler for admin log export request
+   */
+  private createAdminLogExportHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+    prismaLambdaLayer,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.seconds(60),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'createAdminLogsRequestSummaryHandler',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/createAdminLogsRequestSummaryHandler/createAdminLogsRequestSummaryHandler.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        ...databaseEnvironmentVariables,
+      },
+      bundling: prismaBundlingOptions,
+      layers: [prismaLambdaLayer],
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
    * Creates and returns handler for admin log summary request
    */
   private createAdminLogsRequestSummaryHandler({
@@ -964,10 +1033,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(15),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleAdminLogsSummaryRequest',
+      handler: 'handleAdminLogSummaryRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/handleAdminLogsSummaryRequest/handleAdminLogsSummaryRequest.ts`,
+        `../backend/lambdas/raitaApi/handleAdminLogSummaryRequest/handleAdminLogSummaryRequest.ts`,
       ),
       environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,

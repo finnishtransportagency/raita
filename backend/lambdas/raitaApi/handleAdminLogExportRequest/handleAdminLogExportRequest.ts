@@ -12,14 +12,12 @@ import { parseISO } from 'date-fns';
 import { AdminLogSource } from '../../../utils/adminLog/types';
 import { lambdaRequestTracker } from 'pino-lambda';
 
-const MAXIMUM_SUMMARY_PAGE_SIZE = 200;
-
 const withRequest = lambdaRequestTracker();
 
 /**
  * Handle request to view admin log summary
  */
-export async function handleAdminLogsSummaryRequest(
+export async function handleAdminLogExportRequest(
   event: ALBEvent,
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
@@ -72,23 +70,10 @@ export async function handleAdminLogsSummaryRequest(
       throw new RaitaLambdaError('Invalid sources', 400);
     }
 
-    const defaultPageSize = MAXIMUM_SUMMARY_PAGE_SIZE;
-    const pageSize = Number(queryStringParameters?.pageSize ?? defaultPageSize);
-    if (isNaN(pageSize) || pageSize > MAXIMUM_SUMMARY_PAGE_SIZE) {
-      throw new RaitaLambdaError('Invalid pageSize', 400);
-    }
-    const pageIndex = Number(queryStringParameters.pageIndex);
-    if (isNaN(pageIndex)) {
-      throw new RaitaLambdaError('Invalid pageIndex', 400);
-    }
-    const logResult = await getLogSummary(
-      startTimestamp,
-      endTimestamp,
-      parsedSources,
-      pageSize,
-      pageIndex,
-    );
-    return getRaitaSuccessResponse(logResult);
+    // get what
+    // stream csv from db? or generate using polling?
+    const exportResult = {};
+    return getRaitaSuccessResponse(exportResult);
   } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);
