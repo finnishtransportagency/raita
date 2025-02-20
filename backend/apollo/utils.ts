@@ -38,6 +38,8 @@ export const getRaporttiWhereInput = (
     track_id,
     year,
     zip_name,
+    deleted,
+    deleted_at,
   } = raportti;
   if (file_name) {
     where.file_name = {
@@ -200,6 +202,17 @@ export const getRaporttiWhereInput = (
   if (zip_name) {
     where.zip_name = {
       contains: zip_name,
+    };
+  }
+  // always search either deleted or not deleted default = not deleted
+  where.deleted = {
+    equals: !!deleted,
+  };
+  // deleted_at only makes sense if deleted = true, but no validation here done for that
+  if (deleted_at) {
+    where.deleted_at = {
+      gte: deleted_at?.start ?? undefined,
+      lte: deleted_at?.end ?? undefined,
     };
   }
   return where;

@@ -99,6 +99,9 @@ model ams_mittaus {
 
   @@index([raportti_id], map: "ams_index")
   @@index([geoviite_updated_at], map: "ams_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "ams_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "ams_mittaus_multi_index")
+  @@index([id, raportti_id], map: "ams_mittaus_multi_index2")
 }
 
 model data_process_lock {
@@ -160,6 +163,9 @@ model mittaus {
 
   @@index([geoviite_updated_at], map: "mittaus_geoviite_updated_index")
   @@index([raportti_id], map: "mittaus_index")
+  @@index([geoviite_virhe], map: "geoviite_virhe_index")
+  @@index([raportti_id, id], map: "mittaus_multi_index")
+  @@index([id, raportti_id], map: "mittaus_multi_index2")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -261,6 +267,9 @@ model ohl_mittaus {
 
   @@index([raportti_id], map: "ohl_index")
   @@index([geoviite_updated_at], map: "ohl_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "ohl_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "ohl_mittaus_multi_index")
+  @@index([id, raportti_id], map: "ohl_mittaus_multi_index2")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -332,6 +341,9 @@ model pi_mittaus {
 
   @@index([raportti_id], map: "pi_index")
   @@index([geoviite_updated_at], map: "pi_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "pi_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "pi_mittaus_multi_index")
+  @@index([id, raportti_id], map: "pi_mittaus_multi_index2")
 }
 
 model raportti {
@@ -380,6 +392,8 @@ model raportti {
   hash                          String?            @db.VarChar(64)
   geoviite_update_at            DateTime?          @db.Timestamp(6)
   geoviite_status               String?            @db.VarChar(20)
+  deleted                       Boolean?           @default(false)
+  deleted_at                    DateTime?          @db.Timestamp(6)
   ams_mittaus                   ams_mittaus[]
   mittaus                       mittaus[]
   ohl_mittaus                   ohl_mittaus[]
@@ -514,6 +528,9 @@ model rc_mittaus {
 
   @@index([raportti_id], map: "rc_index")
   @@index([geoviite_updated_at], map: "rc_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "rc_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "rc_mittaus_multi_index")
+  @@index([id, raportti_id], map: "rc_mittaus_multi_index2")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -755,6 +772,9 @@ model rp_mittaus {
 
   @@index([raportti_id], map: "rp_index")
   @@index([geoviite_updated_at], map: "rp_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "rp_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "rp_mittaus_multi_index")
+  @@index([id, raportti_id], map: "rp_mittaus_multi_index2")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -873,6 +893,9 @@ model tg_mittaus {
 
   @@index([raportti_id], map: "tg_index")
   @@index([geoviite_updated_at], map: "tg_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "tg_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "tg_mittaus_multi_index")
+  @@index([id, raportti_id], map: "tg_mittaus_multi_index2")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -970,6 +993,9 @@ model tsight_mittaus {
 
   @@index([raportti_id], map: "tsight_index")
   @@index([geoviite_updated_at], map: "tsight_mittaus_geoviite_updated_index")
+  @@index([geoviite_virhe], map: "tsight_geoviite_virhe_index")
+  @@index([raportti_id, id], map: "tsight_mittaus_multi_index")
+  @@index([id, raportti_id], map: "tsight_mittaus_multi_index2")
 }
 
 model puuttuva_kolumni {

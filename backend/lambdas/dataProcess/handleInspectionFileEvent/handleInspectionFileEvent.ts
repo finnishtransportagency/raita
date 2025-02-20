@@ -30,6 +30,7 @@ const findReportByKey = async (key: string, dbConnection: DBConnection) => {
       key: {
         in: [key],
       },
+      deleted: false,
     },
   });
   return foundReport;
