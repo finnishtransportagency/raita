@@ -27,9 +27,7 @@ export type ConversionMessage = {
   /**
    * mittaus id to stop at
    */
-  endID: number
-
-
+  endID: number;
 };
 
 const finlandGenerousMinLat = 55.0;
@@ -56,7 +54,7 @@ export function isFlippedFinlandCoords(lat: number, long: number): boolean {
 /**
  * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
  */
-export function isLatLongFlipped(mittausRows: any[]): boolean {
+export function hasArrayLatLongFlipped(mittausRows: any[]): boolean {
   return !!mittausRows.find(
     mittaus =>
       mittaus.lat &&
@@ -65,8 +63,30 @@ export function isLatLongFlipped(mittausRows: any[]): boolean {
   );
 }
 
+/**
+ * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
+ */
+export function isLatLongFlipped(mittaus: any): boolean {
+  return (
+    !!mittaus.lat &&
+    mittaus.long &&
+    isFlippedFinlandCoords(mittaus.lat, mittaus.long)
+  );
+}
+
+export function isNonsenseCoords(mittaus: any): boolean {
+  return (
+    !!(mittaus.lat && !mittaus.long) ||
+    (!mittaus.lat && mittaus.long) ||
+    (mittaus.lat &&
+      mittaus.long &&
+      !isFinlandCoords(mittaus.lat, mittaus.long) &&
+      !isFlippedFinlandCoords(mittaus.lat, mittaus.long))
+  );
+}
+
 // Numeric coords that are not both undefined/zero and not finlands coords or flipped finbland coords
-export function isNonsenseCoords(mittausRows: any[]): boolean {
+export function hasArrayNonsenseCoords(mittausRows: any[]): boolean {
   return !!mittausRows.find(
     mittaus =>
       (mittaus.lat && !mittaus.long) ||

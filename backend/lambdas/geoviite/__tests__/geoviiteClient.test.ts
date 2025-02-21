@@ -7,8 +7,8 @@ import { jest } from '@jest/globals';
 import { produceGeoviiteBatchUpdateSql } from '../../dataProcess/csvCommon/db/dbUtil';
 
 import {
-  isLatLongFlipped,
-  isNonsenseCoords,
+  hasArrayLatLongFlipped,
+  hasArrayNonsenseCoords,
 } from '../../conversionProcess/util';
 
 const client = new GeoviiteClient('https://xxxxxxxxx.yy/');
@@ -874,66 +874,66 @@ describe('geoviite parse sql from response with updateAlsoNonConvertedLatLong tr
 
 describe('test detecting flipped and nonsense lat long', () => {
   test('success: basic operation', async () => {
-    expect(isLatLongFlipped([{ lat: null, long: null }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 23.5, long: 61.2 }])).toBeTruthy();
-    expect(isLatLongFlipped([{ lat: 0, long: 0 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: undefined, long: undefined }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 1, long: 62 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: null, long: 61.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 0, long: 61.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: undefined, long: 61.2}])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 23.5, long: null }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 23.5, long: 0 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 23.5, long: undefined }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 61.2, long: 61.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 23.5, long: 23.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 50.5, long: 23.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 81.2, long: 11.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 50.2, long: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 81.2, long: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 50.2, long: 11.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 61.2, long: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ lat: 61.2, long: 11.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 81.2, lat: 23.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 50.5, lat: 23.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 81.2, lat: 11.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 50.2, lat: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 81.2, lat: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 50.2, lat: 11.2 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 61.2, lat: 37.5 }])).toBeFalsy();
-    expect(isLatLongFlipped([{ long: 61.2, lat: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: null, long: null }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 23.5, long: 61.2 }])).toBeTruthy();
+    expect(hasArrayLatLongFlipped([{ lat: 0, long: 0 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: undefined, long: undefined }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 1, long: 62 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: null, long: 61.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 0, long: 61.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: undefined, long: 61.2}])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 23.5, long: null }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 23.5, long: 0 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 23.5, long: undefined }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 61.2, long: 61.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 23.5, long: 23.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 50.5, long: 23.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 81.2, long: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 50.2, long: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 81.2, long: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 50.2, long: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 61.2, long: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ lat: 61.2, long: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 81.2, lat: 23.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 50.5, lat: 23.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 81.2, lat: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 50.2, lat: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 81.2, lat: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 50.2, lat: 11.2 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 61.2, lat: 37.5 }])).toBeFalsy();
+    expect(hasArrayLatLongFlipped([{ long: 61.2, lat: 11.2 }])).toBeFalsy();
 
-    expect(isNonsenseCoords([{ lat: null, long: null }])).toBeFalsy();
-    expect(isNonsenseCoords([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
-    expect(isNonsenseCoords([{ lat: 23.5, long: 61.2 }])).toBeFalsy();
-    expect(isNonsenseCoords([{ lat: 0, long: 0 }])).toBeFalsy();
-    expect(isNonsenseCoords([{ lat: undefined, long: undefined }])).toBeFalsy();
-    expect(isNonsenseCoords([{ lat: 1, long: 62 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: null, long: 61.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 0, long: 61.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: undefined, long: 61.2}])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 23.5, long: null }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 23.5, long: 0 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 23.5, long: undefined }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 61.2, long: 61.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 23.5, long: 23.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 81.2, long: 23.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 50.5, long: 23.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 81.2, long: 11.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 50.2, long: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 81.2, long: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 50.2, long: 11.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 61.2, long: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ lat: 61.2, long: 11.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 81.2, lat: 23.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 50.5, lat: 23.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 81.2, lat: 11.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 50.2, lat: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 81.2, lat: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 50.2, lat: 11.2 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 61.2, lat: 37.5 }])).toBeTruthy();
-    expect(isNonsenseCoords([{ long: 61.2, lat: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: null, long: null }])).toBeFalsy();
+    expect(hasArrayNonsenseCoords([{ lat: 61.2, long: 23.5 }])).toBeFalsy();
+    expect(hasArrayNonsenseCoords([{ lat: 23.5, long: 61.2 }])).toBeFalsy();
+    expect(hasArrayNonsenseCoords([{ lat: 0, long: 0 }])).toBeFalsy();
+    expect(hasArrayNonsenseCoords([{ lat: undefined, long: undefined }])).toBeFalsy();
+    expect(hasArrayNonsenseCoords([{ lat: 1, long: 62 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: null, long: 61.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 0, long: 61.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: undefined, long: 61.2}])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 23.5, long: null }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 23.5, long: 0 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 23.5, long: undefined }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 61.2, long: 61.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 23.5, long: 23.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 81.2, long: 23.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 50.5, long: 23.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 81.2, long: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 50.2, long: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 81.2, long: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 50.2, long: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 61.2, long: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ lat: 61.2, long: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 81.2, lat: 23.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 50.5, lat: 23.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 81.2, lat: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 50.2, lat: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 81.2, lat: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 50.2, lat: 11.2 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 61.2, lat: 37.5 }])).toBeTruthy();
+    expect(hasArrayNonsenseCoords([{ long: 61.2, lat: 11.2 }])).toBeTruthy();
 
 
   });

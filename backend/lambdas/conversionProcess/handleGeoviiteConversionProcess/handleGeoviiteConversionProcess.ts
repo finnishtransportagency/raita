@@ -49,15 +49,16 @@ const { withRequest, dbConnection, adminLogger } = init();
 async function initStatement(
   saveBatchSize: number,
   system: string | null,
-  latLongFlipped: boolean,
   prismaClient: PrismaClient,
   invocationTotalBatchIndex: string | number,
 ): Promise<void> {
   const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
     saveBatchSize,
     system,
-    latLongFlipped,
+    true,
   );
+
+
 
   try {
     log.trace('start geoviite StatementInit update');
@@ -69,7 +70,7 @@ async function initStatement(
       'StatementInit error at invocationBatchIndex: ' +
         invocationTotalBatchIndex,
     );
-    log.error({ updateSql });
+    log.error({ updateSql: updateSql });
     throw err;
   }
 
@@ -100,6 +101,7 @@ export async function handleGeoviiteConversionProcess(
       throw new Error('Error parsing JSON');
     }
     const id = message.id;
+    const key = message.key;
 
     log.info({ id }, 'handleGeoviiteConversionProcess raportti id');
     const system = message.system;
@@ -144,11 +146,13 @@ export async function handleGeoviiteConversionProcess(
     // We use the largest value that works with prepared statement to reduce db call count.
     const saveBatchSize = 500;
 
+    let rapottiHasLatLongFlippedMittauses = false;
     let first = true;
 
     let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
     while (startId <= invocationEndId) {
+      const batchStartTime = Date.now();
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
@@ -182,15 +186,6 @@ export async function handleGeoviiteConversionProcess(
 
       log.trace('startId: ' + startId);
 
-      let latLongFlipped = false;
-      if (isNonsenseCoords(mittausRows)) {
-        await adminLogger.warn(
-          `Normaalien koordinaattien ulkopuolinen lat ja/tai long arvo viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
-        );
-      } else {
-        latLongFlipped = isLatLongFlipped(mittausRows);
-      }
-
       log.trace('saveBatchSize: ' + saveBatchSize);
       log.trace('mittausRows.length: ' + mittausRows.length);
 
@@ -198,7 +193,6 @@ export async function handleGeoviiteConversionProcess(
         initStatement(
           saveBatchSize,
           system,
-          latLongFlipped,
           prismaClient,
           invocationTotalBatchIndex,
         );
@@ -209,22 +203,25 @@ export async function handleGeoviiteConversionProcess(
         initStatement(
           mittausRows.length,
           system,
-          latLongFlipped,
           prismaClient,
           invocationTotalBatchIndex,
         );
       }
 
-      if (latLongFlipped) {
-        await adminLogger.warn(
-          `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
-        );
-        mittausRows.forEach((row: { lat: any; long: any }) => {
+      const flipStartTime = Date.now();
+      mittausRows.forEach(async (row: { lat: any; long: any }) => {
+        if (isNonsenseCoords(row)) {
+          await adminLogger.warn(
+            `Normaalien koordinaattien ulkopuolinen lat ja/tai long arvo (${row.lat},${row.long}) viitekehysmuuntimen prosessissa tiedostolla: ${key} `,
+          );
+        } else if (isLatLongFlipped(row)) {
           const oldLat = row.lat;
           row.lat = row.long;
           row.long = oldLat;
-        });
-      }
+          rapottiHasLatLongFlippedMittauses = true;
+        }
+      });
+      log.info('flip timer: ' + (Date.now() - flipStartTime) / 1000 + ' ' + id);
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
@@ -254,7 +251,7 @@ export async function handleGeoviiteConversionProcess(
           batch,
           timestamp,
           system,
-          latLongFlipped,
+          true,
         );
 
         try {
@@ -282,10 +279,17 @@ export async function handleGeoviiteConversionProcess(
             saveBatchIndex,
         );
       }
+      log.info(
+        'batch timer: ' + (Date.now() - batchStartTime) / 1000 + ' ' + id,
+      );
     }
 
     const readyTimestamp = new Date().toISOString();
-
+    if (rapottiHasLatLongFlippedMittauses) {
+      await adminLogger.warn(
+        `Lat ja long vaihdettu oikein päin viitekehysmuuntimen prosessissa tiedostolla: ${message.key}`,
+      );
+    }
     if (invocationTotalBatchIndex + 1 == invocationTotalBatchCount) {
       await prismaClient.raportti.updateMany({
         where: {
