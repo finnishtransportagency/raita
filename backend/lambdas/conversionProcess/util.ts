@@ -51,17 +51,6 @@ export function isFlippedFinlandCoords(lat: number, long: number): boolean {
   return isFinlandLat(long) && isFinlandLong(lat);
 }
 
-/**
- * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
- */
-export function hasArrayLatLongFlipped(mittausRows: any[]): boolean {
-  return !!mittausRows.find(
-    mittaus =>
-      mittaus.lat &&
-      mittaus.long &&
-      isFlippedFinlandCoords(mittaus.lat, mittaus.long),
-  );
-}
 
 /**
  * Check is lat long flipped. Check only first row having non null coords and assume all are flipped if any.
@@ -74,6 +63,7 @@ export function isLatLongFlipped(mittaus: any): boolean {
   );
 }
 
+// Numeric coords that are not both undefined/zero and not Finnland coords or flipped Finnland coords
 export function isNonsenseCoords(mittaus: any): boolean {
   return (
     !!(mittaus.lat && !mittaus.long) ||
@@ -85,15 +75,3 @@ export function isNonsenseCoords(mittaus: any): boolean {
   );
 }
 
-// Numeric coords that are not both undefined/zero and not finlands coords or flipped finbland coords
-export function hasArrayNonsenseCoords(mittausRows: any[]): boolean {
-  return !!mittausRows.find(
-    mittaus =>
-      (mittaus.lat && !mittaus.long) ||
-      (!mittaus.lat && mittaus.long) ||
-      (mittaus.lat &&
-        mittaus.long &&
-        !isFinlandCoords(mittaus.lat, mittaus.long) &&
-        !isFlippedFinlandCoords(mittaus.lat, mittaus.long)),
-  );
-}
