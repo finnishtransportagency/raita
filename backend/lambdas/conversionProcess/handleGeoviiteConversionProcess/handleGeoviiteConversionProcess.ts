@@ -23,7 +23,7 @@ const init = () => {
   try {
     const withRequest = lambdaRequestTracker();
 
-    const dbConnection: Promise<DBConnection> = getDBConnection();
+    const dbConnection: Promise<DBConnection> = getDBConnection(true);
     const adminLogger: IAdminLogger = new PostgresLogger(dbConnection);
 
     return {
