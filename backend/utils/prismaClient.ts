@@ -17,7 +17,7 @@ export const getPrismaClient = async () => {
   const client = new PrismaClient({
     datasources: {
       db: {
-        url: `postgresql://${user}:${password}@${host}:${port}/${database}?schema=${schema}&connection_limit=3`,
+        url: `postgresql://${user}:${password}@${host}:${port}/${database}?schema=${schema}&connection_limit=3&pgbouncer=true`,
       },
     },
     log: [
