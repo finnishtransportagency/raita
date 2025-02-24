@@ -14,7 +14,6 @@ import {
   getDBConnection,
   getMittausSubtable,
   produceGeoviiteBatchUpdateSql,
-  produceGeoviiteBatchUpdateStatementInitSql,
 } from '../../dataProcess/csvCommon/db/dbUtil';
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { IAdminLogger } from '../../../utils/adminLog/types';
@@ -42,42 +41,6 @@ const init = () => {
 };
 
 const { withRequest, dbConnection, adminLogger } = init();
-
-// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
-// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
-async function initStatement(
-  saveBatchSize: number,
-  system: string | null,
-  prismaClient: PrismaClient,
-  invocationTotalBatchIndex: string | number,
-): Promise<void> {
-  const updateSql = produceGeoviiteBatchUpdateStatementInitSql(
-    saveBatchSize,
-    system,
-    true,
-  );
-
-
-
-  try {
-    log.trace('start geoviite StatementInit update');
-    await prismaClient.$executeRaw(updateSql);
-    log.trace('done geoviite StatementInit update');
-  } catch (err) {
-    log.error(
-      { err },
-      'StatementInit error at invocationBatchIndex: ' +
-        invocationTotalBatchIndex,
-    );
-    log.error({ updateSql: updateSql });
-    throw err;
-  }
-
-  log.trace(
-    'StatementInit success at invocationBatchIndex: ' +
-      invocationTotalBatchIndex,
-  );
-}
 
 /**
  * Handle geoviite conversion process: get raportti from queue, run it through geoviite conversion api and save result in database
@@ -151,7 +114,6 @@ export async function handleGeoviiteConversionProcess(
     let startId = invocationStartId;
     // loop through array in batches: get results for batch and save to db
     while (startId <= invocationEndId) {
-      const batchStartTime = Date.now();
       // @ts-ignore
       const mittausRows = await mittausTable.findMany({
         where: {
@@ -188,26 +150,6 @@ export async function handleGeoviiteConversionProcess(
       log.trace('saveBatchSize: ' + saveBatchSize);
       log.trace('mittausRows.length: ' + mittausRows.length);
 
-      if (first) {
-        initStatement(
-          saveBatchSize,
-          system,
-          prismaClient,
-          invocationTotalBatchIndex,
-        );
-        first = false;
-      }
-
-      if (mittausRows.length < saveBatchSize) {
-        initStatement(
-          mittausRows.length,
-          system,
-          prismaClient,
-          invocationTotalBatchIndex,
-        );
-      }
-
-      const flipStartTime = Date.now();
       mittausRows.forEach(async (row: { lat: any; long: any }) => {
         if (isNonsenseCoords(row)) {
           await adminLogger.warn(
@@ -220,7 +162,6 @@ export async function handleGeoviiteConversionProcess(
           rapottiHasLatLongFlippedMittauses = true;
         }
       });
-      log.info('flip timer: ' + (Date.now() - flipStartTime) / 1000 + ' ' + id);
 
       const convertedRows: GeoviiteClientResultItem[] =
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
@@ -278,9 +219,6 @@ export async function handleGeoviiteConversionProcess(
             saveBatchIndex,
         );
       }
-      log.info(
-        'batch timer: ' + (Date.now() - batchStartTime) / 1000 + ' ' + id,
-      );
     }
 
     const readyTimestamp = new Date().toISOString();
