@@ -19,7 +19,6 @@ import {
 import { ConversionStatus } from '../../dataProcess/csvCommon/db/model/Mittaus';
 import { IAdminLogger } from '../../../utils/adminLog/types';
 import { PostgresLogger } from '../../../utils/adminLog/postgresLogger';
-import { PrismaClient } from '@prisma/client';
 
 const init = () => {
   try {

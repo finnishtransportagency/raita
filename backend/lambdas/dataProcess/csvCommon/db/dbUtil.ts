@@ -8,9 +8,9 @@ import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
 import { Mittaus } from './model/Mittaus';
 
-export async function getDBConnection(): Promise<DBConnection> {
+export async function getDBConnection(disablePreparedStatements:boolean = false): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const prisma = await getPrismaClient();
+  const prisma = await getPrismaClient(disablePreparedStatements);
 
   return { schema, prisma };
 }
