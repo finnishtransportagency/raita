@@ -75,6 +75,32 @@ export async function getSingleEventLogs(
 }
 
 /**
+ * Mass export for a specific time interval
+ * TODO: stream?
+ * TODO return type
+ */
+export async function getLogExport(
+  sources: AdminLogSource[],
+  startTimestamp: string,
+  endTimestamp: string,
+  prisma: PrismaClient,
+) {
+  const result = await prisma.logging.findMany({
+    where: {
+      log_timestamp: {
+        gte: startTimestamp,
+        lte: endTimestamp,
+      },
+      source: {
+        in: sources,
+      },
+    },
+    orderBy: [{ invocation_id: 'asc' }, { log_timestamp: 'asc' }],
+  });
+  return result;
+}
+
+/**
  * Get summary for each log "event"
  * An event is defined by invocation_id (filename) and date part of timestamp
  */

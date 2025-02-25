@@ -10,11 +10,32 @@ import {
   tsight_mittaus,
 } from '@prisma/client';
 import { MutationGenerate_Mittaus_CsvArgs } from '../../../apollo/__generated__/resolvers-types';
+import { AdminLogSource } from '../../../utils/adminLog/types';
+
+export enum FileGenerationProgressStatus {
+  SUCCESS = 'SUCCESS',
+  PENDING = 'PENDING',
+  FAILED = 'FAILED',
+}
+
+export interface FileGenerationProgress {
+  status: FileGenerationProgressStatus;
+  progressPercentage: number;
+  url?: string | undefined;
+}
 
 export type CsvGenerationEvent = {
   searchParameters: MutationGenerate_Mittaus_CsvArgs;
   progressKey: string;
   csvKey: string;
+};
+
+export type AdminLogExportEvent = {
+  startTime: string;
+  endTime: string;
+  sources: AdminLogSource[];
+  progressKey: string;
+  resultFileKey: string;
 };
 
 export type CsvRow = { header: string; value: string }[];

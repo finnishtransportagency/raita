@@ -1,28 +1,86 @@
-import * as CSV from 'csv-string';
 import { CsvRow, MittausCombinationLogic, MittausDbResult } from './types';
 import { Decimal } from '@prisma/client/runtime/library';
 import { compareAsc, format } from 'date-fns';
-import { log } from '../../../utils/logger';
 import { Writable } from 'stream';
 import { roundToRataosoitePrecision } from '../../../utils/locationCalculations';
+import { objectToCsvBody, objectToCsvHeader } from './utils';
 
-const separator = ';';
-
-export const objectToCsvHeader = (row: CsvRow) => {
-  const csvHeader = row.map(column => column.header);
-  return CSV.stringify(csvHeader, separator);
+/**
+ * Get rataosoite from mittaus row, in the same format as in the original csv
+ */
+export const getRataosoite = (mittaus: MittausDbResult) => {
+  const rata_kilometri = mittaus.rata_kilometri;
+  const rata_metrit = mittaus.rata_metrit;
+  return `${rata_kilometri ?? ''}+${
+    rata_metrit
+      ? Intl.NumberFormat('en', {
+          minimumIntegerDigits: 4,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        }).format(rata_metrit.toNumber())
+      : ''
+  }`;
+};
+export const getGeoviiteRataosoite = (mittaus: MittausDbResult) => {
+  if (
+    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
+    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
+    mittaus.geoviite_konvertoitu_rata_metrit === null ||
+    mittaus.geoviite_konvertoitu_rata_metrit === undefined
+  ) {
+    return null;
+  }
+  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
+  const rata_metrit = mittaus.geoviite_konvertoitu_rata_metrit;
+  return `${rata_kilometri ?? ''}+${
+    rata_metrit
+      ? Intl.NumberFormat('en', {
+          minimumIntegerDigits: 4,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        }).format(rata_metrit.toNumber())
+      : ''
+  }`;
+};
+export const getGeoviiteRataosoiteRounded = (mittaus: MittausDbResult) => {
+  if (
+    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
+    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
+    mittaus.geoviite_konvertoitu_rata_metrit === null ||
+    mittaus.geoviite_konvertoitu_rata_metrit === undefined
+  ) {
+    return null;
+  }
+  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
+  const rounded_metrit = mittaus.geoviite_konvertoitu_rata_metrit
+    ? roundToRataosoitePrecision(mittaus.geoviite_konvertoitu_rata_metrit)
+    : '';
+  return `${rata_kilometri ?? ''}+${
+    rounded_metrit
+      ? Intl.NumberFormat('en', {
+          minimumIntegerDigits: 4,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          useGrouping: false,
+        }).format(rounded_metrit.toNumber())
+      : ''
+  }`;
 };
 
-export const objectToCsvBody = (rows: CsvRow[]) => {
-  const bodyRows = rows.map(row => row.map(column => column.value));
-  if (!bodyRows || bodyRows.length === 0) {
-    log.error(bodyRows);
+export const convertPrismaValueToCsvValue = (
+  columnName: string,
+  value: any,
+): string => {
+  if (value === null || value === undefined) {
+    return '';
   }
-  const res = CSV.stringify(bodyRows, separator);
-  if (!res) {
-    log.error({ res }, 'empty csv body');
+  // TODO other types?
+  if (Decimal.isDecimal(value)) {
+    return value.toString();
   }
-  return res;
+  return `${value}`;
 };
 
 /**
@@ -118,84 +176,6 @@ export const mapMittausRowsToCsvRow = (
     csvRow.push(...vals);
   });
   return csvRow;
-};
-
-const convertPrismaValueToCsvValue = (
-  columnName: string,
-  value: any,
-): string => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  // TODO other types?
-  if (Decimal.isDecimal(value)) {
-    return value.toString();
-  }
-  return `${value}`;
-};
-
-/**
- * Get rataosoite from mittaus row, in the same format as in the original csv
- */
-export const getRataosoite = (mittaus: MittausDbResult) => {
-  const rata_kilometri = mittaus.rata_kilometri;
-  const rata_metrit = mittaus.rata_metrit;
-  return `${rata_kilometri ?? ''}+${
-    rata_metrit
-      ? Intl.NumberFormat('en', {
-          minimumIntegerDigits: 4,
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-          useGrouping: false,
-        }).format(rata_metrit.toNumber())
-      : ''
-  }`;
-};
-export const getGeoviiteRataosoite = (mittaus: MittausDbResult) => {
-  if (
-    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
-    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
-    mittaus.geoviite_konvertoitu_rata_metrit === null ||
-    mittaus.geoviite_konvertoitu_rata_metrit === undefined
-  ) {
-    return null;
-  }
-  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
-  const rata_metrit = mittaus.geoviite_konvertoitu_rata_metrit;
-  return `${rata_kilometri ?? ''}+${
-    rata_metrit
-      ? Intl.NumberFormat('en', {
-          minimumIntegerDigits: 4,
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-          useGrouping: false,
-        }).format(rata_metrit.toNumber())
-      : ''
-  }`;
-};
-export const getGeoviiteRataosoiteRounded = (mittaus: MittausDbResult) => {
-  if (
-    mittaus.geoviite_konvertoitu_rata_kilometri === null ||
-    mittaus.geoviite_konvertoitu_rata_kilometri === undefined ||
-    mittaus.geoviite_konvertoitu_rata_metrit === null ||
-    mittaus.geoviite_konvertoitu_rata_metrit === undefined
-  ) {
-    return null;
-  }
-  const rata_kilometri = mittaus.geoviite_konvertoitu_rata_kilometri;
-  const rounded_metrit = mittaus.geoviite_konvertoitu_rata_metrit
-    ? roundToRataosoitePrecision(mittaus.geoviite_konvertoitu_rata_metrit)
-    : '';
-  return `${rata_kilometri ?? ''}+${
-    rounded_metrit
-      ? Intl.NumberFormat('en', {
-          minimumIntegerDigits: 4,
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-          useGrouping: false,
-        }).format(rounded_metrit.toNumber())
-      : ''
-  }`;
 };
 
 /**
