@@ -8,9 +8,11 @@ import { jarjestelma, Prisma, PrismaClient } from '@prisma/client';
 import { GeoviiteClientResultItem } from '../../../geoviite/geoviiteClient';
 import { Mittaus } from './model/Mittaus';
 
-export async function getDBConnection(): Promise<DBConnection> {
+export async function getDBConnection(
+  disablePreparedStatements: boolean = false,
+): Promise<DBConnection> {
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
-  const prisma = await getPrismaClient();
+  const prisma = await getPrismaClient(disablePreparedStatements);
 
   return { schema, prisma };
 }
@@ -936,36 +938,6 @@ export function produceGeoviiteBatchUpdateSql(
   queryArray.push('');
 
   return Prisma.sql(queryArray, ...valsArray);
-}
-
-// First call to produceGeoviiteBatchUpdateSql should be done with decimal vals in decimal fields, cause postgres deduces datatypes from the first
-// call to the prepared statement. Otherwise if the first val to decimal fields is int, later decimal vals cause error:  incorrect binary data format in bind parameter
-export function produceGeoviiteBatchUpdateStatementInitSql(
-  saveBatchSize: number,
-  system: string | null,
-  updateAlsoNonConvertedLatLong: boolean,
-) {
-  const batch: GeoviiteClientResultItem[] = [];
-  for (let index = 0; index < saveBatchSize; index++) {
-    const item: GeoviiteClientResultItem = {
-      id: -1,
-      ratametri: 123,
-      ratametri_desimaalit: 231,
-      valimatka: 124.124,
-      x: 999.999,
-      y: 999.999,
-      inputLat: 999.999,
-      inputLong: 999.999,
-    };
-    batch.push(item);
-  }
-  const sql = produceGeoviiteBatchUpdateSql(
-    batch,
-    new Date(2024, 12, 24),
-    system,
-    updateAlsoNonConvertedLatLong,
-  );
-  return sql;
 }
 
 export async function getMittausSubtable(system: string | null, prisma: any) {

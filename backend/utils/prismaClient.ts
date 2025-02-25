@@ -6,7 +6,7 @@ import { logDatabaseOperation } from './logger';
 // disable query logging. TODO: some kind of flag to enable it, if needed
 const enableQueryLogging = false;
 
-export const getPrismaClient = async () => {
+export const getPrismaClient = async (disablePreparedStatements:boolean = false) => {
   const user = getEnvOrFail('PGUSER');
   const host = getEnvOrFail('PGHOST');
   const schema = getEnvOrFail('RAITA_PGSCHEMA');
@@ -14,10 +14,15 @@ export const getPrismaClient = async () => {
   const database = getEnvOrFail('PGDATABASE');
   const password = await getSecretsManagerSecret('database_password');
 
+  let  pgBouncerParam = '';
+  if(disablePreparedStatements){
+    pgBouncerParam='&pgbouncer=true';
+  }
+
   const client = new PrismaClient({
     datasources: {
       db: {
-        url: `postgresql://${user}:${password}@${host}:${port}/${database}?schema=${schema}&connection_limit=3`,
+        url: `postgresql://${user}:${password}@${host}:${port}/${database}?schema=${schema}&connection_limit=3${pgBouncerParam}`,
       },
     },
     log: [
