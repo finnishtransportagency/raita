@@ -77,8 +77,9 @@ export class EmailProcessStack extends NestedStack {
       {
         schedule: events.Schedule.cron({
           minute: '0',
-          hour: '8',
-          weekDay: '1',
+          // time zone is seemingly not supported by the CDK yet, this is in UTC meaning it will change with winter/summer time
+          hour: '6',
+          weekDay: '2', // week starts at sunday, 2 = monday
         }),
       },
     );
