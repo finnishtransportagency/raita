@@ -120,6 +120,9 @@ async function generateCsv(
           key: {
             in: raportti_keys,
           },
+          deleted: {
+            equals: false,
+          },
         }
       : getRaporttiWhereInput(raportti ?? {});
 

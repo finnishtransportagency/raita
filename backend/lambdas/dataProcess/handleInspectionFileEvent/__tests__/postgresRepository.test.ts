@@ -71,6 +71,8 @@ describe('PostgreRepository.upsertDocument', () => {
       hash: null,
       geoviite_status: null,
       geoviite_update_at: null,
+      deleted: false,
+      deleted_at: null,
       ...overrides,
     };
   }

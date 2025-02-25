@@ -33,7 +33,11 @@ export async function handleFileCountInspection(
     const { prisma } = await dbConnection;
     const s3 = new S3Client({ region: config.region });
 
-    const dbFileCount = await prisma.raportti.count();
+    const dbFileCount = await prisma.raportti.count({
+      where: {
+        deleted: false,
+      },
+    });
     let s3BucketFileCount = 0;
     let continuationToken: string | undefined = undefined;
 

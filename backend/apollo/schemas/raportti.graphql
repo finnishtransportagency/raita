@@ -36,6 +36,8 @@ type Raportti {
   parsed_at_datetime: String # TODO date?
   inspection_datetime: String # TODO date?
   metadata_changed_at_datetime: String # TODO date
+  deleted: Boolean
+  deleted_at: String # timestamp
 }
 
 type SearchRaporttiResponse {
@@ -104,6 +106,8 @@ input RaporttiInput {
   zip_name: String
   # zip_reception__year: String TODO: are these useful?
   # zip_reception__date: String
+  deleted: Boolean
+  deleted_at: DateTimeIntervalInput
 }
 
 # TODO: stronger validation for inputs: datetime strings, enums

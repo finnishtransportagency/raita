@@ -34,6 +34,7 @@ export const mittausResolvers: Resolvers = {
               key: {
                 in: raportti_keys,
               },
+              deleted: false,
             }
           : getRaporttiWhereInput(raportti ?? {});
       // TODO: search with mittaus specific fields

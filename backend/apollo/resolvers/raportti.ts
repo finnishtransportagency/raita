@@ -58,6 +58,7 @@ export const raporttiResolvers: Resolvers = {
             key: {
               startsWith: key,
             },
+            deleted: false,
           },
           _count: {
             id: true,
@@ -71,6 +72,7 @@ export const raporttiResolvers: Resolvers = {
             key: {
               startsWith: key,
             },
+            deleted: false,
           },
           skip: (page - 1) * page_size,
           take: page_size,
@@ -91,6 +93,9 @@ export const raporttiResolvers: Resolvers = {
       // TODO: aggregate all in one query or move them to separate resolvers so that only fields that are queried are fetched from database
       const reportTypes = (
         await client.raportti.groupBy({
+          where: {
+            deleted: false,
+          },
           by: 'report_type',
           _count: true,
         })
@@ -98,30 +103,45 @@ export const raporttiResolvers: Resolvers = {
 
       const fileTypes = (
         await client.raportti.groupBy({
+          where: {
+            deleted: false,
+          },
           by: 'file_type',
           _count: true,
         })
       ).filter(row => row.file_type !== null);
       const systems = (
         await client.raportti.groupBy({
+          where: {
+            deleted: false,
+          },
           by: 'system',
           _count: true,
         })
       ).filter(row => row.system !== null);
       const trackParts = (
         await client.raportti.groupBy({
+          where: {
+            deleted: false,
+          },
           by: 'track_part',
           _count: true,
         })
       ).filter(row => row.track_part !== null);
       const tilirataosanumerot = (
         await client.raportti.groupBy({
+          where: {
+            deleted: false,
+          },
           by: 'tilirataosanumero',
           _count: true,
         })
       ).filter(row => row.tilirataosanumero !== null);
 
       const latestInspection = await client.raportti.aggregate({
+        where: {
+          deleted: false,
+        },
         _max: {
           inspection_date: true,
           inspection_datetime: true,

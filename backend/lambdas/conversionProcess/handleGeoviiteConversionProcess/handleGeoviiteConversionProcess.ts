@@ -250,6 +250,7 @@ export async function handleGeoviiteConversionProcess(
     if (message?.key) {
       await prismaClient.raportti.updateMany({
         where: {
+          id: message.id,
           key: message.key,
         },
         data: {
