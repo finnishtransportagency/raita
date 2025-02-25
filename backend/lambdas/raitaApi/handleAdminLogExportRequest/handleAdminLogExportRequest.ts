@@ -6,13 +6,25 @@ import {
   getRaitaSuccessResponse,
   RaitaLambdaError,
 } from '../../utils';
-import { getLogSummary } from '../../../utils/adminLog/pgLogReader';
 import { format } from 'date-fns';
 import { parseISO } from 'date-fns';
 import { AdminLogSource } from '../../../utils/adminLog/types';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import { AdminLogExportEvent } from '../fileGeneration/types';
+import { getGetEnvWithPreassignedContext } from '../../../../utils';
 
 const withRequest = lambdaRequestTracker();
+
+function getLambdaConfigOrFail() {
+  const getEnv = getGetEnvWithPreassignedContext(
+    'handleAdminLogExportGeneration',
+  );
+  return {
+    generateExportFunction: getEnv('GENERATE_EXPORT_FUNCTION'),
+    region: getEnv('REGION'),
+  };
+}
 
 /**
  * Handle request to view admin log summary
@@ -27,6 +39,7 @@ export async function handleAdminLogExportRequest(
     const user = await getUser(event);
     log.info({ user, queryStringParameters });
     await validateAdminUser(user);
+    const { generateExportFunction, region } = getLambdaConfigOrFail();
 
     if (
       !queryStringParameters?.startDate ||
@@ -70,10 +83,38 @@ export async function handleAdminLogExportRequest(
       throw new RaitaLambdaError('Invalid sources', 400);
     }
 
-    // get what
-    // stream csv from db? or generate using polling?
-    const exportResult = {};
-    return getRaitaSuccessResponse(exportResult);
+    const now = new Date();
+    const fileBaseName = `RAITA-admin-log-export-${format(
+      now,
+      'dd.MM.yyyy-HH-mm',
+    )}`;
+    const progressKey = `csv/progress/${fileBaseName}.json`;
+    // TODO: admin log export in separate bucket?
+    const resultFileKey = `admin/log/export/${fileBaseName}.csv`;
+    const exportEvent: AdminLogExportEvent = {
+      startTime: startTimestamp,
+      endTime: endTimestamp,
+      sources: parsedSources,
+      progressKey,
+      resultFileKey,
+    };
+    const payloadJson = JSON.stringify(exportEvent);
+    const payload = new TextEncoder().encode(payloadJson);
+
+    const lambdaClient = new LambdaClient({ region });
+
+    // TODO: should there be a check here to see if data exists?
+
+    const command = new InvokeCommand({
+      FunctionName: generateExportFunction,
+      Payload: payload,
+      InvocationType: 'Event',
+    });
+    await lambdaClient.send(command);
+
+    return getRaitaSuccessResponse({
+      polling_key: progressKey,
+    });
   } catch (err: any) {
     log.error(err);
     return getRaitaLambdaErrorResponse(err);

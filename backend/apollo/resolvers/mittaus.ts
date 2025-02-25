@@ -5,7 +5,7 @@ import { RaitaLambdaError } from '../../lambdas/utils';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { getRaporttiWhereInput } from '../utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
-import { CsvGenerationEvent } from '../../lambdas/raitaApi/csvGeneration/types';
+import { CsvGenerationEvent } from '../../lambdas/raitaApi/fileGeneration/types';
 import { format } from 'date-fns';
 
 /**

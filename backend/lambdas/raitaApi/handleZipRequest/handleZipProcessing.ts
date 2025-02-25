@@ -6,11 +6,8 @@ import {
   getRaitaLambdaErrorResponse,
   getRaitaSuccessResponse,
 } from '../../utils';
-import { initialProgressData, successProgressData } from './constants';
 import {
   validateInputs,
-  uploadProgressData,
-  updateProgressFailed,
   ZipRequestBody,
   getJsonObjectFromS3,
   createLazyDownloadStreamFrom,
@@ -19,6 +16,12 @@ import {
 import { lambdaRequestTracker } from 'pino-lambda';
 import { Context } from 'aws-lambda';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { uploadProgressData } from '../fileGeneration/utils';
+import {
+  FailedProgressData,
+  InitialProgressData,
+  SuccessProgressData,
+} from '../fileGeneration/constants';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipProcessing');
@@ -83,7 +86,7 @@ export async function handleZipProcessing(
         : event.keys;
     const { pollingFileKey } = event;
     await uploadProgressData(
-      initialProgressData,
+      InitialProgressData,
       dataCollectionBucket,
       pollingFileKey,
       s3Client,
@@ -120,7 +123,7 @@ export async function handleZipProcessing(
     });
 
     await uploadProgressData(
-      { ...successProgressData, url },
+      { ...SuccessProgressData, url },
       dataCollectionBucket,
       pollingFileKey,
       s3Client,
@@ -130,7 +133,8 @@ export async function handleZipProcessing(
   } catch (err: any) {
     log.error(err);
     archive.abort();
-    await updateProgressFailed(
+    await uploadProgressData(
+      FailedProgressData,
       getLambdaConfigOrFail().dataCollectionBucket,
       event.pollingFileKey,
       s3Client,

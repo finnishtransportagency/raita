@@ -68,6 +68,7 @@ export class RaitaApiStack extends NestedStack {
   public readonly handleCsvGenerationFn: NodejsFunction;
   public readonly handleAdminLogSummaryRequestFn: NodejsFunction;
   public readonly handleAdminLogExportRequestFn: NodejsFunction;
+  public readonly handleAdminLogExportGenerationFn: NodejsFunction;
   public readonly alb:
     | cdk.aws_elasticloadbalancingv2.ApplicationLoadBalancer
     | elbv2.IApplicationLoadBalancer;
@@ -338,17 +339,33 @@ export class RaitaApiStack extends NestedStack {
       databaseEnvironmentVariables,
       prismaLambdaLayer,
     });
-    this.handleAdminLogExportRequestFn = this.createAdminLogExportHandler({
-      name: 'api-handler-admin-log-export',
-      raitaStackIdentifier,
-      raitaEnv,
-      stackId,
-      jwtTokenIssuer,
-      lambdaRole: this.raitaApiLambdaServiceRole,
-      vpc,
-      databaseEnvironmentVariables,
-      prismaLambdaLayer,
-    });
+    this.handleAdminLogExportGenerationFn =
+      this.createAdminLogExportGenerationHandler({
+        name: 'handler-admin-log-export-generation',
+        raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        jwtTokenIssuer,
+        lambdaRole: this.raitaApiLambdaServiceRole,
+        vpc,
+        databaseEnvironmentVariables,
+        prismaLambdaLayer,
+        targetBucket: dataCollectionBucket, // TODO
+      });
+    this.handleAdminLogExportRequestFn =
+      this.createAdminLogExportRequestHandler({
+        name: 'api-handler-admin-log-export',
+        raitaStackIdentifier,
+        raitaEnv,
+        stackId,
+        jwtTokenIssuer,
+        lambdaRole: this.raitaApiLambdaServiceRole,
+        vpc,
+        databaseEnvironmentVariables,
+        prismaLambdaLayer,
+        adminLogGenerateExportFunction:
+          this.handleAdminLogExportGenerationFn.functionName,
+      });
     this.handleAdminLogSummaryRequestFn =
       this.createAdminLogsRequestSummaryHandler({
         name: 'api-handler-admin-log-summary',
@@ -956,7 +973,7 @@ export class RaitaApiStack extends NestedStack {
   /**
    * Creates and returns handler for admin log export request
    */
-  private createAdminLogExportHandler({
+  private createAdminLogExportRequestHandler({
     name,
     raitaStackIdentifier,
     raitaEnv,
@@ -966,6 +983,7 @@ export class RaitaApiStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    adminLogGenerateExportFunction,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -976,6 +994,7 @@ export class RaitaApiStack extends NestedStack {
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    adminLogGenerateExportFunction: string;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -991,6 +1010,62 @@ export class RaitaApiStack extends NestedStack {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
+        GENERATE_EXPORT_FUNCTION: adminLogGenerateExportFunction,
+        // ...databaseEnvironmentVariables, TODO db not needed?
+      },
+      // bundling: prismaBundlingOptions,
+      // layers: [prismaLambdaLayer],
+      role: lambdaRole,
+      vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets,
+      },
+      logRetention: RetentionDays.SIX_MONTHS,
+    });
+  }
+
+  /**
+   * Creates and returns handler for generating admin log export
+   */
+  private createAdminLogExportGenerationHandler({
+    name,
+    raitaStackIdentifier,
+    raitaEnv,
+    stackId,
+    jwtTokenIssuer,
+    lambdaRole,
+    vpc,
+    databaseEnvironmentVariables,
+    prismaLambdaLayer,
+    targetBucket,
+  }: {
+    name: string;
+    raitaStackIdentifier: string;
+    raitaEnv: string;
+    stackId: string;
+    jwtTokenIssuer: string;
+    lambdaRole: Role;
+    vpc: ec2.IVpc;
+    databaseEnvironmentVariables: DatabaseEnvironmentVariables;
+    prismaLambdaLayer: lambda.LayerVersion;
+    targetBucket: Bucket;
+  }) {
+    return new NodejsFunction(this, name, {
+      functionName: `lambda-${raitaStackIdentifier}-${name}`,
+      memorySize: 512,
+      timeout: cdk.Duration.minutes(15),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'handleAdminLogExportGeneration',
+      entry: path.join(
+        __dirname,
+        `../backend/lambdas/raitaApi/fileGeneration/handleAdminLogExportGeneration.ts`,
+      ),
+      environment: {
+        JWT_TOKEN_ISSUER: jwtTokenIssuer,
+        STACK_ID: stackId,
+        ENVIRONMENT: raitaEnv,
+        REGION: this.region,
+        TARGET_BUCKET: targetBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -1081,15 +1156,14 @@ export class RaitaApiStack extends NestedStack {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 4096,
-      timeout: cdk.Duration.seconds(60 * 15), // max timeout, TODO test how long can this take
+      timeout: cdk.Duration.minutes(15), // max timeout, TODO test how long can this take
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleCsvGeneration',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/csvGeneration/handleCsvGeneration.ts`,
+        `../backend/lambdas/raitaApi/fileGeneration/handleCsvGeneration.ts`,
       ),
       environment: {
-        JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
         TARGET_BUCKET: targetBucket.bucketName,
