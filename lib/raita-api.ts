@@ -1001,10 +1001,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(60),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'createAdminLogsRequestSummaryHandler',
+      handler: 'handleAdminLogSummaryRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/createAdminLogsRequestSummaryHandler/createAdminLogsRequestSummaryHandler.ts`,
+        `../backend/lambdas/raitaApi/handleAdminLogSummaryRequest/handleAdminLogSummaryRequest.ts`,
       ),
       environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
