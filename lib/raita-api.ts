@@ -478,7 +478,7 @@ export class RaitaApiStack extends NestedStack {
         lambda: this.handleAdminLogExportRequestFn,
         priority: 345,
         path: [`${apiBaseUrl}/admin/logs/export`],
-        targetName: 'admin-log',
+        targetName: 'admin-log-export',
       },
       {
         lambda: this.handleAdminLogRequestFn,
@@ -1001,10 +1001,10 @@ export class RaitaApiStack extends NestedStack {
       memorySize: 512,
       timeout: cdk.Duration.seconds(60),
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handleAdminLogSummaryRequest',
+      handler: 'handleAdminLogExportRequest',
       entry: path.join(
         __dirname,
-        `../backend/lambdas/raitaApi/handleAdminLogSummaryRequest/handleAdminLogSummaryRequest.ts`,
+        `../backend/lambdas/raitaApi/handleAdminLogExportRequest/handleAdminLogExportRequest.ts`,
       ),
       environment: {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
