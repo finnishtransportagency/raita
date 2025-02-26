@@ -1,12 +1,11 @@
 import { jarjestelma, Prisma } from '@prisma/client';
 import { MittausDbResult } from '../types';
+import { objectToCsvBody, objectToCsvHeader } from '../utils';
+import { PassThrough } from 'stream';
 import {
   mapMittausRowsToCsvRow,
-  objectToCsvBody,
-  objectToCsvHeader,
   writeDbChunkToStream,
-} from '../utils';
-import { PassThrough } from 'stream';
+} from '../mittausCsvUtils';
 
 const testData = [
   [
