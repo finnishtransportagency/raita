@@ -472,20 +472,20 @@ export class RaitaApiStack extends NestedStack {
         lambda: this.handleAdminLogSummaryRequestFn,
         priority: 340,
         path: [`${apiBaseUrl}/admin/logs/summary`],
-        targetName: 'admin-log-summary',
+        targetName: 'admin-logs-summary',
       },
-      // {
-      //   lambda: this.handleAdminLogExportRequestFn,
-      //   priority: 345,
-      //   path: [`${apiBaseUrl}/admin/logs/export`],
-      //   targetName: 'admin-log-export',
-      // },
-      // {
-      //   lambda: this.handleAdminLogRequestFn,
-      //   priority: 350,
-      //   path: [`${apiBaseUrl}/admin/logs`],
-      //   targetName: 'admin-log',
-      // },
+      {
+        lambda: this.handleAdminLogExportRequestFn,
+        priority: 345,
+        path: [`${apiBaseUrl}/admin/logs/export`],
+        targetName: 'admin-logs-export',
+      },
+      {
+        lambda: this.handleAdminLogRequestFn,
+        priority: 350,
+        path: [`${apiBaseUrl}/admin/logs`],
+        targetName: 'admin-logs',
+      },
       {
         lambda: this.handleV2GraphqlRequest,
         priority: 360,
