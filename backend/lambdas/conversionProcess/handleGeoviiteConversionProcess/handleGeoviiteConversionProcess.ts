@@ -58,6 +58,7 @@ export async function handleGeoviiteConversionProcess(
     const sqsRecords = event.Records;
     const sqsRecord = sqsRecords[0]; // assume only one event at a time
 
+    log.info('message id ' + sqsRecord.messageId);
     message = JSON.parse(sqsRecord.body);
     if (!message) {
       throw new Error('Error parsing JSON');
@@ -266,5 +267,7 @@ export async function handleGeoviiteConversionProcess(
         `Virhe viitekehysmuuntimen prosessissa tiedostolla: tuntematon tiedosto`,
       );
     }
+    throw err;
   }
+
 }
