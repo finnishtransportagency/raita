@@ -169,6 +169,7 @@ export class ApplicationStack extends NestedStack {
         raitaApiStack.raitaApiDeleteRequestLambdaServiceRole,
         raitaApiStack.raitaApiZipRequestLambdaServiceRole,
         raitaApiStack.raitaApiGraphqlLambdaServiceRole,
+        raitaApiStack.raitaApiAdminLogExportRequestLambdaServiceRole,
       ],
       resources: [
         `arn:aws:ssm:${this.region}:${this.account}:parameter/${SSM_API_KEY}`,
