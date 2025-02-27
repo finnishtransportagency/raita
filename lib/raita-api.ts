@@ -60,6 +60,8 @@ export class RaitaApiStack extends NestedStack {
   public readonly raitaApiZipRequestLambdaServiceRole: Role;
   public readonly raitaApiDeleteRequestLambdaServiceRole: Role;
   public readonly raitaApiManualDataProcessLambdaServiceRole: Role;
+  public readonly raitaApiAdminLogExportRequestLambdaServiceRole: Role;
+  public readonly raitaApiAdminLogExportGenerationLambdaServiceRole: Role;
   public readonly handleZipProcessFn: NodejsFunction;
   public readonly handleDeleteRequestFn: NodejsFunction;
   public readonly handleManualDataProcessFn: NodejsFunction;
@@ -232,6 +234,26 @@ export class RaitaApiStack extends NestedStack {
       }),
     );
 
+    this.raitaApiAdminLogExportRequestLambdaServiceRole =
+      createRaitaServiceRole({
+        scope: this,
+        name: 'RaitaApiAdminLogExportRequestLambdaServiceRole',
+        servicePrincipal: 'lambda.amazonaws.com',
+        policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+        raitaStackIdentifier,
+      });
+    this.raitaApiAdminLogExportGenerationLambdaServiceRole =
+      createRaitaServiceRole({
+        scope: this,
+        name: 'RaitaApiAdminLogExportGenerationLambdaServiceRole',
+        servicePrincipal: 'lambda.amazonaws.com',
+        policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
+        raitaStackIdentifier,
+      });
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiAdminLogExportGenerationLambdaServiceRole,
+    );
+
     // Create handler lambdas
     const handleFileRequestFn = this.createFileRequestHandler({
       name: 'api-handler-file',
@@ -346,7 +368,7 @@ export class RaitaApiStack extends NestedStack {
         raitaEnv,
         stackId,
         jwtTokenIssuer,
-        lambdaRole: this.raitaApiLambdaServiceRole,
+        lambdaRole: this.raitaApiAdminLogExportGenerationLambdaServiceRole,
         vpc,
         databaseEnvironmentVariables,
         prismaLambdaLayer,
@@ -359,7 +381,7 @@ export class RaitaApiStack extends NestedStack {
         raitaEnv,
         stackId,
         jwtTokenIssuer,
-        lambdaRole: this.raitaApiLambdaServiceRole,
+        lambdaRole: this.raitaApiAdminLogExportRequestLambdaServiceRole,
         vpc,
         databaseEnvironmentVariables,
         prismaLambdaLayer,

@@ -18,9 +18,7 @@ import { getGetEnvWithPreassignedContext } from '../../../../utils';
 const withRequest = lambdaRequestTracker();
 
 function getLambdaConfigOrFail() {
-  const getEnv = getGetEnvWithPreassignedContext(
-    'handleAdminLogExportGeneration',
-  );
+  const getEnv = getGetEnvWithPreassignedContext('handleAdminLogExportRequest');
   return {
     generateExportFunction: getEnv('GENERATE_EXPORT_FUNCTION'),
     region: getEnv('REGION'),

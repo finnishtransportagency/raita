@@ -185,6 +185,15 @@ export class ApplicationStack extends NestedStack {
       resources: [raitaApiStack.handleZipProcessFn.functionArn],
       actions: ['lambda:invokeFunction'],
     });
+    this.createManagedPolicy({
+      name: 'ApiAdminLogExportGenerationInvokePolicy',
+      raitaStackIdentifier,
+      serviceRoles: [
+        raitaApiStack.raitaApiAdminLogExportRequestLambdaServiceRole,
+      ],
+      resources: [raitaApiStack.handleAdminLogExportGenerationFn.functionArn],
+      actions: ['lambda:invokeFunction'],
+    });
 
     this.createManagedPolicy({
       name: 'GraphqlCsvGenerationInvokePolicy',
