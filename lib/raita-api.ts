@@ -1010,7 +1010,7 @@ export class RaitaApiStack extends NestedStack {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
-        region: this.region,
+        REGION: this.region,
         GENERATE_EXPORT_FUNCTION: adminLogGenerateExportFunction,
         // ...databaseEnvironmentVariables, TODO db not needed?
       },
