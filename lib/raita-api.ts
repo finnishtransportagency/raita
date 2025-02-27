@@ -237,7 +237,7 @@ export class RaitaApiStack extends NestedStack {
     this.raitaApiAdminLogExportRequestLambdaServiceRole =
       createRaitaServiceRole({
         scope: this,
-        name: 'RaitaApiAdminLogExportRequestLambdaServiceRole',
+        name: 'RaitaApiAdminLogExportReqLambdaServiceRole',
         servicePrincipal: 'lambda.amazonaws.com',
         policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
         raitaStackIdentifier,
@@ -245,7 +245,7 @@ export class RaitaApiStack extends NestedStack {
     this.raitaApiAdminLogExportGenerationLambdaServiceRole =
       createRaitaServiceRole({
         scope: this,
-        name: 'RaitaApiAdminLogExportGenerationLambdaServiceRole',
+        name: 'RaitaApiAdminLogExportGenLambdaServiceRole',
         servicePrincipal: 'lambda.amazonaws.com',
         policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
         raitaStackIdentifier,
