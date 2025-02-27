@@ -1,4 +1,5 @@
 import { ALBEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { randomUUID } from 'crypto';
 import { log } from '../../../utils/logger';
 import { getUser, validateAdminUser } from '../../../utils/userService';
 import {
@@ -34,37 +35,37 @@ export async function handleAdminLogExportRequest(
   _context: Context,
 ): Promise<APIGatewayProxyResult> {
   withRequest(event, _context);
-  const { queryStringParameters } = event;
+  const { body } = event;
   try {
     const user = await getUser(event);
-    log.info({ user, queryStringParameters });
+    log.info({ user });
     await validateAdminUser(user);
     const { generateExportFunction, region } = getLambdaConfigOrFail();
 
-    if (
-      !queryStringParameters?.startDate ||
-      !queryStringParameters?.endDate ||
-      !queryStringParameters?.sources ||
-      !queryStringParameters?.pageIndex
-    ) {
+    const parsedBody: {
+      startDate: string;
+      endDate: string;
+      sources: string;
+    } = JSON.parse(body ?? '{}');
+    if (!parsedBody.startDate || !parsedBody.endDate || !parsedBody.sources) {
       throw new RaitaLambdaError(
         'startDate and endDate must be specified',
         400,
       );
     }
     // validate
-    const parsedStartDate = parseISO(queryStringParameters?.startDate);
+    const parsedStartDate = parseISO(parsedBody?.startDate);
     if (isNaN(parsedStartDate.getTime())) {
       throw new RaitaLambdaError('Invalid startDate', 400);
     }
-    const parsedEndDate = parseISO(queryStringParameters?.endDate);
+    const parsedEndDate = parseISO(parsedBody?.endDate);
     if (isNaN(parsedEndDate.getTime())) {
       throw new RaitaLambdaError('Invalid endDate', 400);
     }
     const startTimestamp = `${format(parsedStartDate, 'yyyy-MM-dd')}T00:00:00Z`;
     const endTimestamp = `${format(parsedEndDate, 'yyyy-MM-dd')}T23:59:59Z`;
 
-    const sources = queryStringParameters.sources;
+    const sources = parsedBody.sources;
     const splitSources = sources.split(',');
     let parsedSources: AdminLogSource[];
     if (
@@ -88,9 +89,10 @@ export async function handleAdminLogExportRequest(
       now,
       'dd.MM.yyyy-HH-mm',
     )}`;
-    const progressKey = `csv/progress/${fileBaseName}.json`;
+    const uuid = randomUUID();
+    const progressKey = `csv/progress/${uuid}.json`;
     // TODO: admin log export in separate bucket?
-    const resultFileKey = `admin/log/export/${fileBaseName}.csv`;
+    const resultFileKey = `admin/log/export/${uuid}/${fileBaseName}.csv`;
     const exportEvent: AdminLogExportEvent = {
       startTime: startTimestamp,
       endTime: endTimestamp,

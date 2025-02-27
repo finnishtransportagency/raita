@@ -7,6 +7,7 @@ import { getRaporttiWhereInput } from '../utils';
 import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
 import { CsvGenerationEvent } from '../../lambdas/raitaApi/fileGeneration/types';
 import { format } from 'date-fns';
+import { randomUUID } from 'crypto';
 
 /**
  * Return estimate of result file size in bytes
@@ -93,8 +94,9 @@ export const mittausResolvers: Resolvers = {
       const now = new Date();
       // TODO: file name
       const fileBaseName = `RAITA-export-${format(now, 'dd.MM.yyyy-HH-mm')}`;
-      const progressKey = `csv/progress/${fileBaseName}.json`;
-      const csvKey = `csv/data/${fileBaseName}.csv`;
+      const uuid = randomUUID();
+      const progressKey = `csv/progress/${uuid}.json`;
+      const csvKey = `csv/data/${uuid}/${fileBaseName}.csv`;
       const event: CsvGenerationEvent = {
         searchParameters: params,
         progressKey,

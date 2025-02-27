@@ -78,6 +78,7 @@ export async function handleZipRequest(
     await lambdaClient.send(command);
     return getRaitaSuccessResponse({
       message: 'Zip processing initiated succesfully',
+      // polling_key
     });
   } catch (error: any) {
     log.error(error);
