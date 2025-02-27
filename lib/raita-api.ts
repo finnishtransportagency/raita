@@ -253,6 +253,13 @@ export class RaitaApiStack extends NestedStack {
     dataCollectionBucket.grantReadWrite(
       this.raitaApiAdminLogExportGenerationLambdaServiceRole,
     );
+    this.raitaApiAdminLogExportGenerationLambdaServiceRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: ['*'], // TODO. specify keys?
+      }),
+    );
 
     // Create handler lambdas
     const handleFileRequestFn = this.createFileRequestHandler({
