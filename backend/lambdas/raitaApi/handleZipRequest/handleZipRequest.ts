@@ -13,6 +13,7 @@ import { invocationTypeByteLimit } from './constants';
 import { S3Client } from '@aws-sdk/client-s3';
 import { ZipRequestBody, uploadDeHydratedToS3 } from './utils';
 import { lambdaRequestTracker } from 'pino-lambda';
+import { randomUUID } from 'crypto';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
@@ -55,7 +56,7 @@ export async function handleZipRequest(
   const { body } = event;
   const s3Client = new S3Client({});
   try {
-    const requestBody = body && JSON.parse(body);
+    const requestBody: { keys: string[] } = body && JSON.parse(body);
     const user = await getUser(event);
     log.info({ user, requestBody });
     await validateReadUser(user);
@@ -63,8 +64,15 @@ export async function handleZipRequest(
     // With the 'InvocationType: Event', the limited payload size is
     // 262144 bytes. If the payload size exceeds it, we dehydrate the payload
     // to s3 and pass the s3 key as payload.
+
+    const uuid = randomUUID();
+    const pollingKey = `csv/progress/${uuid}.json`;
+
     const payloadString = await getPayloadString(
-      requestBody,
+      {
+        keys: requestBody.keys,
+        pollingFileKey: pollingKey,
+      },
       targetBucket,
       s3Client,
     );
@@ -77,8 +85,7 @@ export async function handleZipRequest(
     });
     await lambdaClient.send(command);
     return getRaitaSuccessResponse({
-      message: 'Zip processing initiated succesfully',
-      // polling_key
+      polling_key: pollingKey,
     });
   } catch (error: any) {
     log.error(error);
