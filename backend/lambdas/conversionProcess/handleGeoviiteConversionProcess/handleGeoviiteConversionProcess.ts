@@ -168,6 +168,10 @@ export async function handleGeoviiteConversionProcess(
         await geoviiteClient.getConvertedTrackAddressesWithPrismaCoords(
           mittausRows,
         );
+
+      if(Math.random()>0.99){
+        throw new Error('RANDOM ERROR FOR TESTING TODO REMOVE');
+      }
       log.trace({ length: convertedRows.length }, 'converted');
       if (convertedRows.length !== mittausRows.length) {
         /*
