@@ -12,6 +12,12 @@ import { format } from 'date-fns';
 import { getPrismaClient } from '../prismaClient';
 import { getDBConnection } from '../../lambdas/dataProcess/csvCommon/db/dbUtil';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { CsvRow } from '../../lambdas/raitaApi/fileGeneration/types';
+import { Writable } from 'stream';
+import {
+  objectToCsvBody,
+  objectToCsvHeader,
+} from '../../lambdas/raitaApi/fileGeneration/utils';
 
 /**
  * Get logs for a single event, defined by date and invocationId
@@ -79,25 +85,54 @@ export async function getSingleEventLogs(
  * TODO: stream?
  * TODO return type
  */
-export async function getLogExport(
+export async function writeLogExportToWritable(
   sources: AdminLogSource[],
   startTimestamp: string,
   endTimestamp: string,
   prisma: PrismaClient,
+  outputStream: Writable,
 ) {
-  const result = await prisma.logging.findMany({
-    where: {
-      log_timestamp: {
-        gte: startTimestamp,
-        lte: endTimestamp,
-      },
-      source: {
-        in: sources,
-      },
+  const pageSize = 10000;
+  const where: Prisma.loggingWhereInput = {
+    log_timestamp: {
+      gte: startTimestamp,
+      lte: endTimestamp,
     },
-    orderBy: [{ invocation_id: 'asc' }, { log_timestamp: 'asc' }],
-  });
-  return result;
+    source: {
+      in: sources,
+    },
+  };
+  const count = await prisma.logging.count({ where });
+  for (let i = 0; i < count; i += pageSize) {
+    const result = await prisma.logging.findMany({
+      where,
+      select: {
+        log_timestamp: true,
+        log_level: true,
+        log_message: true,
+        invocation_id: true,
+        source: true,
+      },
+      orderBy: [{ invocation_id: 'asc' }, { log_timestamp: 'asc' }],
+      skip: i,
+      take: pageSize,
+    });
+    const mapped: CsvRow[] = result.map(row => [
+      { header: 'invocation_id', value: row.invocation_id ?? '' },
+      {
+        header: 'log_timestamp',
+        value: new Date(row.log_timestamp ?? '').toISOString(),
+      },
+      { header: 'log_message', value: row.log_message ?? '' },
+      { header: 'log_level', value: row.log_level ?? '' },
+      { header: 'source', value: row.source ?? '' },
+    ]);
+    if (i === 0) {
+      outputStream.write(objectToCsvHeader(mapped[0]), 'utf8');
+    }
+    outputStream.write(objectToCsvBody(mapped), 'utf8');
+  }
+  outputStream.end();
 }
 
 /**

@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { log } from '../../../utils/logger';
 import { lambdaRequestTracker } from 'pino-lambda';
@@ -13,10 +13,15 @@ import {
   InitialProgressData,
   SuccessProgressData,
 } from './constants';
-import { uploadProgressData, uploadReadableToS3 } from './utils';
+import {
+  prependBOMToStream,
+  uploadProgressData,
+  uploadReadableToS3,
+} from './utils';
 import { PassThrough, Readable } from 'stream';
 import { AdminLogSource } from '../../../utils/adminLog/types';
-import { getLogExport } from '../../../utils/adminLog/pgLogReader';
+import { writeLogExportToWritable } from '../../../utils/adminLog/pgLogReader';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const withRequest = lambdaRequestTracker();
 
@@ -87,18 +92,23 @@ async function generateAdminLogExport(
     endTime,
     sources,
     dbConnection,
-  ); // TODO read from db and transform to CSV
-
+  );
   await uploadReadableToS3(logStream, targetBucket, resultFileKey, s3Client);
 
+  const downloadCommand = new GetObjectCommand({
+    Bucket: targetBucket,
+    Key: resultFileKey,
+  });
+  const downloadUrl = await getSignedUrl(s3Client, downloadCommand, {
+    expiresIn: 3600,
+  });
+
   await uploadProgressData(
-    { ...SuccessProgressData, url: 'TODO' },
+    { ...SuccessProgressData, url: downloadUrl },
     targetBucket,
     progressKey,
     s3Client,
   );
-  // get what
-  // stream csv from db? or generate using polling?
 }
 
 const readLogsToReadable = async (
@@ -108,15 +118,8 @@ const readLogsToReadable = async (
   dbConnection: DBConnection,
 ): Promise<Readable> => {
   const { prisma } = dbConnection;
-  const logs = await getLogExport(sources, startTime, endTime, prisma);
-
-  const output = new PassThrough();
+  const output = prependBOMToStream(new PassThrough());
   output.pause();
-  logs.map(logRow => {
-    const row: CsvRow = [];
-    // TODO
-  });
-  output.resume();
+  writeLogExportToWritable(sources, startTime, endTime, prisma, output);
   return output;
-  // TODO: convert to string and push to stream
 };
