@@ -137,10 +137,13 @@ async function generateCsv(
     expiresIn: 3600,
   });
 
+  const split = csvKey.split('/');
+  const filename = split[split.length - 1];
   await uploadProgressData(
     {
       ...SuccessProgressData,
       url: downloadUrl,
+      filename,
     },
     targetBucket,
     progressKey,

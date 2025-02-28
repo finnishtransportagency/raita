@@ -121,9 +121,10 @@ export async function handleZipProcessing(
     const url = await getSignedUrl(s3Client, getObjectCommand, {
       expiresIn: 600,
     });
-
+    const split = destKey.split('/');
+    const filename = split[split.length - 1];
     await uploadProgressData(
-      { ...SuccessProgressData, url },
+      { ...SuccessProgressData, url, filename },
       dataCollectionBucket,
       pollingFileKey,
       s3Client,

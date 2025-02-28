@@ -21,7 +21,8 @@ export enum FileGenerationProgressStatus {
 export interface FileGenerationProgress {
   status: FileGenerationProgressStatus;
   progressPercentage: number;
-  url?: string | undefined;
+  url?: string;
+  filename?: string;
 }
 
 export type CsvGenerationEvent = {

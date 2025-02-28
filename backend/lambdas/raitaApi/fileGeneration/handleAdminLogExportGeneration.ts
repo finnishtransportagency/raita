@@ -93,8 +93,10 @@ async function generateAdminLogExport(
     expiresIn: 3600,
   });
 
+  const split = resultFileKey.split('/');
+  const filename = split[split.length - 1];
   await uploadProgressData(
-    { ...SuccessProgressData, url: downloadUrl },
+    { ...SuccessProgressData, url: downloadUrl, filename },
     targetBucket,
     progressKey,
     s3Client,
