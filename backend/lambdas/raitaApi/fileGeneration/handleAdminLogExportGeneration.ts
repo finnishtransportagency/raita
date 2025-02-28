@@ -75,17 +75,7 @@ async function generateAdminLogExport(
   ) {
     throw new Error('Missing parameters in event');
   }
-  // TODO: generic version of readDbToReadable? or new version for this
-
   const { startTime, endTime, sources, progressKey, resultFileKey } = event;
-
-  // TODO: should this be done in the funtion that triggers generation?
-  await uploadProgressData(
-    InitialProgressData,
-    targetBucket,
-    progressKey,
-    s3Client,
-  );
 
   const logStream: Readable = await readLogsToReadable(
     startTime,

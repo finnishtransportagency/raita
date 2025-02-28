@@ -102,6 +102,9 @@ export async function writeLogExportToWritable(
       in: sources,
     },
   };
+
+  // lista eventeistä?
+
   const count = await prisma.logging.count({ where });
   for (let i = 0; i < count; i += pageSize) {
     const result = await prisma.logging.findMany({
@@ -118,14 +121,14 @@ export async function writeLogExportToWritable(
       take: pageSize,
     });
     const mapped: CsvRow[] = result.map(row => [
-      { header: 'invocation_id', value: row.invocation_id ?? '' },
+      { header: 'ZIP', value: row.invocation_id ?? '' },
       {
-        header: 'log_timestamp',
-        value: new Date(row.log_timestamp ?? '').toISOString(),
+        header: 'Timestamp',
+        value: format(new Date(row.log_timestamp ?? ''), 'dd.MM.yyyy HH:mm'),
       },
-      { header: 'log_message', value: row.log_message ?? '' },
-      { header: 'log_level', value: row.log_level ?? '' },
-      { header: 'source', value: row.source ?? '' },
+      { header: 'Message', value: row.log_message ?? '' },
+      { header: 'Log level', value: row.log_level ?? '' },
+      { header: 'Source', value: row.source ?? '' },
     ]);
     if (i === 0) {
       outputStream.write(objectToCsvHeader(mapped[0]), 'utf8');
