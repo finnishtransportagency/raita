@@ -1076,7 +1076,7 @@ export class RaitaApiStack extends NestedStack {
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
         REGION: this.region,
-        DATA_COLLECTIONLBUCKET: dataCollectionBucket.bucketName,
+        DATA_COLLECTION_BUCKET: dataCollectionBucket.bucketName,
         GENERATE_EXPORT_FUNCTION: adminLogGenerateExportFunction,
         // ...databaseEnvironmentVariables, TODO db not needed?
       },
