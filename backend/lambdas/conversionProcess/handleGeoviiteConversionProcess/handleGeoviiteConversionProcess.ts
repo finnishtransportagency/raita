@@ -58,11 +58,12 @@ export async function handleGeoviiteConversionProcess(
     const sqsRecords = event.Records;
     const sqsRecord = sqsRecords[0]; // assume only one event at a time
 
-    log.info('message id ' + sqsRecord.messageId);
+
     message = JSON.parse(sqsRecord.body);
     if (!message) {
       throw new Error('Error parsing JSON');
     }
+    log.info(message, 'message id ' + sqsRecord.messageId );
     const id = message.id;
     const key = message.key;
 
@@ -169,7 +170,7 @@ export async function handleGeoviiteConversionProcess(
           mittausRows,
         );
 
-      if(Math.random()>0.99){
+      if(Math.random()>0.99999){
         throw new Error('RANDOM ERROR FOR TESTING TODO REMOVE');
       }
       log.trace({ length: convertedRows.length }, 'converted');
@@ -180,7 +181,7 @@ export async function handleGeoviiteConversionProcess(
         log.error('Size mismatch');
       }
 
-      // one timestamp for all
+      // one timestamp for allc
       const timestamp = new Date();
       for (
         let saveBatchIndex = 0;
