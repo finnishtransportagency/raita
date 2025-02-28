@@ -399,7 +399,6 @@ export class RaitaApiStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
-      dataCollectionBucket,
     });
     this.handleAdminLogExportGenerationFn =
       this.createAdminLogExportGenerationHandler({
@@ -427,6 +426,7 @@ export class RaitaApiStack extends NestedStack {
         prismaLambdaLayer,
         adminLogGenerateExportFunction:
           this.handleAdminLogExportGenerationFn.functionName,
+        dataCollectionBucket,
       });
     this.handleAdminLogSummaryRequestFn =
       this.createAdminLogsRequestSummaryHandler({
@@ -995,7 +995,6 @@ export class RaitaApiStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
-    dataCollectionBucket,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1006,7 +1005,6 @@ export class RaitaApiStack extends NestedStack {
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
-    dataCollectionBucket: Bucket;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1022,7 +1020,6 @@ export class RaitaApiStack extends NestedStack {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
-        DATA_COLLECTION_BUCKET: dataCollectionBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -1050,6 +1047,7 @@ export class RaitaApiStack extends NestedStack {
     databaseEnvironmentVariables,
     prismaLambdaLayer,
     adminLogGenerateExportFunction,
+    dataCollectionBucket,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1061,6 +1059,7 @@ export class RaitaApiStack extends NestedStack {
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
     adminLogGenerateExportFunction: string;
+    dataCollectionBucket: Bucket;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1077,6 +1076,7 @@ export class RaitaApiStack extends NestedStack {
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
         REGION: this.region,
+        DATA_COLLECTIONLBUCKET: dataCollectionBucket.bucketName,
         GENERATE_EXPORT_FUNCTION: adminLogGenerateExportFunction,
         // ...databaseEnvironmentVariables, TODO db not needed?
       },
