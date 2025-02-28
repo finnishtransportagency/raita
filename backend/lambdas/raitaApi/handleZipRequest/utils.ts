@@ -113,5 +113,6 @@ async function initDownloadStream(
 export interface ZipRequestBody {
   keys: string[];
   pollingFileKey: string;
+  resultFileKey: string;
   dehydrated?: boolean | undefined;
 }

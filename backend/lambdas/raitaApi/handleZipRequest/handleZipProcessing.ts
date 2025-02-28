@@ -108,7 +108,7 @@ export async function handleZipProcessing(
       archive.append(fileStream, { name: fileName });
     });
 
-    const destKey = `zip/raita-zip-${Date.now()}.zip`;
+    const destKey = event.resultFileKey;
     await Promise.all([
       finalizeArchiveSafely(archive),
       uploadZip(dataCollectionBucket, destKey, archive, s3Client),

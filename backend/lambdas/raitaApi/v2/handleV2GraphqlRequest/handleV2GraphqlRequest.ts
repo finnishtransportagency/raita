@@ -25,6 +25,7 @@ function getLambdaConfigOrFail() {
   return {
     csvGenerationLambda: getEnv('CSV_GENERATION_LAMBDA'),
     region: getEnv('REGION'),
+    dataCollectionBucket: getEnv('DATA_COLLECTION_BUCKET'),
   };
 }
 
@@ -72,6 +73,7 @@ export const handleV2GraphqlRequest = startServerAndCreateLambdaHandler(
           user,
           region: config.region,
           csvGenerationLambda: config.csvGenerationLambda,
+          dataCollectionBucket: config.dataCollectionBucket,
         };
       } catch (error) {
         log.error({ event, error }, 'Error in context handler');

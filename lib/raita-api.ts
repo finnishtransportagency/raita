@@ -98,6 +98,10 @@ export class RaitaApiStack extends NestedStack {
     // Create a bucket to hold the data of user made
     // collections as a zip. Set lifecycle policy to delete
     // the objects in 7 days
+    // the bucket has three paths
+    // progress: for progress status
+    // common for results of normal operations
+    // admin for results of admin operations
     const dataCollectionBucket = createRaitaBucket({
       scope: this,
       name: 'data-collection',
@@ -120,6 +124,11 @@ export class RaitaApiStack extends NestedStack {
     inspectionDataBucket.grantRead(this.raitaApiZipProcessLambdaServiceRole);
     dataCollectionBucket.grantReadWrite(
       this.raitaApiZipProcessLambdaServiceRole,
+      'common/*',
+    );
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiZipProcessLambdaServiceRole,
+      'progress/*',
     );
 
     // Zip request function needs permission to invoke another lambda,
@@ -133,6 +142,7 @@ export class RaitaApiStack extends NestedStack {
     });
     dataCollectionBucket.grantReadWrite(
       this.raitaApiZipRequestLambdaServiceRole,
+      'progress/*',
     );
 
     this.raitaApiLambdaServiceRole = createRaitaServiceRole({
@@ -151,6 +161,11 @@ export class RaitaApiStack extends NestedStack {
       raitaStackIdentifier,
     });
 
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiGraphqlLambdaServiceRole,
+      'progress/*',
+    );
+
     this.raitaApiCsvGenerationLambdaServiceRole = createRaitaServiceRole({
       scope: this,
       name: 'RaitaApiCsvGenerationLambdaServiceRole',
@@ -160,6 +175,11 @@ export class RaitaApiStack extends NestedStack {
     });
     dataCollectionBucket.grantReadWrite(
       this.raitaApiCsvGenerationLambdaServiceRole,
+      'common/*',
+    );
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiCsvGenerationLambdaServiceRole,
+      'progress/*',
     );
     this.raitaApiCsvGenerationLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
@@ -170,7 +190,10 @@ export class RaitaApiStack extends NestedStack {
     );
 
     inspectionDataBucket.grantRead(this.raitaApiLambdaServiceRole);
-    dataCollectionBucket.grantRead(this.raitaApiLambdaServiceRole);
+    dataCollectionBucket.grantRead(
+      this.raitaApiLambdaServiceRole,
+      'progress/*',
+    );
     csvDataBucket.grantRead(this.raitaApiLambdaServiceRole);
 
     // TODO: this is not needed on all resources
@@ -242,6 +265,10 @@ export class RaitaApiStack extends NestedStack {
         policyName: 'service-role/AWSLambdaVPCAccessExecutionRole',
         raitaStackIdentifier,
       });
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiAdminLogExportRequestLambdaServiceRole,
+      'progress/*',
+    );
     this.raitaApiAdminLogExportGenerationLambdaServiceRole =
       createRaitaServiceRole({
         scope: this,
@@ -252,6 +279,11 @@ export class RaitaApiStack extends NestedStack {
       });
     dataCollectionBucket.grantReadWrite(
       this.raitaApiAdminLogExportGenerationLambdaServiceRole,
+      'progress/*',
+    );
+    dataCollectionBucket.grantReadWrite(
+      this.raitaApiAdminLogExportGenerationLambdaServiceRole,
+      'admin/*',
     );
     this.raitaApiAdminLogExportGenerationLambdaServiceRole.addToPolicy(
       new iam.PolicyStatement({
@@ -367,6 +399,7 @@ export class RaitaApiStack extends NestedStack {
       vpc,
       databaseEnvironmentVariables,
       prismaLambdaLayer,
+      dataCollectionBucket,
     });
     this.handleAdminLogExportGenerationFn =
       this.createAdminLogExportGenerationHandler({
@@ -379,7 +412,7 @@ export class RaitaApiStack extends NestedStack {
         vpc,
         databaseEnvironmentVariables,
         prismaLambdaLayer,
-        targetBucket: dataCollectionBucket, // TODO
+        targetBucket: dataCollectionBucket,
       });
     this.handleAdminLogExportRequestFn =
       this.createAdminLogExportRequestHandler({
@@ -432,6 +465,7 @@ export class RaitaApiStack extends NestedStack {
       databaseEnvironmentVariables,
       csvGenerationFunction: this.handleCsvGenerationFn.functionName,
       prismaLambdaLayer,
+      dataCollectionBucket,
     });
 
     const handleReturnLogin = this.createReturnLoginHandler({
@@ -961,6 +995,7 @@ export class RaitaApiStack extends NestedStack {
     vpc,
     databaseEnvironmentVariables,
     prismaLambdaLayer,
+    dataCollectionBucket,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -971,11 +1006,12 @@ export class RaitaApiStack extends NestedStack {
     vpc: ec2.IVpc;
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     prismaLambdaLayer: lambda.LayerVersion;
+    dataCollectionBucket: Bucket;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
       memorySize: 512,
-      timeout: cdk.Duration.seconds(60), // TODO
+      timeout: cdk.Duration.seconds(30),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handleAdminLogsRequest',
       entry: path.join(
@@ -986,6 +1022,7 @@ export class RaitaApiStack extends NestedStack {
         JWT_TOKEN_ISSUER: jwtTokenIssuer,
         STACK_ID: stackId,
         ENVIRONMENT: raitaEnv,
+        DATA_COLLECTION_BUCKET: dataCollectionBucket.bucketName,
         ...databaseEnvironmentVariables,
       },
       bundling: prismaBundlingOptions,
@@ -1223,6 +1260,7 @@ export class RaitaApiStack extends NestedStack {
     databaseEnvironmentVariables,
     csvGenerationFunction,
     prismaLambdaLayer,
+    dataCollectionBucket,
   }: {
     name: string;
     raitaStackIdentifier: string;
@@ -1234,6 +1272,7 @@ export class RaitaApiStack extends NestedStack {
     databaseEnvironmentVariables: DatabaseEnvironmentVariables;
     csvGenerationFunction: string;
     prismaLambdaLayer: lambda.LayerVersion;
+    dataCollectionBucket: Bucket;
   }) {
     return new NodejsFunction(this, name, {
       functionName: `lambda-${raitaStackIdentifier}-${name}`,
@@ -1251,6 +1290,7 @@ export class RaitaApiStack extends NestedStack {
         ENVIRONMENT: raitaEnv,
         REGION: this.region,
         CSV_GENERATION_LAMBDA: csvGenerationFunction,
+        DATA_COLLECTION_BUCKET: dataCollectionBucket.bucketName,
         ...databaseEnvironmentVariables,
         NODE_ENV: isPermanentStack(stackId, raitaEnv)
           ? 'production'

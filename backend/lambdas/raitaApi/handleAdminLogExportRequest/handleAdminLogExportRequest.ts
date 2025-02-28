@@ -14,6 +14,9 @@ import { lambdaRequestTracker } from 'pino-lambda';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { AdminLogExportEvent } from '../fileGeneration/types';
 import { getGetEnvWithPreassignedContext } from '../../../../utils';
+import { uploadProgressData } from '../fileGeneration/utils';
+import { InitialProgressData } from '../fileGeneration/constants';
+import { S3Client } from '@aws-sdk/client-s3';
 
 const withRequest = lambdaRequestTracker();
 
@@ -22,6 +25,7 @@ function getLambdaConfigOrFail() {
   return {
     generateExportFunction: getEnv('GENERATE_EXPORT_FUNCTION'),
     region: getEnv('REGION'),
+    dataCollectionBucket: getEnv('DATA_COLLECTION_BUCKET'),
   };
 }
 
@@ -38,7 +42,8 @@ export async function handleAdminLogExportRequest(
     const user = await getUser(event);
     log.info({ user });
     await validateAdminUser(user);
-    const { generateExportFunction, region } = getLambdaConfigOrFail();
+    const { generateExportFunction, region, dataCollectionBucket } =
+      getLambdaConfigOrFail();
 
     const parsedBody: {
       startDate: string;
@@ -88,22 +93,31 @@ export async function handleAdminLogExportRequest(
       'dd.MM.yyyy-HH-mm',
     )}`;
     const uuid = randomUUID();
-    const progressKey = `csv/progress/${uuid}.json`;
-    // TODO: admin log export in separate bucket?
-    const resultFileKey = `admin/log/export/${uuid}/${fileBaseName}.csv`;
+    const pollingKey = `progress/${uuid}.json`;
+    const resultFileKey = `admin/log/${uuid}/${fileBaseName}.csv`;
     const exportEvent: AdminLogExportEvent = {
       startTime: startTimestamp,
       endTime: endTimestamp,
       sources: parsedSources,
-      progressKey,
+      progressKey: pollingKey,
       resultFileKey,
     };
     const payloadJson = JSON.stringify(exportEvent);
     const payload = new TextEncoder().encode(payloadJson);
 
+    const s3Client = new S3Client({});
+
     const lambdaClient = new LambdaClient({ region });
 
     // TODO: should there be a check here to see if data exists?
+
+    // upload indication of started process to data collection bucket
+    await uploadProgressData(
+      InitialProgressData,
+      dataCollectionBucket,
+      pollingKey,
+      s3Client,
+    );
 
     const command = new InvokeCommand({
       FunctionName: generateExportFunction,
@@ -113,7 +127,7 @@ export async function handleAdminLogExportRequest(
     await lambdaClient.send(command);
 
     return getRaitaSuccessResponse({
-      polling_key: progressKey,
+      polling_key: pollingKey,
     });
   } catch (err: any) {
     log.error(err);

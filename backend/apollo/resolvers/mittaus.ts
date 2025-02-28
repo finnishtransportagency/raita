@@ -8,6 +8,9 @@ import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
 import { CsvGenerationEvent } from '../../lambdas/raitaApi/fileGeneration/types';
 import { format } from 'date-fns';
 import { randomUUID } from 'crypto';
+import { uploadProgressData } from '../../lambdas/raitaApi/fileGeneration/utils';
+import { InitialProgressData } from '../../lambdas/raitaApi/fileGeneration/constants';
+import { S3Client } from '@aws-sdk/client-s3';
 
 /**
  * Return estimate of result file size in bytes
@@ -87,7 +90,7 @@ export const mittausResolvers: Resolvers = {
   },
   Mutation: {
     generate_mittaus_csv: async (parent, params, context) => {
-      const { csvGenerationLambda, region } = context;
+      const { csvGenerationLambda, region, dataCollectionBucket } = context;
       if (!csvGenerationLambda || !region) {
         throw new Error('Missing env vars');
       }
@@ -95,17 +98,28 @@ export const mittausResolvers: Resolvers = {
       // TODO: file name
       const fileBaseName = `RAITA-export-${format(now, 'dd.MM.yyyy-HH-mm')}`;
       const uuid = randomUUID();
-      const progressKey = `csv/progress/${uuid}.json`;
-      const csvKey = `csv/data/${uuid}/${fileBaseName}.csv`;
+      const pollingKey = `progress/${uuid}.json`;
+      const csvKey = `common/csv/${uuid}/${fileBaseName}.csv`;
+
       const event: CsvGenerationEvent = {
         searchParameters: params,
-        progressKey,
+        progressKey: pollingKey,
         csvKey,
       };
+
+      const s3Client = new S3Client();
+
       const payloadJson = JSON.stringify(event);
       const payload = new TextEncoder().encode(payloadJson);
 
       const lambdaClient = new LambdaClient({ region });
+
+      await uploadProgressData(
+        InitialProgressData,
+        dataCollectionBucket,
+        pollingKey,
+        s3Client,
+      );
 
       const command = new InvokeCommand({
         FunctionName: csvGenerationLambda,
@@ -115,7 +129,7 @@ export const mittausResolvers: Resolvers = {
       await lambdaClient.send(command);
 
       return {
-        polling_key: progressKey,
+        polling_key: pollingKey,
       };
     },
   },
