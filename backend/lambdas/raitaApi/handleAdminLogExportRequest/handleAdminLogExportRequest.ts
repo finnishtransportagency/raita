@@ -17,6 +17,8 @@ import { getGetEnvWithPreassignedContext } from '../../../../utils';
 import { uploadProgressData } from '../fileGeneration/utils';
 import { InitialProgressData } from '../fileGeneration/constants';
 import { S3Client } from '@aws-sdk/client-s3';
+import { tz } from '@date-fns/tz';
+import { DATA_TIME_ZONE } from '../../../../constants';
 
 const withRequest = lambdaRequestTracker();
 
@@ -91,6 +93,7 @@ export async function handleAdminLogExportRequest(
     const fileBaseName = `RAITA-admin-log-export-${format(
       now,
       'dd.MM.yyyy-HH-mm',
+      { in: tz(DATA_TIME_ZONE) },
     )}`;
     const uuid = randomUUID();
     const pollingKey = `progress/${uuid}.json`;

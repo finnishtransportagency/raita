@@ -4,13 +4,17 @@ import { Resolvers } from '../__generated__/resolvers-types';
 import { RaitaLambdaError } from '../../lambdas/utils';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { getRaporttiWhereInput } from '../utils';
-import { CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT } from '../../../constants';
+import {
+  CSV_GENERATION_MAX_RAPORTTI_ROW_COUNT,
+  DATA_TIME_ZONE,
+} from '../../../constants';
 import { CsvGenerationEvent } from '../../lambdas/raitaApi/fileGeneration/types';
 import { format } from 'date-fns';
 import { randomUUID } from 'crypto';
 import { uploadProgressData } from '../../lambdas/raitaApi/fileGeneration/utils';
 import { InitialProgressData } from '../../lambdas/raitaApi/fileGeneration/constants';
 import { S3Client } from '@aws-sdk/client-s3';
+import { tz } from '@date-fns/tz';
 
 /**
  * Return estimate of result file size in bytes
@@ -96,7 +100,9 @@ export const mittausResolvers: Resolvers = {
       }
       const now = new Date();
       // TODO: file name
-      const fileBaseName = `RAITA-export-${format(now, 'dd.MM.yyyy-HH-mm')}`;
+      const fileBaseName = `RAITA-export-${format(now, 'dd.MM.yyyy-HH-mm', {
+        in: tz(DATA_TIME_ZONE),
+      })}`;
       const uuid = randomUUID();
       const pollingKey = `progress/${uuid}.json`;
       const csvKey = `common/csv/${uuid}/${fileBaseName}.csv`;

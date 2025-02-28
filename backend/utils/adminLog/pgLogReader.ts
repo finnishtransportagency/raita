@@ -82,8 +82,10 @@ export async function getSingleEventLogs(
 
 /**
  * Mass export for a specific time interval
- * TODO: stream?
- * TODO return type
+ *
+ * in same format as UI using summary query and single event query
+ *
+ * write output to outputStream
  */
 export async function writeLogExportToWritable(
   sources: AdminLogSource[],
@@ -91,50 +93,129 @@ export async function writeLogExportToWritable(
   endTimestamp: string,
   prisma: PrismaClient,
   outputStream: Writable,
-) {
-  const pageSize = 10000;
-  const where: Prisma.loggingWhereInput = {
-    log_timestamp: {
-      gte: startTimestamp,
-      lte: endTimestamp,
-    },
-    source: {
-      in: sources,
-    },
-  };
+): Promise<void> {
+  const pageSize = 10000; // use same page size for all queries
+  // const where: Prisma.loggingWhereInput = {
+  //   log_timestamp: {
+  //     gte: startTimestamp,
+  //     lte: endTimestamp,
+  //   },
+  //   source: {
+  //     in: sources,
+  //   },
+  // };
 
-  // lista eventeistä?
+  const stats = await getStatsQuery(
+    sources,
+    startTimestamp,
+    endTimestamp,
+    prisma,
+  );
+  // TODO this is higher than event count, does it matter?
+  const maxTotalCount = stats.reduce((prev, cur) => prev + cur.event_count, 0);
 
-  const count = await prisma.logging.count({ where });
-  for (let i = 0; i < count; i += pageSize) {
-    const result = await prisma.logging.findMany({
-      where,
-      select: {
-        log_timestamp: true,
-        log_level: true,
-        log_message: true,
-        invocation_id: true,
-        source: true,
-      },
-      orderBy: [{ invocation_id: 'asc' }, { log_timestamp: 'asc' }],
-      skip: i,
-      take: pageSize,
-    });
-    const mapped: CsvRow[] = result.map(row => [
-      { header: 'ZIP', value: row.invocation_id ?? '' },
-      {
-        header: 'Timestamp',
-        value: format(new Date(row.log_timestamp ?? ''), 'dd.MM.yyyy HH:mm'),
-      },
-      { header: 'Message', value: row.log_message ?? '' },
-      { header: 'Log level', value: row.log_level ?? '' },
-      { header: 'Source', value: row.source ?? '' },
-    ]);
-    if (i === 0) {
-      outputStream.write(objectToCsvHeader(mapped[0]), 'utf8');
+  for (
+    let summaryPageIndex = 0;
+    summaryPageIndex < maxTotalCount;
+    summaryPageIndex += pageSize
+  ) {
+    const summaryResponse = await getSummaryQuery(
+      sources,
+      startTimestamp,
+      endTimestamp,
+      pageSize,
+      summaryPageIndex,
+      prisma,
+    );
+    const formattedSummary = formatSummary(summaryResponse);
+    formattedSummary;
+    for (
+      let eventIndex = 0;
+      eventIndex < formattedSummary.length;
+      eventIndex++
+    ) {
+      // each summary row is an "event"
+      const summaryRow = formattedSummary[eventIndex];
+      const where: Prisma.loggingWhereInput = {
+        log_timestamp: {
+          gte: `${format(summaryRow.log_date, 'yyyy-MM-dd')}T00:00:00Z`,
+          lte: `${format(summaryRow.log_date, 'yyyy-MM-dd')}23:59:59Z`,
+        },
+        source: {
+          in: sources,
+        },
+        invocation_id: summaryRow.invocation_id,
+      };
+      const logRowCount = await prisma.logging.count({ where });
+      for (
+        let logPageIndex = 0;
+        logPageIndex < logRowCount;
+        logPageIndex += pageSize
+      ) {
+        const result = await prisma.logging.findMany({
+          where,
+          select: {
+            log_timestamp: true,
+            log_level: true,
+            log_message: true,
+            invocation_id: true,
+            source: true,
+          },
+          orderBy: [{ log_timestamp: 'asc' }],
+          skip: logPageIndex,
+          take: pageSize,
+        });
+        const mapped: CsvRow[] = result.map(row => [
+          { header: 'ZIP', value: row.invocation_id ?? '' },
+          {
+            header: 'Timestamp',
+            value: format(
+              new Date(row.log_timestamp ?? ''),
+              'dd.MM.yyyy HH:mm',
+            ),
+          },
+          { header: 'Message', value: row.log_message ?? '' },
+          { header: 'Log level', value: row.log_level ?? '' },
+          { header: 'Source', value: row.source ?? '' },
+        ]);
+        if (summaryPageIndex === 0 && eventIndex === 0 && logPageIndex === 0) {
+          outputStream.write(objectToCsvHeader(mapped[0]), 'utf8');
+        }
+        outputStream.write(objectToCsvBody(mapped), 'utf8');
+      }
     }
-    outputStream.write(objectToCsvBody(mapped), 'utf8');
   }
+
+  // const count = await prisma.logging.count({ where });
+  // for (let i = 0; i < count; i += pageSize) {
+  //   const result = await prisma.logging.findMany({
+  //     where,
+  //     select: {
+  //       log_timestamp: true,
+  //       log_level: true,
+  //       log_message: true,
+  //       invocation_id: true,
+  //       source: true,
+  //     },
+  //     orderBy: [{ invocation_id: 'asc' }, { log_timestamp: 'asc' }],
+  //     skip: i,
+  //     take: pageSize,
+  //   });
+  //   const mapped: CsvRow[] = result.map(row => [
+  //     { header: 'ZIP', value: row.invocation_id ?? '' },
+  //     {
+  //       header: 'Timestamp',
+  //       value: format(new Date(row.log_timestamp ?? ''), 'dd.MM.yyyy HH:mm'),
+  //     },
+  //     { header: 'Message', value: row.log_message ?? '' },
+  //     { header: 'Log level', value: row.log_level ?? '' },
+  //     { header: 'Source', value: row.source ?? '' },
+  //   ]);
+  //   if (i === 0) {
+  //     outputStream.write(objectToCsvHeader(mapped[0]), 'utf8');
+  //   }
+  //   outputStream.write(objectToCsvBody(mapped), 'utf8');
+  // }
   outputStream.end();
 }
 

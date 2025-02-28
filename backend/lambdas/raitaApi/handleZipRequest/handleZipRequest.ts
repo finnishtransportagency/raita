@@ -17,6 +17,8 @@ import { randomUUID } from 'crypto';
 import { format } from 'date-fns';
 import { uploadProgressData } from '../fileGeneration/utils';
 import { InitialProgressData } from '../fileGeneration/constants';
+import { tz } from '@date-fns/tz';
+import { DATA_TIME_ZONE } from '../../../../constants';
 
 function getLambdaConfigOrFail() {
   const getEnv = getGetEnvWithPreassignedContext('handleZipRequest');
@@ -69,7 +71,9 @@ export async function handleZipRequest(
     // to s3 and pass the s3 key as payload.
 
     const now = new Date();
-    const fileBaseName = `RAITA-zip-${format(now, 'dd.MM.yyyy-HH-mm')}`;
+    const fileBaseName = `RAITA-zip-${format(now, 'dd.MM.yyyy-HH-mm', {
+      in: tz(DATA_TIME_ZONE),
+    })}`;
     const uuid = randomUUID();
     const pollingKey = `progress/${uuid}.json`;
     const resultFileKey = `common/zip/${uuid}/${fileBaseName}.zip`;
